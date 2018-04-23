@@ -64,3 +64,6 @@ __recovery/
 
 # Castalia statistics file (since XE7 Castalia is distributed with Delphi)
 *.stat
+
+Samples/Rechnung_9202174904.pdf
+Samples/Rechnung_9202174904_ZUGFeRD-invoice.xml
