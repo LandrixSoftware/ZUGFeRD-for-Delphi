@@ -3,7 +3,8 @@ program ZUGFeRDProject;
 uses
   Vcl.Forms,
   ZUGFeRDUnit1 in 'ZUGFeRDUnit1.pas' {Form1},
-  ZUGFeRD1p0 in '..\..\Specification\ZUGFeRD1p0.pas';
+  ZUGFeRD1p0 in '..\..\Specification\ZUGFeRD1p0.pas',
+  intf.ZUGFeRD in '..\..\intf.ZUGFeRD.pas';
 
 {$R *.res}
 

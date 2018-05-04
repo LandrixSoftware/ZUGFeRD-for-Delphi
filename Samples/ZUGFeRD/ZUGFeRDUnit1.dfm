@@ -1,7 +1,7 @@
 object Form1: TForm1
   Left = 0
   Top = 0
-  Caption = 'Form1'
+  Caption = 'ZUGfERD'
   ClientHeight = 986
   ClientWidth = 1626
   Color = clBtnFace
@@ -47,6 +47,7 @@ object Form1: TForm1
     Height = 97
     ItemHeight = 13
     TabOrder = 3
+    OnClick = Button2Click
   end
   object Button2: TButton
     Left = 1255

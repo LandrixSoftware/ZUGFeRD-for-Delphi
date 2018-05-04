@@ -1,18 +1,22 @@
 
-{************************************************************************************************************}
-{                                                                                                            }
-{                                              XML-Datenbindung                                              }
-{                                                                                                            }
-{         Generiert am: 23.04.2018 11:18:06                                                                  }
-{       Generiert von: D:\projekte\src_lnxa6_3thParty\_git_ZUGFeRD-for-Delphi\Specification\ZUGFeRD1p0.xsd   }
-{                                                                                                            }
-{************************************************************************************************************}
+{******************************************************************************}
+{                                                                              }
+{                                              XML-Datenbindung                }
+{                                                                              }
+{         Generiert am: 23.04.2018 11:18:06                                    }
+{       Generiert von: Specification\ZUGFeRD1p0.xsd                            }
+{                                                                              }
+{******************************************************************************}
 
 unit ZUGFeRD1p0;
 
 interface
 
-uses Xml.xmldom, Xml.XMLDoc, Xml.XMLIntf;
+{NOT$DEFINE USE_OXMLDomVendor} //http://www.kluug.net/oxml.php
+
+uses Xml.xmldom,Xml.XMLDoc,Xml.XMLIntf
+     {$IFDEF USE_OXMLDomVendor},OXmlDOMVendor{$ENDIF}
+     ;
 
 type
 
@@ -2604,12 +2608,18 @@ type
 
 { Globale Funktionen }
 
-function GetCrossIndustryDocument(Doc: IXMLDocument): IXMLCrossIndustryDocumentType;
-function LoadCrossIndustryDocument(const FileName: string): IXMLCrossIndustryDocumentType;
-function NewCrossIndustryDocument: IXMLCrossIndustryDocumentType;
+  TCrossIndustryDocumentTypeHelper = class(TObject)
+  public
+    const TargetNamespace = 'urn:ferd:CrossIndustryDocument:invoice:1p0';
+    const TargetNamespaceRam = 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:12';
+    const TargetNamespaceUdt = 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:15';
+  public
+    class function GetCrossIndustryDocument(Doc: IXMLDocument): IXMLCrossIndustryDocumentType;
+    class function LoadCrossIndustryDocument(const FileName: string): IXMLCrossIndustryDocumentType;
+    class function NewCrossIndustryDocument: IXMLCrossIndustryDocumentType;
 
-const
-  TargetNamespace = 'urn:ferd:CrossIndustryDocument:invoice:1p0';
+    class function DateFromStr(const _Val : String) : TDate;
+  end;
 
 implementation
 
@@ -2617,19 +2627,42 @@ uses Xml.xmlutil;
 
 { Globale Funktionen }
 
-function GetCrossIndustryDocument(Doc: IXMLDocument): IXMLCrossIndustryDocumentType;
+class function TCrossIndustryDocumentTypeHelper.DateFromStr(
+  const _Val: String): TDate;
 begin
-  Result := Doc.GetDocBinding('CrossIndustryDocument', TXMLCrossIndustryDocumentType, TargetNamespace) as IXMLCrossIndustryDocumentType;
+
 end;
 
-function LoadCrossIndustryDocument(const FileName: string): IXMLCrossIndustryDocumentType;
+class function TCrossIndustryDocumentTypeHelper.GetCrossIndustryDocument(Doc: IXMLDocument): IXMLCrossIndustryDocumentType;
 begin
-  Result := LoadXMLDocument(FileName).GetDocBinding('CrossIndustryDocument', TXMLCrossIndustryDocumentType, TargetNamespace) as IXMLCrossIndustryDocumentType;
+  Result := Doc.GetDocBinding('CrossIndustryDocument', TXMLCrossIndustryDocumentType) as IXMLCrossIndustryDocumentType;
+  Result.DeclareNamespace('rsm',TargetNamespace);
 end;
 
-function NewCrossIndustryDocument: IXMLCrossIndustryDocumentType;
+class function TCrossIndustryDocumentTypeHelper.LoadCrossIndustryDocument(const FileName: string): IXMLCrossIndustryDocumentType;
+var
+  xmldoc : IXMLDocument;
 begin
-  Result := NewXMLDocument.GetDocBinding('CrossIndustryDocument', TXMLCrossIndustryDocumentType, TargetNamespace) as IXMLCrossIndustryDocumentType;
+  xmldoc := LoadXMLDocument(FileName);
+  {$IFDEF USE_OXMLDomVendor}TXMLDocument(xmldoc).DOMVendor := Xml.xmldom.GetDOMVendor(sOXmlDOMVendor);{$ENDIF}
+  Result := xmldoc.GetDocBinding('CrossIndustryDocument', TXMLCrossIndustryDocumentType) as IXMLCrossIndustryDocumentType;
+  Result.DeclareNamespace('rsm',TargetNamespace);
+end;
+
+class function TCrossIndustryDocumentTypeHelper.NewCrossIndustryDocument: IXMLCrossIndustryDocumentType;
+var
+  xmldoc : IXMLDocument;
+begin
+  xmldoc := NewXMLDocument;
+  {$IFDEF USE_OXMLDomVendor}
+  TXMLDocument(xmldoc).DOMVendor := Xml.xmldom.GetDOMVendor(sOXmlDOMVendor);
+  {$ENDIF}
+  TXMLDocument(xmldoc).Options := TXMLDocument(xmldoc).Options + [doNodeAutoIndent];
+  Result := xmldoc.GetDocBinding('rsm:CrossIndustryDocument', TXMLCrossIndustryDocumentType) as IXMLCrossIndustryDocumentType;
+  Result.DeclareNamespace('rsm',TargetNamespace);
+  Result.DeclareNamespace('xsi','http://www.w3.org/2001/XMLSchema-instance');
+  Result.DeclareNamespace('ram',TargetNamespaceRam);
+  Result.DeclareNamespace('udt',TargetNamespaceUdt);
 end;
 
 { TXMLCrossIndustryDocumentType }
@@ -2644,7 +2677,7 @@ end;
 
 function TXMLCrossIndustryDocumentType.Get_SpecifiedExchangedDocumentContext: IXMLExchangedDocumentContextType_ram;
 begin
-  Result := ChildNodes['SpecifiedExchangedDocumentContext'] as IXMLExchangedDocumentContextType_ram;
+  Result := ChildNodes['rsm:SpecifiedExchangedDocumentContext'] as IXMLExchangedDocumentContextType_ram;
 end;
 
 function TXMLCrossIndustryDocumentType.Get_HeaderExchangedDocument: IXMLExchangedDocumentType_ram;
@@ -2671,7 +2704,7 @@ end;
 
 function TXMLExchangedDocumentContextType_ram.Get_TestIndicator: IXMLIndicatorType_udt;
 begin
-  Result := ChildNodes['TestIndicator'] as IXMLIndicatorType_udt;
+  Result := ChildNodes['ram:TestIndicator'] as IXMLIndicatorType_udt;
 end;
 
 function TXMLExchangedDocumentContextType_ram.Get_BusinessProcessSpecifiedDocumentContextParameter: IXMLDocumentContextParameterType_ramList;
@@ -2688,12 +2721,12 @@ end;
 
 function TXMLIndicatorType_udt.Get_Indicator: Boolean;
 begin
-  Result := ChildNodes['Indicator'].NodeValue;
+  Result := ChildNodes['udt:Indicator'].NodeValue;
 end;
 
 procedure TXMLIndicatorType_udt.Set_Indicator(Value: Boolean);
 begin
-  ChildNodes['Indicator'].NodeValue := Value;
+  ChildNodes['udt:Indicator'].NodeValue := Value;
 end;
 
 { TXMLDocumentContextParameterType_ram }

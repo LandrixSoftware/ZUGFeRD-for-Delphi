@@ -134,6 +134,7 @@
             <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="..\..\Specification\ZUGFeRD1p0.pas"/>
+        <DCCReference Include="..\..\intf.ZUGFeRD.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -160,14 +161,14 @@
                 </Excluded_Packages>
             </Delphi.Personality>
             <Deployment Version="3">
-                <DeployFile LocalName="Win32\Debug\ZUGFeRDProject.exe" Configuration="Debug" Class="ProjectOutput">
-                    <Platform Name="Win32">
+                <DeployFile LocalName="..\..\Bin\Win64\Debug\ZUGFeRDProject.exe" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win64">
                         <RemoteName>ZUGFeRDProject.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="..\..\Bin\Win64\Debug\ZUGFeRDProject.exe" Configuration="Debug" Class="ProjectOutput">
-                    <Platform Name="Win64">
+                <DeployFile LocalName="Win32\Debug\ZUGFeRDProject.exe" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win32">
                         <RemoteName>ZUGFeRDProject.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
