@@ -16,3 +16,4 @@ rmdir /Q /S .\Samples\ZUGFeRD\__history
 rmdir /Q /S .\Samples\ZUGFeRD\__recovery
 rmdir /Q /S .\bin
 rmdir /Q /S .\__history
+rmdir /Q /S .\__recovery
