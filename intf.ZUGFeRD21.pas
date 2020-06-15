@@ -1,4 +1,4 @@
-unit intf.ZUGFeRD2;
+unit intf.ZUGFeRD21;
 
 interface
 
@@ -6,7 +6,7 @@ interface
 
 uses
   System.SysUtils,System.Classes,System.Variants,System.StrUtils,
-  System.DateUtils,System.Generics.Collections,System.Rtti,
+  System.DateUtils,System.Generics.Collections,
   Xml.xmldom,Xml.XMLDoc,Xml.XMLIntf,
   idCoderMime,
   intf.ZUGFeRDHelper
@@ -307,12 +307,6 @@ type
     function  IsValid(_DocType : TZUGFeRDInvoiceTypeCode; _OnInconsistency : TZUGFeRDValidationEvent) : Boolean;
   end;
 
-  [ZUGFeRDAttrNS('a','urn:un:unece:uncefact:data:standard:QualifiedDataType:100')]
-  [ZUGFeRDAttrNS('rsm','urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100')]
-  [ZUGFeRDAttrNS('qdt','urn:un:unece:uncefact:data:standard:QualifiedDataType:10')]
-  [ZUGFeRDAttrNS('ram','urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100')]
-  [ZUGFeRDAttrNS('xs','http://www.w3.org/2001/XMLSchema')]
-  [ZUGFeRDAttrNS('udt','urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100')]
   TZUGFeRDDocument = class(TObject)
   private
     procedure LoadDocument(_Xml : IXMLDocument);
@@ -755,9 +749,9 @@ begin
   if not SameText(_Xml.DocumentElement.LocalName,'CrossIndustryInvoice') then
     exit;
 
-  TXMLHelper.LoadFromChilds('rsm:ExchangedDocumentContext',_Xml.DocumentElement,ExchangedDocumentContext.Load);
-  TXMLHelper.LoadFromChilds('rsm:ExchangedDocument',_Xml.DocumentElement,ExchangedDocument.Load);
-  TXMLHelper.LoadFromChilds('rsm:SupplyChainTradeTransaction',_Xml.DocumentElement,SupplyChainTradeTransaction.Load);
+  TZUGFeRDXMLHelper.LoadFromChilds('rsm:ExchangedDocumentContext',_Xml.DocumentElement,ExchangedDocumentContext.Load);
+  TZUGFeRDXMLHelper.LoadFromChilds('rsm:ExchangedDocument',_Xml.DocumentElement,ExchangedDocument.Load);
+  TZUGFeRDXMLHelper.LoadFromChilds('rsm:SupplyChainTradeTransaction',_Xml.DocumentElement,SupplyChainTradeTransaction.Load);
 //
 ////  Result := xmldoc.GetDocBinding('CrossIndustryDocument', TXMLCrossIndustryDocumentType) as IXMLCrossIndustryDocumentType;
 ////  Result.DeclareNamespace('rsm',TargetNamespace);
@@ -785,13 +779,6 @@ end;
 procedure TZUGFeRDDocument.SaveDocument(
   _Xml: IXMLDocument);
 var
-  lRTTI: TRTTIContext;
-  lRTTIType: TRttiType;
-  lRTTIFieldList: TArray<TRttiField>;
-  lRTTIAttributes : TArray<TCustomAttribute>;
-  i : Integer;
-//  attr : LnxAttr;
-  val : TValue;
   xRoot : IXMLNode;
 begin
   {$IFDEF USE_OXMLDomVendor}TXMLDocument(_Xml).DOMVendor := Xml.xmldom.GetDOMVendor(sOXmlDOMVendor);{$ENDIF}
@@ -806,133 +793,16 @@ begin
 
   xRoot := _Xml.AddChild('rsm:CrossIndustryInvoice');
 
-  lRTTI := TRTTIContext.Create;
-  try
-    lRTTIType := lRTTI.GetType(self.ClassType);
+  xRoot.DeclareNamespace('a','urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
+  xRoot.DeclareNamespace('rsm','urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100');
+  xRoot.DeclareNamespace('qdt','urn:un:unece:uncefact:data:standard:QualifiedDataType:10');
+  xRoot.DeclareNamespace('ram','urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100');
+  xRoot.DeclareNamespace('xs','http://www.w3.org/2001/XMLSchema');
+  xRoot.DeclareNamespace('udt','urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100');
 
-//  xRoot.DeclareNamespace('rsm',TargetNamespace);
-//  xRoot.DeclareNamespace('xsi','http://www.w3.org/2001/XMLSchema-instance');
-//  xRoot.DeclareNamespace('ram',TargetNamespaceRam);
-//  xRoot.DeclareNamespace('udt',TargetNamespaceUdt);
-
-    lRTTIAttributes := lRTTIType.GetAttributes;
-    for var attr : TCustomAttribute in lRTTIAttributes do
-    if attr is ZUGFeRDAttrNS then
-    with (attr as ZUGFeRDAttrNS) do
-    begin
-      xRoot.DeclareNamespace(Prefix,URI);
-    end;
-
-//    lRTTIFieldList := lRTTIType.GetDeclaredFields;
-//    for i := 0 to Length(lRTTIFieldList)-1 do
-//    begin
-//      if not TLandrixLibraryHelper.HasAttribute<LnxAttr>(lRTTIFieldList[i],attr) then
-//        continue;
-//      if attr.IsIndexField then
-//      if not _WithInternalUID then
-//        continue;
-//      case lRTTIFieldList[i].FieldType.TypeKind of
-//        tkInteger :
-//        begin
-//          if _OnlyChangedFields then
-//          if SameStr(_Itm.InitialFieldValues[i].Value, IntToStr(lRTTIFieldList[i].GetValue(_Itm).AsInteger))  then
-//            continue;
-//          Result.AddField(attr.Value).ValAsInt := lRTTIFieldList[i].GetValue(_Itm).AsInteger;
-//        end;
-//        tkUString :
-//        begin
-//          if _OnlyChangedFields then
-//          if SameStr(_Itm.InitialFieldValues[i].Value, THashSHA1.GetHashString( lRTTIFieldList[i].GetValue(_Itm).AsString))  then
-//            continue;
-//          Result.AddField(attr.Value).Val := lRTTIFieldList[i].GetValue(_Itm).AsString;
-//        end;
-////        tkChar    : Result.AddField(attr.Value).Val :=lRTTIField.GetValue(_Itm).AsString;
-//        tkInt64   :
-//        begin
-//          if _OnlyChangedFields then
-//          if SameStr(_Itm.InitialFieldValues[i].Value, IntToStr(lRTTIFieldList[i].GetValue(_Itm).AsInt64))  then
-//            continue;
-//          Result.AddField(attr.Value).ValAsInt64 := lRTTIFieldList[i].GetValue(_Itm).AsInt64;
-//        end;
-//        tkEnumeration:
-//        begin
-//          val := lRTTIFieldList[i].GetValue(_Itm);
-//          if _OnlyChangedFields then
-//          if SameStr(_Itm.InitialFieldValues[i].Value, IntToStr(val.AsOrdinal))  then
-//            continue;
-//          if (val.TypeInfo = System.TypeInfo(Boolean)) then
-//            Result.AddField(attr.Value).ValAsBool := val.AsBoolean
-//          else
-//            Result.AddField(attr.Value).ValAsInt := val.AsOrdinal;
-//        end;
-//        tkFloat:
-//        begin
-//          val := lRTTIFieldList[i].GetValue(_Itm);
-//          if _OnlyChangedFields then
-//          if SameStr(_Itm.InitialFieldValues[i].Value, FloatToStr(val.AsExtended))  then
-//            continue;
-//          if (val.TypeInfo = System.TypeInfo(TDate)) then
-//          begin
-//            Result.AddField(attr.Value).ValAsDateTime := val.AsExtended;
-//          end
-//          else if (val.TypeInfo = System.TypeInfo(TDateTime)) then
-//          begin
-//            Result.AddField(attr.Value).ValAsDateTime := val.AsExtended;
-//          end
-//          else if (val.TypeInfo = System.TypeInfo(TTime)) then
-//          begin
-//            Result.AddField(attr.Value).ValAsDateTime := val.AsExtended;
-//          end
-//          else
-//            Result.AddField(attr.Value).ValAsDouble := val.AsExtended;
-//        end;
-//        else raise Exception.Create('TLandrixLibraryHelper.ToRODL unknown TypeKind '+lRTTIFieldList[i].Name);
-//      end;
-//
-////      if CanBeRemotelyInvoked(lRTTIMethod) then
-////      begin
-////        aProc(lRTTIMethod);
-////      end;
-//    end;
-
-//    lRTTIMethodList := lRTTIType.BaseType.GetMethods;
-//    for lRTTIMethod in lRTTIMethodList do
-//    begin
-//      if TLandrixLibraryHelper.HasAttribute<MVCInheritableAttribute>(lRTTIMethod) and
-//        CanBeRemotelyInvoked(lRTTIMethod) then
-//      begin
-//        aProc(lRTTIMethod);
-//      end;
-  finally
-    lRTTI.Free;
-  end;
-
-//  xRoot := _Xml.AddChild('rsm:CrossIndustryDocument');
-//  xRoot.DeclareNamespace('rsm',TargetNamespace);
-//  xRoot.DeclareNamespace('xsi','http://www.w3.org/2001/XMLSchema-instance');
-//  xRoot.DeclareNamespace('ram',TargetNamespaceRam);
-//  xRoot.DeclareNamespace('udt',TargetNamespaceUdt);
-//
   ExchangedDocumentContext.Save(xRoot);
   ExchangedDocument.Save(xRoot);
   SupplyChainTradeTransaction.Save(xRoot);
-//  SpecifiedSupplyChainTradeTransaction.Save(xRoot);
-//
-////  xRoot.AddChild('rsm:SpecifiedExchangedDocumentContext')
-////    .AddChild('ram:TestIndicator');
-////  xRoot.ChildNodes.Add(xXmlI.CreateNode('text', ntText));
-////  xRoot.ChildNodes.Add(xXmlI.CreateNode('node', ntElement));
-//
-//
-////  xml := TCrossIndustryDocumentTypeHelper.NewCrossIndustryDocument;
-////  xml.Encoding := 'UTF-8';
-////  xml.WriteBOM := true;
-////  xml.WriterSettings.LineBreak := lbDoNotProcess;
-////  xml.WriterSettings.IndentType := itFlat;
-//
-////  xml.SpecifiedExchangedDocumentContext.TestIndicator.Indicator := true;
-////  Memo1.Lines.Text := xml.Node.XML;
-//
 end;
 
 function TZUGFeRDDocument.IsValid(_DocType : TZUGFeRDInvoiceTypeCode; _OnInconsistency : TZUGFeRDValidationEvent): Boolean;
@@ -994,14 +864,14 @@ var
   itmin : TZUGFeRDIncludedNote;
   i,j : Integer;
 begin
-  TXMLHelper.LoadFromChilds('ram:ID',_Node,ID.Load);
-  if TXMLHelper.FindChild(_Node,'ram:Name',node) then
+  TZUGFeRDXMLHelper.LoadFromChilds('ram:ID',_Node,ID.Load);
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:Name',node) then
     Name := node.Text;
-  if TXMLHelper.FindChild(_Node,'ram:TypeCode',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:TypeCode',node) then
     TypeCode := TZUGFeRDHelper.DocumentCodeContentTypeFromStr(node.Text);
 
-  if TXMLHelper.FindChild(_Node,'ram:IssueDateTime',node) then
-  if TXMLHelper.FindChild(node,'udt:DateTimeString',node2) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:IssueDateTime',node) then
+  if TZUGFeRDXMLHelper.FindChild(node,'udt:DateTimeString',node2) then
     IssueDateTime := TZUGFeRDHelper.DateFromStr(node2.Text);
 
   for i := 0 to _Node.ChildNodes.Count-1 do
@@ -1009,11 +879,11 @@ begin
   begin
     node := _Node.ChildNodes[i];
     itmin := TZUGFeRDIncludedNote.Create;
-    if TXMLHelper.FindChild(node,'ram:ContentCode',node2) then
+    if TZUGFeRDXMLHelper.FindChild(node,'ram:ContentCode',node2) then
       itmin.ContentCode := node2.Text;
-    if TXMLHelper.FindChild(node,'ram:SubjectCode',node2) then
+    if TZUGFeRDXMLHelper.FindChild(node,'ram:SubjectCode',node2) then
       itmin.SubjectCode := node2.Text;
-    if TXMLHelper.FindChild(node,'ram:Content',node2) then
+    if TZUGFeRDXMLHelper.FindChild(node,'ram:Content',node2) then
       itmin.Content := node2.Text;
     IncludedNotes.Add(itmin);
   end;
@@ -1070,12 +940,12 @@ procedure TZUGFeRDExchangedDocumentContext.Load(_Node: IXMLNode);
 var
   node,node2 : IXMLNode;
 begin
-  if TXMLHelper.FindChild(_Node,'ram:TestIndicator',node) then
-  if TXMLHelper.FindChild(node,'udt:Indicator',node2) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:TestIndicator',node) then
+  if TZUGFeRDXMLHelper.FindChild(node,'udt:Indicator',node2) then
     TestIndicator := StrToBoolDef(node2.Text,false);
 
-  if TXMLHelper.FindChild(_Node,'ram:GuidelineSpecifiedDocumentContextParameter',node) then
-  if TXMLHelper.FindChild(node,'ram:ID',node2) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:GuidelineSpecifiedDocumentContextParameter',node) then
+  if TZUGFeRDXMLHelper.FindChild(node,'ram:ID',node2) then
   begin
     if SameText(node2.Text,P_MINIMUM) then
       GuidelineSpecifiedDocumentContextParameter := zugferdTypeCode_Minimum
@@ -1201,9 +1071,9 @@ var
   i : Integer;
   itm : TZUGFeRDIncludedSupplyChainTradeLineItem;
 begin
-  TXMLHelper.LoadFromChilds('ram:ApplicableHeaderTradeAgreement',_Node,ApplicableHeaderTradeAgreement.Load);
-  TXMLHelper.LoadFromChilds('ram:ApplicableHeaderTradeDelivery',_Node,ApplicableHeaderTradeDelivery.Load);
-  TXMLHelper.LoadFromChilds('ram:ApplicableHeaderTradeSettlement',_Node,ApplicableHeaderTradeSettlement.Load);
+  TZUGFeRDXMLHelper.LoadFromChilds('ram:ApplicableHeaderTradeAgreement',_Node,ApplicableHeaderTradeAgreement.Load);
+  TZUGFeRDXMLHelper.LoadFromChilds('ram:ApplicableHeaderTradeDelivery',_Node,ApplicableHeaderTradeDelivery.Load);
+  TZUGFeRDXMLHelper.LoadFromChilds('ram:ApplicableHeaderTradeSettlement',_Node,ApplicableHeaderTradeSettlement.Load);
   for i := 0 to _Node.ChildNodes.Count-1 do
   if SameText(_Node.ChildNodes[i].NodeName,'ram:IncludedSupplyChainTradeLineItem') then
   begin
@@ -1402,9 +1272,9 @@ var
   itm : TZUGFeRDSpecifiedTradePaymentTerm;
   itm2 : TZUGFeRDApplicableTradeTax;
 begin
-  if TXMLHelper.FindChild(_Node,'ram:PaymentReference',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:PaymentReference',node) then
     PaymentReference := node.Text;
-  if TXMLHelper.FindChild(_Node,'ram:InvoiceCurrencyCode',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:InvoiceCurrencyCode',node) then
     InvoiceCurrencyCode := node.Text;
   for i := 0 to _Node.ChildNodes.Count-1 do
   if SameText(_Node.ChildNodes[i].NodeName,'ram:ApplicableTradeTax') then
@@ -1419,36 +1289,36 @@ begin
     itm.Load(_Node.ChildNodes[i]);
     SpecifiedTradePaymentTerms.Add(itm);
   end;
-  if TXMLHelper.FindChild(_Node,'ram:SpecifiedTradeSettlementHeaderMonetarySummation',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:SpecifiedTradeSettlementHeaderMonetarySummation',node) then
   begin
-    if TXMLHelper.FindChild(node,'ram:LineTotalAmount',n2) then
+    if TZUGFeRDXMLHelper.FindChild(node,'ram:LineTotalAmount',n2) then
     begin
       SpecifiedTradeSettlementHeaderMonetarySummation_LineTotalAmount       := TZUGFeRDHelper.StrToCurr(n2.Text);
     end;
-    if TXMLHelper.FindChild(node,'ram:ChargeTotalAmount',n2) then
+    if TZUGFeRDXMLHelper.FindChild(node,'ram:ChargeTotalAmount',n2) then
     begin
       SpecifiedTradeSettlementHeaderMonetarySummation_ChargeTotalAmount       := TZUGFeRDHelper.StrToCurr(n2.Text);
     end;
-    if TXMLHelper.FindChild(node,'ram:AllowanceTotalAmount',n2) then
+    if TZUGFeRDXMLHelper.FindChild(node,'ram:AllowanceTotalAmount',n2) then
     begin
       SpecifiedTradeSettlementHeaderMonetarySummation_AllowanceTotalAmount       := TZUGFeRDHelper.StrToCurr(n2.Text);
     end;
-    if TXMLHelper.FindChild(node,'ram:TaxBasisTotalAmount',n2) then
+    if TZUGFeRDXMLHelper.FindChild(node,'ram:TaxBasisTotalAmount',n2) then
     begin
       SpecifiedTradeSettlementHeaderMonetarySummation_TaxBasisTotalAmount       := TZUGFeRDHelper.StrToCurr(n2.Text);
       SpecifiedTradeSettlementHeaderMonetarySummation_TaxBasisTotalAmountCurrID := VarToStrDef(n2.GetAttribute('currencyID'),'');
     end;
-    if TXMLHelper.FindChild(node,'ram:TaxTotalAmount',n2) then
+    if TZUGFeRDXMLHelper.FindChild(node,'ram:TaxTotalAmount',n2) then
     begin
       SpecifiedTradeSettlementHeaderMonetarySummation_TaxTotalAmount       := TZUGFeRDHelper.StrToCurr(n2.Text);
       SpecifiedTradeSettlementHeaderMonetarySummation_TaxTotalAmountCurrID := VarToStrDef(n2.GetAttribute('currencyID'),'');
     end;
-    if TXMLHelper.FindChild(node,'ram:GrandTotalAmount',n2) then
+    if TZUGFeRDXMLHelper.FindChild(node,'ram:GrandTotalAmount',n2) then
     begin
       SpecifiedTradeSettlementHeaderMonetarySummation_GrandTotalAmount       := TZUGFeRDHelper.StrToCurr(n2.Text);
       SpecifiedTradeSettlementHeaderMonetarySummation_GrandTotalAmountCurrID := VarToStrDef(n2.GetAttribute('currencyID'),'');
     end;
-    if TXMLHelper.FindChild(node,'ram:DuePayableAmount',n2) then
+    if TZUGFeRDXMLHelper.FindChild(node,'ram:DuePayableAmount',n2) then
     begin
       SpecifiedTradeSettlementHeaderMonetarySummation_DuePayableAmount       := TZUGFeRDHelper.StrToCurr(n2.Text);
     end;
@@ -1530,30 +1400,30 @@ var
   node,n2,n3 : IXMLNode;
 begin
   DueDateDateTime := 0;
-  if TXMLHelper.FindChild(_Node,'ram:Description',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:Description',node) then
     Description := node.Text;
-  if TXMLHelper.FindChild(_Node,'ram:DueDateDateTime',node) then
-  if TXMLHelper.FindChild(node,'udt:DateTimeString',n2) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:DueDateDateTime',node) then
+  if TZUGFeRDXMLHelper.FindChild(node,'udt:DateTimeString',n2) then
     DueDateDateTime := TZUGFeRDHelper.DateFromStr(n2.Text);
-  if TXMLHelper.FindChild(_Node,'ram:ApplicableTradePaymentDiscountTerms',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:ApplicableTradePaymentDiscountTerms',node) then
   begin
     if DueDateDateTime = 0 then
     begin
-      if TXMLHelper.FindChild(node,'ram:BasisDateTime',n3) then
-      if TXMLHelper.FindChild(n3,'udt:DateTimeString',n2) then
+      if TZUGFeRDXMLHelper.FindChild(node,'ram:BasisDateTime',n3) then
+      if TZUGFeRDXMLHelper.FindChild(n3,'udt:DateTimeString',n2) then
         DueDateDateTime := TZUGFeRDHelper.DateFromStr(n2.Text);
-      if TXMLHelper.FindChild(node,'ram:BasisPeriodMeasure',n3) then
+      if TZUGFeRDXMLHelper.FindChild(node,'ram:BasisPeriodMeasure',n3) then
       if VarToStrDef(n3.GetAttribute('unitCode'),'') = 'DAY' then
         DueDateDateTime := IncDay(DueDateDateTime,StrToIntDef(n3.Text,0));
     end;
 
-    if TXMLHelper.FindChild(node,'ram:BasisAmount',n2) then
+    if TZUGFeRDXMLHelper.FindChild(node,'ram:BasisAmount',n2) then
     begin
       ApplicableTradePaymentDiscountTerms_BasisAmount := TZUGFeRDHelper.StrToCurr(n2.Text);
     end;
-    if TXMLHelper.FindChild(node,'ram:CalculationPercent',n2) then
+    if TZUGFeRDXMLHelper.FindChild(node,'ram:CalculationPercent',n2) then
       ApplicableTradePaymentDiscountTerms_CalculationPercent  := TZUGFeRDHelper.StrToFloat(n2.Text);
-    if TXMLHelper.FindChild(node,'ram:ActualDiscountAmount',n2) then
+    if TZUGFeRDXMLHelper.FindChild(node,'ram:ActualDiscountAmount',n2) then
     begin
       ApplicableTradePaymentDiscountTerms_ActualDiscountAmount := TZUGFeRDHelper.StrToCurr(n2.Text);
     end;
@@ -1623,15 +1493,15 @@ procedure TZUGFeRDApplicableTradeTax.Load(_Node: IXMLNode);
 var
   node : IXMLNode;
 begin
-  if TXMLHelper.FindChild(_Node,'ram:CalculatedAmount',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:CalculatedAmount',node) then
     CalculatedAmount       := TZUGFeRDHelper.StrToCurr(node.Text);
-  if TXMLHelper.FindChild(_Node,'ram:TypeCode',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:TypeCode',node) then
     TypeCode               := node.Text;
-  if TXMLHelper.FindChild(_Node,'ram:BasisAmount',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:BasisAmount',node) then
     BasisAmount            := TZUGFeRDHelper.StrToCurr(node.Text);
-  if TXMLHelper.FindChild(_Node,'ram:CategoryCode',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:CategoryCode',node) then
     CategoryCode           := node.Text;
-  if TXMLHelper.FindChild(_Node,'ram:RateApplicablePercent',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:RateApplicablePercent',node) then
     RateApplicablePercent      := TZUGFeRDHelper.StrToFloat(node.Text);
 end;
 
@@ -1697,11 +1567,11 @@ procedure TZUGFeRDApplicableHeaderTradeAgreement.Load(
 var
   node : IXMLNode;
 begin
-  if TXMLHelper.FindChild(_Node,'ram:BuyerReference',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:BuyerReference',node) then
     BuyerReference := node.Text;
-  TXMLHelper.LoadFromChilds('ram:SellerTradeParty',_Node,SellerTradeParty.Load);
-  TXMLHelper.LoadFromChilds('ram:BuyerTradeParty',_Node,BuyerTradeParty.Load);
-//  TXMLHelper.LoadFromChilds('ram:ShipFromTradeParty',_Node,ShipFromTradeParty.Load);
+  TZUGFeRDXMLHelper.LoadFromChilds('ram:SellerTradeParty',_Node,SellerTradeParty.Load);
+  TZUGFeRDXMLHelper.LoadFromChilds('ram:BuyerTradeParty',_Node,BuyerTradeParty.Load);
+//  TZUGFeRDXMLHelper.LoadFromChilds('ram:ShipFromTradeParty',_Node,ShipFromTradeParty.Load);
 end;
 
 procedure TZUGFeRDApplicableHeaderTradeAgreement.Save(
@@ -1754,15 +1624,15 @@ procedure TZUGFeRDApplicableHeaderTradeDelivery.Load(
 var
   node,node2,node3 : IXMLNode;
 begin
-//  if TXMLHelper.FindChild(_Node,'ram:ShipToTradeParty',node) then
+//  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:ShipToTradeParty',node) then
 //    ShipToTradeParty.Load(node);
-//  if TXMLHelper.FindChild(_Node,'ram:UltimateShipToTradeParty',node) then
+//  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:UltimateShipToTradeParty',node) then
 //    UltimateShipToTradeParty.Load(node);
-//  if TXMLHelper.FindChild(_Node,'ram:ShipFromTradeParty',node) then
+//  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:ShipFromTradeParty',node) then
 //    ShipFromTradeParty.Load(node);
-  if TXMLHelper.FindChild(_Node,'ram:ActualDeliverySupplyChainEvent',node) then
-  if TXMLHelper.FindChild(node,'ram:OccurrenceDateTime',node2) then
-  if TXMLHelper.FindChild(node2,'udt:DateTimeString',node3) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:ActualDeliverySupplyChainEvent',node) then
+  if TZUGFeRDXMLHelper.FindChild(node,'ram:OccurrenceDateTime',node2) then
+  if TZUGFeRDXMLHelper.FindChild(node2,'udt:DateTimeString',node3) then
     ActualDeliverySupplyChainEvent_OccurrenceDateTime := TZUGFeRDHelper.DateFromStr(node3.Text);
 end;
 
@@ -1813,19 +1683,19 @@ procedure TZUGFeRDPostalTradeAddress.Load(_Node: IXMLNode);
 var
   node : IXMLNode;
 begin
-  if TXMLHelper.FindChild(_Node,'ram:PostcodeCode',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:PostcodeCode',node) then
     PostcodeCode := node.Text;
-  if TXMLHelper.FindChild(_Node,'ram:LineOne',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:LineOne',node) then
     LineOne := node.Text;
-  if TXMLHelper.FindChild(_Node,'ram:LineTwo',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:LineTwo',node) then
     LineTwo := node.Text;
-  if TXMLHelper.FindChild(_Node,'ram:LineTree',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:LineTree',node) then
     LineTree := node.Text;
-  if TXMLHelper.FindChild(_Node,'ram:CityName',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:CityName',node) then
     CityName := node.Text;
-  if TXMLHelper.FindChild(_Node,'ram:CountryID',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:CountryID',node) then
     CountryID := node.Text;
-  if TXMLHelper.FindChild(_Node,'ram:CountrySubDivisionName',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:CountrySubDivisionName',node) then
     CountrySubDivisionName := node.Text;
 end;
 
@@ -1880,15 +1750,15 @@ var
   itmid : TZUGFeRDID;
   i : Integer;
 begin
-  if TXMLHelper.FindChild(_Node,'ram:Name',node) then
+  if TZUGFeRDXMLHelper.FindChild(_Node,'ram:Name',node) then
     Name := node.Text;
-  TXMLHelper.LoadFromChilds('ram:PostalTradeAddress',_Node,PostalTradeAddress.Load);
+  TZUGFeRDXMLHelper.LoadFromChilds('ram:PostalTradeAddress',_Node,PostalTradeAddress.Load);
 
   for i := 0 to _Node.ChildNodes.Count-1 do
   if SameText(_Node.ChildNodes[i].NodeName,'ram:SpecifiedTaxRegistration') then
   begin
     itmid := TZUGFeRDID.Create;
-    TXMLHelper.LoadFromChilds('ram:ID',_Node.ChildNodes[i],itmid.Load);
+    TZUGFeRDXMLHelper.LoadFromChilds('ram:ID',_Node.ChildNodes[i],itmid.Load);
     SpecifiedTaxRegistration.Add(itmid);
   end;
 end;

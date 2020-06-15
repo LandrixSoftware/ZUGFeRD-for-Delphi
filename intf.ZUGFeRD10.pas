@@ -1,8 +1,8 @@
-unit intf.ZUGFeRD;
+unit intf.ZUGFeRD10;
 
 interface
 
-{$DEFINE USE_OXMLDomVendor} //http://www.kluug.net/oxml.php
+{.$DEFINE USE_OXMLDomVendor} //http://www.kluug.net/oxml.php
 
 uses
   System.SysUtils,System.Classes,System.Variants,System.StrUtils,
