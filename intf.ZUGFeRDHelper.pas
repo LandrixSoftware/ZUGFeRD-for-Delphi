@@ -5,7 +5,7 @@ interface
 uses
   System.SysUtils,System.Classes,System.Types,System.DateUtils,System.Rtti
   ,System.Variants
-  ,Xml.xmldom,Xml.XMLDoc,Xml.XMLIntf,Xml.XMLSchema,MSXML2_TLB
+  ,Xml.xmldom,Xml.XMLDoc,Xml.XMLIntf,Xml.XMLSchema,intf.ZUGFeRDMSXML2_TLB
   ;
 
 type
@@ -19,6 +19,7 @@ type
 
   TZUGFeRDValidationHelper = class(TObject)
   public type
+    TZUGFeRDVersion = (zugferdVersion_Unkown,zugferdVersion_10,zugferdVersion_21);
     TValidationError = record
     public
       Reason : String;
@@ -27,7 +28,8 @@ type
   private
     class function LoadXSDFromResource(const _ResourceName : String) : String;
   public
-    class function ValidateZUGFeRD20Basis(const _XML : String; out _Error : TValidationError) : Boolean;
+    class function GetZUGFeRDVersion(_Xml : IXMLDocument) : TZUGFeRDVersion;
+    class function ValidateZUGFeRD21Basis(const _XML : String; out _Error : TValidationError) : Boolean;
   end;
 
 implementation
@@ -59,6 +61,19 @@ end;
 
 { TZUGFeRDValidationHelper }
 
+class function TZUGFeRDValidationHelper.GetZUGFeRDVersion(
+  _Xml: IXMLDocument): TZUGFeRDVersion;
+begin
+  Result := zugferdVersion_Unkown;
+  if _XML = nil then
+    exit;
+  if SameText(_XML.DocumentElement.NodeName,'rsm:CrossIndustryInvoice') then
+    Result := zugferdVersion_21
+  else
+  if SameText(_XML.DocumentElement.NodeName,'rsm:CrossIndustryDocument') then
+    Result := zugferdVersion_10;
+end;
+
 class function TZUGFeRDValidationHelper.LoadXSDFromResource(
   const _ResourceName: String): String;
 var
@@ -76,7 +91,7 @@ begin
   end;
 end;
 
-class function TZUGFeRDValidationHelper.ValidateZUGFeRD20Basis(
+class function TZUGFeRDValidationHelper.ValidateZUGFeRD21Basis(
   const _XML: String; out _Error: TValidationError): Boolean;
 var
   xml, xsd: IXMLDOMDocument2;
@@ -121,6 +136,26 @@ begin
     on E:Exception do begin _Error.Reason := E.Message; _Error.SrcText := E.ClassName; end;
   end;
 end;
+
+//function ExtractPDFMetadata(const aPDFFileName: TFileName): UTF8String;
+//var tmp: RawByteString;
+//    i: integer;
+//begin
+//  with TFileStream.Create(aPDFFileName,fmOpenRead) do
+//  try
+//    SetLength(tmp,Size);
+//    Read(tmp[1],Size);
+//  finally
+//    Free;
+//  end;
+//  result := '';
+//  i := pos('<x:xmpmeta',tmp);
+//  if i=0 then exit;
+//  delete(tmp,1,i-1);
+//  i := pos('</x:xmpmeta>',tmp);
+//  if i=0 then exit;
+//  result := copy(tmp,1,i+12);
+//end;
 
 end.
 
