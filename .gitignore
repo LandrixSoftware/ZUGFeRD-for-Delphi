@@ -26,6 +26,13 @@
 #*.obj
 #
 
+demodata
+ZUGFeRD
+ZUGFeRDRenderer
+ZUGFeRD-Test
+ZUGFeRDToExcel
+ZUGFeRDToExcelTest
+
 # Delphi compiler-generated binaries (safe to delete)
 *.exe
 *.dll
