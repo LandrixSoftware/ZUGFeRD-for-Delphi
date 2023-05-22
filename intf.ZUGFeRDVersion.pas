@@ -23,7 +23,7 @@ type
   /// <summary>
   /// Enumeration der verschiedenen von ZUGFeRD-csharp unterstützten ZUGFeRD-Versionen
   /// </summary>
-  ZUGFeRDVersion = (
+  TZUGFeRDVersion = (
     /// <summary>
     /// Version 1.x - erste öffentliche ZUGFeRD-Version
     /// </summary>

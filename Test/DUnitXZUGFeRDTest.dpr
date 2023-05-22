@@ -57,7 +57,9 @@ uses
   DUnitX.Attributes,
   DUnitX.Linux.Console,
   intf.ZUGFeRDTaxCategoryCodes.UnitTests,
-  intf.ZUGFeRDGlobalIDSchemeIdentifiers.UnitTests;
+  intf.ZUGFeRDGlobalIDSchemeIdentifiers.UnitTests,
+  intf.ZUGFeRDQuantityCodes.UnitTests
+  ;
 
 var
   runner : ITestRunner;
