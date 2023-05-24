@@ -23,8 +23,8 @@ uses
   DUnitX.TestFramework, intf.ZUGFeRDTaxCategoryCodes;
 
 type
- [TestFixture]
-  TTZUGFeRDTaxCategoryCodesTest = class
+  [TestFixture]
+  TZUGFeRDTaxCategoryCodesTest = class
   public
     [Test]
     procedure TestFromString;
@@ -34,7 +34,7 @@ type
 
 implementation
 
-procedure TTZUGFeRDTaxCategoryCodesTest.TestFromString;
+procedure TZUGFeRDTaxCategoryCodesTest.TestFromString;
 begin
   Assert.AreEqual(TZUGFeRDTaxCategoryCodes.A, TZUGFeRDTaxCategoryCodesExtensions.FromString('A'));
   Assert.AreEqual(TZUGFeRDTaxCategoryCodes.AA, TZUGFeRDTaxCategoryCodesExtensions.FromString('AA'));
@@ -60,7 +60,7 @@ begin
   Assert.AreEqual(TZUGFeRDTaxCategoryCodes.Unknown, TZUGFeRDTaxCategoryCodesExtensions.FromString('Invalid'));
 end;
 
-procedure TTZUGFeRDTaxCategoryCodesTest.TestEnumToString;
+procedure TZUGFeRDTaxCategoryCodesTest.TestEnumToString;
 begin
   Assert.AreEqual('A', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(TZUGFeRDTaxCategoryCodes.A));
   Assert.AreEqual('AA', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(TZUGFeRDTaxCategoryCodes.AA));
@@ -101,6 +101,6 @@ initialization
 //Not sure which version {$STRONGLINKTYPES ON} was introduced so we'll allow RTTI and
 //manual registration for now.
 
-//  TDUnitX.RegisterTestFixture(TTZUGFeRDTaxCategoryCodesTest);
+//  TDUnitX.RegisterTestFixture(TZUGFeRDTaxCategoryCodesTest);
 
 end.

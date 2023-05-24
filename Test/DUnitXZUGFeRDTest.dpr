@@ -58,7 +58,9 @@ uses
   DUnitX.Linux.Console,
   intf.ZUGFeRDTaxCategoryCodes.UnitTests,
   intf.ZUGFeRDGlobalIDSchemeIdentifiers.UnitTests,
-  intf.ZUGFeRDQuantityCodes.UnitTests
+  intf.ZUGFeRDQuantityCodes.UnitTests,
+  intf.ZUGFeRDAccountingAccountTypeCodes.UnitTests,
+  intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes.UnitTests
   ;
 
 var

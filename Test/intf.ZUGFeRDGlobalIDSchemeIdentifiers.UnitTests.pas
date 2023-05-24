@@ -24,7 +24,7 @@ uses
 
 type
   [TestFixture]
-  TTZUGFeRDGlobalIDSchemeIdentifiersTest = class
+  TZUGFeRDGlobalIDSchemeIdentifiersTest = class
   public
     [Test]
     procedure TestFromString;
@@ -34,7 +34,7 @@ type
 
 implementation
 
-procedure TTZUGFeRDGlobalIDSchemeIdentifiersTest.TestFromString;
+procedure TZUGFeRDGlobalIDSchemeIdentifiersTest.TestFromString;
 begin
   Assert.AreEqual(TZUGFeRDGlobalIDSchemeIdentifiers.Sirene, TZUGFeRDGlobalIDSchemeIdentifiersExtensions.FromString('0002'));
   Assert.AreEqual(TZUGFeRDGlobalIDSchemeIdentifiers.SiretCode, TZUGFeRDGlobalIDSchemeIdentifiersExtensions.FromString('0009'));
@@ -47,7 +47,7 @@ begin
   Assert.AreEqual(TZUGFeRDGlobalIDSchemeIdentifiers.Unknown, TZUGFeRDGlobalIDSchemeIdentifiersExtensions.FromString('Invalid'));
 end;
 
-procedure TTZUGFeRDGlobalIDSchemeIdentifiersTest.TestEnumToString;
+procedure TZUGFeRDGlobalIDSchemeIdentifiersTest.TestEnumToString;
 begin
   Assert.AreEqual('0002', TZUGFeRDGlobalIDSchemeIdentifiersExtensions.EnumToString(TZUGFeRDGlobalIDSchemeIdentifiers.Sirene));
   Assert.AreEqual('0009', TZUGFeRDGlobalIDSchemeIdentifiersExtensions.EnumToString(TZUGFeRDGlobalIDSchemeIdentifiers.SiretCode));

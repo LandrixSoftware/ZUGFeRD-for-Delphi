@@ -23,8 +23,8 @@ uses
   DUnitX.TestFramework, intf.ZUGFeRDQuantityCodes;
 
 type
- [TestFixture]
-  TTZUGFeRDQuantityCodesTest = class
+  [TestFixture]
+  TZUGFeRDQuantityCodesTest = class
   public
     [Test]
     procedure TestFromString;
@@ -34,7 +34,7 @@ type
 
 implementation
 
-procedure TTZUGFeRDQuantityCodesTest.TestFromString;
+procedure TZUGFeRDQuantityCodesTest.TestFromString;
 begin
   Assert.AreEqual(TZUGFeRDQuantityCodes.Unknown, TZUGFeRDQuantityCodesExtensions.FromString('Unknown'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.C62, TZUGFeRDQuantityCodesExtensions.FromString('C62'));
@@ -77,7 +77,7 @@ begin
   Assert.AreEqual(TZUGFeRDQuantityCodes.XPK, TZUGFeRDQuantityCodesExtensions.FromString('XPK'));
 end;
 
-procedure TTZUGFeRDQuantityCodesTest.TestEnumToString;
+procedure TZUGFeRDQuantityCodesTest.TestEnumToString;
 begin
   Assert.AreEqual('Unknown', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.Unknown));
   Assert.AreEqual('C62', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.C62));

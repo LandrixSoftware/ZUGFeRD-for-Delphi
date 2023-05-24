@@ -24,12 +24,12 @@ uses
   ;
 
 type
-    /// <summary>
-    /// ISO Quantity Codes
-    ///
-    /// for web reference, see e.g.
-    /// http://www.robert-kuhlemann.de/iso_masseinheiten.htm
-    /// </summary>
+  /// <summary>
+  /// ISO Quantity Codes
+  ///
+  /// for web reference, see e.g.
+  /// http://www.robert-kuhlemann.de/iso_masseinheiten.htm
+  /// </summary>
   TZUGFeRDQuantityCodes = (
     /// <summary>
     /// Unknown/ invalid quantity code
