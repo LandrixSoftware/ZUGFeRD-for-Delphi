@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.}
 
-unit intf.ZUGFeRDBuyerOrderReferencedDocument;
+unit intf.ZUGFeRDContractReferencedDocument;
 
 interface
 
@@ -23,12 +23,13 @@ uses intf.ZUGFeRDBaseReferencedDocument;
 
 type
   /// <summary>
-  /// Structure containing details of the associated order
+  /// Detailed information on the associated contract
   /// </summary>
-  TZUGFeRDBuyerOrderReferencedDocument = class(TZUGFeRDBaseReferencedDocument)
-  public
+  TZUGFeRDContractReferencedDocument = class(TZUGFeRDBaseReferencedDocument)
+
   end;
 
 implementation
+
 
 end.

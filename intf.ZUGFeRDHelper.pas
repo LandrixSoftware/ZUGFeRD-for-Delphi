@@ -1,4 +1,4 @@
-unit intf.ZUGFeRDHelper;
+﻿unit intf.ZUGFeRDHelper;
 
 interface
 

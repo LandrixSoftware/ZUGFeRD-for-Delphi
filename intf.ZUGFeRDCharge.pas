@@ -15,20 +15,51 @@
  * specific language governing permissions and limitations
  * under the License.}
 
-unit intf.ZUGFeRDBuyerOrderReferencedDocument;
+unit intf.ZUGFeRDCharge;
 
 interface
 
-uses intf.ZUGFeRDBaseReferencedDocument;
+uses
+  intf.ZUGFeRDTax;
 
 type
   /// <summary>
-  /// Structure containing details of the associated order
+  /// Abstract base class for the various types
+  /// of charges
   /// </summary>
-  TZUGFeRDBuyerOrderReferencedDocument = class(TZUGFeRDBaseReferencedDocument)
+  TZUGFeRDCharge = class
+  private
+    FTax: TZUGFeRDTax;
+    FAmount: Currency;
   public
+    constructor Create;
+    destructor Destroy; override;
+    /// <summary>
+    /// Tax that is applied to the charge
+    /// </summary>
+    /// <value></value>
+    property Tax: TZUGFeRDTax read FTax write FTax;
+    /// <summary>
+    /// Monetary charge amount, presented in the respective currency
+    /// </summary>
+    /// <value></value>
+    property Amount: Currency read FAmount write FAmount;
   end;
 
 implementation
+
+
+{ TZUGFeRDCharge }
+
+constructor TZUGFeRDCharge.Create;
+begin
+  FTax := TZUGFeRDTax.Create;
+end;
+
+destructor TZUGFeRDCharge.Destroy;
+begin
+  if Assigned(FTax) then begin FTax.Free; FTax := nil; end;
+  inherited;
+end;
 
 end.

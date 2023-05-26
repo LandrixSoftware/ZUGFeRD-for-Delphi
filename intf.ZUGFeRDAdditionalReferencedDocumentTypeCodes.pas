@@ -1,4 +1,4 @@
-{* Licensed to the Apache Software Foundation (ASF) under one
+﻿{* Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -49,7 +49,7 @@ type
   TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions = class
   public
     class function FromString(const s: string): TZUGFeRDAdditionalReferencedDocumentTypeCode;
-    class function EnumValueToString(t: TZUGFeRDAdditionalReferencedDocumentTypeCode): string;
+    //class function EnumValueToString(t: TZUGFeRDAdditionalReferencedDocumentTypeCode): string;
     class function EnumToString(t: TZUGFeRDAdditionalReferencedDocumentTypeCode): string;
   end;
 
@@ -69,19 +69,20 @@ begin
     Result := TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument
 end;
 
-class function TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumValueToString(t: TZUGFeRDAdditionalReferencedDocumentTypeCode): string;
-begin
-  Result := IntToStr(Integer(t));
-end;
+//class function TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumValueToString(t: TZUGFeRDAdditionalReferencedDocumentTypeCode): string;
+//begin
+//  Result := IntToStr(Integer(t));
+//end;
 
 class function TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumToString(t: TZUGFeRDAdditionalReferencedDocumentTypeCode): string;
 begin
-  case t of
-    TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument: Result := '916';
-    TZUGFeRDAdditionalReferencedDocumentTypeCode.InvoiceDataSheet: Result := '130';
-    TZUGFeRDAdditionalReferencedDocumentTypeCode.PriceSalesCatalogueResponse: Result := '50';
-    else Result := '65536';
-  end;
+  Result := IntToStr(Integer(t));
+//  case t of
+//    TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument: Result := '916';
+//    TZUGFeRDAdditionalReferencedDocumentTypeCode.InvoiceDataSheet: Result := '130';
+//    TZUGFeRDAdditionalReferencedDocumentTypeCode.PriceSalesCatalogueResponse: Result := '50';
+//    else Result := '65536';
+//  end;
 end;
 
 end.

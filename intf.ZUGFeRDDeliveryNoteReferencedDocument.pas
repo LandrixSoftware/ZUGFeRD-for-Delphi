@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.}
 
-unit intf.ZUGFeRDBuyerOrderReferencedDocument;
+unit intf.ZUGFeRDDeliveryNoteReferencedDocument;
 
 interface
 
@@ -23,9 +23,9 @@ uses intf.ZUGFeRDBaseReferencedDocument;
 
 type
   /// <summary>
-  /// Structure containing details of the associated order
+  /// Structure containing detailed information about the corresponding delivery note
   /// </summary>
-  TZUGFeRDBuyerOrderReferencedDocument = class(TZUGFeRDBaseReferencedDocument)
+  TZUGFeRDDeliveryNoteReferencedDocument = class(TZUGFeRDBaseReferencedDocument)
   public
   end;
 

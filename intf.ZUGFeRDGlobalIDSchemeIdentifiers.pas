@@ -1,4 +1,4 @@
-unit intf.ZUGFeRDGlobalIDSchemeIdentifiers;
+﻿unit intf.ZUGFeRDGlobalIDSchemeIdentifiers;
 
 interface
 

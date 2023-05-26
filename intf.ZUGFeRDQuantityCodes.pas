@@ -1,4 +1,4 @@
-{* Licensed to the Apache Software Foundation (ASF) under one
+ï»¿{* Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -36,13 +36,13 @@ type
     /// </summary>
     Unknown = 0,
     /// <summary>
-    /// Eins (Stück)
-    /// Abkürzung: Stk.
+    /// Eins (StÃ¼ck)
+    /// AbkÃ¼rzung: Stk.
     /// </summary>
     C62,
     /// <summary>
     /// Tag
-    /// Abkürzung: Tag(e)
+    /// AbkÃ¼rzung: Tag(e)
     /// </summary>
     DAY,
     /// <summary>
@@ -52,142 +52,142 @@ type
     H87,
     /// <summary>
     /// Hektar
-    /// Abkürzung: ha
+    /// AbkÃ¼rzung: ha
     /// </summary>
     HAR,
     /// <summary>
     /// Stunde
-    /// Abkürzung: Std.
+    /// AbkÃ¼rzung: Std.
     /// </summary>
     HUR,
     /// <summary>
     /// Kilogramm
-    /// Abkürzung: kg
+    /// AbkÃ¼rzung: kg
     /// </summary>
     KGM,
     /// <summary>
     /// Zentimeter
-    /// Abkürzung: cm
+    /// AbkÃ¼rzung: cm
     /// </summary>
     CMT,
     /// <summary>
     /// Kilometer
-    /// Abkürzung: km (Rec20r13) für XRechnung
+    /// AbkÃ¼rzung: km (Rec20r13) fÃ¼r XRechnung
     /// </summary>
     KMT,
     /// <summary>
     /// Kilometer
-    /// Abkürzung: km (Rec20r16)
+    /// AbkÃ¼rzung: km (Rec20r16)
     /// </summary>
     KTM,
     /// <summary>
     /// Kilowattstune
-    /// Abkürzung: kWh
+    /// AbkÃ¼rzung: kWh
     /// </summary>
     KWH,
     /// <summary>
     /// Kilowatt
-    /// Abkürzung: kW
+    /// AbkÃ¼rzung: kW
     /// </summary>
     KWT,
     /// <summary>
     /// Pauschale
-    /// Abkürzung: pausch.
+    /// AbkÃ¼rzung: pausch.
     /// </summary>
     LS,
     /// <summary>
     /// Liter
-    /// Abkürzung: l
+    /// AbkÃ¼rzung: l
     /// </summary>
     LTR,
     /// <summary>
     /// Minute
-    /// Abkürzung: min
+    /// AbkÃ¼rzung: min
     /// </summary>
     MIN,
     /// <summary>
     /// Quadratmillimeter
-    /// Abkürzung: mm^2
+    /// AbkÃ¼rzung: mm^2
     /// </summary>
     MMK,
     /// <summary>
     /// Millimeter
-    /// Abkürzung: mm
+    /// AbkÃ¼rzung: mm
     /// </summary>
     MMT,
     /// <summary>
     /// Quadratmeter
-    /// Abkürzung: m^2
+    /// AbkÃ¼rzung: m^2
     /// </summary>
     MTK,
     /// <summary>
     /// Kubikmeter
-    /// Abkürzung: m^3
+    /// AbkÃ¼rzung: m^3
     /// </summary>
     MTQ,
     /// <summary>
     /// Meter
-    /// Abkürzung: m
+    /// AbkÃ¼rzung: m
     /// </summary>
     MTR,
     /// <summary>
     /// Anzahl Artikel
-    /// Abkürzung: Anz.
+    /// AbkÃ¼rzung: Anz.
     /// </summary>
     NAR,
     /// <summary>
     /// Anzahl Paare
-    /// Abkürzung: Pr.
+    /// AbkÃ¼rzung: Pr.
     /// </summary>
     NPR,
     /// <summary>
     /// Prozent
-    /// Abkürzung: %
+    /// AbkÃ¼rzung: %
     /// </summary>
     P1,
     /// <summary>
-    /// Stück
+    /// StÃ¼ck
     /// </summary>
     //[Obsolete("Does not conform to ZUGFeRD standard. Use H87 ('piece') or C62 ('one') instead")]
     PCE,
     /// <summary>
     /// Set
-    /// Abkürzung: Set(s)
+    /// AbkÃ¼rzung: Set(s)
     /// </summary>
     SET_,
     /// <summary>
     /// Tonne (metrisch)
-    /// Abkürzung:  t
+    /// AbkÃ¼rzung:  t
     /// </summary>
     TNE,
     /// <summary>
     /// Woche
-    /// Abkürzung: Woche(n)
+    /// AbkÃ¼rzung: Woche(n)
     /// </summary>
     WEE,
     /// <summary>
     /// Monat
-    /// Abkürzung: Monat(e)
+    /// AbkÃ¼rzung: Monat(e)
     /// </summary>
     MON,
     /// <summary>
     /// Jahr
-    /// Abkürzung: Jahr(e)
+    /// AbkÃ¼rzung: Jahr(e)
     /// </summary>
     ANN,
     /// <summary>
     /// Sekunde
-    /// Abkürzung: Sekunde(n)
+    /// AbkÃ¼rzung: Sekunde(n)
     /// </summary>
     SEC,
     /// <summary>
-    /// Bündel
-    /// Abkürzung: Bund
+    /// BÃ¼ndel
+    /// AbkÃ¼rzung: Bund
     /// </summary>
     XBE,
     /// <summary>
     /// Flasche
-    /// Abkürzung: Fl
+    /// AbkÃ¼rzung: Fl
     /// </summary>
     /// <remarks>
     /// Bottle, non-protected, cylindrical
@@ -196,7 +196,7 @@ type
     XBO,
     /// <summary>
     /// Karton
-    /// Abkürzung: Kt
+    /// AbkÃ¼rzung: Kt
     /// </summary>
     XCT,
     /// <summary>
@@ -208,7 +208,7 @@ type
     PR,
     /// <summary>
     /// Palette
-    /// Abkürzung: Pal
+    /// AbkÃ¼rzung: Pal
     /// </summary>
     /// <remarks>
     /// Platform or open-ended box, usually made of wood, on which goods are retained for ease of mechanical handling during transport and storage.
@@ -216,17 +216,17 @@ type
     XPX,
     /// <summary>
     /// Stange
-    /// Abkürzung: Stg
+    /// AbkÃ¼rzung: Stg
     /// </summary>
     XRD,
     /// <summary>
     /// Tafel/Board
-    /// Abkürzung: Tf
+    /// AbkÃ¼rzung: Tf
     /// </summary>
     XBD,
     /// <summary>
-    /// tausend Stück
-    /// Abkürzung: Tsd
+    /// tausend StÃ¼ck
+    /// AbkÃ¼rzung: Tsd
     /// </summary>
     /// <remarks>
     /// A unit of count defining the number of pieces in multiples of 1000 (piece: a single item, article or exemplar).
@@ -240,7 +240,6 @@ type
     /// </remarks>
     XPK
   );
-
 
   TZUGFeRDQuantityCodesExtensions = class
   public

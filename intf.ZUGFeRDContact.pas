@@ -15,18 +15,42 @@
  * specific language governing permissions and limitations
  * under the License.}
 
-unit intf.ZUGFeRDBuyerOrderReferencedDocument;
+unit intf.ZUGFeRDContact;
 
 interface
 
-uses intf.ZUGFeRDBaseReferencedDocument;
-
 type
   /// <summary>
-  /// Structure containing details of the associated order
+  /// Detail information of a contact person of e.g. a party
   /// </summary>
-  TZUGFeRDBuyerOrderReferencedDocument = class(TZUGFeRDBaseReferencedDocument)
+  TZUGFeRDContact = class
+  private
+    FName: string;
+    FOrgUnit: string;
+    FEmailAddress: string;
+    FPhoneNo: string;
+    FFaxNo: string;
   public
+    /// <summary>
+    /// Contact Name
+    /// </summary>
+    property Name: string read FName write FName;
+    /// <summary>
+    /// Contact organizational unit (with a party)
+    /// </summary>
+    property OrgUnit: string read FOrgUnit write FOrgUnit;
+    /// <summary>
+    /// Contact email address
+    /// </summary>
+    property EmailAddress: string read FEmailAddress write FEmailAddress;
+    /// <summary>
+    /// Contact phone number
+    /// </summary>
+    property PhoneNo: string read FPhoneNo write FPhoneNo;
+    /// <summary>
+    /// Contact fax number
+    /// </summary>
+    property FaxNo: string read FFaxNo write FFaxNo;
   end;
 
 implementation

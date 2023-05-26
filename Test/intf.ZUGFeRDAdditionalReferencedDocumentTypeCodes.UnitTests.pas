@@ -1,4 +1,4 @@
-{* Licensed to the Apache Software Foundation (ASF) under one
+﻿{* Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -28,8 +28,8 @@ type
   public
     [Test]
     procedure TestFromString;
-    [Test]
-    procedure TestEnumValueToString;
+    //[Test]
+    //procedure TestEnumValueToString;
     [Test]
     procedure TestEnumToString;
   end;
@@ -73,22 +73,22 @@ begin
   Assert.AreEqual('65536', Value);
 end;
 
-procedure TZUGFeRDAdditionalReferencedDocumentTypeCodeTest.TestEnumValueToString;
-var
-  Value: string;
-begin
-  Value := TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumValueToString(TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument);
-  Assert.AreEqual('916', Value);
-
-  Value := TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumValueToString(TZUGFeRDAdditionalReferencedDocumentTypeCode.InvoiceDataSheet);
-  Assert.AreEqual('130', Value);
-
-  Value := TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumValueToString(TZUGFeRDAdditionalReferencedDocumentTypeCode.PriceSalesCatalogueResponse);
-  Assert.AreEqual('50', Value);
-
-  Value := TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumValueToString(TZUGFeRDAdditionalReferencedDocumentTypeCode.Unknown);
-  Assert.AreEqual('65536', Value);
-end;
+//procedure TZUGFeRDAdditionalReferencedDocumentTypeCodeTest.TestEnumValueToString;
+//var
+//  Value: string;
+//begin
+//  Value := TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumValueToString(TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument);
+//  Assert.AreEqual('916', Value);
+//
+//  Value := TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumValueToString(TZUGFeRDAdditionalReferencedDocumentTypeCode.InvoiceDataSheet);
+//  Assert.AreEqual('130', Value);
+//
+//  Value := TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumValueToString(TZUGFeRDAdditionalReferencedDocumentTypeCode.PriceSalesCatalogueResponse);
+//  Assert.AreEqual('50', Value);
+//
+//  Value := TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumValueToString(TZUGFeRDAdditionalReferencedDocumentTypeCode.Unknown);
+//  Assert.AreEqual('65536', Value);
+//end;
 
 initialization
 

@@ -1,4 +1,4 @@
-{* Licensed to the Apache Software Foundation (ASF) under one
+ï»¿{* Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -21,11 +21,11 @@ interface
 
 type
   /// <summary>
-  /// Enumeration der verschiedenen von ZUGFeRD-csharp unterstützten ZUGFeRD-Versionen
+  /// Enumeration der verschiedenen von ZUGFeRD-csharp unterstÃ¼tzten ZUGFeRD-Versionen
   /// </summary>
   TZUGFeRDVersion = (
     /// <summary>
-    /// Version 1.x - erste öffentliche ZUGFeRD-Version
+    /// Version 1.x - erste Ã¶ffentliche ZUGFeRD-Version
     /// </summary>
     Version1 = 100,
     /// <summary>
@@ -33,7 +33,7 @@ type
     /// </summary>
     Version20 = 200,
     /// <summary>
-    /// Version 2.1 - vereinheitlicht mit französischer Factur-X 1.0, unterstützt XRechnung
+    /// Version 2.1 - vereinheitlicht mit franzÃ¶sischer Factur-X 1.0, unterstÃ¼tzt XRechnung
     /// </summary>
     Version21 = 210
   );
