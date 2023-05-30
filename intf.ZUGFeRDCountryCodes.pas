@@ -1590,7 +1590,7 @@ begin
     TZUGFeRDCountryCodes.AO : Result := 'AO';
     TZUGFeRDCountryCodes.AQ : Result := 'AQ';
     TZUGFeRDCountryCodes.AR : Result := 'AR';
-    TZUGFeRDCountryCodes.AS_: Result := 'AS' ;
+    TZUGFeRDCountryCodes.AS_: Result := 'AS';
     TZUGFeRDCountryCodes.AT : Result := 'AT';
     TZUGFeRDCountryCodes.AU : Result := 'AU';
     TZUGFeRDCountryCodes.AW : Result := 'AW';
@@ -1640,7 +1640,7 @@ begin
     TZUGFeRDCountryCodes.DJ : Result := 'DJ';
     TZUGFeRDCountryCodes.DK : Result := 'DK';
     TZUGFeRDCountryCodes.DM : Result := 'DM';
-    TZUGFeRDCountryCodes.DO_: Result := 'DO' ;
+    TZUGFeRDCountryCodes.DO_: Result := 'DO';
     TZUGFeRDCountryCodes.DZ : Result := 'DZ';
     TZUGFeRDCountryCodes.EC : Result := 'EC';
     TZUGFeRDCountryCodes.EE : Result := 'EE';
@@ -1684,11 +1684,11 @@ begin
     TZUGFeRDCountryCodes.IE : Result := 'IE';
     TZUGFeRDCountryCodes.IL : Result := 'IL';
     TZUGFeRDCountryCodes.IM : Result := 'IM';
-    TZUGFeRDCountryCodes.IN_: Result := 'IN' ;
+    TZUGFeRDCountryCodes.IN_: Result := 'IN';
     TZUGFeRDCountryCodes.IO : Result := 'IO';
     TZUGFeRDCountryCodes.IQ : Result := 'IQ';
     TZUGFeRDCountryCodes.IR : Result := 'IR';
-    TZUGFeRDCountryCodes.IS_: Result := 'IS' ;
+    TZUGFeRDCountryCodes.IS_: Result := 'IS';
     TZUGFeRDCountryCodes.IT : Result := 'IT';
     TZUGFeRDCountryCodes.JE : Result := 'JE';
     TZUGFeRDCountryCodes.JM : Result := 'JM';
@@ -1803,7 +1803,7 @@ begin
     TZUGFeRDCountryCodes.TL : Result := 'TL';
     TZUGFeRDCountryCodes.TM : Result := 'TM';
     TZUGFeRDCountryCodes.TN : Result := 'TN';
-    TZUGFeRDCountryCodes.TO_: Result := 'TO' ;
+    TZUGFeRDCountryCodes.TO_: Result := 'TO';
     TZUGFeRDCountryCodes.TR : Result := 'TR';
     TZUGFeRDCountryCodes.TT : Result := 'TT';
     TZUGFeRDCountryCodes.TV : Result := 'TV';
@@ -1829,7 +1829,7 @@ begin
     TZUGFeRDCountryCodes.ZA : Result := 'ZA';
     TZUGFeRDCountryCodes.ZM : Result := 'ZM';
     TZUGFeRDCountryCodes.ZW : Result := 'ZW';
-    TZUGFeRDCountryCodes._1A: Result := '1A' ;
+    TZUGFeRDCountryCodes._1A: Result := '1A';
     else Result := 'Unknown';
   end;
 end;

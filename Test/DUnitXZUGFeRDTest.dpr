@@ -1,4 +1,4 @@
-{* Licensed to the Apache Software Foundation (ASF) under one
+﻿{* Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -60,8 +60,15 @@ uses
   intf.ZUGFeRDGlobalIDSchemeIdentifiers.UnitTests,
   intf.ZUGFeRDQuantityCodes.UnitTests,
   intf.ZUGFeRDAccountingAccountTypeCodes.UnitTests,
-  intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes.UnitTests
+  intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes.UnitTests,
+  intf.ZUGFeRDContentCodes.UnitTests,
+  intf.ZUGFeRDCountryCodes.UnitTests,
+  intf.ZUGFeRDCurrencyCodes.UnitTests
   ;
+
+  //Übersetze folgenden C#-Code nach Delphi. Wenn ein Klassenname übersetzt wird, setze ihm den Präfix TZUGFeRD vorran. Stelle alles als Codeblock dar.
+  //Translate the following C# code to Delphi. When translating a class name, prefix it with TZUGFeRD.
+
 
 var
   runner : ITestRunner;
