@@ -63,7 +63,9 @@ uses
   intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes.UnitTests,
   intf.ZUGFeRDContentCodes.UnitTests,
   intf.ZUGFeRDCountryCodes.UnitTests,
-  intf.ZUGFeRDCurrencyCodes.UnitTests
+  intf.ZUGFeRDCurrencyCodes.UnitTests,
+  intf.ZUGFeRDInvoiceTypes.UnitTests,
+  intf.ZUGFeRDMimeTypeMapper.UnitTests
   ;
 
   //Übersetze folgenden C#-Code nach Delphi. Wenn ein Klassenname übersetzt wird, setze ihm den Präfix TZUGFeRD vorran. Stelle alles als Codeblock dar.
