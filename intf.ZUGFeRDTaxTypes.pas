@@ -424,64 +424,6 @@ class function TZUGFeRDTaxTypesExtensions.EnumToString(
   codes: TZUGFeRDTaxTypes): string;
 begin
   Result := GetEnumName(TypeInfo(TZUGFeRDTaxTypes), Integer(codes));
-
-  case codes of
-    AAA: ;
-    AAB: ;
-    AAC: ;
-    AAD: ;
-    AAE: ;
-    AAF: ;
-    AAG: ;
-    AAH: ;
-    AAI: ;
-    AAJ: ;
-    AAK: ;
-    AAL: ;
-    AAM: ;
-    ADD: ;
-    BOL: ;
-    CAP: ;
-    CAR: ;
-    COC: ;
-    CST: ;
-    CUD: ;
-    CVD: ;
-    ENV: ;
-    EXC: ;
-    EXP: ;
-    FET: ;
-    FRE: ;
-    GCN: ;
-    GST: ;
-    ILL: ;
-    IMP: ;
-    IND: ;
-    LAC: ;
-    LCN: ;
-    LDP: ;
-    LOC: ;
-    LST: ;
-    MCA: ;
-    MCD: ;
-    OTH: ;
-    PDB: ;
-    PDC: ;
-    PRF: ;
-    SCN: ;
-    SSS: ;
-    SIT: ;
-    SUP: ;
-    SUR: ;
-    SWT: ;
-    TAC: ;
-    TOT: ;
-    TOX: ;
-    TTA: ;
-    VAD: ;
-    VAT: ;
-    Unknown: ;
-  end;
 end;
 
 class function TZUGFeRDTaxTypesExtensions.FromString(
