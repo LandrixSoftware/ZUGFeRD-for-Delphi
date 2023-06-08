@@ -70,7 +70,8 @@ uses
   intf.ZUGFeRDTaxTypes.UnitTests,
   intf.ZUGFeRDTaxExemptionReasonCodes.UnitTests,
   intf.ZUGFeRDSubjectCodes.UnitTests,
-  intf.ZUGFeRDReferenceTypeCodes.UnitTests
+  intf.ZUGFeRDReferenceTypeCodes.UnitTests,
+  intf.ZUGFeRDProfile.UnitTests
   ;
 
   //Übersetze folgenden C#-Code nach Delphi. Wenn ein Klassenname übersetzt wird, setze ihm den Präfix TZUGFeRD vorran. Stelle alles als Codeblock dar.
