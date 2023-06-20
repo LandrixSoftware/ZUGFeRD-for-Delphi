@@ -71,7 +71,7 @@ type
     /// <summary>
     /// ExemptionReasonCode for no Tax
     /// </summary>
-    property ExemptionReasonCode: TZUGFeRDTaxExemptionReasonCodes? read FExemptionReasonCode write FExemptionReasonCode;
+    property ExemptionReasonCode: TZUGFeRDTaxExemptionReasonCodes read FExemptionReasonCode write FExemptionReasonCode;
     /// <summary>
     /// Exemption Reason Text for no Tax
     /// </summary>

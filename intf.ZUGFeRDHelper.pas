@@ -19,11 +19,17 @@ type
     function HasValue: Boolean;
     function GetValue: T;
     procedure SetValue(const AValue: T);
+    procedure ClearValue;
 
     property Value: T read GetValue write SetValue;
   end;
 
 implementation
+
+procedure TZUGFeRDNullable<T>.ClearValue;
+begin
+  FHasValue := false;
+end;
 
 constructor TZUGFeRDNullable<T>.Create;
 begin
