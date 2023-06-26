@@ -24,6 +24,22 @@ type
     property Value: T read GetValue write SetValue;
   end;
 
+  TZUGFeRDNullableCurrency = class
+  private
+    FHasValue: Boolean;
+    FValue: Currency;
+  public
+    constructor Create;
+    constructor CreateWithValue(const AValue: Currency);
+
+    function HasValue: Boolean;
+    function GetValue: Currency;
+    procedure SetValue(const AValue: Currency);
+    procedure ClearValue;
+
+    property Value: Currency read GetValue write SetValue;
+  end;
+
 implementation
 
 procedure TZUGFeRDNullable<T>.ClearValue;
@@ -56,6 +72,44 @@ begin
 end;
 
 procedure TZUGFeRDNullable<T>.SetValue(const AValue: T);
+begin
+  FHasValue := True;
+  FValue := AValue;
+end;
+
+{ TZUGFeRDNullableCurrency }
+
+procedure TZUGFeRDNullableCurrency.ClearValue;
+begin
+  FHasValue := false;
+end;
+
+constructor TZUGFeRDNullableCurrency.Create;
+begin
+  FHasValue := false;
+end;
+
+constructor TZUGFeRDNullableCurrency.CreateWithValue(
+  const AValue: Currency);
+begin
+  FHasValue := True;
+  FValue := AValue;
+end;
+
+function TZUGFeRDNullableCurrency.GetValue: Currency;
+begin
+  if not FHasValue then
+    raise Exception.Create('Nullable object does not have a value.');
+
+  Result := FValue;
+end;
+
+function TZUGFeRDNullableCurrency.HasValue: Boolean;
+begin
+  Result := FHasValue;
+end;
+
+procedure TZUGFeRDNullableCurrency.SetValue(const AValue: Currency);
 begin
   FHasValue := True;
   FValue := AValue;
