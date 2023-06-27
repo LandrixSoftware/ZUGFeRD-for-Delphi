@@ -78,6 +78,7 @@ uses
   ;
 
   //Übersetze folgenden C#-Code nach Delphi. Wenn ein Klassenname übersetzt wird, setze ihm den Präfix TZUGFeRD vorran. Stelle alles als Codeblock dar.
+  //Übersetze alle folgenden und zukünftigen C#-Code in diesem Chat nach Delphi. Wenn ein Klassenname übersetzt wird, setze ihm den Präfix TZUGFeRD vorran. Stelle alles als Codeblock dar.
   //Translate the following C# code to Delphi. When translating a class name, prefix it with TZUGFeRD.
 
 var
