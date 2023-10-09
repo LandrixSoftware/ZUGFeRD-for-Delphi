@@ -109,107 +109,138 @@ type
       orderReferencedDate: TZUGFeRDNullable<TDateTime>);
   public
     /// <summary>
-    /// Eindeutige Bezeichnung für die betreffende Rechnungsposition
-    /// </summary>
-    property LineID: string read FLineID write FLineID;
-    /// <summary>
-    /// Kennung eines Artikels gemäß einem registrierten Schema
+    /// The identification of articles based on a registered scheme
+    ///
+    /// The global identifier of the article is a globally unique identifier of the product being assigned to it by its
+    /// producer, bases on the rules of a global standardisation body.
     /// </summary>
     property GlobalID: TZUGFeRDGlobalID read FGlobalID write FGlobalID;
+
     /// <summary>
-    /// Artikelnummer des Verkäufers
+    /// An identification of the item assigned by the seller.
     /// </summary>
     property SellerAssignedID: string read FSellerAssignedID write FSellerAssignedID;
+
     /// <summary>
-    /// Artikelnummer des Käufers
+    /// An identification of the item assigned by the buyer.
     /// </summary>
     property BuyerAssignedID: string read FBuyerAssignedID write FBuyerAssignedID;
+
     /// <summary>
-    /// Artikelname
+    /// An article’s name
     /// </summary>
     property Name: string read FName write FName;
+
     /// <summary>
-    /// Artikelbeschreibung
+    /// The description of an item
+    ///
+    /// The item’s description makes it possible to describe a product and its properties more comprehensively
+    /// than would be possible with just the article name.
     /// </summary>
     property Description: string read FDescription write FDescription;
+
     /// <summary>
-    /// Menge, enthalten
+    /// Included amount
     /// </summary>
     property UnitQuantity: TZUGFeRDNullable<Double> read FUnitQuantity write FUnitQuantity;
+
     /// <summary>
-    /// Basismenge zum Artikelpreis
+    /// Invoiced quantity
     /// </summary>
     property BilledQuantity: Double read FBilledQuantity write FBilledQuantity;
+
     /// <summary>
-    /// Nettobetrag der Rechnungsposition
+    /// Invoice line net amount
+    /// BT-131
     /// </summary>
     property LineTotalAmount: TZUGFeRDNullable<Double> read FLineTotalAmount write FLineTotalAmount;
+
     /// <summary>
-    /// Beginn des für die Rechnungsposition maßgeblichen Abrechnungszeitraums
+    /// Detailed information about the invoicing period
+    ///
+    /// Invoicing period start date
     /// </summary>
     property BillingPeriodStart: TZUGFeRDNullable<TDateTime> read FBillingPeriodStart write FBillingPeriodStart;
+
     /// <summary>
-    /// Ende des für die Rechnungsposition maßgeblichen Abrechnungszeitraums
+    /// Detailed information about the invoicing period
+    ///
+    /// Invoicing period end date
     /// </summary>
     property BillingPeriodEnd: TZUGFeRDNullable<TDateTime> read FBillingPeriodEnd write FBillingPeriodEnd;
+
     /// <summary>
-    /// Steuerkategoriecode
+    /// he code valid for the invoiced goods sales tax category
     /// </summary>
     property TaxCategoryCode: TZUGFeRDTaxCategoryCodes read FTaxCategoryCode write FTaxCategoryCode;
+
     /// <summary>
-    /// Steuersatz
+    /// Tax rate
     /// </summary>
     property TaxPercent: Double read FTaxPercent write FTaxPercent;
+
     /// <summary>
-    /// Steuertyp
+    /// Tax type
     /// </summary>
     property TaxType: TZUGFeRDTaxTypes read FTaxType write FTaxType default TZUGFeRDTaxTypes.VAT;
+
     /// <summary>
-    /// Netto-Einzelpreis
+    /// net unit price of the item
     /// </summary>
     property NetUnitPrice: TZUGFeRDNullableCurrency read FNetUnitPrice write FNetUnitPrice;
+
     /// <summary>
-    /// Brutto-Einzelpreis
+    /// gross unit price of the item
     /// </summary>
     property GrossUnitPrice: TZUGFeRDNullableCurrency read FGrossUnitPrice write FGrossUnitPrice;
+
     /// <summary>
-    /// Einheit der Preisbasismenge
+    /// Item Base Quantity Unit Code
     /// </summary>
     property UnitCode: TZUGFeRDQuantityCodes read FUnitCode write FUnitCode;
+
     /// <summary>
-    /// Dokument, das mit der Rechnungsposition verknüpft ist
+    /// Identifier of the invoice line item
     /// </summary>
     property AssociatedDocument: TZUGFeRDAssociatedDocument read FAssociatedDocument write FAssociatedDocument;
+
     /// <summary>
-    /// Tatsächliches Lieferdatum
+    /// Detailed information about the actual Delivery
     /// </summary>
     property ActualDeliveryDate: TZUGFeRDNullable<TDateTime> read FActualDeliveryDate write FActualDeliveryDate;
+
     /// <summary>
     /// Details of the associated order
     /// </summary>
     property BuyerOrderReferencedDocument: TZUGFeRDBuyerOrderReferencedDocument read FBuyerOrderReferencedDocument write FBuyerOrderReferencedDocument;
+
     /// <summary>
     /// Detailed information about the corresponding delivery note
     /// </summary>
     property DeliveryNoteReferencedDocument: TZUGFeRDDeliveryNoteReferencedDocument read FDeliveryNoteReferencedDocument write FDeliveryNoteReferencedDocument;
+
     /// <summary>
     /// Details of the associated contract
     /// </summary>
     property ContractReferencedDocument: TZUGFeRDContractReferencedDocument read FContractReferencedDocument write FContractReferencedDocument;
+
     /// <summary>
-    /// Liste der zusätzlichen Referenzdokumente
+    /// Details of an additional document reference
     /// </summary>
     property AdditionalReferencedDocuments: TObjectList<TZUGFeRDAdditionalReferencedDocument> read FAdditionalReferencedDocuments write FAdditionalReferencedDocuments;
+
     /// <summary>
     /// A group of business terms providing information about the applicable surcharges or discounts on the total amount of the invoice
     /// </summary>
     property TradeAllowanceCharges: TObjectList<TZUGFeRDTradeAllowanceCharge> read FTradeAllowanceCharges write FTradeAllowanceCharges;
+
     /// <summary>
     /// Detailed information on the accounting reference
     /// </summary>
     property ReceivableSpecifiedTradeAccountingAccounts: TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount> read FReceivableSpecifiedTradeAccountingAccounts write FReceivableSpecifiedTradeAccountingAccounts;
+
     /// <summary>
-    /// Zusätzliche Produkteigenschaften
+    /// Additional product information
     /// </summary>
     property ApplicableProductCharacteristics: TObjectList<TZUGFeRDApplicableProductCharacteristic> read FApplicableProductCharacteristics write FApplicableProductCharacteristics;
   end;

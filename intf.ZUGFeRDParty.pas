@@ -50,34 +50,42 @@ type
     /// Party identifier
     /// </summary>
     property ID: TZUGFeRDGlobalID read FID write FID;
+
     /// <summary>
     /// Party name, e.g. company name
     /// </summary>
     property Name: string read FName write FName;
+
     /// <summary>
     /// Name of the contact at the party
     /// </summary>
     property ContactName: string read FContactName write FContactName;
+
     /// <summary>
     /// City, not including postcode (separate property)
     /// </summary>
     property City: string read FCity write FCity;
+
     /// <summary>
     /// Party postcode, represented in the respective country format
     /// </summary>
     property Postcode: string read FPostcode write FPostcode;
+
     /// <summary>
     /// Party country
     /// </summary>
     property Country: TZUGFeRDCountryCodes read FCountry write FCountry;
+
     /// <summary>
     /// Street name and number
     /// </summary>
     property Street: string read FStreet write FStreet;
+
     /// <summary>
     /// Global identifier
     /// </summary>
     property GlobalID: TZUGFeRDGlobalID read FGlobalID write FGlobalID;
+
     /// <summary>
     /// Address line 3
     /// It's an additional line to give more details to the address.
@@ -85,12 +93,14 @@ type
     /// e.g. used for BT-162, BT-164, BT-165
     /// </summary>
     property AddressLine3: string read FAddressLine3 write FAddressLine3;
+
     /// <summary>
     /// Country subdivision (e.g. Niedersachsen, Bayern)
     /// This field is purely optional.
     /// e.g. used for BT-39, BT-54, BT-68, BT-79
     /// </summary>
     property CountrySubdivisionName: string read FCountrySubdivisionName write FCountrySubdivisionName;
+
     /// <summary>
     /// Legal organization
     /// </summary>
