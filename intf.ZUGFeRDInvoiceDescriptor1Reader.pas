@@ -15,38 +15,28 @@
  * specific language governing permissions and limitations
  * under the License.}
 
-unit intf.ZUGFeRDExceptions;
+unit intf.ZUGFeRDInvoiceDescriptor1Reader;
 
 interface
 
-uses System.SysUtils;
+uses
+  System.SysUtils, System.Classes, System.DateUtils, Xml.XmlDom, Xml.XmlIntf, Xml.XmlDoc,
+  intf.ZUGFeRDInvoiceDescriptorReader,
+  intf.ZUGFeRDInvoiceDescriptor, intf.ZUGFeRDBankAccount, intf.ZUGFeRDContact;
 
 type
-  /// <summary>
-  /// The stream where the ZUGFeRD data shall be saved is not valid, e.g. closed.
-  /// </summary>
-  TZUGFeRDIllegalStreamException = class(Exception)
-  end;
-
-  /// <summary>
-  /// A certain value or setting is not supported, e.g. in the selected version of ZUGFeRD
-  /// </summary>
-  TZUGFeRDUnsupportedException = class(Exception)
-  end;
-
-  /// <summary>
-  /// This exception is thrown when data is missing that is mandatory for a certain ZUGFeRD version or profile.
-  /// </summary>
-  TZUGFeRDMissingDataException = class(Exception)
-  end;
-
-  TZUGFeRDFileNotFoundException = class(Exception)
-  end;
-
-  TZUGFeRDArgumentException = class(Exception)
+  TZUGFeRDInvoiceDescriptor1Reader = class(TZUGFeRDInvoiceDescriptorReader)
+  public
+    function Load(const Stream: TStream): TZUGFeRDInvoiceDescriptor;
   end;
 
 implementation
 
+{ TZUGFeRDInvoiceDescriptor1Reader }
+
+function TZUGFeRDInvoiceDescriptor1Reader.Load(const Stream: TStream): TZUGFeRDInvoiceDescriptor;
+begin
+
+end;
 
 end.

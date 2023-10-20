@@ -74,7 +74,12 @@ uses
   intf.ZUGFeRDProfile.UnitTests,
   intf.ZUGFeRDPaymentMeansTypeCodes.UnitTests,
 
-  intf.ZUGFeRDInvoiceDescriptor,intf.ZUGFeRDTradeLineItem,intf.ZUGFeRDInvoiceValidator
+  intf.ZUGFeRDInvoiceDescriptor,intf.ZUGFeRDTradeLineItem,intf.ZUGFeRDInvoiceValidator,
+  intf.ZUGFeRDInvoiceDescriptorReader,intf.ZUGFeRDInvoiceDescriptorWriter,
+  intf.ZUGFeRDInvoiceDescriptor1Reader,intf.ZUGFeRDInvoiceDescriptor1Writer,
+  intf.ZUGFeRDInvoiceDescriptor20Reader,intf.ZUGFeRDInvoiceDescriptor20Writer,
+  intf.ZUGFeRDInvoiceDescriptor21Reader,intf.ZUGFeRDInvoiceDescriptor21Writer
+
   ;
 
   //Übersetze folgenden C#-Code nach Delphi. Wenn ein Klassenname übersetzt wird, setze ihm den Präfix TZUGFeRD vorran. Stelle alles als Codeblock dar.

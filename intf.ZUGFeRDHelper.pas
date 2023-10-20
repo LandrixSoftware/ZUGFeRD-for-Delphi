@@ -19,6 +19,7 @@ type
     function HasValue: Boolean;
     function GetValue: T;
     procedure SetValue(const AValue: T);
+    procedure SetValueClass(AValue : TZUGFeRDNullable<T>);
     procedure ClearValue;
 
     property Value: T read GetValue write SetValue;
@@ -35,6 +36,7 @@ type
     function HasValue: Boolean;
     function GetValue: Currency;
     procedure SetValue(const AValue: Currency);
+    procedure SetValueClass(AValue : TZUGFeRDNullableCurrency);
     procedure ClearValue;
 
     property Value: Currency read GetValue write SetValue;
@@ -77,6 +79,14 @@ begin
   FValue := AValue;
 end;
 
+procedure TZUGFeRDNullable<T>.SetValueClass(AValue: TZUGFeRDNullable<T>);
+begin
+  if AValue = nil then
+    ClearValue
+  else
+    Value := AValue.Value;
+end;
+
 { TZUGFeRDNullableCurrency }
 
 procedure TZUGFeRDNullableCurrency.ClearValue;
@@ -113,6 +123,15 @@ procedure TZUGFeRDNullableCurrency.SetValue(const AValue: Currency);
 begin
   FHasValue := True;
   FValue := AValue;
+end;
+
+procedure TZUGFeRDNullableCurrency.SetValueClass(
+  AValue: TZUGFeRDNullableCurrency);
+begin
+  if AValue = nil then
+    ClearValue
+  else
+    Value := AValue.Value;
 end;
 
 end.

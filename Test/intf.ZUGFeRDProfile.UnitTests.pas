@@ -20,7 +20,7 @@ unit intf.ZUGFeRDProfile.UnitTests;
 interface
 
 uses
-  DUnitX.TestFramework, intf.ZUGFeRDProfile,intf.ZUGFeRDVersion;
+  System.SysUtils, DUnitX.TestFramework, intf.ZUGFeRDProfile,intf.ZUGFeRDVersion;
 
 type
   [TestFixture]
@@ -88,10 +88,10 @@ begin
   Assert.AreEqual('urn:cen.eu:en16931:2017',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.Comfort, TZUGFeRDVersion.Version21));
   Assert.AreEqual('urn:cen.eu:en16931:2017#conformant#urn:factur-x.eu:1p0:extended',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.Extended, TZUGFeRDVersion.Version21));
   Assert.AreEqual('urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_1.2',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.XRechnung1, TZUGFeRDVersion.Version21));
-//          if Now >= EncodeDate(2022, 8, 1) then
-  Assert.AreEqual('urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.2',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.XRechnung, TZUGFeRDVersion.Version21));
-//          else
-//            Result := 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.1';
+  if Now >= EncodeDate(2023, 8, 1) then
+    Assert.AreEqual('urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.XRechnung, TZUGFeRDVersion.Version21))
+          else
+    Assert.AreEqual('urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.2',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.XRechnung, TZUGFeRDVersion.Version21));
 end;
 
 initialization

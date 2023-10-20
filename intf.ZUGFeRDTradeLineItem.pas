@@ -51,7 +51,6 @@ type
     FReceivableSpecifiedTradeAccountingAccounts: TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>;
     FAdditionalReferencedDocuments: TObjectList<TZUGFeRDAdditionalReferencedDocument>;
     FUnitCode: TZUGFeRDQuantityCodes;
-    FLineID: string;
     FBillingPeriodStart: TZUGFeRDNullable<TDateTime>;
     FApplicableProductCharacteristics: TObjectList<TZUGFeRDApplicableProductCharacteristic>;
     FSellerAssignedID: string;
@@ -258,7 +257,7 @@ begin
   FBillingPeriodEnd:= TZUGFeRDNullable<TDateTime>.Create;
   FNetUnitPrice := TZUGFeRDNullableCurrency.CreateWithValue(0.0);
   FGrossUnitPrice:= TZUGFeRDNullableCurrency.CreateWithValue(0.0);
-  FAssociatedDocument:= TZUGFeRDAssociatedDocument.Create(FLineID);
+  FAssociatedDocument:= nil;
   FActualDeliveryDate:= TZUGFeRDNullable<TDateTime>.Create;
   FBuyerOrderReferencedDocument:= TZUGFeRDBuyerOrderReferencedDocument.Create;
   FDeliveryNoteReferencedDocument:= TZUGFeRDDeliveryNoteReferencedDocument.Create;
@@ -326,7 +325,7 @@ procedure TZUGFeRDTradeLineItem.AddAdditionalReferencedDocument(
   id: string; date: TZUGFeRDNullable<TDateTime> = nil;
   code: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown);
 begin
-  FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create);
+  FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(true));
   with FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1] do
   begin
     ID := id;

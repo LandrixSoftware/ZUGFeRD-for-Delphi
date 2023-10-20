@@ -42,7 +42,7 @@ type
     FTypeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
     function GetMimeType: string;
   public
-    constructor Create;
+    constructor Create(CreateAttachmentBinaryObject : Boolean);
     destructor Destroy; override;
   public
     /// <summary>
@@ -73,10 +73,13 @@ type
 
 implementation
 
-constructor TZUGFeRDAdditionalReferencedDocument.Create;
+constructor TZUGFeRDAdditionalReferencedDocument.Create(CreateAttachmentBinaryObject : Boolean);
 begin
   inherited Create;
-  FAttachmentBinaryObject := TMemoryStream.Create;
+  if CreateAttachmentBinaryObject then
+    FAttachmentBinaryObject := TMemoryStream.Create
+  else
+    FAttachmentBinaryObject := nil;
 end;
 
 destructor TZUGFeRDAdditionalReferencedDocument.Destroy;
