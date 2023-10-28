@@ -48,6 +48,9 @@ begin
   Assert.AreEqual(TZUGFeRDInvoiceType.InvoiceInformation, TZUGFeRDInvoiceTypeExtensions.FromString('751'));
   Assert.AreEqual(TZUGFeRDInvoiceType.CorrectionOld, TZUGFeRDInvoiceTypeExtensions.FromString('1380'));
   Assert.AreEqual(TZUGFeRDInvoiceType.Cancellation, TZUGFeRDInvoiceTypeExtensions.FromString('457'));
+  Assert.AreEqual(TZUGFeRDInvoiceType.PartialConstructionInvoice, TZUGFeRDInvoiceTypeExtensions.FromString('875'));
+  Assert.AreEqual(TZUGFeRDInvoiceType.PartialFinalConstructionInvoice, TZUGFeRDInvoiceTypeExtensions.FromString('876'));
+  Assert.AreEqual(TZUGFeRDInvoiceType.FinalConstructionInvoice, TZUGFeRDInvoiceTypeExtensions.FromString('877'));
   Assert.AreEqual(TZUGFeRDInvoiceType.Unknown, TZUGFeRDInvoiceTypeExtensions.FromString('Invalid'));
 end;
 
@@ -65,6 +68,9 @@ begin
   Assert.AreEqual('751', TZUGFeRDInvoiceTypeExtensions.EnumToString(TZUGFeRDInvoiceType.InvoiceInformation));
   Assert.AreEqual('1380', TZUGFeRDInvoiceTypeExtensions.EnumToString(TZUGFeRDInvoiceType.CorrectionOld));
   Assert.AreEqual('457', TZUGFeRDInvoiceTypeExtensions.EnumToString(TZUGFeRDInvoiceType.Cancellation));
+  Assert.AreEqual('875', TZUGFeRDInvoiceTypeExtensions.EnumToString(TZUGFeRDInvoiceType.PartialConstructionInvoice));
+  Assert.AreEqual('876', TZUGFeRDInvoiceTypeExtensions.EnumToString(TZUGFeRDInvoiceType.PartialFinalConstructionInvoice));
+  Assert.AreEqual('877', TZUGFeRDInvoiceTypeExtensions.EnumToString(TZUGFeRDInvoiceType.FinalConstructionInvoice));
   Assert.AreEqual('0', TZUGFeRDInvoiceTypeExtensions.EnumToString(TZUGFeRDInvoiceType.Unknown));
 end;
 

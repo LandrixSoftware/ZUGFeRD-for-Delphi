@@ -135,6 +135,21 @@ type
     Cancellation = 457,
 
     /// <summary>
+    /// Appears to be only valid in Germany for XRechnung (BR-DE-17)
+    /// </summary>
+    PartialConstructionInvoice = 875,
+
+    /// <summary>
+    /// Appears to be only valid in Germany for XRechnung (BR-DE-17)
+    /// </summary>
+    PartialFinalConstructionInvoice = 876,
+
+    /// <summary>
+    /// Appears to be only valid in Germany for XRechnung (BR-DE-17)
+    /// </summary>
+    FinalConstructionInvoice = 877,
+
+    /// <summary>
     /// Unknown (0)
     /// is a fall back for all other cases
     /// (not all UNTDID 1001 codes are allowed, but there are several more)
@@ -168,6 +183,9 @@ begin
     InvoiceInformation:                     Result := '751';
     CorrectionOld:                          Result := '1380';
     Cancellation:                           Result := '457';
+    PartialConstructionInvoice:             Result := '875';
+    PartialFinalConstructionInvoice:        Result := '876';
+    FinalConstructionInvoice:               Result := '877';
     else                                    Result := '0';//Unknown
   end;
 end;
@@ -186,7 +204,10 @@ begin
   if SameText(s,'389') then Result := TZUGFeRDInvoiceType.SelfBilledInvoice else
   if SameText(s,'751') then Result := TZUGFeRDInvoiceType.InvoiceInformation else
   if SameText(s,'1380') then Result := TZUGFeRDInvoiceType.CorrectionOld else
-  if SameText(s,'457') then Result := TZUGFeRDInvoiceType.Cancellation
+  if SameText(s,'457') then Result := TZUGFeRDInvoiceType.Cancellation else
+  if SameText(s,'875') then Result := TZUGFeRDInvoiceType.PartialConstructionInvoice else
+  if SameText(s,'876') then Result := TZUGFeRDInvoiceType.PartialFinalConstructionInvoice else
+  if SameText(s,'877') then Result := TZUGFeRDInvoiceType.FinalConstructionInvoice
   else Result := TZUGFeRDInvoiceType.Unknown;
 end;
 

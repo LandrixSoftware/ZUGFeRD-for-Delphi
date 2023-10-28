@@ -41,6 +41,7 @@ begin
   Assert.AreEqual(TZUGFeRDSubjectCodes.ABN, TZUGFeRDSubjectCodesExtensions.FromString('ABN'));
   Assert.AreEqual(TZUGFeRDSubjectCodes.AAK, TZUGFeRDSubjectCodesExtensions.FromString('AAK'));
   Assert.AreEqual(TZUGFeRDSubjectCodes.ACB, TZUGFeRDSubjectCodesExtensions.FromString('ACB'));
+  Assert.AreEqual(TZUGFeRDSubjectCodes.ADU, TZUGFeRDSubjectCodesExtensions.FromString('ADU'));
   Assert.AreEqual(TZUGFeRDSubjectCodes.PMT, TZUGFeRDSubjectCodesExtensions.FromString('PMT'));
   Assert.AreEqual(TZUGFeRDSubjectCodes.PRF, TZUGFeRDSubjectCodesExtensions.FromString('PRF'));
   Assert.AreEqual(TZUGFeRDSubjectCodes.REG, TZUGFeRDSubjectCodesExtensions.FromString('REG'));
@@ -56,6 +57,7 @@ begin
   Assert.AreEqual('ABN', TZUGFeRDSubjectCodesExtensions.EnumToString(TZUGFeRDSubjectCodes.ABN));
   Assert.AreEqual('AAK', TZUGFeRDSubjectCodesExtensions.EnumToString(TZUGFeRDSubjectCodes.AAK));
   Assert.AreEqual('ACB', TZUGFeRDSubjectCodesExtensions.EnumToString(TZUGFeRDSubjectCodes.ACB));
+  Assert.AreEqual('ADU', TZUGFeRDSubjectCodesExtensions.EnumToString(TZUGFeRDSubjectCodes.ADU));
   Assert.AreEqual('PMT', TZUGFeRDSubjectCodesExtensions.EnumToString(TZUGFeRDSubjectCodes.PMT));
   Assert.AreEqual('PRF', TZUGFeRDSubjectCodesExtensions.EnumToString(TZUGFeRDSubjectCodes.PRF));
   Assert.AreEqual('REG', TZUGFeRDSubjectCodesExtensions.EnumToString(TZUGFeRDSubjectCodes.REG));

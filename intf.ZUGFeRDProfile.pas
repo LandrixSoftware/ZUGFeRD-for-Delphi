@@ -143,7 +143,8 @@ begin
   if SameText(s,'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.0') or
      SameText(s,'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.1') or
      SameText(s,'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.2') or
-     SameText(s,'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3') then
+     SameText(s,'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3') or
+     SameText(s,'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0') then
       Result := XRechnung
   else
     Result := Unknown;
@@ -194,10 +195,10 @@ begin
         TZUGFeRDProfile.XRechnung1:
           Result := 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_1.2';
         TZUGFeRDProfile.XRechnung:
-          if Now >= EncodeDate(2023, 8, 1) then
-            Result := 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3'
+          if Now >= EncodeDate(2024, 2, 1) then
+            Result := 'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0'
           else
-            Result := 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.2';
+            Result := 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3';
       else
         raise Exception.Create('Unsupported profile for ZUGFeRD version 21');
       end;
