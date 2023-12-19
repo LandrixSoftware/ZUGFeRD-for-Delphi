@@ -56,6 +56,7 @@ uses
   DUnitX.Timeout,
   DUnitX.Attributes,
   DUnitX.Linux.Console,
+
   intf.ZUGFeRDTaxCategoryCodes.UnitTests,
   intf.ZUGFeRDGlobalIDSchemeIdentifiers.UnitTests,
   intf.ZUGFeRDQuantityCodes.UnitTests,
@@ -73,6 +74,7 @@ uses
   intf.ZUGFeRDReferenceTypeCodes.UnitTests,
   intf.ZUGFeRDProfile.UnitTests,
   intf.ZUGFeRDPaymentMeansTypeCodes.UnitTests,
+  intf.ZUGFeRDElectronicAddressSchemeIdentifiers.UnitTests,
 
   intf.ZUGFeRDInvoiceDescriptor,intf.ZUGFeRDTradeLineItem,intf.ZUGFeRDInvoiceValidator,
   intf.ZUGFeRDInvoiceDescriptorReader,intf.ZUGFeRDInvoiceDescriptorWriter,
