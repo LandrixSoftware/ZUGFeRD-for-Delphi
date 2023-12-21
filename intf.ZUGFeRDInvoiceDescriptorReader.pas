@@ -33,7 +33,6 @@ type
 
     function Load(const filename: string): TZUGFeRDInvoiceDescriptor; overload;
     function IsReadableByThisReaderVersion(const filename: string): Boolean; overload;
-
   protected
     function NodeAsBool(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: Boolean = True): Boolean;
     function NodeAsString(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: string = ''): string;
