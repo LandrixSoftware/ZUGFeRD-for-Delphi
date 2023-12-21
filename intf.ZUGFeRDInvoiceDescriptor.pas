@@ -59,7 +59,9 @@ uses
   intf.ZUGFeRDSubjectCodes,
   intf.ZUGFeRDContentCodes,
   intf.ZUGFeRDCountryCodes,
-  intf.ZUGFeRDLegalOrganization
+  intf.ZUGFeRDLegalOrganization,
+  intf.ZUGFeRDElectronicAddress,
+  intf.ZUGFeRDElectronicAddressSchemeIdentifiers
   ;
 
 type
@@ -82,9 +84,11 @@ type
     FBuyer: TZUGFeRDParty;
     FBuyerContact: TZUGFeRDContact;
     FBuyerTaxRegistration: TObjectList<TZUGFeRDTaxRegistration>;
+    FBuyerElectronicAddress: TZUGFeRDElectronicAddress;
     FSeller: TZUGFeRDParty;
     FSellerContact: TZUGFeRDContact;
     FSellerTaxRegistration: TObjectList<TZUGFeRDTaxRegistration>;
+    FSellerElectronicAddress: TZUGFeRDElectronicAddress;
     FInvoicee: TZUGFeRDParty;
     FShipTo: TZUGFeRDParty;
     FPayee: TZUGFeRDParty;
@@ -190,9 +194,11 @@ type
     property BuyerContact: TZUGFeRDContact read FBuyerContact write FBuyerContact;
 
     property BuyerTaxRegistration: TObjectList<TZUGFeRDTaxRegistration> read FBuyerTaxRegistration;
+    property BuyerElectronicAddress : TZUGFeRDElectronicAddress read FBuyerElectronicAddress;
     property Seller: TZUGFeRDParty read FSeller write FSeller;
     property SellerContact: TZUGFeRDContact read FSellerContact write FSellerContact;
     property SellerTaxRegistration: TObjectList<TZUGFeRDTaxRegistration> read FSellerTaxRegistration;
+    property SellerElectronicAddress : TZUGFeRDElectronicAddress read FSellerElectronicAddress;
 
     /// <summary>
     /// This party is optional and only relevant for Extended profile
@@ -478,6 +484,20 @@ type
     procedure AddSellerTaxRegistration(const no: string; const schemeID: TZUGFeRDTaxRegistrationSchemeID);
 
     /// <summary>
+    /// Sets the Buyer Electronic Address for Peppol
+    /// </summary>
+    /// <param name="address">Peppol Address</param>
+    /// <param name="electronicAddressSchemeID">ElectronicAddressSchemeIdentifier</param>
+    procedure SetBuyerElectronicAddress(address : string; electronicAddressSchemeID : TZUGFeRDElectronicAddressSchemeIdentifiers);
+
+    /// <summary>
+    /// Sets the Seller Electronic Address for Peppol
+    /// </summary>
+    /// <param name="address">Peppol Address</param>
+    /// <param name="electronicAddressSchemeID">ElectronicAddressSchemeIdentifier</param>
+    procedure SetSellerElectronicAddress(address : string; electronicAddressSchemeID : TZUGFeRDElectronicAddressSchemeIdentifiers);
+
+    /// <summary>
     /// Add an additional reference document
     /// </summary>
     /// <param name="id">Document number such as delivery note no or credit memo no</param>
@@ -708,15 +728,17 @@ begin
   FOrderDate := TZUGFeRDNullable<TDateTime>.Create;
   FActualDeliveryDate := TZUGFeRDNullable<TDateTime>.Create;
   FAdditionalReferencedDocuments := TObjectList<TZUGFeRDAdditionalReferencedDocument>.Create;
-  FDeliveryNoteReferencedDocument:= nil;//TZUGFeRDDeliveryNoteReferencedDocument.Create;
+  FDeliveryNoteReferencedDocument:= TZUGFeRDDeliveryNoteReferencedDocument.Create;
   FContractReferencedDocument    := TZUGFeRDContractReferencedDocument.Create;
   FSpecifiedProcuringProject     := TZUGFeRDSpecifiedProcuringProject.Create;
   FBuyer                         := TZUGFeRDParty.Create;
   FBuyerContact                  := TZUGFeRDContact.Create;
   FBuyerTaxRegistration          := TObjectList<TZUGFeRDTaxRegistration>.Create;
+  FBuyerElectronicAddress        := TZUGFeRDElectronicAddress.Create;
   FSeller                        := TZUGFeRDParty.Create;
   FSellerContact                 := TZUGFeRDContact.Create;
   FSellerTaxRegistration         := TObjectList<TZUGFeRDTaxRegistration>.Create;
+  FSellerElectronicAddress       := TZUGFeRDElectronicAddress.Create;
   FInvoicee                      := TZUGFeRDParty.Create;
   FShipTo                        := TZUGFeRDParty.Create;
   FPayee                         := TZUGFeRDParty.Create;
@@ -756,9 +778,11 @@ begin
   if Assigned(FBuyer                         ) then begin FBuyer.Free; FBuyer                          := nil; end;
   if Assigned(FBuyerContact                  ) then begin FBuyerContact.Free; FBuyerContact                   := nil; end;
   if Assigned(FBuyerTaxRegistration          ) then begin FBuyerTaxRegistration.Free; FBuyerTaxRegistration           := nil; end;
+  if Assigned(FBuyerElectronicAddress        ) then begin FBuyerElectronicAddress        .Free; FBuyerElectronicAddress         := nil; end;
   if Assigned(FSeller                        ) then begin FSeller.Free; FSeller                         := nil; end;
   if Assigned(FSellerContact                 ) then begin FSellerContact.Free; FSellerContact                  := nil; end;
   if Assigned(FSellerTaxRegistration         ) then begin FSellerTaxRegistration.Free; FSellerTaxRegistration          := nil; end;
+  if Assigned(FSellerElectronicAddress       ) then begin FSellerElectronicAddress       .Free; FSellerElectronicAddress        := nil; end;
   if Assigned(FInvoicee                      ) then begin FInvoicee.Free; FInvoicee                       := nil; end;
   if Assigned(FShipTo                        ) then begin FShipTo.Free; FShipTo                         := nil; end;
   if Assigned(FPayee                         ) then begin FPayee.Free; FPayee                          := nil; end;
@@ -792,24 +816,36 @@ var
   reader: TZUGFeRDInvoiceDescriptorReader;
 begin
   reader := TZUGFeRDInvoiceDescriptor1Reader.Create;
-  if reader.IsReadableByThisReaderVersion(filename) then
-  begin
-    Result := TZUGFeRDVersion.Version1;
-    Exit;
+  try
+    if reader.IsReadableByThisReaderVersion(filename) then
+    begin
+      Result := TZUGFeRDVersion.Version1;
+      Exit;
+    end;
+  finally
+    reader.Free;
   end;
 
   reader := TZUGFeRDInvoiceDescriptor21Reader.Create;
-  if reader.IsReadableByThisReaderVersion(filename) then
-  begin
-    Result := TZUGFeRDVersion.Version21;
-    Exit;
+  try
+    if reader.IsReadableByThisReaderVersion(filename) then
+    begin
+      Result := TZUGFeRDVersion.Version21;
+      Exit;
+    end;
+  finally
+    reader.Free;
   end;
 
   reader := TZUGFeRDInvoiceDescriptor20Reader.Create;
-  if reader.IsReadableByThisReaderVersion(filename) then
-  begin
-    Result := TZUGFeRDVersion.Version20;
-    Exit;
+  try
+    if reader.IsReadableByThisReaderVersion(filename) then
+    begin
+      Result := TZUGFeRDVersion.Version20;
+      Exit;
+    end;
+  finally
+    reader.Free;
   end;
 
   raise TZUGFeRDUnsupportedException.Create('No ZUGFeRD invoice reader was able to parse this file "' + filename + '"!');
@@ -950,7 +986,9 @@ procedure TZUGFeRDInvoiceDescriptor.AddNote(const note: string;
   subjectCode: TZUGFeRDSubjectCodes = TZUGFeRDSubjectCodes.Unknown;
   contentCode: TZUGFeRDContentCodes = TZUGFeRDContentCodes.Unknown);
 begin
-  //TODO prüfen: ST1, ST2, ST3 nur mit AAK; EEV, WEB, VEV nur mit AAJ
+  //TODO prüfen:
+  //ST1, ST2, ST3 nur mit AAK
+  //EEV, WEB, VEV nur mit AAJ
 
   FNotes.Add(TZUGFeRDNote.Create(note, subjectCode, contentCode));
 end;
@@ -1028,6 +1066,18 @@ begin
   FSellerTaxRegistration[SellerTaxRegistration.Count - 1].SchemeID := schemeID;
 end;
 
+procedure TZUGFeRDInvoiceDescriptor.SetBuyerElectronicAddress(address : string; electronicAddressSchemeID : TZUGFeRDElectronicAddressSchemeIdentifiers);
+begin
+  FBuyerElectronicAddress.Address := address;
+  FBuyerElectronicAddress.ElectronicAddressSchemeID := electronicAddressSchemeID;
+end;
+
+procedure TZUGFeRDInvoiceDescriptor.SetSellerElectronicAddress(address : string; electronicAddressSchemeID : TZUGFeRDElectronicAddressSchemeIdentifiers);
+begin
+  FSellerElectronicAddress.Address := address;
+  FSellerElectronicAddress.ElectronicAddressSchemeID := electronicAddressSchemeID;
+end;
+
 procedure TZUGFeRDInvoiceDescriptor.AddAdditionalReferencedDocument(const id: string; const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
   const issueDateTime: TDateTime = 0; const name: string = ''; const referenceTypeCode: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
   const attachmentBinaryObject: TMemoryStream = nil; const filename: string = '');
@@ -1053,8 +1103,6 @@ end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetDeliveryNoteReferenceDocument(const deliveryNoteNo: string; const deliveryNoteDate: TDateTime = 0);
 begin
-  if FDeliveryNoteReferencedDocument = nil then
-    FDeliveryNoteReferencedDocument := TZUGFeRDDeliveryNoteReferencedDocument.Create;
   FDeliveryNoteReferencedDocument.ID := deliveryNoteNo; //TODO memeak
   FDeliveryNoteReferencedDocument.IssueDateTime.SetValue(deliveryNoteDate);
 end;
@@ -1146,7 +1194,9 @@ begin
   Taxes.Add(tax);
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.Save(const stream: TStream; const version: TZUGFeRDVersion = TZUGFeRDVersion.Version1; const profile: TZUGFeRDProfile = TZUGFeRDProfile.Basic);
+procedure TZUGFeRDInvoiceDescriptor.Save(const stream: TStream;
+  const version: TZUGFeRDVersion = TZUGFeRDVersion.Version1;
+  const profile: TZUGFeRDProfile = TZUGFeRDProfile.Basic);
 var
   writer: TZUGFeRDInvoiceDescriptorWriter;
 begin
@@ -1229,13 +1279,25 @@ begin
   TradeLineItems.Add(item);
 end;
 
-function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const name: string; const description: string = '';
-  const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown; const unitQuantity: TZUGFeRDNullable<Double> = nil;
-  const grossUnitPrice: TZUGFeRDNullableCurrency = nil; const netUnitPrice: TZUGFeRDNullableCurrency = nil; const billedQuantity: Double = 0;
-  const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const taxPercent: Double = 0;
-  const comment: string = ''; const id: TZUGFeRDGlobalID = nil; const sellerAssignedID: string = '';
-  const buyerAssignedID: string = ''; const deliveryNoteID: string = ''; const deliveryNoteDate: TZUGFeRDNullable<TDateTime> = nil;
-  const buyerOrderID: string = ''; const buyerOrderDate: TZUGFeRDNullable<TDateTime> = nil; const billingPeriodStart: TZUGFeRDNullable<TDateTime> = nil;
+function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const name: string;
+  const description: string = '';
+  const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown;
+  const unitQuantity: TZUGFeRDNullable<Double> = nil;
+  const grossUnitPrice: TZUGFeRDNullableCurrency = nil;
+  const netUnitPrice: TZUGFeRDNullableCurrency = nil;
+  const billedQuantity: Double = 0;
+  const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown;
+  const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown;
+  const taxPercent: Double = 0;
+  const comment: string = '';
+  const id: TZUGFeRDGlobalID = nil;
+  const sellerAssignedID: string = '';
+  const buyerAssignedID: string = '';
+  const deliveryNoteID: string = '';
+  const deliveryNoteDate: TZUGFeRDNullable<TDateTime> = nil;
+  const buyerOrderID: string = '';
+  const buyerOrderDate: TZUGFeRDNullable<TDateTime> = nil;
+  const billingPeriodStart: TZUGFeRDNullable<TDateTime> = nil;
   const billingPeriodEnd: TZUGFeRDNullable<TDateTime> = nil): TZUGFeRDTradeLineItem;
 begin
   Result := AddTradeLineItem(_getNextLineId(), name, description, unitCode, unitQuantity, grossUnitPrice, netUnitPrice, billedQuantity,
@@ -1243,13 +1305,25 @@ begin
     buyerOrderID, buyerOrderDate, billingPeriodStart, billingPeriodEnd);
 end;
 
-function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const lineID: string; const name: string; const description: string = '';
-  const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown; const unitQuantity: TZUGFeRDNullable<Double> = nil;
-  const grossUnitPrice: TZUGFeRDNullableCurrency = nil; const netUnitPrice: TZUGFeRDNullableCurrency = nil; const billedQuantity: Double = 0;
-  const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const taxPercent: Double = 0;
-  const comment: string = ''; const id: TZUGFeRDGlobalID = nil; const sellerAssignedID: string = ''; const buyerAssignedID: string = '';
-  const deliveryNoteID: string = ''; const deliveryNoteDate: TZUGFeRDNullable<TDateTime> = nil; const buyerOrderID: string = '';
-  const buyerOrderDate: TZUGFeRDNullable<TDateTime> = nil; const billingPeriodStart: TZUGFeRDNullable<TDateTime> = nil;
+function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const lineID: string;
+  const name: string; const description: string = '';
+  const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown;
+  const unitQuantity: TZUGFeRDNullable<Double> = nil;
+  const grossUnitPrice: TZUGFeRDNullableCurrency = nil;
+  const netUnitPrice: TZUGFeRDNullableCurrency = nil;
+  const billedQuantity: Double = 0;
+  const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown;
+  const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown;
+  const taxPercent: Double = 0;
+  const comment: string = '';
+  const id: TZUGFeRDGlobalID = nil;
+  const sellerAssignedID: string = '';
+  const buyerAssignedID: string = '';
+  const deliveryNoteID: string = '';
+  const deliveryNoteDate: TZUGFeRDNullable<TDateTime> = nil;
+  const buyerOrderID: string = '';
+  const buyerOrderDate: TZUGFeRDNullable<TDateTime> = nil;
+  const billingPeriodStart: TZUGFeRDNullable<TDateTime> = nil;
   const billingPeriodEnd: TZUGFeRDNullable<TDateTime> = nil): TZUGFeRDTradeLineItem;
 var
   newItem: TZUGFeRDTradeLineItem;
@@ -1303,7 +1377,6 @@ end;
 procedure TZUGFeRDInvoiceDescriptor.SetPaymentMeans(paymentCode: TZUGFeRDPaymentMeansTypeCodes; const information: string = '';
   const identifikationsnummer: string = ''; const mandatsnummer: string = '');
 begin
-  Self.PaymentMeans := PaymentMeans.Create;
   Self.PaymentMeans.TypeCode := paymentCode;
   Self.PaymentMeans.Information := information;
   Self.PaymentMeans.SEPACreditorIdentifier := identifikationsnummer;
@@ -1313,7 +1386,6 @@ end;
 procedure TZUGFeRDInvoiceDescriptor.SetPaymentMeansSepaDirectDebit(const sepaCreditorIdentifier: string;
   const sepaMandateReference: string; const information: string = '');
 begin
-  Self.PaymentMeans := PaymentMeans.Create;
   Self.PaymentMeans.TypeCode := TZUGFeRDPaymentMeansTypeCodes.SEPADirectDebit;
   Self.PaymentMeans.Information := information;
   Self.PaymentMeans.SEPACreditorIdentifier := sepaCreditorIdentifier;

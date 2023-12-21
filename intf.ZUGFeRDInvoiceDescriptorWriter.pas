@@ -20,7 +20,7 @@ unit intf.ZUGFeRDInvoiceDescriptorWriter;
 interface
 
 uses
-  System.Classes, System.SysUtils, System.DateUtils
+  System.Classes, System.SysUtils, System.DateUtils, System.StrUtils
   ,intf.ZUGFeRDInvoiceDescriptor,intf.ZUGFeRDProfileAwareXmlTextWriter
   ,intf.ZUGFeRDProfile;
 
@@ -28,19 +28,19 @@ type
   TZUGFeRDInvoiceDescriptorWriter = class abstract
   public
     procedure Save(descriptor: TZUGFeRDInvoiceDescriptor; stream: TStream); overload; virtual; abstract;
-
     procedure Save(descriptor: TZUGFeRDInvoiceDescriptor; const filename: string); overload;
     function Validate(descriptor: TZUGFeRDInvoiceDescriptor; throwExceptions: Boolean = True): Boolean; virtual; abstract;
-
   protected
-    procedure WriteOptionalElementString(writer: TZUGFeRDProfileAwareXmlTextWriter; const tagName, value: string; profile: TZUGFeRDProfile = Unknown);
+    procedure WriteOptionalElementString(writer: TZUGFeRDProfileAwareXmlTextWriter; const tagName, value: string; profile: TZUGFeRDProfile = TZUGFeRDProfile.Unknown);
     function FormatDecimal(value: Currency; numDecimals: Integer = 2): string;
     function FormatDate(date: TDateTime; formatAs102: Boolean = True): string;
   end;
 
 implementation
 
-procedure TZUGFeRDInvoiceDescriptorWriter.Save(descriptor: TZUGFeRDInvoiceDescriptor; const filename: string);
+procedure TZUGFeRDInvoiceDescriptorWriter.Save(
+  descriptor: TZUGFeRDInvoiceDescriptor;
+  const filename: string);
 var
   fs: TFileStream;
 begin
@@ -50,20 +50,24 @@ begin
     try
       Save(descriptor, fs);
       //fs.Flush;
+      //fs.Close;
     finally
       fs.Free;
     end;
   end;
 end;
 
-procedure TZUGFeRDInvoiceDescriptorWriter.WriteOptionalElementString(writer: TZUGFeRDProfileAwareXmlTextWriter;
-  const tagName, value: string; profile: TZUGFeRDProfile);
+procedure TZUGFeRDInvoiceDescriptorWriter.WriteOptionalElementString(
+  writer: TZUGFeRDProfileAwareXmlTextWriter;
+  const tagName, value: string;
+  profile: TZUGFeRDProfile = TZUGFeRDProfile.Unknown);
 begin
   if not value.IsEmpty then
     writer.WriteElementString(tagName, value, profile);
 end;
 
-function TZUGFeRDInvoiceDescriptorWriter.FormatDecimal(value: Currency; numDecimals: Integer): string;
+function TZUGFeRDInvoiceDescriptorWriter.FormatDecimal(
+  value: Currency; numDecimals: Integer): string;
 var
   formatString: string;
   i: Integer;
@@ -73,6 +77,7 @@ begin
     formatString := formatString + '0';
 
   Result := FormatFloat(formatString, value);
+  Result := ReplaceText(Result,',','.');
 end;
 
 function TZUGFeRDInvoiceDescriptorWriter.FormatDate(date: TDateTime; formatAs102: Boolean): string;
@@ -80,62 +85,7 @@ begin
   if formatAs102 then
     Result := FormatDateTime('yyyymmdd', date)
   else
-    Result := FormatDateTime('yyyy-mm-dd"THH:mm:ss', date);
+    Result := FormatDateTime('yyyy-mm-ddThh:nn:ss', date);
 end;
-
- //   internal abstract class IInvoiceDescriptorWriter
-//    {
-//        public abstract void Save(InvoiceDescriptor descriptor, Stream stream);
-//
-//
-//        public void Save(InvoiceDescriptor descriptor, string filename)
-//        {
-//            if (Validate(descriptor, true))
-//            {
-//                FileStream fs = new FileStream(filename, FileMode.Create, FileAccess.Write);
-//                Save(descriptor, fs);
-//                fs.Flush();
-//                fs.Close();
-//            }
-//        } // !Save()
-//
-//
-//        internal abstract bool Validate(InvoiceDescriptor descriptor, bool throwExceptions = true);
-//
-//
-//        internal void _writeOptionalElementString(ProfileAwareXmlTextWriter writer, string tagName, string value, Profile profile = Profile.Unknown)
-//        {
-//            if (!String.IsNullOrEmpty(value))
-//            {
-//                writer.WriteElementString(tagName, value, profile);
-//            }
-//        } // !_writeOptionalElementString()
-//
-//
-//        protected string _formatDecimal(decimal value, int numDecimals = 2)
-//        {
-//            string formatString = "0.";
-//            for (int i = 0; i < numDecimals; i++)
-//            {
-//                formatString += "0";
-//            }
-//
-//            return value.ToString(formatString).Replace(",", ".");
-//        } // !_formatDecimal()
-//
-//
-//        protected string _formatDate(DateTime date, bool formatAs102 = true)
-//        {
-//            if (formatAs102)
-//            {
-//                return date.ToString("yyyyMMdd");
-//            }
-//            else
-//            {
-//                return date.ToString("yyyy-MM-ddTHH:mm:ss");
-//            }
-//        } // !_formatDate()
-//    }
-//}
 
 end.
