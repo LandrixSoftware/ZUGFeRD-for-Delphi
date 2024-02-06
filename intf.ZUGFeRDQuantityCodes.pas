@@ -238,7 +238,15 @@ type
     /// <remarks>
     /// Standard packaging unit
     /// </remarks>
-    XPK
+    XPK,
+    /// <summary>
+    /// Ar
+    /// Abkürzung: a
+    /// </summary>
+    /// <remarks>
+    /// 100 m^2
+    /// </remarks>
+    FF
   );
 
   TZUGFeRDQuantityCodesExtensions = class

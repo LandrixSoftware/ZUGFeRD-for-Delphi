@@ -75,6 +75,7 @@ begin
   Assert.AreEqual(TZUGFeRDQuantityCodes.XBD, TZUGFeRDQuantityCodesExtensions.FromString('XBD'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.T3, TZUGFeRDQuantityCodesExtensions.FromString('T3'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.XPK, TZUGFeRDQuantityCodesExtensions.FromString('XPK'));
+  Assert.AreEqual(TZUGFeRDQuantityCodes.FF, TZUGFeRDQuantityCodesExtensions.FromString('FF'));
 end;
 
 procedure TZUGFeRDQuantityCodesTest.TestEnumToString;
@@ -118,6 +119,7 @@ begin
   Assert.AreEqual('XBD', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.XBD));
   Assert.AreEqual('T3', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.T3));
   Assert.AreEqual('XPK', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.XPK));
+  Assert.AreEqual('FF', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.FF));
 end;
 
 initialization
