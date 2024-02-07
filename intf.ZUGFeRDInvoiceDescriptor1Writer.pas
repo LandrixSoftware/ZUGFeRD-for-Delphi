@@ -204,6 +204,7 @@ begin
 //            Writer.WriteEndElement(); // !ApplicableSupplyChainTradeDelivery
 //
 //            Writer.WriteStartElement("ram:ApplicableSupplyChainTradeSettlement");
+//            Writer.WriteElementString("ram:InvoiceCurrencyCode", this.Descriptor.Currency.EnumToString());
 //
 //            if (Descriptor.Profile != Profile.Basic)
 //            {
@@ -218,7 +219,6 @@ begin
 //            {
 //                _writeOptionalElementString(Writer, "ram:PaymentReference", this.Descriptor.PaymentReference);
 //            }
-//            Writer.WriteElementString("ram:InvoiceCurrencyCode", this.Descriptor.Currency.EnumToString());
 //
 //            if (this.Descriptor.CreditorBankAccounts.Count == 0 && this.Descriptor.DebitorBankAccounts.Count == 0)
 //            {

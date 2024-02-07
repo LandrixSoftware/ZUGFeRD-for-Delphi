@@ -71,7 +71,7 @@ type
   TZUGFeRDInvoiceDescriptor = class
   private
     FInvoiceNo: string;
-    FInvoiceDate: TZUGFeRDNullable<TDateTime>;
+    FInvoiceDate: TDateTime;
     FPaymentReference: string;
     FOrderNo: string;
     FOrderDate: TZUGFeRDNullable<TDateTime>;
@@ -130,7 +130,7 @@ type
     /// <summary>
     /// Invoice date
     /// </summary>
-    property InvoiceDate: TZUGFeRDNullable<TDateTime> read FInvoiceDate write FInvoiceDate;
+    property InvoiceDate: TDateTime read FInvoiceDate write FInvoiceDate;
 
     /// <summary>
     /// A textual value used to establish a link between the payment and the invoice, issued by the seller.
@@ -724,7 +724,6 @@ uses
 
 constructor TZUGFeRDInvoiceDescriptor.Create;
 begin
-  FInvoiceDate := TZUGFeRDNullable<TDateTime>.Create;
   FOrderDate := TZUGFeRDNullable<TDateTime>.Create;
   FActualDeliveryDate := TZUGFeRDNullable<TDateTime>.Create;
   FAdditionalReferencedDocuments := TObjectList<TZUGFeRDAdditionalReferencedDocument>.Create;
@@ -768,7 +767,6 @@ end;
 
 destructor TZUGFeRDInvoiceDescriptor.Destroy;
 begin
-  if Assigned(FInvoiceDate) then begin FInvoiceDate.Free; FInvoiceDate := nil; end;
   if Assigned(FOrderDate) then begin FOrderDate.Free; FOrderDate := nil; end;
   if Assigned(FActualDeliveryDate) then begin FActualDeliveryDate.Free; FActualDeliveryDate := nil; end;
   if Assigned(FAdditionalReferencedDocuments ) then begin FAdditionalReferencedDocuments.Free; FAdditionalReferencedDocuments  := nil; end;
@@ -976,7 +974,7 @@ class function TZUGFeRDInvoiceDescriptor.CreateInvoice(const invoiceNo: string; 
   currency: TZUGFeRDCurrencyCodes; const invoiceNoAsReference: string = ''): TZUGFeRDInvoiceDescriptor;
 begin
   Result := TZUGFeRDInvoiceDescriptor.Create;
-  Result.InvoiceDate.SetValue(invoiceDate);
+  Result.InvoiceDate := invoiceDate;
   Result.InvoiceNo := invoiceNo;
   Result.Currency := currency;
   Result.PaymentReference := invoiceNoAsReference;

@@ -34,17 +34,17 @@ type
     function Load(const filename: string): TZUGFeRDInvoiceDescriptor; overload;
     function IsReadableByThisReaderVersion(const filename: string): Boolean; overload;
   protected
-    function NodeAsBool(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: Boolean = True): Boolean;
-    function NodeAsString(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: string = ''): string;
-    function NodeAsInt(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: Integer = 0): Integer;
+    function _nodeAsBool(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: Boolean = False): Boolean;
+    function _nodeAsString(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: string = ''): string;
+    function _nodeAsInt(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: Integer = 0): Integer;
     /// <summary>
     ///  reads the value from given xpath and interprets the value as decimal
     /// </summary>
-    function NodeAsDecimal(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: Currency = 0): Currency;
+    function _nodeAsDecimal(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: Currency = 0): Currency;
     /// <summary>
     ///  reads the value from given xpath and interprets the value as date time
     /// </summary>
-    function NodeAsDateTime(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: TDateTime = 0): TDateTime;
+    function _nodeAsDateTime(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: TDateTime = 0): TDateTime;
     function SafeParseDateTime(const year: string = '0'; const month: string = '0'; const day: string = '0'; const hour: string = '0'; const minute: string = '0'; const second: string = '0'): TDateTime;
     function IsReadableByThisReaderVersion(stream: TStream; const validURIs: TArray<string>): Boolean; overload;
   end;
@@ -81,7 +81,7 @@ begin
   end;
 end;
 
-function TZUGFeRDInvoiceDescriptorReader.NodeAsBool(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager;}
+function TZUGFeRDInvoiceDescriptorReader._nodeAsBool(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager;}
   defaultValue: Boolean): Boolean;
 var
   value: string;
@@ -91,7 +91,7 @@ begin
   if node = nil then
     exit;
 
-  value := NodeAsString(node, xpath{, nsmgr});
+  value := _nodeAsString(node, xpath{, nsmgr});
   if value.IsEmpty then
     exit
   else
@@ -104,7 +104,7 @@ begin
   end;
 end;
 
-function TZUGFeRDInvoiceDescriptorReader.NodeAsString(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager;}
+function TZUGFeRDInvoiceDescriptorReader._nodeAsString(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager;}
   defaultValue: string): string;
 var
   _node: IXmlDomNode;
@@ -127,7 +127,7 @@ begin
   end;
 end;
 
-function TZUGFeRDInvoiceDescriptorReader.NodeAsInt(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager;}
+function TZUGFeRDInvoiceDescriptorReader._nodeAsInt(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager;}
   defaultValue: Integer): Integer;
 var
   temp: string;
@@ -137,12 +137,12 @@ begin
   if node = nil then
     exit;
 
-  temp := NodeAsString(node, xpath{, nsmgr});
+  temp := _nodeAsString(node, xpath{, nsmgr});
 
   TryStrToInt(temp, Result);
 end;
 
-function TZUGFeRDInvoiceDescriptorReader.NodeAsDecimal(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager;}
+function TZUGFeRDInvoiceDescriptorReader._nodeAsDecimal(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager;}
   defaultValue: Currency): Currency;
 var
   temp: string;
@@ -152,11 +152,11 @@ begin
   if node = nil then
     exit;
 
-  temp := NodeAsString(node, xpath{, nsmgr});
+  temp := _nodeAsString(node, xpath{, nsmgr});
   TryStrToCurr(temp, Result, FormatSettings.Invariant);
 end;
 
-function TZUGFeRDInvoiceDescriptorReader.NodeAsDateTime(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager;}
+function TZUGFeRDInvoiceDescriptorReader._nodeAsDateTime(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager;}
   defaultValue: TDateTime): TDateTime;
 var
   format, rawValue, year, month, day, hour, minute, second, week: string;
