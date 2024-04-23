@@ -38,7 +38,7 @@ type
     EanLocationCode = 0088,
 
     /// <summary>
-    /// German Leitweg-ID
+    /// Leitweg-ID
     /// </summary>
     LeitwegID = 0204,
 
@@ -215,7 +215,47 @@ type
     /// <summary>
     /// French VAT number
     /// </summary>
-    FrenchVatNumber = 9957
+    FrenchVatNumber = 9957,
+
+    /// <summary>
+    /// Belgian Crossroad Bank of Enterprises
+    /// </summary>
+    BelgianCrossroad = 9956,
+
+    /// <summary>
+    /// German Leitweg ID
+    /// </summary>
+    GermanLeitwegID = 9958,
+
+    /// <summary>
+    /// Employer Identification Number (EIN, USA)
+    /// </summary>
+    EmployerIdentificationNumber = 9959,
+
+    /// <summary>
+    /// O.F.T.P. (ODETTE File Transfer Protocol)
+    /// </summary>
+    AN = 999999,
+
+    /// <summary>
+    /// X.400 address for mail text
+    /// </summary>
+    AQ = 999998,
+
+    /// <summary>
+    /// AS2 exchange
+    /// </summary>
+    AS_ = 999997,
+
+    /// <summary>
+    /// File Transfer Protocol
+    /// </summary>
+    AU = 999996,
+
+    /// <summary>
+    /// Electronic mail
+    /// </summary>
+    EM = 999995
   );
 
   TZUGFeRDElectronicAddressSchemeIdentifiersExtensions = class
@@ -269,6 +309,14 @@ begin
     TZUGFeRDElectronicAddressSchemeIdentifiers.HolySeeVatNumber: Result := '9953';
     TZUGFeRDElectronicAddressSchemeIdentifiers.SwedishVatNumber: Result := '9955';
     TZUGFeRDElectronicAddressSchemeIdentifiers.FrenchVatNumber: Result := '9957';
+    TZUGFeRDElectronicAddressSchemeIdentifiers.BelgianCrossroad: Result := '9956';
+    TZUGFeRDElectronicAddressSchemeIdentifiers.GermanLeitwegID: Result := '9958';
+    TZUGFeRDElectronicAddressSchemeIdentifiers.EmployerIdentificationNumber: Result := '9959';
+    TZUGFeRDElectronicAddressSchemeIdentifiers.AN: Result := 'AN';
+    TZUGFeRDElectronicAddressSchemeIdentifiers.AQ: Result := 'AQ';
+    TZUGFeRDElectronicAddressSchemeIdentifiers.AS_: Result := 'AS';
+    TZUGFeRDElectronicAddressSchemeIdentifiers.AU: Result := 'AU';
+    TZUGFeRDElectronicAddressSchemeIdentifiers.EM: Result := 'EM';
   else
     Result := '0000';
   end;
@@ -351,6 +399,22 @@ begin
     Result := TZUGFeRDElectronicAddressSchemeIdentifiers.SwedishVatNumber else
   if SameText(s,'9957') then
     Result := TZUGFeRDElectronicAddressSchemeIdentifiers.FrenchVatNumber else
+  if SameText(s,'9956') then
+    Result := TZUGFeRDElectronicAddressSchemeIdentifiers.BelgianCrossroad else
+  if SameText(s,'9958') then
+    Result := TZUGFeRDElectronicAddressSchemeIdentifiers.GermanLeitwegID else
+  if SameText(s,'9959') then
+    Result := TZUGFeRDElectronicAddressSchemeIdentifiers.EmployerIdentificationNumber else
+  if SameText(s,'AN') then
+    Result := TZUGFeRDElectronicAddressSchemeIdentifiers.AN else
+  if SameText(s,'AQ') then
+    Result := TZUGFeRDElectronicAddressSchemeIdentifiers.AQ else
+  if SameText(s,'AS') then
+    Result := TZUGFeRDElectronicAddressSchemeIdentifiers.AS_ else
+  if SameText(s,'AU') then
+    Result := TZUGFeRDElectronicAddressSchemeIdentifiers.AU else
+  if SameText(s,'EM') then
+    Result := TZUGFeRDElectronicAddressSchemeIdentifiers.EM else
 
   Result := TZUGFeRDElectronicAddressSchemeIdentifiers.Unknown;
 end;

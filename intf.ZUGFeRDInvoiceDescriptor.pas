@@ -460,10 +460,10 @@ type
 
     procedure AddNote(const note: string; subjectCode: TZUGFeRDSubjectCodes = TZUGFeRDSubjectCodes.Unknown; contentCode: TZUGFeRDContentCodes = TZUGFeRDContentCodes.Unknown);
 
-    procedure SetBuyer(const name, postcode, city, street: string; country: TZUGFeRDCountryCodes; const id: string;
+    procedure SetBuyer(const name, postcode, city, street: string; country: TZUGFeRDCountryCodes; const id: string = '';
                      globalID: TZUGFeRDGlobalID = nil; const receiver: string = ''; legalOrganization: TZUGFeRDLegalOrganization = nil);
 
-    procedure SetSeller(const name, postcode, city, street: string; country: TZUGFeRDCountryCodes; const id: string;
+    procedure SetSeller(const name, postcode, city, street: string; country: TZUGFeRDCountryCodes; const id: string = '';
                      globalID: TZUGFeRDGlobalID = nil; legalOrganization: TZUGFeRDLegalOrganization = nil);
 
     procedure SetSellerContact(const name: string = ''; const orgunit: string = '';
@@ -649,7 +649,7 @@ type
     /// <param name="billingPeriodStart"></param>
     /// <param name="billingPeriodEnd"></param>
     /// <returns></returns>
-    function AddTradeLineItem(const name: string; const description: string = '';
+    function AddTradeLineItem(const name: string; const description: string;
                   const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown; const unitQuantity: TZUGFeRDNullable<Double> = nil;
                   const grossUnitPrice: TZUGFeRDNullableCurrency = nil; const netUnitPrice: TZUGFeRDNullableCurrency = nil; const billedQuantity: Double = 0;
                   const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const taxPercent: Double = 0;
@@ -662,7 +662,7 @@ type
     /// <summary>
     /// Adds a new line to the invoice. The line id is passed as a parameter.
     /// </summary>
-    function AddTradeLineItem(const lineID: string; const name: string; const description: string = '';
+    function AddTradeLineItem(const lineID: string; const name: string; const description: string;
                   const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown; const unitQuantity: TZUGFeRDNullable<Double> = nil;
                   const grossUnitPrice: TZUGFeRDNullableCurrency = nil; const netUnitPrice: TZUGFeRDNullableCurrency = nil; const billedQuantity: Double = 0;
                   const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const taxPercent: Double = 0;
@@ -727,21 +727,21 @@ begin
   FOrderDate := TZUGFeRDNullable<TDateTime>.Create;
   FActualDeliveryDate := TZUGFeRDNullable<TDateTime>.Create;
   FAdditionalReferencedDocuments := TObjectList<TZUGFeRDAdditionalReferencedDocument>.Create;
-  FDeliveryNoteReferencedDocument:= TZUGFeRDDeliveryNoteReferencedDocument.Create;
-  FContractReferencedDocument    := TZUGFeRDContractReferencedDocument.Create;
-  FSpecifiedProcuringProject     := TZUGFeRDSpecifiedProcuringProject.Create;
-  FBuyer                         := TZUGFeRDParty.Create;
-  FBuyerContact                  := TZUGFeRDContact.Create;
+  FDeliveryNoteReferencedDocument:= nil;//TZUGFeRDDeliveryNoteReferencedDocument.Create;
+  FContractReferencedDocument    := nil;//TZUGFeRDContractReferencedDocument.Create;
+  FSpecifiedProcuringProject     := nil;//TZUGFeRDSpecifiedProcuringProject.Create;
+  FBuyer                         := nil;//TZUGFeRDParty.Create;
+  FBuyerContact                  := nil;//TZUGFeRDContact.Create;
   FBuyerTaxRegistration          := TObjectList<TZUGFeRDTaxRegistration>.Create;
   FBuyerElectronicAddress        := TZUGFeRDElectronicAddress.Create;
-  FSeller                        := TZUGFeRDParty.Create;
-  FSellerContact                 := TZUGFeRDContact.Create;
+  FSeller                        := nil;//TZUGFeRDParty.Create;
+  FSellerContact                 := nil;//TZUGFeRDContact.Create;
   FSellerTaxRegistration         := TObjectList<TZUGFeRDTaxRegistration>.Create;
   FSellerElectronicAddress       := TZUGFeRDElectronicAddress.Create;
-  FInvoicee                      := TZUGFeRDParty.Create;
-  FShipTo                        := TZUGFeRDParty.Create;
-  FPayee                         := TZUGFeRDParty.Create;
-  FShipFrom                      := TZUGFeRDParty.Create;
+  FInvoicee                      := nil;//TZUGFeRDParty.Create;
+  FShipTo                        := nil;//TZUGFeRDParty.Create;
+  FPayee                         := nil;//TZUGFeRDParty.Create;
+  FShipFrom                      := nil;//TZUGFeRDParty.Create;
   FNotes                         := TObjectList<TZUGFeRDNote>.Create;
   FTradeLineItems                := TObjectList<TZUGFeRDTradeLineItem>.Create;
   FLineTotalAmount := TZUGFeRDNullableCurrency.Create;
@@ -756,13 +756,13 @@ begin
   FTaxes                         := TObjectList<TZUGFeRDTax>.Create;
   FServiceCharges                := TObjectList<TZUGFeRDServiceCharge>.Create;
   FTradeAllowanceCharges         := TObjectList<TZUGFeRDTradeAllowanceCharge>.Create;
-  FPaymentTerms                  := TZUGFeRDPaymentTerms.Create;
-  FInvoiceReferencedDocument     := TZUGFeRDInvoiceReferencedDocument.Create;
+  FPaymentTerms                  := nil;//TZUGFeRDPaymentTerms.Create;
+  FInvoiceReferencedDocument     := nil;//TZUGFeRDInvoiceReferencedDocument.Create;
   FReceivableSpecifiedTradeAccountingAccounts:= TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>.Create;
   FCreditorBankAccounts          := TObjectList<TZUGFeRDBankAccount>.Create;
   FDebitorBankAccounts           := TObjectList<TZUGFeRDBankAccount>.Create;
-  FPaymentMeans                  := TZUGFeRDPaymentMeans.Create;
-  FSellerOrderReferencedDocument := TZUGFeRDSellerOrderReferencedDocument.Create;
+  FPaymentMeans                  := nil;//TZUGFeRDPaymentMeans.Create;
+  FSellerOrderReferencedDocument := nil;//TZUGFeRDSellerOrderReferencedDocument.Create;
 end;
 
 destructor TZUGFeRDInvoiceDescriptor.Destroy;
@@ -991,8 +991,10 @@ begin
   FNotes.Add(TZUGFeRDNote.Create(note, subjectCode, contentCode));
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.SetBuyer(const name, postcode, city, street: string; country: TZUGFeRDCountryCodes; const id: string;
-  globalID: TZUGFeRDGlobalID = nil; const receiver: string = ''; legalOrganization: TZUGFeRDLegalOrganization = nil);
+procedure TZUGFeRDInvoiceDescriptor.SetBuyer(const name, postcode, city, street: string;
+  country: TZUGFeRDCountryCodes; const id: string = '';
+  globalID: TZUGFeRDGlobalID = nil; const receiver: string = '';
+  legalOrganization: TZUGFeRDLegalOrganization = nil);
 begin
   FBuyer.ID.ID := id;
   FBuyer.ID.SchemeID := TZUGFeRDGlobalIDSchemeIdentifiers.Unknown;
@@ -1008,8 +1010,10 @@ begin
   FBuyer.SpecifiedLegalOrganization := legalOrganization; //TODO Mem Leak
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.SetSeller(const name, postcode, city, street: string; country: TZUGFeRDCountryCodes; const id: string;
-  globalID: TZUGFeRDGlobalID = nil; legalOrganization: TZUGFeRDLegalOrganization = nil);
+procedure TZUGFeRDInvoiceDescriptor.SetSeller(const name, postcode, city, street: string;
+  country: TZUGFeRDCountryCodes; const id: string = '';
+  globalID: TZUGFeRDGlobalID = nil;
+  legalOrganization: TZUGFeRDLegalOrganization = nil);
 begin
   FSeller.ID.ID := id;
   FSeller.ID.SchemeID := TZUGFeRDGlobalIDSchemeIdentifiers.Unknown;
@@ -1101,7 +1105,7 @@ end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetDeliveryNoteReferenceDocument(const deliveryNoteNo: string; const deliveryNoteDate: TDateTime = 0);
 begin
-  FDeliveryNoteReferencedDocument.ID := deliveryNoteNo; //TODO memeak
+  FDeliveryNoteReferencedDocument.ID := deliveryNoteNo;
   FDeliveryNoteReferencedDocument.IssueDateTime.SetValue(deliveryNoteDate);
 end;
 
@@ -1278,7 +1282,7 @@ begin
 end;
 
 function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const name: string;
-  const description: string = '';
+  const description: string;
   const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown;
   const unitQuantity: TZUGFeRDNullable<Double> = nil;
   const grossUnitPrice: TZUGFeRDNullableCurrency = nil;
@@ -1304,7 +1308,7 @@ begin
 end;
 
 function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const lineID: string;
-  const name: string; const description: string = '';
+  const name: string; const description: string;
   const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown;
   const unitQuantity: TZUGFeRDNullable<Double> = nil;
   const grossUnitPrice: TZUGFeRDNullableCurrency = nil;
@@ -1337,6 +1341,7 @@ begin
   end;
 
   newItem := TZUGFeRDTradeLineItem.Create;
+  newItem.AssociatedDocument := TZUGFeRDAssociatedDocument.Create(lineID);
   newItem.GlobalID.Free; newItem.GlobalID := id;
   newItem.SellerAssignedID := sellerAssignedID;
   newItem.BuyerAssignedID := buyerAssignedID;
@@ -1361,10 +1366,10 @@ begin
     )
   );
 
-  if (not deliveryNoteID.IsEmpty) or (deliveryNoteDate.HasValue) then
+  if (not deliveryNoteID.IsEmpty) or ((deliveryNoteDate <> nil) and deliveryNoteDate.HasValue) then
     newItem.SetDeliveryNoteReferencedDocument(deliveryNoteID,deliveryNoteDate);
 
-  if (not buyerOrderID.IsEmpty) or (buyerOrderDate.HasValue) then
+  if (not buyerOrderID.IsEmpty) or ((buyerOrderDate <> nil) and buyerOrderDate.HasValue) then
     newItem.SetOrderReferencedDocument(buyerOrderID, buyerOrderDate);
 
   TradeLineItems.Add(newItem);

@@ -60,6 +60,7 @@ type
     procedure WriteStartDocument(standalone: Boolean); overload;
     procedure WriteEndDocument;
     procedure WriteValue(const value: string; profile: TZUGFeRDProfile = Unknown);
+    procedure WriteOptionalElementString(const tagName, value: string; profile: TZUGFeRDProfile = Unknown);
     procedure WriteElementString(const prefix, localName, ns, value: string; profile: TZUGFeRDProfile = Unknown); overload;
     procedure WriteElementString(const localName, ns, value: string; profile: TZUGFeRDProfile = Unknown); overload;
     procedure WriteElementString(const localName, value: string; profile: TZUGFeRDProfile = Unknown); overload;
@@ -188,6 +189,13 @@ begin
   if DoesProfileFitToCurrentProfile(infoForCurrentXmlLevel.Profile) and IsNodeVisible then
     //TextWriter.WriteEndElement;
 end;
+procedure TZUGFeRDProfileAwareXmlTextWriter.WriteOptionalElementString(
+  const tagName, value: string; profile: TZUGFeRDProfile);
+begin
+  if (value <> '') then
+    WriteElementString(tagName, value, profile);
+end;
+
 //
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteElementString(const prefix, localName, ns, value: string; profile: TZUGFeRDProfile = Unknown);
 //var

@@ -71,7 +71,15 @@ type
     /// Invoice format based on EU Directive 2014/55/EU, adopted to Germany in E-Invoice Law of April 4, 2017 (BGBl. I p. 770).
     /// Important note: using this profile will generate a version 1 XRechnung (as valid until 31/12/2020)
     /// </summary>
-    XRechnung1 = 64
+    XRechnung1 = 64,
+
+    /// <summary>
+    /// The e-reporting (https://www.impots.gouv.fr/e-reporting-la-transmission-de-donnees-de-transaction-ladministration)
+    /// concern companies subject to VAT in France and trading with private individuals and, more generally, non-taxable persons
+    /// (business to consumer or BtoC), with companies not established on French territory (i.e. taxable persons who do not have
+    /// an establishment, domicile or habitual residence in France).
+    /// </summary>
+    EReporting = 128
   );
 
   TZUGFeRDProfileExtensions = class
@@ -147,6 +155,9 @@ begin
      SameText(s,'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0') then
       Result := XRechnung
   else
+  if SameText(s,'urn.cpro.gouv.fr:1p0:ereporting') then
+      Result := EReporting
+  else
     Result := Unknown;
 end;
 
@@ -199,6 +210,8 @@ begin
             Result := 'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0'
           else
             Result := 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3';
+        TZUGFeRDProfile.EReporting :
+          Result := 'urn.cpro.gouv.fr:1p0:ereporting';
       else
         raise Exception.Create('Unsupported profile for ZUGFeRD version 21');
       end;

@@ -178,6 +178,7 @@ begin
     exit;
   end;
 
+  if dateNode.Attributes.getNamedItem('format') <> nil then
   if dateNode.Attributes.getNamedItem('format').text <> '' then
     format := dateNode.Attributes.getNamedItem('format').text;
 

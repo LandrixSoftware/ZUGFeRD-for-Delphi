@@ -27,7 +27,11 @@ type
   /// <summary>
   /// ISO Quantity Codes
   ///
-  /// for web reference, see e.g.
+  /// Official reference:
+  /// https://unece.org/trade/uncefact/cl-recommendations
+  /// (Rec 20)
+  ///
+  /// See ee also
   /// http://www.robert-kuhlemann.de/iso_masseinheiten.htm
   /// </summary>
   TZUGFeRDQuantityCodes = (
@@ -139,6 +143,7 @@ type
     /// Anzahl Paare
     /// Abkürzung: Pr.
     /// </summary>
+    ///[Obsolete("This enum will be removed in the next major version. Please use PR instead")]
     NPR,
     /// <summary>
     /// Prozent
@@ -150,6 +155,14 @@ type
     /// </summary>
     //[Obsolete("Does not conform to ZUGFeRD standard. Use H87 ('piece') or C62 ('one') instead")]
     PCE,
+    /// <summary>
+    /// Paar
+    /// Pair
+    /// </summary>
+    /// <remarks>
+    /// A unit of count defining the number of pairs (pair: item described by two's).
+    /// </remarks>
+    PR,
     /// <summary>
     /// Set
     /// Abkürzung: Set(s)
@@ -200,13 +213,6 @@ type
     /// </summary>
     XCT,
     /// <summary>
-    /// Paar
-    /// </summary>
-    /// <remarks>
-    /// A unit of count defining the number of pairs (pair: item described by two's).
-    /// </remarks>
-    PR,
-    /// <summary>
     /// Palette
     /// Abkürzung: Pal
     /// </summary>
@@ -246,7 +252,51 @@ type
     /// <remarks>
     /// 100 m^2
     /// </remarks>
-    FF
+    FF,
+    /// <summary>
+    /// Rolle
+    /// </summary>
+    XRO,
+    /// <summary>
+    /// Dose
+    /// </summary>
+    XTN,
+    /// <summary>
+    /// Kanister
+    /// </summary>
+    XCI,
+    /// <summary>
+    /// Tube
+    /// </summary>
+    XTU,
+    /// <summary>
+    /// Beutel
+    /// </summary>
+    XBG,
+    /// <summary>
+    /// (Papier) Bogen
+    /// </summary>
+    XST,
+    /// <summary>
+    /// Sack
+    /// </summary>
+    XSA,
+    /// <summary>
+    /// Fass
+    /// </summary>
+    XBA,
+    /// <summary>
+    /// Eimer
+    /// </summary>
+    XBJ,
+    /// <summary>
+    /// Gramm
+    /// </summary>
+    GRM,
+    /// <summary>
+    /// Kit
+    /// </summary>
+    KT
   );
 
   TZUGFeRDQuantityCodesExtensions = class

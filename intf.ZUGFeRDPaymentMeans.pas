@@ -70,7 +70,7 @@ implementation
 
 constructor TZUGFeRDPaymentMeans.Create;
 begin
-  FFinancialCard := TZUGFeRDFinancialCard.Create;
+  FFinancialCard := nil;//TZUGFeRDFinancialCard.Create;
 end;
 
 destructor TZUGFeRDPaymentMeans.Destroy;

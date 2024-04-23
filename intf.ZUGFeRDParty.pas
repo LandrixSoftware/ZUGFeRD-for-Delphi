@@ -113,7 +113,7 @@ constructor TZUGFeRDParty.Create;
 begin
   FID := TZUGFeRDGlobalID.Create;
   FGlobalID := TZUGFeRDGlobalID.Create;
-  FSpecifiedLegalOrganization := TZUGFeRDLegalOrganization.Create;
+  FSpecifiedLegalOrganization := nil;//TZUGFeRDLegalOrganization.Create;
 end;
 
 destructor TZUGFeRDParty.Destroy;

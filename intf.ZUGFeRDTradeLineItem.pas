@@ -78,7 +78,7 @@ type
     destructor Destroy; override;
 
     procedure AddAdditionalReferencedDocument(id: string;
-      date: TZUGFeRDNullable<TDateTime> = nil; code : TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown);
+      date: TDateTime = 0; code : TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown);
 
     procedure AddReceivableSpecifiedTradeAccountingAccount(
       AccountID: string); overload;
@@ -259,9 +259,9 @@ begin
   FGrossUnitPrice:= TZUGFeRDNullableCurrency.CreateWithValue(0.0);
   FAssociatedDocument:= nil;
   FActualDeliveryDate:= TZUGFeRDNullable<TDateTime>.Create;
-  FBuyerOrderReferencedDocument:= TZUGFeRDBuyerOrderReferencedDocument.Create;
-  FDeliveryNoteReferencedDocument:= TZUGFeRDDeliveryNoteReferencedDocument.Create;
-  FContractReferencedDocument:= TZUGFeRDContractReferencedDocument.Create;
+  FBuyerOrderReferencedDocument:= nil;//TZUGFeRDBuyerOrderReferencedDocument.Create;
+  FDeliveryNoteReferencedDocument:= nil;//TZUGFeRDDeliveryNoteReferencedDocument.Create;
+  FContractReferencedDocument:= nil;//TZUGFeRDContractReferencedDocument.Create;
   FAdditionalReferencedDocuments:= TObjectList<TZUGFeRDAdditionalReferencedDocument>.Create;
   FTradeAllowanceCharges:= TObjectList<TZUGFeRDTradeAllowanceCharge>.Create;
   FReceivableSpecifiedTradeAccountingAccounts:= TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>.Create;
@@ -322,20 +322,17 @@ begin
 end;
 
 procedure TZUGFeRDTradeLineItem.AddAdditionalReferencedDocument(
-  id: string; date: TZUGFeRDNullable<TDateTime> = nil;
+  id: string; date: TDateTime = 0;
   code: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown);
 begin
   FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(true));
   with FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1] do
   begin
     ID := id;
-    if date = nil then
+    if date <= 0 then
       IssueDateTime.ClearValue
     else
-    if date.HasValue then
-      IssueDateTime.SetValue(date.GetValue)
-    else
-      IssueDateTime.ClearValue;
+      IssueDateTime.SetValue(date);
     ReferenceTypeCode := code;
   end;
 end;

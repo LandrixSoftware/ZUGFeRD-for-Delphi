@@ -73,6 +73,14 @@ begin
   Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.HolySeeVatNumber, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('9953'));
   Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.SwedishVatNumber, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('9955'));
   Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.FrenchVatNumber, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('9957'));
+  Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.BelgianCrossroad, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('9956'));
+  Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.GermanLeitwegID, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('9958'));
+  Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.EmployerIdentificationNumber, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('9959'));
+  Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.AN, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('AN'));
+  Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.AQ, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('AQ'));
+  Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.AS_, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('AS'));
+  Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.AU, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('AU'));
+  Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.EM, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('EM'));
   Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.Unknown, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('Invalid'));
 end;
 
@@ -115,6 +123,14 @@ begin
   Assert.AreEqual('9953', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.HolySeeVatNumber));
   Assert.AreEqual('9955', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.SwedishVatNumber));
   Assert.AreEqual('9957', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.FrenchVatNumber));
+  Assert.AreEqual('9956', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.BelgianCrossroad));
+  Assert.AreEqual('9958', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.GermanLeitwegID));
+  Assert.AreEqual('9959', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.EmployerIdentificationNumber));
+  Assert.AreEqual('AN', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.AN));
+  Assert.AreEqual('AQ', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.AQ));
+  Assert.AreEqual('AS', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.AS_));
+  Assert.AreEqual('AU', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.AU));
+  Assert.AreEqual('EM', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.EM));
   Assert.AreEqual('0000', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.Unknown));
 end;
 
