@@ -33,7 +33,9 @@ ZUGFeRDRenderer
 ZUGFeRD-Test
 ZUGFeRDToExcel
 ZUGFeRDToExcelTest
+demodata/customer
 
+*.WinMerge
 # Delphi compiler-generated binaries (safe to delete)
 *.exe
 *.dll
