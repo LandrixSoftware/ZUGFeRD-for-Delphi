@@ -24,6 +24,7 @@ uses
   ,intf.ZUGFeRDInvoiceDescriptor
   ,intf.ZUGFeRDProfile,intf.ZUGFeRDInvoiceTypes
   ,intf.ZUGFeRDInvoiceProvider
+  ,intf.ZUGFeRDVersion
   ;
 
 type
@@ -50,26 +51,37 @@ procedure TZUGFeRD10Tests.TestReferenceComfortInvoice;
 begin
   var lFilename : String := '..\..\..\demodata\zugferd10\ZUGFeRD_1p0_COMFORT_Einfach.xml';
   var desc : TZUGFeRDInvoiceDescriptor := TZUGFeRDInvoiceDescriptor.Load(lFilename);
-
-  Assert.AreEqual(desc.Profile, TZUGFeRDProfile.Comfort);
-  Assert.AreEqual(desc.Type_, TZUGFeRDInvoiceType.Invoice);
+  try
+    Assert.AreEqual(desc.Profile, TZUGFeRDProfile.Comfort);
+    Assert.AreEqual(desc.Type_, TZUGFeRDInvoiceType.Invoice);
+  finally
+    desc.Free;
+  end;
 end;
 
 procedure TZUGFeRD10Tests.TestReferenceComfortInvoiceRabattiert;
+var
+  path : String;
+  desc : TZUGFeRDInvoiceDescriptor;
 begin
-//            string path = @"..\..\..\..\demodata\zugferd10\ZUGFeRD_1p0_COMFORT_Rabatte.xml";
-//            path = _makeSurePathIsCrossPlatformCompatible(path);
-//
-//            InvoiceDescriptor desc = InvoiceDescriptor.Load(path);
-//
-//            desc.Save("test.xml", ZUGFeRDVersion.Version1, Profile.Comfort);
-//
-//            Assert.AreEqual(desc.Profile, Profile.Comfort);
-//            Assert.AreEqual(desc.Type, InvoiceType.Invoice);
-//            Assert.AreEqual(desc.CreditorBankAccounts[0].BankName, "Hausbank München");
+  path := '..\..\..\demodata\zugferd10\ZUGFeRD_1p0_COMFORT_Rabatte.xml';
+
+  desc := TZUGFeRDInvoiceDescriptor.Load(path);
+  try
+    desc.Save('test.xml', TZUGFeRDVersion.Version1, TZUGFeRDProfile.Comfort);
+
+    Assert.AreEqual(desc.Profile, TZUGFeRDProfile.Comfort);
+    Assert.AreEqual(desc.Type_, TZUGFeRDInvoiceType.Invoice);
+    Assert.AreEqual(desc.CreditorBankAccounts[0].BankName, 'Hausbank München');
+  finally
+    desc.Free;
+  end;
 end;
 
 procedure TZUGFeRD10Tests.TestStoringInvoiceViaFile;
+var
+  path : String;
+  desc : TZUGFeRDInvoiceDescriptor;
 begin
 //            string path = "output.xml";
 //            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
@@ -80,40 +92,51 @@ begin
 end;
 
 procedure TZUGFeRD10Tests.TestStoringInvoiceViaStreams;
+var
+  path : String;
+  desc : TZUGFeRDInvoiceDescriptor;
 begin
-//            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+//    path := 'output_stream.xml';
+//    FileStream saveStream = new FileStream(path, FileMode.Create);
+//    desc.Save(saveStream, ZUGFeRDVersion.Version1, Profile.Comfort);
+//    saveStream.Close();
 //
-//            string path = "output_stream.xml";
-//            FileStream saveStream = new FileStream(path, FileMode.Create);
-//            desc.Save(saveStream, ZUGFeRDVersion.Version1, Profile.Comfort);
-//            saveStream.Close();
+//    FileStream loadStream = new FileStream(path, FileMode.Open);
+//    InvoiceDescriptor desc2 = InvoiceDescriptor.Load(loadStream);
+//    loadStream.Close();
 //
-//            FileStream loadStream = new FileStream(path, FileMode.Open);
-//            InvoiceDescriptor desc2 = InvoiceDescriptor.Load(loadStream);
-//            loadStream.Close();
-//
-//            Assert.AreEqual(desc2.Profile, Profile.Comfort);
-//            Assert.AreEqual(desc2.Type, InvoiceType.Invoice);
+//    Assert.AreEqual(desc2.Profile, Profile.Comfort);
+//    Assert.AreEqual(desc2.Type, InvoiceType.Invoice);
 //
 //
-//            // try again with a memory stream
-//            MemoryStream ms = new MemoryStream();
-//            desc.Save(ms, ZUGFeRDVersion.Version1, Profile.Comfort);
+//    // try again with a memory stream
+//    MemoryStream ms = new MemoryStream();
+//    desc.Save(ms, ZUGFeRDVersion.Version1, Profile.Comfort);
 //
-//            byte[] data = ms.ToArray();
-//            string s = System.Text.Encoding.Default.GetString(data);
-//            // TODO: Add more asserts
+//    byte[] data = ms.ToArray();
+//    string s = System.Text.Encoding.Default.GetString(data);
+//    // TODO: Add more asserts
+  finally
+    desc.Free;
+  end;
 end;
 
 procedure TZUGFeRD10Tests.TestMissingPropertiesAreNull;
+var
+  path : String;
+  invoiceDescriptor : TZUGFeRDInvoiceDescriptor;
 begin
-//            string path = @"..\..\..\..\demodata\zugferd10\ZUGFeRD_1p0_COMFORT_Einfach.xml";
-//            path = _makeSurePathIsCrossPlatformCompatible(path);
-//
-//            var invoiceDescriptor = InvoiceDescriptor.Load(path);
-//
-//            Assert.IsTrue(invoiceDescriptor.TradeLineItems.TrueForAll(x => x.BillingPeriodStart == null));
-//            Assert.IsTrue(invoiceDescriptor.TradeLineItems.TrueForAll(x => x.BillingPeriodEnd == null));
+  path := '..\..\..\demodata\zugferd10\ZUGFeRD_1p0_COMFORT_Einfach.xml';
+
+  invoiceDescriptor := TZUGFeRDInvoiceDescriptor.Load(path);
+  try
+//    Assert.IsTrue(invoiceDescriptor.TradeLineItems.TrueForAll(x => x.BillingPeriodStart == null));
+//    Assert.IsTrue(invoiceDescriptor.TradeLineItems.TrueForAll(x => x.BillingPeriodEnd == null));
+  finally
+    invoiceDescriptor.Free;
+  end;
 end;
 
 initialization

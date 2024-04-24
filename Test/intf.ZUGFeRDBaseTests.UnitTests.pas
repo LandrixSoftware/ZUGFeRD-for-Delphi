@@ -115,13 +115,13 @@ procedure TZUGFeRDBaseTests.TestGetVersion;
 var
   path : String;
 begin
-  path := '.\..\..\..\demodata\zugferd10\ZUGFeRD_1p0_COMFORT_Einfach.xml';
+  path := '..\..\..\demodata\zugferd10\ZUGFeRD_1p0_COMFORT_Einfach.xml';
   Assert.AreEqual(TZUGFeRDInvoiceDescriptor.GetVersion(path), TZUGFeRDVersion.Version1);
 
-  path := '.\..\..\..\demodata\zugferd20\zugferd_2p0_BASIC_Einfach.xml';
+  path := '..\..\..\demodata\zugferd20\zugferd_2p0_BASIC_Einfach.xml';
   Assert.AreEqual(TZUGFeRDInvoiceDescriptor.GetVersion(path), TZUGFeRDVersion.Version20);
 
-  path := '.\..\..\..\demodata\zugferd21\zugferd_2p1_BASIC_Einfach-factur-x.xml';
+  path := '..\..\..\demodata\zugferd21\zugferd_2p1_BASIC_Einfach-factur-x.xml';
   Assert.AreEqual(TZUGFeRDInvoiceDescriptor.GetVersion(path), TZUGFeRDVersion.Version21);
 end;
 
