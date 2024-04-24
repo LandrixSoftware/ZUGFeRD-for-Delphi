@@ -444,14 +444,6 @@ begin
         TZUGFeRDReferenceTypeCodesExtensions.FromString(_nodeAsString(nodes[i], 'ram:ReferenceTypeCode'))
     );
   end;
-
-  //TODO warum doppelt
-  if (tradeLineItem.SelectSingleNode('.//ram:SpecifiedSupplyChainTradeAgreement/ram:ContractReferencedDocument/ram:ID') <> nil) then
-  begin
-    Result.ContractReferencedDocument := TZUGFeRDContractReferencedDocument.Create;
-    Result.ContractReferencedDocument.ID := _nodeAsString(tradeLineItem, './/ram:SpecifiedSupplyChainTradeAgreement/ram:ContractReferencedDocument/ram:ID');
-    Result.ContractReferencedDocument.IssueDateTime.SetValue(_nodeAsDateTime(tradeLineItem, './/ram:SpecifiedSupplyChainTradeAgreement/ram:ContractReferencedDocument/ram:IssueDateTime'));
-  end;
 end;
 
 end.
