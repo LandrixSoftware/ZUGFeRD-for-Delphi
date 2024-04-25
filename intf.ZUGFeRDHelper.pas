@@ -231,8 +231,8 @@ begin
 
       Result := _Attachment <> nil;
     end;
-          leer ,achen
-    TDirectory.Delete(tmpPath);
+
+    TDirectory.Delete(tmpPath,true);
   finally
     cmd.Free;
   end;

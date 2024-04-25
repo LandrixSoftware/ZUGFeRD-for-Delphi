@@ -32,8 +32,8 @@ type
     function Validate(descriptor: TZUGFeRDInvoiceDescriptor; throwExceptions: Boolean = True): Boolean; virtual; abstract;
   protected
     procedure WriteOptionalElementString(writer: TZUGFeRDProfileAwareXmlTextWriter; const tagName, value: string; profile: TZUGFeRDProfile = TZUGFeRDProfile.Unknown);
-    function FormatDecimal(value: Currency; numDecimals: Integer = 2): string;
-    function FormatDate(date: TDateTime; formatAs102: Boolean = True): string;
+    function _formatDecimal(value: Currency; numDecimals: Integer = 2): string;
+    function _formatDate(date: TDateTime; formatAs102: Boolean = True): string;
   end;
 
 implementation
@@ -66,7 +66,7 @@ begin
     writer.WriteElementString(tagName, value, profile);
 end;
 
-function TZUGFeRDInvoiceDescriptorWriter.FormatDecimal(
+function TZUGFeRDInvoiceDescriptorWriter._formatDecimal(
   value: Currency; numDecimals: Integer): string;
 var
   formatString: string;
@@ -80,7 +80,7 @@ begin
   Result := ReplaceText(Result,',','.');
 end;
 
-function TZUGFeRDInvoiceDescriptorWriter.FormatDate(date: TDateTime; formatAs102: Boolean): string;
+function TZUGFeRDInvoiceDescriptorWriter._formatDate(date: TDateTime; formatAs102: Boolean): string;
 begin
   if formatAs102 then
     Result := FormatDateTime('yyyymmdd', date)

@@ -25,6 +25,9 @@ uses
   ,intf.ZUGFeRDProfileAwareXmlTextWriter
   ,intf.ZUGFeRDInvoiceDescriptorWriter
   ,intf.ZUGFeRDExceptions
+  ,intf.ZUGFeRDProfile
+  ,intf.ZUGFeRDHelper
+  ,intf.ZUGFeRDCurrencyCodes
   ;
 
 type
@@ -32,6 +35,7 @@ type
   private
     FWriter: TZUGFeRDProfileAwareXmlTextWriter;
     FDescriptor: TZUGFeRDInvoiceDescriptor;
+    procedure _writeOptionalAmount(writer : TZUGFeRDProfileAwareXmlTextWriter; tagName : string; value : TZUGFeRDNullable<Currency>; numDecimals : Integer = 2; forceCurrency : Boolean = false; profile : TZUGFeRDProfile = TZUGFeRDProfile.Unknown);
   public
     function Validate(descriptor: TZUGFeRDInvoiceDescriptor; throwExceptions: Boolean = True): Boolean; override;
     /// <summary>
@@ -822,14 +826,15 @@ end;
 function TZUGFeRDInvoiceDescriptor20Writer.Validate(
   descriptor: TZUGFeRDInvoiceDescriptor; throwExceptions: Boolean): Boolean;
 begin
-//            if (descriptor.Profile == Profile.BasicWL)
-//            {
-//                if (throwExceptions)
-//                {
-//                    throw new UnsupportedException("Invalid profile used for ZUGFeRD 2.0 invoice.");
-//                }
-//                return false;
-//            }
+  Result := false;
+
+  //TODO in C# enthalten, aber eigentlich falsch, deswegen auskommentiert
+  //if (descriptor.Profile = TZUGFeRDProfile.BasicWL) then
+  //if (throwExceptions) then
+  //  raise TZUGFeRDUnsupportedException.Create('Invalid profile used for ZUGFeRD 2.0 invoice.')
+  //else
+  //  exit;
+
 //
 //            if (descriptor.Profile != Profile.Extended) // check tax types, only extended profile allows tax types other than vat
 //            {
@@ -840,8 +845,22 @@ begin
 //                }
 //            }
 //
-//            return true;
+  Result := true;
+end;
 
+procedure TZUGFeRDInvoiceDescriptor20Writer._writeOptionalAmount(
+  writer: TZUGFeRDProfileAwareXmlTextWriter; tagName: string;
+  value: TZUGFeRDNullable<Currency>;
+  numDecimals: Integer; forceCurrency: Boolean; profile: TZUGFeRDProfile);
+begin
+  if (value.HasValue) then // && (value.Value != decimal.MinValue))
+  begin
+    writer.WriteStartElement(tagName,profile);
+    if forceCurrency then
+      writer.WriteAttributeString('currencyID', TZUGFeRDCurrencyCodesExtensions.EnumToString(FDescriptor.Currency));
+    writer.WriteValue(_formatDecimal(value.Value, numDecimals));
+    writer.WriteEndElement; // !tagName
+  end;
 end;
 
 end.

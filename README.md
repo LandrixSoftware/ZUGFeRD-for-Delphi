@@ -6,7 +6,7 @@ The ZUGFeRD library allows to create XML files as required by German electronic 
 The library is meant to be as simple as possible, however it is not straight forward to use as the resulting XML file contains a complete invoice in XML format. Please take a look at the ZUGFeRD-Test project to find sample creation code. This code creates the same XML file as shipped with the ZUGFeRD information package.
 
 ## License
-Subject to the Apache license http://www.apache.org/licenses/LICENSE-2.0.html
+Subject to the Apache license https://www.apache.org/licenses/LICENSE-2.0.html
 
 ## TODO
 Tests and writing support for ZUGFeRD invoices are still missing.
