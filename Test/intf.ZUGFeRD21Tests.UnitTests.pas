@@ -20,10 +20,12 @@ unit intf.ZUGFeRD21Tests.UnitTests;
 interface
 
 uses
-  DUnitX.TestFramework
+  System.SysUtils
+  ,DUnitX.TestFramework
   ,intf.ZUGFeRDInvoiceDescriptor
   ,intf.ZUGFeRDProfile,intf.ZUGFeRDInvoiceTypes
   ,intf.ZUGFeRDInvoiceProvider
+  ,intf.ZUGFeRDVersion
   ;
 
 type
@@ -120,19 +122,24 @@ type
 implementation
 
 procedure TZUGFeRD21Tests.TestReferenceBasicFacturXInvoice;
+var
+  path : String;
+  desc : TZUGFeRDInvoiceDescriptor;
 begin
-//            string path = @"..\..\..\..\demodata\zugferd21\zugferd_2p1_BASIC_Einfach-factur-x.xml";
-//            path = _makeSurePathIsCrossPlatformCompatible(path);
-//
-//            Stream s = File.Open(path, FileMode.Open);
-//            InvoiceDescriptor desc = InvoiceDescriptor.Load(s);
-//            s.Close();
-//
-//            Assert.AreEqual(desc.Profile, Profile.Basic);
-//            Assert.AreEqual(desc.Type, InvoiceType.Invoice);
-//            Assert.AreEqual(desc.InvoiceNo, "471102");
-//            Assert.AreEqual(desc.TradeLineItems.Count, 1);
-//            Assert.AreEqual(desc.LineTotalAmount, 198.0m);
+  path := '..\..\..\demodata\zugferd21\zugferd_2p1_BASIC_Einfach-factur-x.xml';
+
+  desc := TZUGFeRDInvoiceDescriptor.Load(path);
+  try
+    desc.Save(ExtractFilePath(ParamStr(0))+'test_zugferd21.xml', TZUGFeRDVersion.Version21, TZUGFeRDProfile.Basic);
+
+    Assert.AreEqual(desc.Profile, TZUGFeRDProfile.Basic);
+    Assert.AreEqual(desc.Type_, TZUGFeRDInvoiceType.Invoice);
+    Assert.AreEqual(desc.InvoiceNo, '471102');
+    //TODO Assert.AreEqual(desc.TradeLineItems.Count, 1);
+    //TODO Assert.AreEqual(desc.LineTotalAmount.Value, 198.0m);
+  finally
+    desc.Free;
+  end;
 end;
 
 procedure TZUGFeRD21Tests.TestStoringReferenceBasicFacturXInvoice;

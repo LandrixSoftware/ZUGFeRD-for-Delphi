@@ -21,13 +21,14 @@ interface
 
 uses
   System.Classes, System.SysUtils, System.Generics.Collections,
-  Xml.XMLDoc, Xml.xmldom, Xml.XMLIntf,
+  System.StrUtils,
+  Xml.xmldom,Xml.XMLDoc,Xml.XMLIntf,Xml.XMLSchema,intf.MSXML2_TLB,
   intf.ZUGFeRDProfile
   ;
 
 type
   TZUGFeRDStackInfo = record
-    Profile: TZUGFeRDProfile;
+    Profile: TZUGFeRDProfiles;
     IsVisible: Boolean;
   end;
 
@@ -37,15 +38,20 @@ type
 
   TZUGFeRDProfileAwareXmlTextWriter = class
   private
-    //TextWriter: TXmlTextWriter;
+    TextWriter: IXMLDocument;
     XmlStack: TStack<TZUGFeRDStackInfo>;
     CurrentProfile: TZUGFeRDProfile;
+
+    CurrentEncoding : TEncoding;
+    CurrentFilename : String;
+    CurrentStream : TStream;
+    XmlNodeStack: TStack<IXMLNode>;
 
     function GetFormatting: TZUGFeRDXmlFomatting;
     procedure SetFormatting(value: TZUGFeRDXmlFomatting);
 
-    function DoesProfileFitToCurrentProfile(profile: TZUGFeRDProfile): Boolean;
-    function IsNodeVisible: Boolean;
+    function _DoesProfileFitToCurrentProfile(profile: TZUGFeRDProfiles): Boolean;
+    function _IsNodeVisible: Boolean;
   public
     property Formatting: TZUGFeRDXmlFomatting read GetFormatting write SetFormatting;
 
@@ -59,17 +65,17 @@ type
     procedure WriteStartDocument; overload;
     procedure WriteStartDocument(standalone: Boolean); overload;
     procedure WriteEndDocument;
-    procedure WriteValue(const value: string; profile: TZUGFeRDProfile = Unknown);
-    procedure WriteOptionalElementString(const tagName, value: string; profile: TZUGFeRDProfile = Unknown);
-    procedure WriteElementString(const prefix, localName, ns, value: string; profile: TZUGFeRDProfile = Unknown); overload;
-    procedure WriteElementString(const localName, ns, value: string; profile: TZUGFeRDProfile = Unknown); overload;
-    procedure WriteElementString(const localName, value: string; profile: TZUGFeRDProfile = Unknown); overload;
-    procedure WriteAttributeString(const prefix, localName, ns, value: string; profile: TZUGFeRDProfile = Unknown); overload;
-    procedure WriteAttributeString(const localName, value: string; profile: TZUGFeRDProfile = Unknown); overload;
-    procedure WriteAttributeString(const localName, ns, value: string; profile: TZUGFeRDProfile = Unknown); overload;
-    procedure WriteStartElement(const prefix, localName, ns: string; profile: TZUGFeRDProfile = Unknown); overload;
-    procedure WriteStartElement(const localName: string; profile: TZUGFeRDProfile = Unknown); overload;
-    procedure WriteStartElement(const localName, ns: string; profile: TZUGFeRDProfile = Unknown); overload;
+    procedure WriteValue(const value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
+    procedure WriteOptionalElementString(const tagName, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
+    procedure WriteElementString(const prefix, localName, ns, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
+    procedure WriteElementString(const localName, ns, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
+    procedure WriteElementString(const localName, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
+    procedure WriteAttributeString(const prefix, localName, ns, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
+    procedure WriteAttributeString(const localName, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
+    procedure WriteAttributeString(const localName, ns, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
+    procedure WriteStartElement(const prefix, localName, ns: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
+    procedure WriteStartElement(const localName: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
+    procedure WriteStartElement(const localName, ns: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
   end;
 
 implementation
@@ -77,23 +83,46 @@ implementation
 constructor TZUGFeRDProfileAwareXmlTextWriter.Create(const filename: string; encoding: TEncoding; profile: TZUGFeRDProfile);
 begin
   inherited Create;
-  //TextWriter := TXmlTextWriter.Create(filename, encoding);
+  TextWriter := NewXMLDocument;
+  CurrentFilename := filename;
+  CurrentEncoding := encoding;
+  CurrentStream := nil;
+
+  TextWriter.Active := True;
+  TextWriter.Version := '1.0';
+  TextWriter.StandAlone := 'yes';
+  TextWriter.Encoding := 'UTF-8';
+  TextWriter.Options := [doNodeAutoCreate, doAttrNull];
+
   XmlStack := TStack<TZUGFeRDStackInfo>.Create;
+  XmlNodeStack := TStack<IXMLNode>.Create;
   CurrentProfile := profile;
 end;
 
 constructor TZUGFeRDProfileAwareXmlTextWriter.Create(w: TStream; encoding: TEncoding; profile: TZUGFeRDProfile);
 begin
   inherited Create;
-  //TextWriter := TXmlTextWriter.Create(w, encoding);
+  TextWriter := NewXMLDocument;
+  CurrentFilename := '';
+  CurrentEncoding := encoding;
+  CurrentStream := w;
+
+  TextWriter.Active := True;
+  TextWriter.Version := '1.0';
+  TextWriter.StandAlone := 'yes';
+  TextWriter.Encoding := 'UTF-8';
+  TextWriter.Options := [doNodeAutoCreate, doAttrNull];
+
   XmlStack := TStack<TZUGFeRDStackInfo>.Create;
+  XmlNodeStack := TStack<IXMLNode>.Create;
   CurrentProfile := profile;
 end;
 
 destructor TZUGFeRDProfileAwareXmlTextWriter.Destroy;
 begin
-  //if Assigned(TextWriter) then begin TextWriter.Free; TextWriter := nil; end;
+  TextWriter := nil;
   if Assigned(XmlStack) then begin XmlStack.Free; XmlStack := nil; end;
+  if Assigned(XmlNodeStack) then begin XmlNodeStack.Free; XmlNodeStack := nil; end;
   inherited;
 end;
 
@@ -104,81 +133,73 @@ end;
 
 procedure TZUGFeRDProfileAwareXmlTextWriter.Flush;
 begin
-//  TextWriter.Flush;
+  if CurrentFilename <> '' then
+  begin
+    if not System.SysUtils.DirectoryExists(ExtractFilePath(CurrentFilename)) then
+      exit;
+    TextWriter.SaveToFile(CurrentFilename);
+  end else
+  if (CurrentStream <> nil) then
+  begin
+    TextWriter.SaveToStream(CurrentStream);
+  end;
 end;
 
 function TZUGFeRDProfileAwareXmlTextWriter.GetFormatting: TZUGFeRDXmlFomatting;
 begin
-  //Result := TextWriter.Formatting;
+  if (doNodeAutoIndent in TXMLDocument(TextWriter).Options) then
+    Result := TZUGFeRDXmlFomatting.xmlFormatting_Indented
+  else
+    Result := TZUGFeRDXmlFomatting.xmlFormatting_None;
 end;
 
 procedure TZUGFeRDProfileAwareXmlTextWriter.SetFormatting(value: TZUGFeRDXmlFomatting);
 begin
-  //TextWriter.Formatting := value;
+  case value of
+    xmlFormatting_None: TXMLDocument(TextWriter).Options := TXMLDocument(TextWriter).Options - [doNodeAutoIndent];
+    xmlFormatting_Indented: TXMLDocument(TextWriter).Options := TXMLDocument(TextWriter).Options + [doNodeAutoIndent];
+  end;
 end;
 
-procedure TZUGFeRDProfileAwareXmlTextWriter.WriteStartElement(const prefix, localName, ns: string; profile: TZUGFeRDProfile = Unknown);
-//var
-//  _profile: TZUGFeRDProfile;
-//  info: TStackInfo;
+procedure TZUGFeRDProfileAwareXmlTextWriter.WriteStartElement(const prefix, localName, ns: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
+var
+  _profile: TZUGFeRDProfiles;
+  info: TZUGFeRDStackInfo;
+  xmlNode : IXMLNode;
 begin
-//  _profile := profile;
-//  if profile = Unknown then
-//    _profile := CurrentProfile;
-//
-//  if not _IsNodeVisible or not _DoesProfileFitToCurrentProfile(_profile) then
-//  begin
-//    info.Profile := _profile;
-//    info.IsVisible := False;
-//    XmlStack.Push(info);
-//    Exit;
-//  end;
-//
-//  info.Profile := _profile;
-//  info.IsVisible := True;
-//  XmlStack.Push(info);
-//
-//  if not string.IsNullOrEmpty(prefix) then
-//    TextWriter.WriteStartElement(prefix, localName, ns)
-//  else if not string.IsNullOrEmpty(ns) then
-//    TextWriter.WriteStartElement(localName, ns)
-//  else
-//    TextWriter.WriteStartElement(localName);
+  _profile := profile;
+  if profile = TZUGFERDPROFILES_DEFAULT then
+    _profile := [CurrentProfile];
 
+  if (not _IsNodeVisible) or (not _DoesProfileFitToCurrentProfile(_profile)) then
+  begin
+    info.Profile := _profile;
+    info.IsVisible := false;
+    XmlStack.Push(info);
+    exit;
+  end;
 
-//        public void WriteStartElement(string prefix, string localName, string ns, Profile profile = Profile.Unknown)
-//        {
-//            Profile _profile = profile;
-//            if (profile == Profile.Unknown)
-//            {
-//                _profile = this.CurrentProfile;
-//            }
-//
-//            if (!_IsNodeVisible() || !_DoesProfileFitToCurrentProfile(_profile))
-//            {
-//                this.XmlStack.Push(new StackInfo() { Profile = _profile, IsVisible = false });
-//                return;
-//            }
-//            else
-//            {
-//                this.XmlStack.Push(new StackInfo() { Profile = _profile, IsVisible = true });
-//            }
-//
-//            // write value
-//            if (!String.IsNullOrEmpty(prefix))
-//            {
-//                this.TextWriter?.WriteStartElement(prefix, localName, ns);
-//            }
-//            else if (!String.IsNullOrEmpty(ns))
-//            {
-//                this.TextWriter?.WriteStartElement(localName, ns);
-//            }
-//            else
-//            {
-//                this.TextWriter?.WriteStartElement(localName);
-//            }
-//        } // !WriteStartElement()
+  info.Profile := _profile;
+  info.IsVisible := True;
+  XmlStack.Push(info);
 
+  // write value
+  //TODO  if (!String.IsNullOrWhiteSpace(prefix))
+  //  {
+  //      this.TextWriter?.WriteStartElement(prefix, localName, ns);
+  //  }
+  //  else if (!String.IsNullOrWhiteSpace(ns))
+  //  {
+  //      this.TextWriter?.WriteStartElement(localName, ns);
+  //  }
+  //  else
+  begin
+    if XMLNodeStack.Count = 0 then
+      xmlNode := TextWriter.AddChild(localName)
+    else
+      xmlNode := XMLNodeStack.Peek.AddChild(localName);
+    XmlNodeStack.Push(xmlNode);
+  end;
 end;
 
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteEndElement;
@@ -186,199 +207,143 @@ var
   infoForCurrentXmlLevel: TZUGFeRDStackInfo;
 begin
   infoForCurrentXmlLevel := XmlStack.Pop;
-  if DoesProfileFitToCurrentProfile(infoForCurrentXmlLevel.Profile) and IsNodeVisible then
-    //TextWriter.WriteEndElement;
+  if (_DoesProfileFitToCurrentProfile(infoForCurrentXmlLevel.Profile) and _IsNodeVisible()) then
+  begin
+    XmlNodeStack.Pop;
+  end;
 end;
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteOptionalElementString(
-  const tagName, value: string; profile: TZUGFeRDProfile);
+  const tagName, value: string; profile: TZUGFeRDProfiles);
 begin
   if (value <> '') then
     WriteElementString(tagName, value, profile);
 end;
 
-//
-procedure TZUGFeRDProfileAwareXmlTextWriter.WriteElementString(const prefix, localName, ns, value: string; profile: TZUGFeRDProfile = Unknown);
-//var
-//  _profile: TZUGFeRDProfile;
+procedure TZUGFeRDProfileAwareXmlTextWriter.WriteElementString(const prefix, localName, ns, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
+var
+  _profile: TZUGFeRDProfiles;
 begin
-//  _profile := profile;
-//  if profile = Unknown then
-//    _profile := CurrentProfile;
-//
-//  if not _IsNodeVisible or not _DoesProfileFitToCurrentProfile(_profile) then
-//    Exit;
-//
-//  if not string.IsNullOrEmpty(prefix) then
-//    TextWriter.WriteElementString(prefix, localName, ns, value)
-//  else if not string.IsNullOrEmpty(ns) then
-//    TextWriter.WriteElementString(localName, ns, value)
-//  else
-//    TextWriter.WriteElementString(localName, value);
+  _profile := profile;
+  if profile = TZUGFERDPROFILES_DEFAULT then
+    _profile := [CurrentProfile];
 
+  if (not _IsNodeVisible) or (not _DoesProfileFitToCurrentProfile(_profile)) then
+    exit;
 
-//        public void WriteElementString(string prefix, string localName, string ns, string value, Profile profile = Profile.Unknown)
-//        {
-//            Profile _profile = profile;
-//            if (profile == Profile.Unknown)
-//            {
-//                _profile = this.CurrentProfile;
-//            }
-//
-//            if (!_IsNodeVisible() || !_DoesProfileFitToCurrentProfile(_profile))
-//            {
-//                return;
-//            }
-//
-//            // write value
-//            if (!String.IsNullOrEmpty(prefix))
-//            {
-//                this.TextWriter?.WriteElementString(prefix, localName, ns, value);
-//            }
-//            else if (!String.IsNullOrEmpty(ns))
-//            {
-//                this.TextWriter?.WriteElementString(localName, ns, value);
-//            }
-//            else
-//            {
-//                this.TextWriter?.WriteElementString(localName, value);
-//            }
-//        } // !WriteElementString()
-
+  XMLNodeStack.Peek.AddChild(localName).Text := value;
 end;
 
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteStartDocument;
 begin
-//  TextWriter.WriteStartDocument;
+//  XmlStack.Push(TextWriter.DocumentElement);
 end;
 
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteStartDocument(standalone: Boolean);
 begin
+//  XmlStack.Push(TextWriter.DocumentElement);
 //  TextWriter.WriteStartDocument(standalone);
 end;
 
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteEndDocument;
 begin
-//  TextWriter.WriteEndDocument;
+//  XmlStack.Pop;
 end;
 
-procedure TZUGFeRDProfileAwareXmlTextWriter.WriteAttributeString(const prefix, localName, ns, value: string; profile: TZUGFeRDProfile = Unknown);
-//var
-//  infoForCurrentNode: TStackInfo;
-begin
-//  infoForCurrentNode := XmlStack.First;
-//  if not infoForCurrentNode.IsVisible then
-//    Exit;
-//
-//  if profile <> Unknown then
-//  begin
-//    if (profile and CurrentProfile) <> CurrentProfile then
-//      Exit;
-//  end;
-//
-//  if not string.IsNullOrEmpty(prefix) then
-//    TextWriter.WriteAttributeString(prefix, localName, ns, value)
-//  else if not string.IsNullOrEmpty(ns) then
-//    TextWriter.WriteAttributeString(localName, ns, value)
-//  else
-//    TextWriter.WriteAttributeString(localName, value);
-
-//        public void WriteAttributeString(string prefix, string localName, string ns, string value, Profile profile = Profile.Unknown)
-//        {
-//            StackInfo infoForCurrentNode = this.XmlStack.First();
-//            if (!infoForCurrentNode.IsVisible)
-//            {
-//                return;
-//            }
-//
-//            if (profile != Profile.Unknown)
-//            {
-//                Profile bitmask = profile & this.CurrentProfile;
-//                if (bitmask != this.CurrentProfile)
-//                {
-//                    return;
-//                }
-//            }
-//
-//            // write value
-//            if (!String.IsNullOrEmpty(prefix))
-//            {
-//                this.TextWriter?.WriteAttributeString(prefix, localName, ns, value);
-//            }
-//            else if (!String.IsNullOrEmpty(ns))
-//            {
-//                this.TextWriter?.WriteAttributeString(localName, ns, value);
-//            }
-//            else
-//            {
-//                this.TextWriter?.WriteAttributeString(localName, value);
-//            }
-//        } // !WriteAttributeString()
-end;
-
-procedure TZUGFeRDProfileAwareXmlTextWriter.WriteValue(const value: string; profile: TZUGFeRDProfile = Unknown);
-//var
-//  infoForCurrentNode: TStackInfo;
-begin
-//  infoForCurrentNode := XmlStack.First;
-//  if not infoForCurrentNode.IsVisible then
-//    Exit;
-//
-//  TextWriter.WriteValue(value);
-end;
-
-function TZUGFeRDProfileAwareXmlTextWriter.DoesProfileFitToCurrentProfile(profile: TZUGFeRDProfile): Boolean;
+procedure TZUGFeRDProfileAwareXmlTextWriter.WriteAttributeString(const prefix, localName, ns, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
 var
-  maskedProfile: TZUGFeRDProfile;
+  currentNode : IXMLNode;
+  infoForCurrentNode: TZUGFeRDStackInfo;
 begin
-//  if profile <> Unknown then
-//  begin
-//    maskedProfile := profile and CurrentProfile;
-//    if maskedProfile <> CurrentProfile then
-//      Exit(False);
-//  end;
-//
-//  Result := True;
+  infoForCurrentNode := XmlStack.Peek;
+
+  if not infoForCurrentNode.IsVisible then
+    exit;
+
+  if not _DoesProfileFitToCurrentProfile(profile) then
+    exit;
+
+  currentNode := XmlNodeStack.Peek;
+  if currentNode = nil then
+    exit;
+  currentNode.SetAttributeNS(IfThen(prefix<>'',prefix+':','')+ localName,'',value);
 end;
 
-function TZUGFeRDProfileAwareXmlTextWriter.IsNodeVisible: Boolean;
-//var
-//  stackInfo: TStackInfo;
+procedure TZUGFeRDProfileAwareXmlTextWriter.WriteValue(const value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
+var
+  infoForCurrentNode: TZUGFeRDStackInfo;
 begin
-//  for stackInfo in XmlStack do
-//  begin
-//    if not stackInfo.IsVisible then
-//      Exit(False);
-//  end;
-//
-//  Result := True;
+  infoForCurrentNode := XmlStack.Peek;
+  if not infoForCurrentNode.IsVisible then
+    exit;
+
+  XmlNodeStack.Peek.Text := value;
 end;
 
-procedure TZUGFeRDProfileAwareXmlTextWriter.WriteElementString(const localName, ns, value: string; profile: TZUGFeRDProfile = Unknown);
+function TZUGFeRDProfileAwareXmlTextWriter._DoesProfileFitToCurrentProfile(
+  profile: TZUGFeRDProfiles): Boolean;
+var
+  maskedProfile: Integer;
+  i : TZUGFeRDProfile;
+begin
+  Result := false;
+
+  if profile = TZUGFERDPROFILES_DEFAULT then
+    exit;
+
+  for i := Low(TZUGFeRDProfile) to High(TZUGFeRDProfile) do
+  begin
+    if i = TZUGFeRDProfile.Unknown then
+      continue;
+    if not (i in profile) then
+      continue;
+    maskedProfile := Integer(i) and Integer(CurrentProfile);
+    if maskedProfile = Integer(CurrentProfile) then
+    begin
+      Result := True;
+      exit;
+    end;
+  end;
+end;
+
+function TZUGFeRDProfileAwareXmlTextWriter._IsNodeVisible: Boolean;
+var
+  stackInfo: TZUGFeRDStackInfo;
+begin
+  Result := false;
+  for stackInfo in XmlStack do
+  begin
+    if not stackInfo.IsVisible then
+      exit;
+  end;
+  Result := True;
+end;
+
+procedure TZUGFeRDProfileAwareXmlTextWriter.WriteElementString(const localName, ns, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
 begin
   WriteElementString('', localName, ns, value, profile);
 end;
 
-procedure TZUGFeRDProfileAwareXmlTextWriter.WriteElementString(const localName, value: string; profile: TZUGFeRDProfile = Unknown);
+procedure TZUGFeRDProfileAwareXmlTextWriter.WriteElementString(const localName, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
 begin
   WriteElementString('', localName, '', value, profile);
 end;
 
-procedure TZUGFeRDProfileAwareXmlTextWriter.WriteAttributeString(const localName, value: string; profile: TZUGFeRDProfile = Unknown);
+procedure TZUGFeRDProfileAwareXmlTextWriter.WriteAttributeString(const localName, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
 begin
   WriteAttributeString('', localName, '', value, profile);
 end;
 
-procedure TZUGFeRDProfileAwareXmlTextWriter.WriteAttributeString(const localName, ns, value: string; profile: TZUGFeRDProfile = Unknown);
+procedure TZUGFeRDProfileAwareXmlTextWriter.WriteAttributeString(const localName, ns, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
 begin
   WriteAttributeString('', localName, ns, value, profile);
 end;
 
-procedure TZUGFeRDProfileAwareXmlTextWriter.WriteStartElement(const localName: string; profile: TZUGFeRDProfile = Unknown);
+procedure TZUGFeRDProfileAwareXmlTextWriter.WriteStartElement(const localName: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
 begin
   WriteStartElement('', localName, '', profile);
 end;
 
-procedure TZUGFeRDProfileAwareXmlTextWriter.WriteStartElement(const localName, ns: string; profile: TZUGFeRDProfile = Unknown);
+procedure TZUGFeRDProfileAwareXmlTextWriter.WriteStartElement(const localName, ns: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
 begin
   WriteStartElement('', localName, ns, profile);
 end;

@@ -30,8 +30,8 @@ type
     procedure Save(descriptor: TZUGFeRDInvoiceDescriptor; stream: TStream); overload; virtual; abstract;
     procedure Save(descriptor: TZUGFeRDInvoiceDescriptor; const filename: string); overload;
     function Validate(descriptor: TZUGFeRDInvoiceDescriptor; throwExceptions: Boolean = True): Boolean; virtual; abstract;
-  protected
-    procedure WriteOptionalElementString(writer: TZUGFeRDProfileAwareXmlTextWriter; const tagName, value: string; profile: TZUGFeRDProfile = TZUGFeRDProfile.Unknown);
+  public
+    procedure WriteOptionalElementString(writer: TZUGFeRDProfileAwareXmlTextWriter; const tagName, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
     function _formatDecimal(value: Currency; numDecimals: Integer = 2): string;
     function _formatDate(date: TDateTime; formatAs102: Boolean = True): string;
   end;
@@ -60,7 +60,7 @@ end;
 procedure TZUGFeRDInvoiceDescriptorWriter.WriteOptionalElementString(
   writer: TZUGFeRDProfileAwareXmlTextWriter;
   const tagName, value: string;
-  profile: TZUGFeRDProfile = TZUGFeRDProfile.Unknown);
+  profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
 begin
   if not value.IsEmpty then
     writer.WriteElementString(tagName, value, profile);

@@ -29,7 +29,7 @@ type
     /// <summary>
     /// Fallback value
     /// </summary>
-    Unknown = 65536,
+    Unknown = 0,
 
     /// <summary>
     /// Contains core line
@@ -82,11 +82,16 @@ type
     EReporting = 128
   );
 
+  TZUGFeRDProfiles = set of TZUGFeRDProfile;
+
   TZUGFeRDProfileExtensions = class
   public
     class function FromString(const s: string): TZUGFeRDProfile; static;
     class function EnumToString(profile: TZUGFeRDProfile; version: TZUGFeRDVersion): string; static;
   end;
+
+const
+  TZUGFERDPROFILES_DEFAULT = [TZUGFeRDProfile.Unknown];
 
 implementation
 
