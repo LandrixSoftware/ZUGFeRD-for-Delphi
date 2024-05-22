@@ -41,7 +41,6 @@ uses
   ,intf.ZUGFeRDTaxRegistrationSchemeID
   ,intf.ZUGFeRDTax
   ,intf.ZUGFeRDTaxTypes
-
   ,intf.ZUGFeRDTaxCategoryCodes
   ,intf.ZUGFeRDTradeLineItem
   ,intf.ZUGFeRDAdditionalReferencedDocument
@@ -63,12 +62,10 @@ type
     procedure _writeNotes(_writer : TZUGFeRDProfileAwareXmlTextWriter; notes : TObjectList<TZUGFeRDNote>);
     procedure _writeOptionalContact(_writer: TZUGFeRDProfileAwareXmlTextWriter; contactTag: String; contact: TZUGFeRDContact);
     procedure _writeOptionalParty(_writer: TZUGFeRDProfileAwareXmlTextWriter; PartyTag: String; Party: TZUGFeRDParty; Contact: TZUGFeRDContact = nil; TaxRegistrations: TObjectList<TZUGFeRDTaxRegistration> = nil);
+    procedure _writeOptionalTaxes(_writer: TZUGFeRDProfileAwareXmlTextWriter);
+    procedure _writeElementWithAttribute(_writer: TZUGFeRDProfileAwareXmlTextWriter; tagName, attributeName,attributeValue, nodeValue: String);
     function _translateInvoiceType(type_ : TZUGFeRDInvoiceType) : String;
     function _encodeInvoiceType(type_ : TZUGFeRDInvoiceType) : Integer;
-    procedure _writeOptionalTaxes(_writer: TZUGFeRDProfileAwareXmlTextWriter);
-    procedure _writeElementWithAttribute(
-      _writer: TZUGFeRDProfileAwareXmlTextWriter; tagName, attributeName,
-      attributeValue, nodeValue: String);
   public
     function Validate(_descriptor: TZUGFeRDInvoiceDescriptor; _throwExceptions: Boolean = True): Boolean; override;
     /// <summary>

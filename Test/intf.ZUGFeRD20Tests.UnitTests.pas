@@ -20,12 +20,13 @@ unit intf.ZUGFeRD20Tests.UnitTests;
 interface
 
 uses
-  System.SysUtils
+  System.SysUtils,System.Classes
   ,DUnitX.TestFramework
   ,intf.ZUGFeRDInvoiceDescriptor
   ,intf.ZUGFeRDProfile,intf.ZUGFeRDInvoiceTypes
   ,intf.ZUGFeRDInvoiceProvider
   ,intf.ZUGFeRDVersion
+  ,intf.ZUGFeRDCurrencyCodes
   ;
 
 type
@@ -62,7 +63,7 @@ type
 
 implementation
 
-{ TZUGFeRD10Tests }
+{ TZUGFeRD20Tests }
 
 procedure TZUGFeRD20Tests.TestReferenceBasicInvoice;
 var
@@ -73,42 +74,48 @@ begin
 
   desc := TZUGFeRDInvoiceDescriptor.Load(path);
   try
-    desc.Save(ExtractFilePath(ParamStr(0))+'test_zugferd20.xml', TZUGFeRDVersion.Version20, TZUGFeRDProfile.Basic);
+    //desc.Save(ExtractFilePath(ParamStr(0))+'test_zugferd20.xml', TZUGFeRDVersion.Version20, TZUGFeRDProfile.Basic);
 
     Assert.AreEqual(desc.Profile, TZUGFeRDProfile.Basic);
     Assert.AreEqual(desc.Type_, TZUGFeRDInvoiceType.Invoice);
     Assert.AreEqual(desc.InvoiceNo, '471102');
-    //TODO Assert.AreEqual(desc.TradeLineItems.Count, 1);
-    //TODO Assert.AreEqual(desc.LineTotalAmount.Value, 198.0m);
+    Assert.AreEqual(Int64(desc.TradeLineItems.Count), Int64(1));
+    Assert.AreEqual(desc.LineTotalAmount.Value, Currency(198.00));
   finally
     desc.Free;
   end;
 end;
 
 procedure TZUGFeRD20Tests.TestReferenceExtendedInvoice;
+var
+  path : String;
+  desc : TZUGFeRDInvoiceDescriptor;
 begin
-//      string path = @"..\..\..\..\demodata\zugferd20\zugferd_2p0_EXTENDED_Warenrechnung.xml";
-//      path = _makeSurePathIsCrossPlatformCompatible(path);
-//
-//      Stream s = File.Open(path, FileMode.Open);
-//      InvoiceDescriptor desc = InvoiceDescriptor.Load(s);
-//      s.Close();
-//
-//      Assert.AreEqual(desc.Profile, Profile.Extended);
-//      Assert.AreEqual(desc.Type, InvoiceType.Invoice);
-//      Assert.AreEqual(desc.InvoiceNo, "R87654321012345");
-//      Assert.AreEqual(desc.TradeLineItems.Count, 6);
-//      Assert.AreEqual(desc.LineTotalAmount, 457.20m);
+  path := '..\..\..\demodata\zugferd20\zugferd_2p0_EXTENDED_Warenrechnung.xml';
+
+  desc := TZUGFeRDInvoiceDescriptor.Load(path);
+  try
+    //desc.Save(ExtractFilePath(ParamStr(0))+'test_zugferd20.xml', TZUGFeRDVersion.Version20, TZUGFeRDProfile.Basic);
+
+    Assert.AreEqual(desc.Profile, TZUGFeRDProfile.Extended);
+    Assert.AreEqual(desc.Type_, TZUGFeRDInvoiceType.Invoice);
+    Assert.AreEqual(desc.InvoiceNo, 'R87654321012345');
+    Assert.AreEqual(Int64(desc.TradeLineItems.Count), Int64(6));
+    Assert.AreEqual(desc.LineTotalAmount.Value, Currency(457.20));
+
+  finally
+    desc.Free;
+  end;
 end;
 
 procedure TZUGFeRD20Tests.TestStoringSepaPreNotification;
 begin
-//      var d = new InvoiceDescriptor();
-//      d.Type = InvoiceType.Invoice;
-//      d.InvoiceNo = "471102";
-//      d.Currency = CurrencyCodes.EUR;
-//      d.InvoiceDate = new DateTime(2018, 3, 5);
-//      d.AddTradeLineItem(
+  var d := TZUGFeRDInvoiceDescriptor.Create;
+  d.Type_ := TZUGFeRDInvoiceType.Invoice;
+  d.InvoiceNo := '471102';
+  d.Currency := TZUGFeRDCurrencyCodes.EUR;
+  d.InvoiceDate := EncodeDate(2018, 3, 5);
+//  d.AddTradeLineItem(
 //          lineID: "1",
 //          id: new GlobalID(GlobalIDSchemeIdentifiers.EAN, "4012345001235"),
 //          sellerAssignedID: "TB100A4",
@@ -166,7 +173,7 @@ begin
 //          529.87m,
 //          0.00m,
 //          529.87m);
-//      d.SellerTaxRegistration.Add(new TaxRegistration
+//   d.SellerTaxRegistration.Add(new TaxRegistration
 //      {
 //        SchemeID = TaxRegistrationSchemeID.FC,
 //        No = "201/113/40209"
@@ -187,17 +194,27 @@ begin
 //          TaxTypes.VAT,
 //          TaxCategoryCodes.S);
 //
+  var stream : TMemoryStream := TMemoryStream.Create;
+  try
+    d.Save(stream,TZUGFeRDVersion.Version20,TZUGFeRDProfile.Comfort);
+
+    stream.Position := 0;
+
+    var d2 : TZUGFeRDInvoiceDescriptor := TZUGFeRDInvoiceDescriptor.Load(stream);
+    Assert.AreEqual('DE98ZZZ09999999999', d2.PaymentMeans.SEPACreditorIdentifier);
+    Assert.AreEqual('REF A-123', d2.PaymentMeans.SEPAMandateReference);
+    Assert.AreEqual(Int64(1), Int64(d2.DebitorBankAccounts.Count));
+    if d2.DebitorBankAccounts.Count = 1 then
+    Assert.AreEqual('DE21860000000086001055', d2.DebitorBankAccounts[0].IBAN);
+  finally
+    stream.Free;
+  end;
 //      using (var stream = new MemoryStream())
 //      {
 //        d.Save(stream, ZUGFeRDVersion.Version20, Profile.Comfort);
 //
 //        stream.Seek(0, SeekOrigin.Begin);
 //
-//        var d2 = InvoiceDescriptor.Load(stream);
-//        Assert.AreEqual("DE98ZZZ09999999999", d2.PaymentMeans.SEPACreditorIdentifier);
-//        Assert.AreEqual("REF A-123", d2.PaymentMeans.SEPAMandateReference);
-//        Assert.AreEqual(1, d2.DebitorBankAccounts.Count);
-//        Assert.AreEqual("DE21860000000086001055", d2.DebitorBankAccounts[0].IBAN);
 //      }
 end;
 

@@ -23,6 +23,7 @@ uses
   Winapi.Windows, Winapi.Messages
   ,System.SysUtils,System.Classes,System.Types,System.DateUtils,System.Rtti
   ,System.Variants,System.IOUtils,System.Win.COMObj
+  ,System.NetEncoding
   ;
 
 type
@@ -63,6 +64,7 @@ type
   TZUGFeRDHelper = class(TObject)
   public
     class function CreateUuid : String;
+    class function GetDataAsBase64(_Stream : TStream) : String;
   end;
 
   IZUGFeRDPdfHelper = interface
@@ -344,6 +346,33 @@ begin
   Result := TGUID.NewGuid.ToString;
   Delete(Result,1,1);
   Delete(Result,Length(Result),1);
+end;
+
+class function TZUGFeRDHelper.GetDataAsBase64(_Stream: TStream): String;
+var
+  str : TMemoryStream;
+  base64 : System.NetEncoding.TBase64Encoding;
+  internalResult : AnsiString;
+begin
+  Result := '';
+  _Stream.Seek(0,soFromBeginning);
+  if _Stream.Size = 0 then
+    exit;
+  str := TMemoryStream.Create;
+  base64 := System.NetEncoding.TBase64Encoding.Create(0); // CharsPerLine = 0 means no line breaks
+  try
+    base64.Encode(_Stream,str);
+    str.Seek(0,soFromBeginning);
+    if str.Size = 0 then
+      exit;
+    SetLength(internalResult,str.Size);
+    str.Read(internalResult[1],str.Size);
+    Result := String(internalResult);
+  finally
+    _Stream.Seek(0,soFromBeginning);
+    base64.Free;
+    str.Free;
+  end;
 end;
 
 end.
