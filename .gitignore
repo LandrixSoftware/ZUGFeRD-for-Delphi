@@ -34,6 +34,8 @@ ZUGFeRD-Test
 ZUGFeRDToExcel
 ZUGFeRDToExcelTest
 demodata/customer
+Distribution/java
+Distribution/mustangproject
 
 *.WinMerge
 # Delphi compiler-generated binaries (safe to delete)
