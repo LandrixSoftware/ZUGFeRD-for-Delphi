@@ -20,7 +20,7 @@ unit intf.ZUGFeRDTax;
 interface
 
 uses
-  System.SysUtils,
+  System.SysUtils,System.Math,
   intf.ZUGFeRDTaxTypes,
   intf.ZUGFeRDTaxCategoryCodes,
   intf.ZUGFeRDTaxExemptionReasonCodes;
@@ -84,7 +84,8 @@ implementation
 
 function TZUGFeRDTax.GetTaxAmount: Currency;
 begin
-  Result := 0.01 * FPercent * FBasisAmount;
+  //TODO pruefen System.Math.Round(0.01m * this.Percent * this.BasisAmount, 2, MidpointRounding.AwayFromZero);
+  Result := RoundTo(0.01 * FPercent * FBasisAmount,-2);
 end;
 
 end.

@@ -80,7 +80,8 @@ uses
   intf.ZUGFeRDInvoiceDescriptorReader,intf.ZUGFeRDInvoiceDescriptorWriter,
   intf.ZUGFeRDInvoiceDescriptor1Reader,intf.ZUGFeRDInvoiceDescriptor1Writer,intf.ZUGFeRD10Tests.UnitTests,
   intf.ZUGFeRDInvoiceDescriptor20Reader,intf.ZUGFeRDInvoiceDescriptor20Writer,intf.ZUGFeRD20Tests.UnitTests,
-  intf.ZUGFeRDInvoiceDescriptor21Reader,intf.ZUGFeRDInvoiceDescriptor21Writer,intf.ZUGFeRD21Tests.UnitTests,
+  intf.ZUGFeRDInvoiceDescriptor22Reader,intf.ZUGFeRDInvoiceDescriptor22Writer,intf.ZUGFeRD22Tests.UnitTests,
+  intf.ZUGFeRDInvoiceDescriptor22UblReader,
   intf.ZUGFeRDBaseTests.UnitTests
   ;
 

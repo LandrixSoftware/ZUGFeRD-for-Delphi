@@ -126,7 +126,7 @@ begin
   if SameText(s,'urn:cen.eu:en16931:2017#compliant#urn:zugferd.de:2p0:basic') then
       Result := Basic
   else
-  if SameText(s,'urn: cen.eu:en16931: 2017') then
+  if SameText(s,'urn: cen.eu:en16931: 2017') then // Spaces inserted to prevent clash with v2.1
       Result := Comfort
   else
   if SameText(s,'urn:cen.eu:en16931:2017#conformant#urn:zugferd.de:2p0:extended') then
@@ -196,7 +196,8 @@ begin
       else
         raise Exception.Create('Unsupported profile for ZUGFeRD version 20');
       end;
-    TZUGFeRDVersion.Version21:
+    TZUGFeRDVersion.Version21,
+    TZUGFeRDVersion.Version22:
       case profile of
         TZUGFeRDProfile.Minimum:
           Result := 'urn:factur-x.eu:1p0:minimum';

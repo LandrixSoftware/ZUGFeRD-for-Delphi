@@ -69,7 +69,7 @@ begin
 
   desc := TZUGFeRDInvoiceDescriptor.Load(path);
   try
-    desc.Save(ExtractFilePath(ParamStr(0))+'test_zugferd1.xml', TZUGFeRDVersion.Version1, TZUGFeRDProfile.Comfort);
+    //desc.Save(ExtractFilePath(ParamStr(0))+'test_zugferd1.xml', TZUGFeRDVersion.Version1, TZUGFeRDProfile.Comfort);
 
     Assert.AreEqual(desc.Profile, TZUGFeRDProfile.Comfort);
     Assert.AreEqual(desc.Type_, TZUGFeRDInvoiceType.Invoice);

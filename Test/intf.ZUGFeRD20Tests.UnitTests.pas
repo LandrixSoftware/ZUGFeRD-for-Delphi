@@ -156,14 +156,14 @@ begin
 //          city: "Frankfurt",
 //          street: "Kundenstraße 15",
 //          country: CountryCodes.DE);
-//      d.SetPaymentMeansSepaDirectDebit(
-//          "DE98ZZZ09999999999",
-//          "REF A-123");
+      d.SetPaymentMeansSepaDirectDebit(
+          'DE98ZZZ09999999999',
+          'REF A-123');
 //      d.AddDebitorFinancialAccount(
 //          "DE21860000000086001055",
 //          null);
-//      d.SetTradePaymentTerms(
-//          "Der Betrag in Höhe von EUR 529,87 wird am 20.03.2018 von Ihrem Konto per SEPA-Lastschrift eingezogen.");
+      d.SetTradePaymentTerms(
+          'Der Betrag in Höhe von EUR 529,87 wird am 20.03.2018 von Ihrem Konto per SEPA-Lastschrift eingezogen.');
 //      d.SetTotals(
 //          473.00m,
 //          0.00m,
@@ -209,13 +209,6 @@ begin
   finally
     stream.Free;
   end;
-//      using (var stream = new MemoryStream())
-//      {
-//        d.Save(stream, ZUGFeRDVersion.Version20, Profile.Comfort);
-//
-//        stream.Seek(0, SeekOrigin.Begin);
-//
-//      }
 end;
 
 procedure TZUGFeRD20Tests.TestTotalRounding;
@@ -690,7 +683,7 @@ begin
 //      Assert.AreEqual(timestamp.AddDays(14), loadedInvoice.BillingPeriodEnd);
 //
 //      //TradeAllowanceCharges
-//      var tradeAllowanceCharge = loadedInvoice.TradeAllowanceCharges.FirstOrDefault(i => i.Reason == "Reason for charge");
+//      var tradeAllowanceCharge = loadedInvoice.GetTradeAllowanceCharges.FirstOrDefault(i => i.Reason == "Reason for charge");
 //      Assert.IsNotNull(tradeAllowanceCharge);
 //      Assert.IsTrue(tradeAllowanceCharge.ChargeIndicator);
 //      Assert.AreEqual("Reason for charge", tradeAllowanceCharge.Reason);
@@ -783,7 +776,7 @@ begin
 //      //Assert.AreEqual("987654", accountingAccount.TradeAccountID);
 //
 //
-//      var lineItemTradeAllowanceCharge = loadedLineItem.TradeAllowanceCharges.FirstOrDefault(i => i.Reason == "Reason: UnitTest");
+//      var lineItemTradeAllowanceCharge = loadedLineItem.GetTradeAllowanceCharges.FirstOrDefault(i => i.Reason == "Reason: UnitTest");
 //      Assert.IsNotNull(lineItemTradeAllowanceCharge);
 //      Assert.IsTrue(lineItemTradeAllowanceCharge.ChargeIndicator);
 //      Assert.AreEqual(10m, lineItemTradeAllowanceCharge.BasisAmount);

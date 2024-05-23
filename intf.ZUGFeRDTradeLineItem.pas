@@ -96,7 +96,20 @@ type
     /// <param name="reason">Reason for the allowance or surcharge</param>
     procedure AddTradeAllowanceCharge(isDiscount: Boolean;
       currency: TZUGFeRDCurrencyCodes; basisAmount, actualAmount: double;
-      reason: string);
+      reason: string); overload;
+
+    /// <summary>
+    /// As an allowance or charge on item level, attaching it to the corresponding item.
+    /// </summary>
+    /// <param name="isDiscount">Marks if its an allowance (true) or charge (false). Please note that the xml will present inversed values</param>
+    /// <param name="currency">Currency of the allowance or surcharge</param>
+    /// <param name="basisAmount">Basis aount for the allowance or surcharge, typicalls the net amount of the item</param>
+    /// <param name="actualAmount">The actual allowance or surcharge amount</param>
+    /// <param name="chargePercentage">Actual allowance or surcharge charge percentage</param>
+    /// <param name="reason">Reason for the allowance or surcharge</param>
+    procedure AddTradeAllowanceCharge(isDiscount: Boolean;
+      currency: TZUGFeRDCurrencyCodes; basisAmount, actualAmount: double;
+      chargePercentage : Currency; reason: string); overload;
 
     procedure SetContractReferencedDocument(contractReferencedId: string;
       contractReferencedDate: TZUGFeRDNullable<TDateTime>);
@@ -230,6 +243,8 @@ type
 
     /// <summary>
     /// A group of business terms providing information about the applicable surcharges or discounts on the total amount of the invoice
+    ///
+    /// Now private. Please use GetTradeAllowanceCharges() instead
     /// </summary>
     property TradeAllowanceCharges: TObjectList<TZUGFeRDTradeAllowanceCharge> read FTradeAllowanceCharges write FTradeAllowanceCharges;
 
@@ -291,17 +306,30 @@ end;
 
 procedure TZUGFeRDTradeLineItem.AddTradeAllowanceCharge(
   isDiscount: Boolean; currency: TZUGFeRDCurrencyCodes;
-  basisAmount: double; actualAmount: double; reason: string);
+  basisAmount: double; actualAmount: double;
+  reason: string);
 begin
   FTradeAllowanceCharges.Add(TZUGFeRDTradeAllowanceCharge.Create);
-  with FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1] do
-  begin
-    ChargeIndicator := not isDiscount;
-    Currency := currency;
-    ActualAmount := actualAmount;
-    BasisAmount := basisAmount;
-    Reason := reason;
-  end;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ChargeIndicator := not isDiscount;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].Currency := currency;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ActualAmount := actualAmount;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].BasisAmount := basisAmount;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ChargePercentage := 0;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].Reason := reason;
+end;
+
+procedure TZUGFeRDTradeLineItem.AddTradeAllowanceCharge(
+  isDiscount: Boolean; currency: TZUGFeRDCurrencyCodes;
+  basisAmount: double; actualAmount: double;
+  chargePercentage : Currency; reason: string);
+begin
+  FTradeAllowanceCharges.Add(TZUGFeRDTradeAllowanceCharge.Create);
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ChargeIndicator := not isDiscount;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].Currency := currency;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ActualAmount := actualAmount;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].BasisAmount := basisAmount;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ChargePercentage := chargePercentage;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].Reason := reason;
 end;
 
 procedure TZUGFeRDTradeLineItem.SetDeliveryNoteReferencedDocument(

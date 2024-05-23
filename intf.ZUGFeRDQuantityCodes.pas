@@ -33,6 +33,9 @@ type
   ///
   /// See ee also
   /// http://www.robert-kuhlemann.de/iso_masseinheiten.htm
+  /// Rec 21 source:
+  /// https://docs.peppol.eu/poacc/billing/3.0/codelist/UNECERec20/
+  /// (starting with X, length of 3)
   /// </summary>
   TZUGFeRDQuantityCodes = (
     /// <summary>
@@ -296,7 +299,13 @@ type
     /// <summary>
     /// Kit
     /// </summary>
-    KT
+    KT,
+
+    /// <summary>
+    /// Piece
+    /// A loose or unpacked article.
+    /// </summary>
+    XPP
   );
 
   TZUGFeRDQuantityCodesExtensions = class

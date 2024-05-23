@@ -21,6 +21,7 @@ interface
 
 uses
   System.Classes, System.SysUtils, System.DateUtils, System.StrUtils
+  , System.Math
   ,intf.ZUGFeRDInvoiceDescriptor,intf.ZUGFeRDProfileAwareXmlTextWriter
   ,intf.ZUGFeRDProfile;
 
@@ -72,6 +73,8 @@ var
   formatString: string;
   i: Integer;
 begin
+  //TODO Testen
+  value := RoundTo(value,-numDecimals);
   formatString := '0.';
   for i := 0 to numDecimals - 1 do
     formatString := formatString + '0';

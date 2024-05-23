@@ -249,28 +249,25 @@ begin
       Writer.WriteEndElement(); // !ram:ContractReferencedDocument(Extended)
     end;
 
-    if (tradeLineItem.AdditionalReferencedDocuments <> nil) then
+    for var document : TZUGFeRDAdditionalReferencedDocument in tradeLineItem.AdditionalReferencedDocuments do
     begin
-      for var document : TZUGFeRDAdditionalReferencedDocument in tradeLineItem.AdditionalReferencedDocuments do
+      Writer.WriteStartElement('ram:AdditionalReferencedDocument', [TZUGFeRDProfile.Extended]);
+      if (document.IssueDateTime.HasValue) then
       begin
-          Writer.WriteStartElement('ram:AdditionalReferencedDocument', [TZUGFeRDProfile.Extended]);
-          if (document.IssueDateTime.HasValue) then
-          begin
-              Writer.WriteStartElement('ram:FormattedIssueDateTime');
-              Writer.WriteStartElement('qdt:DateTimeString');
-              Writer.WriteAttributeString('format', '102');
-              Writer.WriteValue(_formatDate(document.IssueDateTime.Value));
-              Writer.WriteEndElement(); // !udt:DateTimeString
-              Writer.WriteEndElement(); // !ram:IssueDateTime
-          end;
+          Writer.WriteStartElement('ram:FormattedIssueDateTime');
+          Writer.WriteStartElement('qdt:DateTimeString');
+          Writer.WriteAttributeString('format', '102');
+          Writer.WriteValue(_formatDate(document.IssueDateTime.Value));
+          Writer.WriteEndElement(); // !udt:DateTimeString
+          Writer.WriteEndElement(); // !ram:IssueDateTime
+      end;
 
-          Writer.WriteElementString('ram:LineID', Format('%d',[tradeLineItem.AssociatedDocument.LineID]));
-          Writer.WriteOptionalElementString('ram:IssuerAssignedID', document.ID);
-          Writer.WriteElementString('ram:ReferenceTypeCode', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(document.ReferenceTypeCode));
+      Writer.WriteElementString('ram:LineID', Format('%d',[tradeLineItem.AssociatedDocument.LineID]));
+      Writer.WriteOptionalElementString('ram:IssuerAssignedID', document.ID);
+      Writer.WriteElementString('ram:ReferenceTypeCode', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(document.ReferenceTypeCode));
 
-          Writer.WriteEndElement(); // !ram:AdditionalReferencedDocument
-      end; // !foreach(document)
-    end;
+      Writer.WriteEndElement(); // !ram:AdditionalReferencedDocument
+    end; // !foreach(document)
 
     Writer.WriteStartElement('ram:GrossPriceProductTradePrice');
     _writeOptionalAmount(Writer, 'ram:ChargeAmount', tradeLineItem.GrossUnitPrice, 4, false);
@@ -702,60 +699,55 @@ begin
   //#endregion
 
   //  13. SpecifiedTradeAllowanceCharge (optional)
-  if (Descriptor.TradeAllowanceCharges <> nil) then
-  if (Descriptor.TradeAllowanceCharges.Count > 0) then
+  for var tradeAllowanceCharge : TZUGFeRDTradeAllowanceCharge in Descriptor.TradeAllowanceCharges do
   begin
-    for var tradeAllowanceCharge : TZUGFeRDTradeAllowanceCharge in Descriptor.TradeAllowanceCharges do
-    begin
-      Writer.WriteStartElement('ram:SpecifiedTradeAllowanceCharge');
-      Writer.WriteStartElement('ram:ChargeIndicator');
-      Writer.WriteElementString('udt:Indicator', ifthen(tradeAllowanceCharge.ChargeIndicator,'true','false'));
-      Writer.WriteEndElement(); // !ram:ChargeIndicator
+    Writer.WriteStartElement('ram:SpecifiedTradeAllowanceCharge');
+    Writer.WriteStartElement('ram:ChargeIndicator');
+    Writer.WriteElementString('udt:Indicator', ifthen(tradeAllowanceCharge.ChargeIndicator,'true','false'));
+    Writer.WriteEndElement(); // !ram:ChargeIndicator
 
+    if tradeAllowanceCharge.BasisAmount <> 0.0 then
+    begin
       Writer.WriteStartElement('ram:BasisAmount');
       Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.BasisAmount));
       Writer.WriteEndElement();
+    end;
 
-      Writer.WriteStartElement('ram:ActualAmount');
-      Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ActualAmount, 2));
-      Writer.WriteEndElement();
+    Writer.WriteStartElement('ram:ActualAmount');
+    Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ActualAmount));
+    Writer.WriteEndElement();
 
-      Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason);
+    Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason);
 
-      if (tradeAllowanceCharge.Tax <> nil) then
-      begin
-        Writer.WriteStartElement('ram:CategoryTradeTax');
-        Writer.WriteElementString('ram:TypeCode', TZUGFeRDTaxTypesExtensions.EnumToString(tradeAllowanceCharge.Tax.TypeCode));
-        if (tradeAllowanceCharge.Tax.CategoryCode <> TZUGFeRDTaxCategoryCodes.Unknown) then
-          Writer.WriteElementString('ram:CategoryCode', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(tradeAllowanceCharge.Tax.CategoryCode));
-        Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(tradeAllowanceCharge.Tax.Percent));
-        Writer.WriteEndElement();
-      end;
+    if (tradeAllowanceCharge.Tax <> nil) then
+    begin
+      Writer.WriteStartElement('ram:CategoryTradeTax');
+      Writer.WriteElementString('ram:TypeCode', TZUGFeRDTaxTypesExtensions.EnumToString(tradeAllowanceCharge.Tax.TypeCode));
+      if (tradeAllowanceCharge.Tax.CategoryCode <> TZUGFeRDTaxCategoryCodes.Unknown) then
+        Writer.WriteElementString('ram:CategoryCode', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(tradeAllowanceCharge.Tax.CategoryCode));
+      Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(tradeAllowanceCharge.Tax.Percent));
       Writer.WriteEndElement();
     end;
+    Writer.WriteEndElement();
   end;
 
   //  14. SpecifiedLogisticsServiceCharge (optional)
-  if (Descriptor.ServiceCharges <> nil) then
-  if (Descriptor.ServiceCharges.Count > 0) then
+  for var serviceCharge : TZUGFeRDServiceCharge in Descriptor.ServiceCharges do
   begin
-    for var serviceCharge : TZUGFeRDServiceCharge in Descriptor.ServiceCharges do
+    Writer.WriteStartElement('ram:SpecifiedLogisticsServiceCharge');
+    if serviceCharge.Description <> '' then
+      Writer.WriteElementString('ram:Description', serviceCharge.Description);
+    Writer.WriteElementString('ram:AppliedAmount', _formatDecimal(serviceCharge.Amount));
+    if (serviceCharge.Tax <> nil) then
     begin
-      Writer.WriteStartElement('ram:SpecifiedLogisticsServiceCharge');
-      if serviceCharge.Description <> '' then
-        Writer.WriteElementString('ram:Description', serviceCharge.Description);
-      Writer.WriteElementString('ram:AppliedAmount', _formatDecimal(serviceCharge.Amount));
-      if (serviceCharge.Tax <> nil) then
-      begin
-        Writer.WriteStartElement('ram:AppliedTradeTax');
-        Writer.WriteElementString('ram:TypeCode', TZUGFeRDTaxTypesExtensions.EnumToString(serviceCharge.Tax.TypeCode));
-        if (serviceCharge.Tax.CategoryCode <> TZUGFeRDTaxCategoryCodes.Unknown) then
-          Writer.WriteElementString('ram:CategoryCode', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(serviceCharge.Tax.CategoryCode));
-        Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(serviceCharge.Tax.Percent));
-        Writer.WriteEndElement();
-      end;
+      Writer.WriteStartElement('ram:AppliedTradeTax');
+      Writer.WriteElementString('ram:TypeCode', TZUGFeRDTaxTypesExtensions.EnumToString(serviceCharge.Tax.TypeCode));
+      if (serviceCharge.Tax.CategoryCode <> TZUGFeRDTaxCategoryCodes.Unknown) then
+        Writer.WriteElementString('ram:CategoryCode', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(serviceCharge.Tax.CategoryCode));
+      Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(serviceCharge.Tax.Percent));
       Writer.WriteEndElement();
     end;
+    Writer.WriteEndElement();
   end;
 
   //  15. SpecifiedTradePaymentTerms (optional)

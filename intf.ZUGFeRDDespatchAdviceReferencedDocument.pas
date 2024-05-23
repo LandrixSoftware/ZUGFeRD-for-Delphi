@@ -15,34 +15,20 @@
  * specific language governing permissions and limitations
  * under the License.}
 
-unit intf.ZUGFeRDVersion;
+unit intf.ZUGFeRDDespatchAdviceReferencedDocument;
 
 interface
 
+uses
+  intf.ZUGFeRDBaseReferencedDocument;
+
 type
   /// <summary>
-  /// Enumeration der verschiedenen von ZUGFeRD-csharp unterstützten ZUGFeRD-Versionen
+  /// Structure containing detailed information about the corresponding despatch advice
   /// </summary>
-  TZUGFeRDVersion = (
-    /// <summary>
-    /// Version 1.x - erste öffentliche ZUGFeRD-Version
-    /// </summary>
-    Version1 = 100,
-    /// <summary>
-    /// Version 2.0 - zweite wichtige ZUGFeRD-Version
-    /// </summary>
-    Version20 = 200,
-    /// <summary>
-    /// Version 2.1 - vereinheitlicht mit französischer Factur-X 1.0, unterstützt XRechnung
-    /// </summary>
-    //[Obsolete("Will be removed in the next version")]
-    Version21 = 210,
-
-    /// <summary>
-    /// Version 2.2 - unified with french factur-x 1.0, supports XRechnung
-    /// </summary>
-    Version22 = 220
-  );
+  TZUGFeRDDespatchAdviceReferencedDocument = class(TZUGFeRDBaseReferencedDocument)
+  public
+  end;
 
 implementation
 

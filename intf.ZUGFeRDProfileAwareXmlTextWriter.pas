@@ -287,9 +287,7 @@ var
 begin
   Result := false;
 
-  if profile = TZUGFERDPROFILES_DEFAULT then
-    exit;
-
+  if profile <> TZUGFERDPROFILES_DEFAULT then
   for i := Low(TZUGFeRDProfile) to High(TZUGFeRDProfile) do
   begin
     if i = TZUGFeRDProfile.Unknown then
@@ -303,6 +301,8 @@ begin
       exit;
     end;
   end;
+
+  Result := true;
 end;
 
 function TZUGFeRDProfileAwareXmlTextWriter._IsNodeVisible: Boolean;

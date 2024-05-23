@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.}
 
-unit intf.ZUGFeRDInvoiceDescriptor21Reader;
+unit intf.ZUGFeRDInvoiceDescriptor22Reader;
 
 interface
 
@@ -60,10 +60,11 @@ uses
   ,intf.ZUGFeRDAssociatedDocument
   ,intf.ZUGFeRDNote
   ,intf.ZUGFeRDContentCodes
+  ,intf.ZUGFeRDDespatchAdviceReferencedDocument
   ;
 
 type
-  TZUGFeRDInvoiceDescriptor21Reader = class(TZUGFeRDInvoiceDescriptorReader)
+  TZUGFeRDInvoiceDescriptor22Reader = class(TZUGFeRDInvoiceDescriptorReader)
   private
     function _parseTradeLineItem(tradeLineItem : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDTradeLineItem;
     function _nodeAsParty(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDParty;
@@ -85,9 +86,9 @@ type
 
 implementation
 
-{ TZUGFeRDInvoiceDescriptor21Reader }
+{ TZUGFeRDInvoiceDescriptor22Reader }
 
-function TZUGFeRDInvoiceDescriptor21Reader.IsReadableByThisReaderVersion(
+function TZUGFeRDInvoiceDescriptor22Reader.IsReadableByThisReaderVersion(
   stream: TStream): Boolean;
 var
   validURIs: TArray<string>;
@@ -110,7 +111,7 @@ begin
   Result := IsReadableByThisReaderVersion(stream, validURIs);
 end;
 
-function TZUGFeRDInvoiceDescriptor21Reader.Load(stream: TStream): TZUGFeRDInvoiceDescriptor;
+function TZUGFeRDInvoiceDescriptor22Reader.Load(stream: TStream): TZUGFeRDInvoiceDescriptor;
 var
   xml : IXMLDocument;
   doc : IXMLDOMDocument2;
@@ -267,6 +268,20 @@ begin
   Result.ShipFrom := _nodeAsParty(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:ShipFromTradeParty');
   Result.ActualDeliveryDate.SetValue(_nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:ActualDeliverySupplyChainEvent/ram:OccurrenceDateTime/udt:DateTimeString'));
 
+  var _despatchAdviceNo : String := _nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DespatchAdviceReferencedDocument/ram:IssuerAssignedID');
+  var _despatchAdviceDate : TDateTime := _nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DespatchAdviceReferencedDocument/ram:FormattedIssueDateTime/udt:DateTimeString');
+
+  if (_despatchAdviceDate < 100) then
+  begin
+    _despatchAdviceDate := _nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DespatchAdviceReferencedDocument/ram:FormattedIssueDateTime');
+  end;
+
+  if ((_despatchAdviceDate > 100) or (_despatchAdviceNo <> '')) then
+  begin
+    Result.DespatchAdviceReferencedDocument := TZUGFeRDDespatchAdviceReferencedDocument.Create;
+    Result.SetDespatchAdviceReferencedDocument(_despatchAdviceNo,_despatchAdviceDate);
+  end;
+
   var _deliveryNoteNo : String := _nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:IssuerAssignedID');
   var _deliveryNoteDate : TDateTime := _nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:IssueDateTime/udt:DateTimeString');
 
@@ -373,6 +388,7 @@ begin
                                    _nodeAsDecimal(nodes[i], './/ram:BasisAmount', 0),
                                    Result.Currency,
                                    _nodeAsDecimal(nodes[i], './/ram:ActualAmount', 0),
+                                   _nodeAsDecimal(node, './/ram:CalculationPercent', 0),
                                    _nodeAsString(nodes[i], './/ram:Reason'),
                                    TZUGFeRDTaxTypesExtensions.FromString(_nodeAsString(nodes[i], './/ram:CategoryTradeTax/ram:TypeCode')),
                                    TZUGFeRDTaxCategoryCodesExtensions.FromString(_nodeAsString(nodes[i], './/ram:CategoryTradeTax/ram:CategoryCode')),
@@ -446,7 +462,7 @@ begin
     Result.TradeLineItems.Add(_parseTradeLineItem(nodes[i]));
 end;
 
-function TZUGFeRDInvoiceDescriptor21Reader._getAdditionalReferencedDocument(
+function TZUGFeRDInvoiceDescriptor22Reader._getAdditionalReferencedDocument(
   a_oXmlNode: IXmlDomNode): TZUGFeRDAdditionalReferencedDocument;
 begin
   var strBase64BinaryData : String := _nodeAsString(a_oXmlNode, 'ram:AttachmentBinaryObject');
@@ -465,7 +481,7 @@ begin
   Result.ReferenceTypeCode := TZUGFeRDReferenceTypeCodesExtensions.FromString(_nodeAsString(a_oXmlNode, 'ram:ReferenceTypeCode'));
 end;
 
-function TZUGFeRDInvoiceDescriptor21Reader._nodeAsLegalOrganization(
+function TZUGFeRDInvoiceDescriptor22Reader._nodeAsLegalOrganization(
   basenode: IXmlDomNode; const xpath: string) : TZUGFeRDLegalOrganization;
 var
   node : IXmlDomNode;
@@ -482,7 +498,7 @@ begin
                _nodeAsString(node, 'ram:TradingBusinessName'));
 end;
 
-function TZUGFeRDInvoiceDescriptor21Reader._nodeAsParty(basenode: IXmlDomNode;
+function TZUGFeRDInvoiceDescriptor22Reader._nodeAsParty(basenode: IXmlDomNode;
   const xpath: string) : TZUGFeRDParty;
 var
   node : IXmlDomNode;
@@ -521,7 +537,7 @@ begin
   Result.CountrySubdivisionName := _nodeAsString(node, 'ram:PostalTradeAddress/ram:CountrySubDivisionName');
 end;
 
-function TZUGFeRDInvoiceDescriptor21Reader._parseTradeLineItem(
+function TZUGFeRDInvoiceDescriptor22Reader._parseTradeLineItem(
   tradeLineItem: IXmlDomNode): TZUGFeRDTradeLineItem;
 var
   nodes : IXMLDOMNodeList;
@@ -637,11 +653,13 @@ begin
     var actualAmount : Currency := _nodeAsDecimal(nodes[i], './ram:ActualAmount',0);
     var actualAmountCurrency : String := _nodeAsString(nodes[i], './ram:ActualAmount/@currencyID');
     var reason : String := _nodeAsString(nodes[i], './ram:Reason');
+    var chargePercentage : Currency := _nodeAsDecimal(nodes[i], './ram:CalculationPercent',0);
 
     Result.AddTradeAllowanceCharge(not chargeIndicator, // wichtig: das not beachten
                                     TZUGFeRDCurrencyCodesExtensions.FromString(basisAmountCurrency),
                                     basisAmount,
                                     actualAmount,
+                                    chargePercentage,
                                     reason);
   end;
 

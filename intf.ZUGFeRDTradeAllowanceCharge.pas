@@ -45,6 +45,7 @@ type
     FBasisAmount: Currency;
     FCurrency: TZUGFeRDCurrencyCodes;
     FActualAmount: Currency;
+    FChargePercentage: Currency;
   public
     /// <summary>
     /// Switch for discount and surcharge
@@ -71,6 +72,12 @@ type
     /// The amount of the discount / surcharge or discount without VAT
     /// </summary>
     property ActualAmount: Currency read FActualAmount write FActualAmount;
+    /// <summary>
+    /// The percentage that may be used in conjunction with the document level discount base amount, to calculate the
+    /// document level discount amount.
+    /// BT-101
+    /// </summary>
+    property ChargePercentage : Currency read FChargePercentage write FChargePercentage;
   end;
 
 implementation

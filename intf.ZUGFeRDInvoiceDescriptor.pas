@@ -61,7 +61,8 @@ uses
   intf.ZUGFeRDCountryCodes,
   intf.ZUGFeRDLegalOrganization,
   intf.ZUGFeRDElectronicAddress,
-  intf.ZUGFeRDElectronicAddressSchemeIdentifiers
+  intf.ZUGFeRDElectronicAddressSchemeIdentifiers,
+  intf.ZUGFeRDDespatchAdviceReferencedDocument
   ;
 
 type
@@ -121,6 +122,7 @@ type
     FBillingPeriodStart: TDateTime;
     FBillingPeriodEnd: TDateTime;
     FSellerOrderReferencedDocument: TZUGFeRDSellerOrderReferencedDocument;
+    FDespatchAdviceReferencedDocument: TZUGFeRDDespatchAdviceReferencedDocument;
   public
     /// <summary>
     /// Invoice Number
@@ -153,6 +155,11 @@ type
     /// A new reference document is added by AddAdditionalReferenceDocument()
     /// </summary>
     property AdditionalReferencedDocuments: TObjectList<TZUGFeRDAdditionalReferencedDocument> read FAdditionalReferencedDocuments;
+
+    /// <summary>
+    /// Detailed information about the corresponding despatch advice
+    /// </summary>
+    property DespatchAdviceReferencedDocument : TZUGFeRDDespatchAdviceReferencedDocument read FDespatchAdviceReferencedDocument write FDespatchAdviceReferencedDocument;
 
     /// <summary>
     /// Detailed information about the corresponding delivery note
@@ -343,7 +350,8 @@ type
     property ServiceCharges: TObjectList<TZUGFeRDServiceCharge> read FServiceCharges;
 
     /// <summary>
-    /// Detailed information on discounts and charges
+    /// Detailed information on discounts and charges.
+    /// This field is marked as private now, please use GetTradeAllowanceCharges() to retrieve all trade allowance charges
     /// </summary>
     property TradeAllowanceCharges: TObjectList<TZUGFeRDTradeAllowanceCharge> read FTradeAllowanceCharges;
 
@@ -519,6 +527,13 @@ type
     procedure SetBuyerOrderReferenceDocument(const orderNo: string; const orderDate: TDateTime = 0);
 
     /// <summary>
+    /// Sets detailed information about the corresponding despatch advice
+    /// </summary>
+    /// <param name="deliveryNoteNo"></param>
+    /// <param name="deliveryNoteDate"></param>
+    procedure SetDespatchAdviceReferencedDocument(despatchAdviceNo : String; despatchAdviceDate: TDateTime = 0);
+
+    /// <summary>
     /// Sets detailed information about the corresponding delivery note
     /// </summary>
     /// <param name="deliveryNoteNo"></param>
@@ -547,7 +562,23 @@ type
     /// <param name="taxTypeCode">VAT type code for document level allowance/ charge</param>
     /// <param name="taxCategoryCode">VAT type code for document level allowance/ charge</param>
     /// <param name="taxPercent">VAT rate for the allowance</param>
-    procedure AddTradeAllowanceCharge(const isDiscount: Boolean; const basisAmount: Currency; const currency: TZUGFeRDCurrencyCodes; const actualAmount: Currency; const reason: string; const taxTypeCode: TZUGFeRDTaxTypes; const taxCategoryCode: TZUGFeRDTaxCategoryCodes; const taxPercent: Currency);
+    procedure AddTradeAllowanceCharge(const isDiscount: Boolean; const basisAmount: Currency; const currency: TZUGFeRDCurrencyCodes; const actualAmount: Currency; const reason: string; const taxTypeCode: TZUGFeRDTaxTypes; const taxCategoryCode: TZUGFeRDTaxCategoryCodes; const taxPercent: Currency); overload;
+
+    /// <summary>
+    /// Adds an allowance or charge on document level.
+    ///
+    /// Allowance represents a discount whereas charge represents a surcharge.
+    /// </summary>
+    /// <param name="isDiscount">Marks if the allowance charge is a discount. Please note that in contrary to this function, the xml file indicated a surcharge, not a discount (value will be inverted)</param>
+    /// <param name="basisAmount">Base amount (basis of allowance)</param>
+    /// <param name="currency">Curency of the allowance</param>
+    /// <param name="actualAmount">Actual allowance charge amount</param>
+    /// <param name="chargePercentage">Actual allowance charge percentage</param>
+    /// <param name="reason">Reason for the allowance</param>
+    /// <param name="taxTypeCode">VAT type code for document level allowance/ charge</param>
+    /// <param name="taxCategoryCode">VAT type code for document level allowance/ charge</param>
+    /// <param name="taxPercent">VAT rate for the allowance</param>
+    procedure AddTradeAllowanceCharge(const isDiscount: Boolean; const basisAmount: Currency; const currency: TZUGFeRDCurrencyCodes; const actualAmount: Currency; const chargePercentage : Currency; const reason: string; const taxTypeCode: TZUGFeRDTaxTypes; const taxCategoryCode: TZUGFeRDTaxCategoryCodes; const taxPercent: Currency); overload;
 
     procedure SetTradePaymentTerms(const description: string; const dueDate: TDateTime = 0);
 
@@ -705,8 +736,6 @@ type
 
     procedure AddReceivableSpecifiedTradeAccountingAccount(const AccountID: string;
       const AccountTypeCode: TZUGFeRDAccountingAccountTypeCodes); overload;
-
-
   private
     function _getNextLineId: string;
   end;
@@ -717,7 +746,8 @@ uses
   intf.ZUGFeRDInvoiceDescriptorReader,intf.ZUGFeRDInvoiceDescriptorWriter,
   intf.ZUGFeRDInvoiceDescriptor1Reader,intf.ZUGFeRDInvoiceDescriptor1Writer,
   intf.ZUGFeRDInvoiceDescriptor20Reader,intf.ZUGFeRDInvoiceDescriptor20Writer,
-  intf.ZUGFeRDInvoiceDescriptor21Reader,intf.ZUGFeRDInvoiceDescriptor21Writer
+  intf.ZUGFeRDInvoiceDescriptor22Reader,intf.ZUGFeRDInvoiceDescriptor22Writer,
+  intf.ZUGFeRDInvoiceDescriptor22UblReader
   ;
 
 { TZUGFeRDInvoiceDescriptor }
@@ -727,6 +757,7 @@ begin
   FOrderDate := TZUGFeRDNullable<TDateTime>.Create;
   FActualDeliveryDate := TZUGFeRDNullable<TDateTime>.Create;
   FAdditionalReferencedDocuments := TObjectList<TZUGFeRDAdditionalReferencedDocument>.Create;
+  FDespatchAdviceReferencedDocument := nil;
   FDeliveryNoteReferencedDocument:= nil;//TZUGFeRDDeliveryNoteReferencedDocument.Create;
   FContractReferencedDocument    := nil;//TZUGFeRDContractReferencedDocument.Create;
   FSpecifiedProcuringProject     := nil;//TZUGFeRDSpecifiedProcuringProject.Create;
@@ -770,6 +801,7 @@ begin
   if Assigned(FOrderDate) then begin FOrderDate.Free; FOrderDate := nil; end;
   if Assigned(FActualDeliveryDate) then begin FActualDeliveryDate.Free; FActualDeliveryDate := nil; end;
   if Assigned(FAdditionalReferencedDocuments ) then begin FAdditionalReferencedDocuments.Free; FAdditionalReferencedDocuments  := nil; end;
+  if Assigned(FDespatchAdviceReferencedDocument) then begin FDespatchAdviceReferencedDocument.Free; FDespatchAdviceReferencedDocument := nil; end;
   if Assigned(FDeliveryNoteReferencedDocument) then begin FDeliveryNoteReferencedDocument.Free; FDeliveryNoteReferencedDocument := nil; end;
   if Assigned(FContractReferencedDocument    ) then begin FContractReferencedDocument.Free; FContractReferencedDocument     := nil; end;
   if Assigned(FSpecifiedProcuringProject     ) then begin FSpecifiedProcuringProject.Free; FSpecifiedProcuringProject      := nil; end;
@@ -824,11 +856,22 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor21Reader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22UblReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(filename) then
     begin
-      Result := TZUGFeRDVersion.Version21;
+      Result := TZUGFeRDVersion.Version22;
+      Exit;
+    end;
+  finally
+    reader.Free;
+  end;
+
+  reader := TZUGFeRDInvoiceDescriptor22Reader.Create;
+  try
+    if reader.IsReadableByThisReaderVersion(filename) then
+    begin
+      Result := TZUGFeRDVersion.Version22;
       Exit;
     end;
   finally
@@ -865,11 +908,22 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor21Reader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22UblReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(stream) then
     begin
-      Result := TZUGFeRDVersion.Version21;
+      Result := TZUGFeRDVersion.Version22;
+      Exit;
+    end;
+  finally
+    reader.Free;
+  end;
+
+  reader := TZUGFeRDInvoiceDescriptor22Reader.Create;
+  try
+    if reader.IsReadableByThisReaderVersion(stream) then
+    begin
+      Result := TZUGFeRDVersion.Version22;
       Exit;
     end;
   finally
@@ -905,7 +959,18 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor21Reader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22UblReader.Create;
+  try
+    if reader.IsReadableByThisReaderVersion(stream) then
+    begin
+      Result := reader.Load(stream);
+      exit;
+    end;
+  finally
+    reader.Free;
+  end;
+
+  reader := TZUGFeRDInvoiceDescriptor22Reader.Create;
   try
     if reader.IsReadableByThisReaderVersion(stream) then
     begin
@@ -945,7 +1010,18 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor21Reader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22UblReader.Create;
+  try
+    if reader.IsReadableByThisReaderVersion(filename) then
+    begin
+      Result := reader.Load(filename);
+      exit;
+    end;
+  finally
+    reader.Free;
+  end;
+
+  reader := TZUGFeRDInvoiceDescriptor22Reader.Create;
   try
     if reader.IsReadableByThisReaderVersion(filename) then
     begin
@@ -1109,6 +1185,13 @@ begin
   FDeliveryNoteReferencedDocument.IssueDateTime.SetValue(deliveryNoteDate);
 end;
 
+procedure TZUGFeRDInvoiceDescriptor.SetDespatchAdviceReferencedDocument(
+  despatchAdviceNo: String; despatchAdviceDate: TDateTime);
+begin
+  FDespatchAdviceReferencedDocument.ID := despatchAdviceNo;
+  FDespatchAdviceReferencedDocument.IssueDateTime.SetValue(despatchAdviceDate);
+end;
+
 procedure TZUGFeRDInvoiceDescriptor.SetContractReferencedDocument(const contractNo: string; const contractDate: TDateTime);
 begin
   FContractReferencedDocument.ID := contractNo; //TODO memeak
@@ -1139,6 +1222,30 @@ begin
   tradeAllowanceCharge.ActualAmount := actualAmount;
   tradeAllowanceCharge.Currency := currency;
   tradeAllowanceCharge.Amount := actualAmount;
+  tradeAllowanceCharge.ChargePercentage := 0;
+  tradeAllowanceCharge.Tax.CategoryCode := taxCategoryCode;
+  tradeAllowanceCharge.Tax.TypeCode := taxTypeCode;
+  tradeAllowanceCharge.Tax.Percent := taxPercent;
+  FTradeAllowanceCharges.Add(tradeAllowanceCharge);
+end;
+
+procedure TZUGFeRDInvoiceDescriptor.AddTradeAllowanceCharge(
+  const isDiscount: Boolean; const basisAmount: Currency;
+  const currency: TZUGFeRDCurrencyCodes; const actualAmount,
+  chargePercentage: Currency; const reason: string;
+  const taxTypeCode: TZUGFeRDTaxTypes;
+  const taxCategoryCode: TZUGFeRDTaxCategoryCodes; const taxPercent: Currency);
+var
+  tradeAllowanceCharge: TZUGFeRDTradeAllowanceCharge;
+begin
+  tradeAllowanceCharge := TZUGFeRDTradeAllowanceCharge.Create;
+  tradeAllowanceCharge.ChargeIndicator := not isDiscount;
+  tradeAllowanceCharge.Reason := reason;
+  tradeAllowanceCharge.BasisAmount := basisAmount;
+  tradeAllowanceCharge.ActualAmount := actualAmount;
+  tradeAllowanceCharge.Currency := currency;
+  tradeAllowanceCharge.Amount := actualAmount;
+  tradeAllowanceCharge.ChargePercentage := chargePercentage;
   tradeAllowanceCharge.Tax.CategoryCode := taxCategoryCode;
   tradeAllowanceCharge.Tax.TypeCode := taxTypeCode;
   tradeAllowanceCharge.Tax.Percent := taxPercent;
@@ -1147,8 +1254,9 @@ end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetTradePaymentTerms(const description: string; const dueDate: TDateTime = 0);
 begin
-  FPaymentTerms.Description := description;
-  FPaymentTerms.DueDate.SetValue(dueDate);
+  if PaymentTerms = nil then PaymentTerms := TZUGFeRDPaymentTerms.Create;
+  PaymentTerms.Description := description;
+  PaymentTerms.DueDate.SetValue(dueDate);
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetInvoiceReferencedDocument(const id: string; const IssueDateTime: TDateTime = 0);
@@ -1209,8 +1317,8 @@ begin
       writer := TZUGFeRDInvoiceDescriptor1Writer.Create;
     TZUGFeRDVersion.Version20:
       writer := TZUGFeRDInvoiceDescriptor20Writer.Create;
-    TZUGFeRDVersion.Version21:
-      writer := TZUGFeRDInvoiceDescriptor21Writer.Create;
+    TZUGFeRDVersion.Version22:
+      writer := TZUGFeRDInvoiceDescriptor22Writer.Create;
     else
       raise TZUGFeRDUnsupportedException.Create('New ZUGFeRDVersion defined but not implemented!');
   end;
@@ -1232,8 +1340,9 @@ begin
       writer := TZUGFeRDInvoiceDescriptor1Writer.Create;
     TZUGFeRDVersion.Version20:
       writer := TZUGFeRDInvoiceDescriptor20Writer.Create;
-    TZUGFeRDVersion.Version21:
-      writer := TZUGFeRDInvoiceDescriptor21Writer.Create;
+    TZUGFeRDVersion.Version21,
+    TZUGFeRDVersion.Version22:
+      writer := TZUGFeRDInvoiceDescriptor22Writer.Create;
     else
       raise TZUGFeRDUnsupportedException.Create('New ZUGFeRDVersion defined but not implemented!');
   end;
@@ -1380,6 +1489,8 @@ end;
 procedure TZUGFeRDInvoiceDescriptor.SetPaymentMeans(paymentCode: TZUGFeRDPaymentMeansTypeCodes; const information: string = '';
   const identifikationsnummer: string = ''; const mandatsnummer: string = '');
 begin
+  if Self.PaymentMeans = nil then Self.PaymentMeans := TZUGFeRDPaymentMeans.Create;
+
   Self.PaymentMeans.TypeCode := paymentCode;
   Self.PaymentMeans.Information := information;
   Self.PaymentMeans.SEPACreditorIdentifier := identifikationsnummer;
@@ -1389,6 +1500,8 @@ end;
 procedure TZUGFeRDInvoiceDescriptor.SetPaymentMeansSepaDirectDebit(const sepaCreditorIdentifier: string;
   const sepaMandateReference: string; const information: string = '');
 begin
+  if Self.PaymentMeans = nil then Self.PaymentMeans := TZUGFeRDPaymentMeans.Create;
+
   Self.PaymentMeans.TypeCode := TZUGFeRDPaymentMeansTypeCodes.SEPADirectDebit;
   Self.PaymentMeans.Information := information;
   Self.PaymentMeans.SEPACreditorIdentifier := sepaCreditorIdentifier;
@@ -1398,6 +1511,8 @@ end;
 procedure TZUGFeRDInvoiceDescriptor.SetPaymentMeansFinancialCard(const financialCardId: string;
   const financialCardCardholder: string; const information: string = '');
 begin
+  if Self.PaymentMeans = nil then Self.PaymentMeans := TZUGFeRDPaymentMeans.Create;
+
   PaymentMeans.TypeCode := TZUGFeRDPaymentMeansTypeCodes.SEPADirectDebit;
   PaymentMeans.Information := information;
   PaymentMeans.FinancialCard.Id := financialCardId;
