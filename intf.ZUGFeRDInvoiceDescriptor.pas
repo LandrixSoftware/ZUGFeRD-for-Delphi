@@ -666,6 +666,7 @@ type
     /// <param name="grossUnitPrice"></param>
     /// <param name="netUnitPrice"></param>
     /// <param name="billedQuantity"></param>
+    /// <param name="lineTotalAmount">net total including discounts and surcharges. This parameter is optional. If it is not filled, the line total amount is automatically calculated based on netUnitPrice and billedQuantity</param>
     /// <param name="taxType"></param>
     /// <param name="categoryCode"></param>
     /// <param name="taxPercent"></param>
@@ -682,7 +683,7 @@ type
     /// <returns></returns>
     function AddTradeLineItem(const name: string; const description: string;
                   const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown; const unitQuantity: TZUGFeRDNullable<Double> = nil;
-                  const grossUnitPrice: TZUGFeRDNullableCurrency = nil; const netUnitPrice: TZUGFeRDNullableCurrency = nil; const billedQuantity: Double = 0;
+                  const grossUnitPrice: TZUGFeRDNullableCurrency = nil; const netUnitPrice: TZUGFeRDNullableCurrency = nil; const billedQuantity: Double = 0; const lineTotalAmount : Currency = 0;
                   const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const taxPercent: Double = 0;
                   const comment: string = ''; const id: TZUGFeRDGlobalID = nil; const sellerAssignedID: string = '';
                   const buyerAssignedID: string = ''; const deliveryNoteID: string = ''; const deliveryNoteDate: TZUGFeRDNullable<TDateTime> = nil;
@@ -695,7 +696,7 @@ type
     /// </summary>
     function AddTradeLineItem(const lineID: string; const name: string; const description: string;
                   const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown; const unitQuantity: TZUGFeRDNullable<Double> = nil;
-                  const grossUnitPrice: TZUGFeRDNullableCurrency = nil; const netUnitPrice: TZUGFeRDNullableCurrency = nil; const billedQuantity: Double = 0;
+                  const grossUnitPrice: TZUGFeRDNullableCurrency = nil; const netUnitPrice: TZUGFeRDNullableCurrency = nil; const billedQuantity: Double = 0; const lineTotalAmount : Currency = 0;
                   const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const taxPercent: Double = 0;
                   const comment: string = ''; const id: TZUGFeRDGlobalID = nil; const sellerAssignedID: string = ''; const buyerAssignedID: string = '';
                   const deliveryNoteID: string = ''; const deliveryNoteDate: TZUGFeRDNullable<TDateTime> = nil; const buyerOrderID: string = '';
@@ -1397,6 +1398,7 @@ function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const name: string;
   const grossUnitPrice: TZUGFeRDNullableCurrency = nil;
   const netUnitPrice: TZUGFeRDNullableCurrency = nil;
   const billedQuantity: Double = 0;
+  const lineTotalAmount: Currency = 0;
   const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown;
   const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown;
   const taxPercent: Double = 0;
@@ -1411,9 +1413,11 @@ function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const name: string;
   const billingPeriodStart: TZUGFeRDNullable<TDateTime> = nil;
   const billingPeriodEnd: TZUGFeRDNullable<TDateTime> = nil): TZUGFeRDTradeLineItem;
 begin
-  Result := AddTradeLineItem(_getNextLineId(), name, description, unitCode, unitQuantity, grossUnitPrice, netUnitPrice, billedQuantity,
-    taxType, categoryCode, taxPercent, comment, id, sellerAssignedID, buyerAssignedID, deliveryNoteID, deliveryNoteDate,
-    buyerOrderID, buyerOrderDate, billingPeriodStart, billingPeriodEnd);
+  Result := AddTradeLineItem(_getNextLineId(), name, description, unitCode,
+    unitQuantity, grossUnitPrice, netUnitPrice, billedQuantity, lineTotalAmount,
+    taxType, categoryCode, taxPercent, comment, id, sellerAssignedID,
+    buyerAssignedID, deliveryNoteID, deliveryNoteDate, buyerOrderID,
+    buyerOrderDate, billingPeriodStart, billingPeriodEnd);
 end;
 
 function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const lineID: string;
@@ -1423,6 +1427,7 @@ function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const lineID: string;
   const grossUnitPrice: TZUGFeRDNullableCurrency = nil;
   const netUnitPrice: TZUGFeRDNullableCurrency = nil;
   const billedQuantity: Double = 0;
+  const lineTotalAmount: Currency = 0;
   const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown;
   const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown;
   const taxPercent: Double = 0;
@@ -1461,6 +1466,8 @@ begin
   newItem.GrossUnitPrice := grossUnitPrice;
   newItem.NetUnitPrice := netUnitPrice;
   newItem.BilledQuantity := billedQuantity;
+  if lineTotalAmount <> 0.0 then
+    newItem.LineTotalAmount.SetValue(LineTotalAmount);
   newItem.TaxType := taxType;
   newItem.TaxCategoryCode := categoryCode;
   newItem.TaxPercent := taxPercent;

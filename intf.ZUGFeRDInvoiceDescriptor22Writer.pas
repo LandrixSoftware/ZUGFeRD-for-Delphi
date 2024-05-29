@@ -316,17 +316,33 @@ begin
       //#endregion
 
       //#region GrossPriceProductTradePrice (Comfort, Extended, XRechnung)
-      // BT-148
-      if (tradeLineItem.GrossUnitPrice.HasValue or (tradeLineItem.TradeAllowanceCharges.Count > 0)) then
+      var needToWriteGrossUnitPrice := false;
+
+      // the PEPPOL business rule for XRechnung is very specific
+      // PEPPOL-EN16931-R046
+      if ((descriptor.Profile = TZUGFeRDProfile.XRechnung) and
+          tradeLineItem.GrossUnitPrice.HasValue and
+          (tradeLineItem.TradeAllowanceCharges.Count > 0)) then
+      begin
+          needToWriteGrossUnitPrice := true;
+      end
+      else
+      if ((descriptor.Profile <> TZUGFeRDProfile.XRechnung) and
+         (tradeLineItem.GrossUnitPrice.HasValue or (tradeLineItem.TradeAllowanceCharges.Count > 0))) then
+      begin
+        needToWriteGrossUnitPrice := true;
+      end;
+
+      if (needToWriteGrossUnitPrice) then
       begin
         Writer.WriteStartElement('ram:GrossPriceProductTradePrice', [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
-        _writeOptionalAmount(Writer, 'ram:ChargeAmount', tradeLineItem.GrossUnitPrice, 2);
+        _writeOptionalAmount(Writer, 'ram:ChargeAmount', tradeLineItem.GrossUnitPrice, 2); //BT-148
         if (tradeLineItem.UnitQuantity.HasValue) then
         begin
           _writeElementWithAttribute(Writer, 'ram:BasisQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.UnitQuantity.Value, 4));
         end;
 
-        for var tradeAllowanceCharge : TZUGFeRDTradeAllowanceCharge in tradeLineItem.TradeAllowanceCharges do
+        for var tradeAllowanceCharge : TZUGFeRDTradeAllowanceCharge in tradeLineItem.TradeAllowanceCharges do //BT-147
         begin
           Writer.WriteStartElement('ram:AppliedTradeAllowanceCharge');
 
@@ -360,16 +376,6 @@ begin
           Writer.WriteEndElement();
           //#endregion
 
-          //TODO doppelt?
-          //#region ChargePercentage
-          if (tradeAllowanceCharge.ChargePercentage <> 0.0) then
-          begin
-            Writer.WriteStartElement('ram:CalculationPercent', [TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
-            Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ChargePercentage, 2));
-            Writer.WriteEndElement();
-          end;
-          //#endregion
-
           Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason, [TZUGFeRDProfile.Extended]); // not in XRechnung according to CII-SR-128
 
           Writer.WriteEndElement(); // !AppliedTradeAllowanceCharge
@@ -382,7 +388,7 @@ begin
       //#region NetPriceProductTradePrice
       //Im Nettopreis sind alle Zu- und Abschläge enthalten, jedoch nicht die Umsatzsteuer.
       Writer.WriteStartElement('ram:NetPriceProductTradePrice', [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
-      _writeOptionalAmount(Writer, 'ram:ChargeAmount', tradeLineItem.NetUnitPrice, 2);
+      _writeOptionalAmount(Writer, 'ram:ChargeAmount', tradeLineItem.NetUnitPrice, 2); //BT-146
 
       if (tradeLineItem.UnitQuantity.HasValue) then
       begin
@@ -907,7 +913,7 @@ begin
   end;
   //#endregion
 
-  //  13. SpecifiedTradeAllowanceCharge (optional)
+  //13. SpecifiedTradeAllowanceCharge (optional)
   for var tradeAllowanceCharge : TZUGFeRDTradeAllowanceCharge in Descriptor.TradeAllowanceCharges do
   begin
     Writer.WriteStartElement('ram:SpecifiedTradeAllowanceCharge');
@@ -1375,16 +1381,16 @@ begin
   _writeOptionalContact(writer, 'ram:DefinedTradeContact', contact, [TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung]);
 
   writer.WriteStartElement('ram:PostalTradeAddress');
-  writer.WriteElementString('ram:PostcodeCode', party.Postcode); // BT-53
-  writer.WriteElementString('ram:LineOne', ifthen(party.ContactName<>'',party.Street,party.ContactName)); // BT-50
+  writer.WriteOptionalElementString('ram:PostcodeCode', party.Postcode); //buyer: BT-53
+  writer.WriteOptionalElementString('ram:LineOne', ifthen(party.ContactName<>'',party.Street,party.ContactName)); //buyer: BT-50
   if (party.ContactName<>'')then
   begin
-      writer.WriteElementString('ram:LineTwo', party.Street); // BT-51
+      writer.WriteOptionalElementString('ram:LineTwo', party.Street); //buyer: BT-51
   end;
 
-  writer.WriteOptionalElementString('ram:LineThree', party.AddressLine3); // BT-163
-  writer.WriteElementString('ram:CityName', party.City); // BT-52
-  writer.WriteElementString('ram:CountryID', TZUGFeRDCountryCodesExtensions.EnumToString(party.Country)); // BT-55
+  writer.WriteOptionalElementString('ram:LineThree', party.AddressLine3); //buyer: BT-163
+  writer.WriteOptionalElementString('ram:CityName', party.City); //buyer: BT-52
+  writer.WriteElementString('ram:CountryID', TZUGFeRDCountryCodesExtensions.EnumToString(party.Country)); //buyer: BT-55
   writer.WriteOptionalElementString('ram:CountrySubDivisionName', party.CountrySubdivisionName); // BT-79
   writer.WriteEndElement(); // !PostalTradeAddress
 

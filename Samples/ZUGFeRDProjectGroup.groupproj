@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{BDE2F953-E805-4F98-9E9D-456B1EB6B690}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="ZUGFeRDProject.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="..\Test\DUnitXZUGFeRDTest.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="ZUGFeRDProject">
+        <MSBuild Projects="ZUGFeRDProject.dproj"/>
+    </Target>
+    <Target Name="ZUGFeRDProject:Clean">
+        <MSBuild Projects="ZUGFeRDProject.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ZUGFeRDProject:Make">
+        <MSBuild Projects="ZUGFeRDProject.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="DUnitXZUGFeRDTest">
+        <MSBuild Projects="..\Test\DUnitXZUGFeRDTest.dproj"/>
+    </Target>
+    <Target Name="DUnitXZUGFeRDTest:Clean">
+        <MSBuild Projects="..\Test\DUnitXZUGFeRDTest.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="DUnitXZUGFeRDTest:Make">
+        <MSBuild Projects="..\Test\DUnitXZUGFeRDTest.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="ZUGFeRDProject;DUnitXZUGFeRDTest"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="ZUGFeRDProject:Clean;DUnitXZUGFeRDTest:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="ZUGFeRDProject:Make;DUnitXZUGFeRDTest:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

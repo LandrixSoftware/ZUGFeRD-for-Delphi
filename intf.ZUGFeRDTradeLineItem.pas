@@ -162,7 +162,7 @@ type
     property BilledQuantity: Double read FBilledQuantity write FBilledQuantity;
 
     /// <summary>
-    /// Invoice line net amount
+    /// Invoice line net amount including (!) trade allowance charges for the line item
     /// BT-131
     /// </summary>
     property LineTotalAmount: TZUGFeRDNullable<Double> read FLineTotalAmount write FLineTotalAmount;

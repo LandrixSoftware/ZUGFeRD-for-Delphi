@@ -70,7 +70,16 @@ type
   IZUGFeRDPdfHelper = interface
     ['{EB5E0786-D33B-4811-9749-E58DE90102F7}']
     function SetPdfTkServerPath(const _Path : String) : IZUGFeRDPdfHelper;
-    function GetZUGFeRDPdfAttachment(const _PdfFilename : String; out _Attachment : TStream; out _CmdOutput : String) : Boolean;
+    function PdfTkServerGetZUGFeRDPdfAttachment(const _PdfFilename : String; out _Attachment : TStream; out _CmdOutput : String) : Boolean;
+
+    function SetJavaRuntimeEnvironmentPath(const _Path : String) : IZUGFeRDPdfHelper;
+    function SetMustangprojectLibPath(const _Path : String) : IZUGFeRDPdfHelper;
+
+//    function Validate(const _InvoiceXMLData : String; out _CmdOutput,_ValidationResultAsXML,_ValidationResultAsHTML : String) : Boolean;
+//    function ValidateFile(const _InvoiceXMLFilename : String; out _CmdOutput,_ValidationResultAsXML,_ValidationResultAsHTML : String) : Boolean;
+    function Visualize(const _InvoiceXMLData : String; out _CmdOutput,_VisualizationAsHTML : String) : Boolean;
+    function VisualizeFile(const _InvoiceXMLFilename : String; out _CmdOutput,_VisualizationAsHTML : String) : Boolean;
+    function VisualizeFileAsPdf(const _InvoiceXMLFilename : String; out _CmdOutput : String; out _VisualizationAsPdf : TMemoryStream) : Boolean;
   end;
 
   function GetZUGFeRDPdfHelper : IZUGFeRDPdfHelper;
@@ -81,6 +90,10 @@ type
   TZUGFeRDPdfHelper = class(TInterfacedObject,IZUGFeRDPdfHelper)
   private
     PdfTkServerPath : String;
+    JavaRuntimeEnvironmentPath : String;
+    //https://github.com/ZUGFeRD/mustangproject/blob/master/Mustang-CLI/src/main/java/org/mustangproject/commandline/Main.java
+    //https://www.mustangproject.org/kommandozeile/?lang=de
+    MustangprojectPath : String;
     CmdOutput : TStringList;
     function ExecAndWait(_Filename, _Params: string): Boolean;
     function QuoteIfContainsSpace(const _Value : String) : String;
@@ -88,7 +101,14 @@ type
     constructor Create;
     destructor Destroy; override;
     function SetPdfTkServerPath(const _Path : String) : IZUGFeRDPdfHelper;
-    function GetZUGFeRDPdfAttachment(const _PdfFilename : String; out _Attachment : TStream; out _CmdOutput : String) : Boolean;
+    function PdfTkServerGetZUGFeRDPdfAttachment(const _PdfFilename : String; out _Attachment : TStream; out _CmdOutput : String) : Boolean;
+
+    function SetJavaRuntimeEnvironmentPath(const _Path : String) : IZUGFeRDPdfHelper;
+    function SetMustangprojectLibPath(const _Path : String) : IZUGFeRDPdfHelper;
+
+    function Visualize(const _InvoiceXMLData : String; out _CmdOutput,_VisualizationAsHTML : String) : Boolean;
+    function VisualizeFile(const _InvoiceXMLFilename : String; out _CmdOutput,_VisualizationAsHTML : String) : Boolean;
+    function VisualizeFileAsPdf(const _InvoiceXMLFilename : String; out _CmdOutput : String; out _VisualizationAsPdf : TMemoryStream) : Boolean;
   end;
 
 function GetZUGFeRDPdfHelper : IZUGFeRDPdfHelper;
@@ -177,7 +197,7 @@ begin
     Result := _Value;
 end;
 
-function TZUGFeRDPdfHelper.GetZUGFeRDPdfAttachment(const _PdfFilename: String;
+function TZUGFeRDPdfHelper.PdfTkServerGetZUGFeRDPdfAttachment(const _PdfFilename: String;
   out _Attachment: TStream; out _CmdOutput: String): Boolean;
 var
   cmd: TStringList;
@@ -240,11 +260,168 @@ begin
   end;
 end;
 
+function TZUGFeRDPdfHelper.SetJavaRuntimeEnvironmentPath(
+  const _Path: String): IZUGFeRDPdfHelper;
+begin
+  JavaRuntimeEnvironmentPath := IncludeTrailingPathDelimiter(_Path);
+  Result := self;
+end;
+
+function TZUGFeRDPdfHelper.SetMustangprojectLibPath(
+  const _Path: String): IZUGFeRDPdfHelper;
+begin
+  MustangprojectPath := IncludeTrailingPathDelimiter(_Path);
+  Result := self;
+end;
+
 function TZUGFeRDPdfHelper.SetPdfTkServerPath(
   const _Path: String): IZUGFeRDPdfHelper;
 begin
   PdfTkServerPath := IncludeTrailingPathDelimiter(_Path);
   Result := self;
+end;
+
+function TZUGFeRDPdfHelper.Visualize(const _InvoiceXMLData: String;
+  out _CmdOutput, _VisualizationAsHTML: String): Boolean;
+var
+  hstrl,cmd: TStringList;
+  tmpFilename : String;
+begin
+  Result := false;
+  if _InvoiceXMLData = '' then
+    exit;
+  if not FileExists(JavaRuntimeEnvironmentPath+'bin\java.exe') then
+    exit;
+  if not FileExists(MustangprojectPath+'Mustang-CLI-2.11.0.jar') then
+    exit;
+
+  tmpFilename := TPath.GetTempFileName;
+
+  hstrl := TStringList.Create;
+  cmd := TStringList.Create;
+  try
+    hstrl.Text := _InvoiceXMLData;
+    hstrl.SaveToFile(tmpFilename,TEncoding.UTF8);
+
+    cmd.Add('pushd '+QuoteIfContainsSpace(ExtractFilePath(tmpFilename)));
+
+    cmd.Add(QuoteIfContainsSpace(JavaRuntimeEnvironmentPath+'bin\java.exe')+' -Xmx1G '+
+            '-Dfile.encoding=UTF-8 -jar '+QuoteIfContainsSpace(MustangprojectPath+'Mustang-CLI-2.11.0.jar')+
+            ' --action visualize ' +
+            '-source-xml '+ QuoteIfContainsSpace(tmpFilename));
+
+    cmd.SaveToFile(tmpFilename+'.bat',TEncoding.ANSI);
+
+    Result := ExecAndWait(tmpFilename+'.bat','');
+
+    _CmdOutput := CmdOutput.Text;
+
+    DeleteFile(tmpFilename+'.bat');
+    DeleteFile(tmpFilename);
+
+  finally
+    hstrl.Free;
+    cmd.Free;
+  end;
+end;
+
+function TZUGFeRDPdfHelper.VisualizeFile(const _InvoiceXMLFilename: String;
+  out _CmdOutput, _VisualizationAsHTML: String): Boolean;
+var
+  cmd: TStringList;
+  tmpFilename : String;
+begin
+  Result := false;
+  if not FileExists(_InvoiceXMLFilename) then
+    exit;
+  if not FileExists(JavaRuntimeEnvironmentPath+'bin\java.exe') then
+    exit;
+  if not FileExists(MustangprojectPath+'Mustang-CLI-2.11.0.jar') then
+    exit;
+
+  tmpFilename := TPath.GetTempFileName;
+
+  cmd := TStringList.Create;
+  try
+    cmd.Add('pushd '+QuoteIfContainsSpace(ExtractFilePath(tmpFilename)));
+
+    cmd.Add(QuoteIfContainsSpace(JavaRuntimeEnvironmentPath+'bin\java.exe')+' -Xmx1G '+
+            '-Dfile.encoding=UTF-8 -jar '+QuoteIfContainsSpace(MustangprojectPath+'Mustang-CLI-2.11.0.jar')+
+            ' --action visualize' +
+            ' --source '+ QuoteIfContainsSpace(_InvoiceXMLFilename)+
+            ' --out '+tmpFilename+'.html'+
+            ' --language de');
+
+    cmd.SaveToFile(tmpFilename+'.bat',TEncoding.ANSI);
+
+    Result := ExecAndWait(tmpFilename+'.bat','');
+
+    if Result and FileExists(tmpFilename+'.html') then
+    begin
+      _VisualizationAsHTML := TFile.ReadAllText(tmpFilename+'.html',TEncoding.UTF8);
+    end;
+
+    _CmdOutput := CmdOutput.Text;
+
+    DeleteFile(tmpFilename+'.bat');
+    if FileExists(tmpFilename+'.html') then
+      DeleteFile(tmpFilename+'.html');
+    if FileExists(ExtractFilePath(tmpFilename)+'xrechnung-viewer.css') then
+      DeleteFile(ExtractFilePath(tmpFilename)+'xrechnung-viewer.css');
+    if FileExists(ExtractFilePath(tmpFilename)+'xrechnung-viewer.js') then
+      DeleteFile(ExtractFilePath(tmpFilename)+'xrechnung-viewer.js');
+  finally
+    cmd.Free;
+  end;
+end;
+
+function TZUGFeRDPdfHelper.VisualizeFileAsPdf(const _InvoiceXMLFilename: String;
+  out _CmdOutput: String; out _VisualizationAsPdf: TMemoryStream): Boolean;
+var
+  cmd: TStringList;
+  tmpFilename : String;
+begin
+  Result := false;
+  if not FileExists(_InvoiceXMLFilename) then
+    exit;
+  if not FileExists(JavaRuntimeEnvironmentPath+'bin\java.exe') then
+    exit;
+  if not FileExists(MustangprojectPath+'Mustang-CLI-2.11.0.jar') then
+    exit;
+
+  tmpFilename := TPath.GetTempFileName;
+
+  cmd := TStringList.Create;
+  try
+    cmd.Add('pushd '+QuoteIfContainsSpace(ExtractFilePath(tmpFilename)));
+
+    cmd.Add(QuoteIfContainsSpace(JavaRuntimeEnvironmentPath+'bin\java.exe')+' -Xmx1G '+
+            '-Dfile.encoding=UTF-8 -jar '+QuoteIfContainsSpace(MustangprojectPath+'Mustang-CLI-2.11.0.jar')+
+            ' --action pdf' +
+            ' --source '+ QuoteIfContainsSpace(_InvoiceXMLFilename)+
+            ' --out '+tmpFilename+'.pdf'+
+            ' --language de');
+
+    cmd.SaveToFile(tmpFilename+'.bat',TEncoding.ANSI);
+
+    Result := ExecAndWait(tmpFilename+'.bat','');
+
+    if Result and FileExists(tmpFilename+'.pdf') then
+    begin
+      _VisualizationAsPdf := TMemoryStream.Create;
+      _VisualizationAsPdf.LoadFromFile(tmpFilename+'.pdf');
+      _VisualizationAsPdf.Position := 0;
+    end else
+      _VisualizationAsPdf := nil;
+
+    _CmdOutput := CmdOutput.Text;
+
+    DeleteFile(tmpFilename+'.bat');
+    if FileExists(tmpFilename+'.pdf') then
+      DeleteFile(tmpFilename+'.pdf');
+  finally
+    cmd.Free;
+  end;
 end;
 
 { TZUGFeRDNullable }

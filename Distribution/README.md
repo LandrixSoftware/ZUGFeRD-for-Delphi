@@ -6,6 +6,8 @@ Das Skript installtools.ps1 mit PowerShell ausfuehren, um die Tools zu installie
 
 https://www.mustangproject.org/kommandozeile/?lang=de
 
+https://github.com/ZUGFeRD/mustangproject/blob/master/Mustang-CLI/src/main/java/org/mustangproject/commandline/Main.java
+
 ## Historie
 
 - 23.05.2024 Update\

@@ -756,13 +756,13 @@ begin
   _Writer.WriteOptionalElementString('ram:Name', Party.Name);
   _writeOptionalContact(_writer, 'ram:DefinedTradeContact', Contact);
   _writer.WriteStartElement('ram:PostalTradeAddress');
-  _writer.WriteElementString('ram:PostcodeCode', Party.Postcode);
-  _writer.WriteElementString('ram:LineOne', ifthen(Party.ContactName = '', Party.Street,Party.ContactName));
+  _writer.WriteOptionalElementString('ram:PostcodeCode', Party.Postcode);
+  _writer.WriteOptionalElementString('ram:LineOne', ifthen(Party.ContactName = '', Party.Street,Party.ContactName));
   if (Party.ContactName <> '') then
   begin
-    _writer.WriteElementString('ram:LineTwo', Party.Street);
+    _writer.WriteOptionalElementString('ram:LineTwo', Party.Street);
   end;
-  _writer.WriteElementString('ram:CityName', Party.City);
+  _writer.WriteOptionalElementString('ram:CityName', Party.City);
   _writer.WriteElementString('ram:CountryID', TZUGFeRDCountryCodesExtensions.EnumToString(Party.Country));
   _writer.WriteEndElement(); // !PostalTradeAddress
 
