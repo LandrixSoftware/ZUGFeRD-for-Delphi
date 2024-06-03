@@ -302,7 +302,7 @@ begin
     end;
   end;
 
-  Result := true;
+  Result := false; // profile does not fit
 end;
 
 function TZUGFeRDProfileAwareXmlTextWriter._IsNodeVisible: Boolean;
