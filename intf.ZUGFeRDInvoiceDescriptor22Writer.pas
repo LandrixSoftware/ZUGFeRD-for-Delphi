@@ -1382,7 +1382,7 @@ begin
 
   writer.WriteStartElement('ram:PostalTradeAddress');
   writer.WriteOptionalElementString('ram:PostcodeCode', party.Postcode); //buyer: BT-53
-  writer.WriteOptionalElementString('ram:LineOne', ifthen(party.ContactName<>'',party.Street,party.ContactName)); //buyer: BT-50
+  writer.WriteOptionalElementString('ram:LineOne', ifthen(party.ContactName='',party.Street,party.ContactName)); //buyer: BT-50
   if (party.ContactName<>'')then
   begin
       writer.WriteOptionalElementString('ram:LineTwo', party.Street); //buyer: BT-51
