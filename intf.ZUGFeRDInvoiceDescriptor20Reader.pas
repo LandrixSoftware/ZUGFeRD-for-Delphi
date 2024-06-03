@@ -439,7 +439,8 @@ begin
   Result.Description := _nodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:Description');
   Result.UnitQuantity.SetValue(_nodeAsDecimal(tradeLineItem, './/ram:BasisQuantity', 1));
   Result.BilledQuantity := _nodeAsDecimal(tradeLineItem, './/ram:BilledQuantity', 0);
-  Result.LineTotalAmount.SetValue(_nodeAsDecimal(tradeLineItem, './/ram:LineTotalAmount', 0));
+//  Result.LineTotalAmount.SetValue(_nodeAsDecimal(tradeLineItem, './/ram:LineTotalAmount', 0));
+  Result.LineTotalAmount:= _nodeAsDecimal(tradeLineItem, './/ram:LineTotalAmount', 0);
   Result.TaxCategoryCode := TZUGFeRDTaxCategoryCodesExtensions.FromString(_nodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:CategoryCode'));
   Result.TaxType := TZUGFeRDTaxTypesExtensions.FromString(_nodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:TypeCode'));
   Result.TaxPercent := _nodeAsDecimal(tradeLineItem, './/ram:ApplicableTradeTax/ram:RateApplicablePercent', 0);

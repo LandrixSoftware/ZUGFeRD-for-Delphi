@@ -65,7 +65,7 @@ type
     FAssociatedDocument: TZUGFeRDAssociatedDocument;
     FTaxCategoryCode: TZUGFeRDTaxCategoryCodes;
     FNetUnitPrice: TZUGFeRDNullableCurrency;
-    FLineTotalAmount: TZUGFeRDNullable<Double>;
+    FLineTotalAmount: Nullable<Double>; // TZUGFeRDNullable<Double>;
     FDeliveryNoteReferencedDocument: TZUGFeRDDeliveryNoteReferencedDocument;
     FGlobalID: TZUGFeRDGlobalID;
     FBuyerOrderReferencedDocument: TZUGFeRDBuyerOrderReferencedDocument;
@@ -165,7 +165,7 @@ type
     /// Invoice line net amount including (!) trade allowance charges for the line item
     /// BT-131
     /// </summary>
-    property LineTotalAmount: TZUGFeRDNullable<Double> read FLineTotalAmount write FLineTotalAmount;
+    property LineTotalAmount: Nullable<Double> {TZUGFeRDNullable<Double>} read FLineTotalAmount write FLineTotalAmount;
 
     /// <summary>
     /// Detailed information about the invoicing period
@@ -267,7 +267,7 @@ begin
   FGlobalID := TZUGFeRDGlobalID.Create;
   // UnitQuantity := TZUGFeRDNullable<Double>.Create; // should be unneccesary
   FUnitQuantity:= TZUGFeRDNullable<Double>.Create;
-  FLineTotalAmount:= TZUGFeRDNullable<Double>.Create;
+//  FLineTotalAmount:= NTZUGFeRDNullable<Double>.Create;
   FBillingPeriodStart:= TZUGFeRDNullable<TDateTime>.Create;
   FBillingPeriodEnd:= TZUGFeRDNullable<TDateTime>.Create;
   FNetUnitPrice := TZUGFeRDNullableCurrency.CreateWithValue(0.0);
@@ -287,7 +287,7 @@ destructor TZUGFeRDTradeLineItem.Destroy;
 begin
   if Assigned(FGlobalID) then begin FGlobalID.Free; FGlobalID := nil; end;
   if Assigned(FUnitQuantity) then begin FUnitQuantity.Free; FUnitQuantity := nil; end;
-  if Assigned(FLineTotalAmount) then begin FLineTotalAmount.Free; FLineTotalAmount := nil; end;
+//  if Assigned(FLineTotalAmount) then begin FLineTotalAmount.Free; FLineTotalAmount := nil; end;
   if Assigned(FBillingPeriodStart) then begin FBillingPeriodStart.Free; FBillingPeriodStart := nil; end;
   if Assigned(FBillingPeriodEnd) then begin FBillingPeriodEnd.Free; FBillingPeriodEnd := nil; end;
   if Assigned(FNetUnitPrice) then begin FNetUnitPrice.Free; FNetUnitPrice := nil; end;
