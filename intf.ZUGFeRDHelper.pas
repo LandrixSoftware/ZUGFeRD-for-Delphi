@@ -87,6 +87,7 @@ type
 
 type
   // NullableParam wird für die Parameterübergabe verwendet, da dies die Möglichkeit schafft, Default Parameter zu realisieren
+  // entweder Nil, dann ohne Wert oder mit Wert, das <> Nil
   INullableParam<T> = interface
     function GetValue: T;
     procedure SetValue(const AValue: T);
@@ -100,7 +101,6 @@ type
   public
     Property Value: T read GetValue Write SetValue;
     constructor Create (AValue: T);
-    Destructor Destroy; override;
   end;
 
   // Nullable as managed record
@@ -130,6 +130,7 @@ type
   NullableDouble = Nullable<Double>;
   NullableInt = Nullable<Integer>;
   NullableDateTime = Nullable<TDateTime>;
+  NullableCurrency = Nullable<Currency>;
 
 implementation
 
@@ -602,6 +603,7 @@ end;
 { Nullable<T> }
 
 constructor Nullable<T>.Create(Dummy: Boolean);
+// constructor to create an uninitialzed Instance
 begin
   FHasValue:= False;
 end;
@@ -692,11 +694,6 @@ end;
 constructor NullableParam<T>.Create(AValue: T);
 begin
   Value:= AValue;
-end;
-
-destructor NullableParam<T>.Destroy;
-begin
-  //
 end;
 
 function NullableParam<T>.GetValue: T;
