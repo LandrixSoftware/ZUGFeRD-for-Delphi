@@ -94,7 +94,7 @@ type
     Property Value: T read GetValue Write SetValue;
   end;
 
-  NullableParam<T> = class (TInterfacedObject, INullableParam<T>)
+  TNullableParam<T> = class (TInterfacedObject, INullableParam<T>)
     FValue: T;
     function GetValue: T;
     procedure SetValue(const AValue: T);
@@ -124,6 +124,7 @@ type
     class operator Implicit(Value: Nullable<T>): T;
     class operator Implicit(Value: T): Nullable<T>;
     class operator Implicit(Param: INullableParam<T>): Nullable<T>;
+    class operator Implicit(Param: Nullable<T>): INullableParam<T>;
     class operator Explicit(Value: Nullable<T>): T;
   end;
 
@@ -672,9 +673,17 @@ end;
 class operator Nullable<T>.Implicit(Param: INullableParam<T>): Nullable<T>;
 begin
   if Param=Nil then
-    Result:= Nullable<T>.Create(Default(T))
+    Result:= Nullable<T>.Create(false)
   else
     Result:= Nullable<T>.Create(Param.Value);
+end;
+
+class operator Nullable<T>.Implicit(Param: Nullable<T>): INullableParam<T>;
+begin
+  if not Param.HasValue then
+    Result := nil
+  else
+    Result := TNullableParam<T>.Create(Param.Value);
 end;
 
 class operator Nullable<T>.NotEqual(ALeft, ARight: Nullable<T>): Boolean;
@@ -691,17 +700,17 @@ end;
 
 { NullableParam<T> }
 
-constructor NullableParam<T>.Create(AValue: T);
+constructor TNullableParam<T>.Create(AValue: T);
 begin
   Value:= AValue;
 end;
 
-function NullableParam<T>.GetValue: T;
+function TNullableParam<T>.GetValue: T;
 begin
   Result:= FValue
 end;
 
-procedure NullableParam<T>.SetValue(const AValue: T);
+procedure TNullableParam<T>.SetValue(const AValue: T);
 begin
   FValue:= AValue
 end;
