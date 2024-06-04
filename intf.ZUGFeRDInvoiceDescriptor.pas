@@ -682,7 +682,7 @@ type
     /// <param name="billingPeriodEnd"></param>
     /// <returns></returns>
     function AddTradeLineItem(const name: string; const description: string;
-                  const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown; const unitQuantity: TZUGFeRDNullable<Double> = nil;
+                  const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown; const unitQuantity: INullableParam<Double> = nil;
                   const grossUnitPrice: TZUGFeRDNullableCurrency = nil; const netUnitPrice: TZUGFeRDNullableCurrency = nil; const billedQuantity: Double = 0; const lineTotalAmount : Currency = 0;
                   const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const taxPercent: Double = 0;
                   const comment: string = ''; const id: TZUGFeRDGlobalID = nil; const sellerAssignedID: string = '';
@@ -695,7 +695,7 @@ type
     /// Adds a new line to the invoice. The line id is passed as a parameter.
     /// </summary>
     function AddTradeLineItem(const lineID: string; const name: string; const description: string;
-                  const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown; const unitQuantity: TZUGFeRDNullable<Double> = nil;
+                  const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown; const unitQuantity: INullableParam<Double> = nil;
                   const grossUnitPrice: TZUGFeRDNullableCurrency = nil; const netUnitPrice: TZUGFeRDNullableCurrency = nil; const billedQuantity: Double = 0; const lineTotalAmount : Currency = 0;
                   const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const taxPercent: Double = 0;
                   const comment: string = ''; const id: TZUGFeRDGlobalID = nil; const sellerAssignedID: string = ''; const buyerAssignedID: string = '';
@@ -1394,7 +1394,7 @@ end;
 function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const name: string;
   const description: string;
   const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown;
-  const unitQuantity: TZUGFeRDNullable<Double> = nil;
+  const unitQuantity: INullableParam<Double> = nil;
   const grossUnitPrice: TZUGFeRDNullableCurrency = nil;
   const netUnitPrice: TZUGFeRDNullableCurrency = nil;
   const billedQuantity: Double = 0;
@@ -1423,7 +1423,7 @@ end;
 function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const lineID: string;
   const name: string; const description: string;
   const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown;
-  const unitQuantity: TZUGFeRDNullable<Double> = nil;
+  const unitQuantity: INullableParam<Double> = nil;
   const grossUnitPrice: TZUGFeRDNullableCurrency = nil;
   const netUnitPrice: TZUGFeRDNullableCurrency = nil;
   const billedQuantity: Double = 0;
@@ -1463,18 +1463,17 @@ begin
   newItem.Description := description;
   newItem.UnitCode := unitCode;
   newItem.UnitQuantity := unitQuantity;
-  newItem.GrossUnitPrice := grossUnitPrice;
-  newItem.NetUnitPrice := netUnitPrice;
+//  newItem.GrossUnitPrice := grossUnitPrice;
+//  newItem.NetUnitPrice := netUnitPrice;
   newItem.BilledQuantity := billedQuantity;
   if lineTotalAmount <> 0.0 then
-//    newItem.LineTotalAmount.SetValue(LineTotalAmount);
     newItem.LineTotalAmount:= LineTotalAmount;
+
   newItem.TaxType := taxType;
   newItem.TaxCategoryCode := categoryCode;
   newItem.TaxPercent := taxPercent;
   newItem.BillingPeriodStart.SetValueClass(billingPeriodStart);
   newItem.BillingPeriodEnd.SetValueClass(billingPeriodEnd);
-
   if (not comment.IsEmpty) then
   newItem.AssociatedDocument.Notes.Add(
     TZUGFeRDNote.Create(comment,

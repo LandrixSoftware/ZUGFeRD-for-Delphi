@@ -60,7 +60,7 @@ type
     FBuyerAssignedID: string;
     FActualDeliveryDate: TZUGFeRDNullable<TDateTime>;
     FBillingPeriodEnd: TZUGFeRDNullable<TDateTime>;
-    FUnitQuantity: TZUGFeRDNullable<Double>;
+    FUnitQuantity: Nullable<Double>;
     FDescription: string;
     FAssociatedDocument: TZUGFeRDAssociatedDocument;
     FTaxCategoryCode: TZUGFeRDTaxCategoryCodes;
@@ -154,7 +154,7 @@ type
     /// <summary>
     /// Included amount
     /// </summary>
-    property UnitQuantity: TZUGFeRDNullable<Double> read FUnitQuantity write FUnitQuantity;
+    property UnitQuantity: Nullable<Double> read FUnitQuantity write FUnitQuantity;
 
     /// <summary>
     /// Invoiced quantity
@@ -265,8 +265,7 @@ constructor TZUGFeRDTradeLineItem.Create;
 begin
   inherited;
   FGlobalID := TZUGFeRDGlobalID.Create;
-  // UnitQuantity := TZUGFeRDNullable<Double>.Create; // should be unneccesary
-  FUnitQuantity:= TZUGFeRDNullable<Double>.Create;
+//    FUnitQuantity:= TZUGFeRDNullable<Double>.Create;
 //  FLineTotalAmount:= NTZUGFeRDNullable<Double>.Create;
   FBillingPeriodStart:= TZUGFeRDNullable<TDateTime>.Create;
   FBillingPeriodEnd:= TZUGFeRDNullable<TDateTime>.Create;
@@ -286,10 +285,6 @@ end;
 destructor TZUGFeRDTradeLineItem.Destroy;
 begin
   if Assigned(FGlobalID) then begin FGlobalID.Free; FGlobalID := nil; end;
-  if Assigned(FUnitQuantity) then begin FUnitQuantity.Free; FUnitQuantity := nil; end;
-//  if Assigned(FLineTotalAmount) then begin FLineTotalAmount.Free; FLineTotalAmount := nil; end;
-  if Assigned(FBillingPeriodStart) then begin FBillingPeriodStart.Free; FBillingPeriodStart := nil; end;
-  if Assigned(FBillingPeriodEnd) then begin FBillingPeriodEnd.Free; FBillingPeriodEnd := nil; end;
   if Assigned(FNetUnitPrice) then begin FNetUnitPrice.Free; FNetUnitPrice := nil; end;
   if Assigned(FGrossUnitPrice) then begin FGrossUnitPrice.Free; FGrossUnitPrice := nil; end;
   if Assigned(FAssociatedDocument) then begin FAssociatedDocument.Free; FAssociatedDocument := nil; end;
