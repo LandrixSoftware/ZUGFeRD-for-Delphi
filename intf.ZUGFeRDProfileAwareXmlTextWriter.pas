@@ -285,9 +285,9 @@ var
   maskedProfile: Integer;
   i : TZUGFeRDProfile;
 begin
-  Result := false;
+  if profile = TZUGFERDPROFILES_DEFAULT then
+    Exit(true);
 
-  if profile <> TZUGFERDPROFILES_DEFAULT then
   for i := Low(TZUGFeRDProfile) to High(TZUGFeRDProfile) do
   begin
     if i = TZUGFeRDProfile.Unknown then
@@ -302,7 +302,7 @@ begin
     end;
   end;
 
-  Result := true;
+  Result := false; // profile does not fit
 end;
 
 function TZUGFeRDProfileAwareXmlTextWriter._IsNodeVisible: Boolean;

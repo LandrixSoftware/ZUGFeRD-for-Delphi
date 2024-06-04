@@ -265,7 +265,7 @@ constructor TZUGFeRDTradeLineItem.Create;
 begin
   inherited;
   FGlobalID := TZUGFeRDGlobalID.Create;
-  UnitQuantity := TZUGFeRDNullable<Double>.Create;
+  // UnitQuantity := TZUGFeRDNullable<Double>.Create; // should be unneccesary
   FUnitQuantity:= TZUGFeRDNullable<Double>.Create;
   FLineTotalAmount:= TZUGFeRDNullable<Double>.Create;
   FBillingPeriodStart:= TZUGFeRDNullable<TDateTime>.Create;
