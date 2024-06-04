@@ -1467,7 +1467,8 @@ begin
   newItem.NetUnitPrice := netUnitPrice;
   newItem.BilledQuantity := billedQuantity;
   if lineTotalAmount <> 0.0 then
-    newItem.LineTotalAmount.SetValue(LineTotalAmount);
+//    newItem.LineTotalAmount.SetValue(LineTotalAmount);
+    newItem.LineTotalAmount:= LineTotalAmount;
   newItem.TaxType := taxType;
   newItem.TaxCategoryCode := categoryCode;
   newItem.TaxPercent := taxPercent;
