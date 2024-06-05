@@ -184,6 +184,9 @@ begin
 
   rawValue := dateNode.text;
 
+  if (Trim(rawValue) = '') then // we have to deal with real-life ZUGFeRD files :(
+    exit;
+
   if (format='102') then
   begin
     if Length(rawValue) <> 8 then
