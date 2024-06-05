@@ -322,19 +322,12 @@ end;
 procedure TZUGFeRDTradeLineItem.SetDeliveryNoteReferencedDocument(
   deliveryNoteId: string; deliveryNoteDate: INullableParam<TDateTime>);
 begin
-  //FDeliveryNoteReferencedDocument := TZUGFeRDDeliveryNoteReferencedDocument.Create;
+  if FDeliveryNoteReferencedDocument = nil then
+    FDeliveryNoteReferencedDocument := TZUGFeRDDeliveryNoteReferencedDocument.Create;
   with FDeliveryNoteReferencedDocument do
   begin
     ID := deliveryNoteId;
     IssueDateTime:= deliveryNoteDate;
-(*    if deliveryNoteDate = nil then
-      IssueDateTime.ClearValue
-    else
-    if deliveryNoteDate.HasValue then
-      IssueDateTime.SetValue(deliveryNoteDate.GetValue)
-    else
-      IssueDateTime.ClearValue;
-      *)
   end;
 end;
 
@@ -357,39 +350,24 @@ end;
 procedure TZUGFeRDTradeLineItem.SetOrderReferencedDocument(
   orderReferencedId: string; orderReferencedDate: INullableParam<TDateTime>);
 begin
-  //FBuyerOrderReferencedDocument := BuyerOrderReferencedDocument.Create;
+  if FBuyerOrderReferencedDocument = nil then
+    FBuyerOrderReferencedDocument := BuyerOrderReferencedDocument.Create;
   with FBuyerOrderReferencedDocument do
   begin
     ID := orderReferencedId;
     IssueDateTime:= orderReferencedDate;
-    (*
-    if orderReferencedDate = nil then
-      IssueDateTime.ClearValue
-    else
-    if orderReferencedDate.HasValue then
-      IssueDateTime.SetValue(orderReferencedDate.GetValue)
-    else
-      IssueDateTime.ClearValue;
-      *)
   end;
 end;
 
 procedure TZUGFeRDTradeLineItem.SetContractReferencedDocument(
   contractReferencedId: string; contractReferencedDate: INullableParam<TDateTime>);
 begin
-  //FContractReferencedDocument := ContractReferencedDocument.Create;
+  if FContractReferencedDocument = nil then
+    FContractReferencedDocument := ContractReferencedDocument.Create;
   with FContractReferencedDocument do
   begin
     ID := contractReferencedId;
     IssueDateTime:= contractReferencedDate;
-    (*if contractReferencedDate = nil then
-      IssueDateTime.ClearValue
-    else
-    if contractReferencedDate.HasValue then
-      IssueDateTime.SetValue(contractReferencedDate.GetValue)
-    else
-      IssueDateTime.ClearValue;
-      *)
   end;
 end;
 

@@ -189,20 +189,20 @@ begin
     end
     else if Abs(taxTotal - descriptor.TaxTotalAmount.Value) < 0.01 then
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.taxTotal Message: Berechneter Wert ist wie vorhanden:[%0.0000]', [taxTotal]));
+      Result.Add(Format('trade.settlement.monetarySummation.taxTotal Message: Berechneter Wert ist wie vorhanden:[%4f]', [taxTotal]));
     end
     else
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.taxTotal Message: Berechneter Wert ist[%0.0000] aber tatsächliche vorhander Wert ist[%1:0.0000] | Actual value: %1:0.0000)', [taxTotal, descriptor.TaxTotalAmount]));
+      Result.Add(Format('trade.settlement.monetarySummation.taxTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [taxTotal, descriptor.TaxTotalAmount.GetValueOrDefault]));
     end;
 
     if Abs(lineTotal - descriptor.LineTotalAmount.Value) < 0.01 then
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.lineTotal Message: Berechneter Wert ist wie vorhanden:[%0.0000]', [lineTotal]));
+      Result.Add(Format('trade.settlement.monetarySummation.lineTotal Message: Berechneter Wert ist wie vorhanden:[%4f]', [lineTotal]));
     end
     else
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.lineTotal Message: Berechneter Wert ist[%0.0000] aber tatsächliche vorhander Wert ist[%1:0.0000] | Actual value: %1:0.0000)', [lineTotal, descriptor.LineTotalAmount]));
+      Result.Add(Format('trade.settlement.monetarySummation.lineTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [lineTotal, descriptor.LineTotalAmount.GetValueOrDefault]));
     end;
 
     if not descriptor.GrandTotalAmount.HasValue then
@@ -211,11 +211,11 @@ begin
     end
     else if Abs(grandTotal - descriptor.GrandTotalAmount.Value) < 0.01 then
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.grandTotal Message: Berechneter Wert ist wie vorhanden:[%0.0000]', [grandTotal]));
+      Result.Add(Format('trade.settlement.monetarySummation.grandTotal Message: Berechneter Wert ist wie vorhanden:[%4f]', [grandTotal]));
     end
     else
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.grandTotal Message: Berechneter Wert ist[%0.0000] aber tatsächliche vorhander Wert ist[%1:0.0000] | Actual value: %1:0.0000)', [grandTotal, descriptor.GrandTotalAmount]));
+      Result.Add(Format('trade.settlement.monetarySummation.grandTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [grandTotal, descriptor.GrandTotalAmount.GetValueOrDefault]));
     end;
 
     {
@@ -223,20 +223,20 @@ begin
     }
     if Abs(_taxBasisTotal - _taxBasisTotal) < 0.01 then
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.taxBasisTotal Message: Berechneter Wert ist wie vorhanden:[%0.0000]', [_taxBasisTotal]));
+      Result.Add(Format('trade.settlement.monetarySummation.taxBasisTotal Message: Berechneter Wert ist wie vorhanden:[%4f]', [_taxBasisTotal]));
     end
     else
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.taxBasisTotal Message: Berechneter Wert ist[%0.0000] aber tatsächliche vorhander Wert ist[%1:0.0000] | Actual value: %1:0.0000)', [_taxBasisTotal, _taxBasisTotal]));
+      Result.Add(Format('trade.settlement.monetarySummation.taxBasisTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [_taxBasisTotal, _taxBasisTotal]));
     end;
 
     if Abs(allowanceTotal - _allowanceTotal) < 0.01 then
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist wie vorhanden:[%0.0000]', [_allowanceTotal]));
+      Result.Add(Format('trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist wie vorhanden:[%4f]', [_allowanceTotal]));
     end
     else
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist[%0.0000] aber tatsächliche vorhander Wert ist[%1:0.0000] | Actual value: %1:0.0000)', [allowanceTotal, _allowanceTotal]));
+      Result.Add(Format('trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [allowanceTotal, _allowanceTotal]));
     end;
 
   finally
