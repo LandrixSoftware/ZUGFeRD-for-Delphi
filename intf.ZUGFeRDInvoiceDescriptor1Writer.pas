@@ -263,6 +263,7 @@ begin
         Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
         Writer.WriteElementString('ram:Information', Descriptor.PaymentMeans.Information);
 
+        if (Descriptor.PaymentMeans <> nil) then
         if (Descriptor.PaymentMeans.SEPACreditorIdentifier <> '') and
            (Descriptor.PaymentMeans.SEPAMandateReference <> '') then
         begin
@@ -287,6 +288,7 @@ begin
         Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
         Writer.WriteElementString('ram:Information', Descriptor.PaymentMeans.Information);
 
+        if (Descriptor.PaymentMeans <> nil) then
         if (Descriptor.PaymentMeans.SEPACreditorIdentifier <> '') and
            (Descriptor.PaymentMeans.SEPAMandateReference <> '') then
         begin
@@ -324,6 +326,7 @@ begin
         Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
         Writer.WriteElementString('ram:Information', Descriptor.PaymentMeans.Information);
 
+        if (Descriptor.PaymentMeans <> nil) then
         if (Descriptor.PaymentMeans.SEPACreditorIdentifier <> '') and
            (Descriptor.PaymentMeans.SEPAMandateReference <> '') then
         begin

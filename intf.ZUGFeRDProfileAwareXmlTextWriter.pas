@@ -212,6 +212,7 @@ begin
     XmlNodeStack.Pop;
   end;
 end;
+
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteOptionalElementString(
   const tagName, value: string; profile: TZUGFeRDProfiles);
 begin
