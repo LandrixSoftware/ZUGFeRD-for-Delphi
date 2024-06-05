@@ -47,6 +47,8 @@ uses
   ,intf.ZUGFeRDBuyerOrderReferencedDocument
   ,intf.ZUGFeRDReferenceTypeCodes
   ,intf.ZUGFeRDContractReferencedDocument
+  ,intf.ZUGFeRDSpecialServiceDescriptionCodes
+  ,intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
   ;
 
 type
@@ -261,6 +263,8 @@ begin
                                    Result.Currency,
                                    _nodeAsDecimal(nodes[i], './/ram:ActualAmount', 0),
                                    _nodeAsString(nodes[i], './/ram:Reason'),
+                                   TZUGFeRDSpecialServiceDescriptionCodesExtensions.FromString(_nodeAsString(nodes[i], './ram:ReasonCode')),
+                                   TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.FromString(_nodeAsString(nodes[i], './ram:ReasonCode')),
                                    TZUGFeRDTaxTypesExtensions.FromString(_nodeAsString(nodes[i], './/ram:CategoryTradeTax/ram:TypeCode')),
                                    TZUGFeRDTaxCategoryCodesExtensions.FromString(_nodeAsString(nodes[i], './/ram:CategoryTradeTax/ram:CategoryCode')),
                                    _nodeAsDecimal(nodes[i], './/ram:CategoryTradeTax/ram:ApplicablePercent', 0));
@@ -400,7 +404,9 @@ begin
                                     TZUGFeRDCurrencyCodesExtensions.FromString(basisAmountCurrency),
                                     basisAmount,
                                     actualAmount,
-                                    reason);
+                                    reason,
+                                    TZUGFeRDSpecialServiceDescriptionCodes.Unknown,
+                                    TZUGFeRDAllowanceOrChargeIdentificationCodes.Unknown);
   end;
 
   if (Result.UnitCode = TZUGFeRDQuantityCodes.Unknown) then

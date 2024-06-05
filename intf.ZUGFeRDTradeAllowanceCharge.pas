@@ -19,7 +19,11 @@ unit intf.ZUGFeRDTradeAllowanceCharge;
 
 interface
 
-uses intf.ZUGFeRDCharge,intf.ZUGFeRDCurrencyCodes;
+uses
+  intf.ZUGFeRDCharge,intf.ZUGFeRDCurrencyCodes,
+  intf.ZUGFeRDAllowanceOrChargeIdentificationCodes,
+  intf.ZUGFeRDSpecialServiceDescriptionCodes
+  ;
 
 type
   /// <summary>
@@ -46,6 +50,10 @@ type
     FCurrency: TZUGFeRDCurrencyCodes;
     FActualAmount: Currency;
     FChargePercentage: Currency;
+    FReasonCodeAllowance: TZUGFeRDAllowanceOrChargeIdentificationCodes;
+    FReasonCodeCharge: TZUGFeRDSpecialServiceDescriptionCodes;
+  public
+    constructor Create;
   public
     /// <summary>
     /// Switch for discount and surcharge
@@ -56,6 +64,13 @@ type
     /// In case of a discount (BG-27) the value of the ChargeIndicators has to be "false". In case of a surcharge (BG-28) the value of the ChargeIndicators has to be "true".
     /// </summary>
     property ChargeIndicator: Boolean read FChargeIndicator write FChargeIndicator;
+
+    /// <summary>
+    /// The reason code - one tag -> 2 Types
+    /// </summary>
+    property ReasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes read FReasonCodeAllowance write FReasonCodeAllowance;
+    property ReasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes read FReasonCodeCharge write FReasonCodeCharge;
+
     /// <summary>
     /// The reason for the surcharge or discount in written form
     /// </summary>
@@ -81,5 +96,20 @@ type
   end;
 
 implementation
+
+{ TZUGFeRDTradeAllowanceCharge }
+
+constructor TZUGFeRDTradeAllowanceCharge.Create;
+begin
+  inherited Create;
+  FChargeIndicator:= false;
+  FReason:= '';
+  FBasisAmount:= 0;
+  FCurrency:= TZUGFeRDCurrencyCodes.Unknown;
+  FActualAmount:= 0;
+  FChargePercentage:= 0;
+  FReasonCodeAllowance:= TZUGFeRDAllowanceOrChargeIdentificationCodes.Unknown;
+  FReasonCodeCharge := TZUGFeRDSpecialServiceDescriptionCodes.Unknown;
+end;
 
 end.

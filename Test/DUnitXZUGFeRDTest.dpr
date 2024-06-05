@@ -75,6 +75,8 @@ uses
   intf.ZUGFeRDProfile.UnitTests,
   intf.ZUGFeRDPaymentMeansTypeCodes.UnitTests,
   intf.ZUGFeRDElectronicAddressSchemeIdentifiers.UnitTests,
+  intf.ZUGFeRDSpecialServiceDescriptionCodes.UnitTests,
+  intf.ZUGFeRDAllowanceOrChargeIdentificationCodes.UnitTests,
 
   intf.ZUGFeRDInvoiceDescriptor,intf.ZUGFeRDTradeLineItem,intf.ZUGFeRDInvoiceValidator,
   intf.ZUGFeRDInvoiceDescriptorReader,intf.ZUGFeRDInvoiceDescriptorWriter,

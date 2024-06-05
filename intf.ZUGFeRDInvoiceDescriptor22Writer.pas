@@ -60,6 +60,8 @@ uses
   ,intf.ZUGFeRDReceivableSpecifiedTradeAccountingAccount
   ,intf.ZUGFeRDAccountingAccountTypeCodes
   ,intf.ZUGFeRDMimeTypeMapper
+  ,intf.ZUGFeRDSpecialServiceDescriptionCodes
+  ,intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
   ;
 
 type
@@ -376,7 +378,21 @@ begin
           Writer.WriteEndElement();
           //#endregion
 
-          Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason, [TZUGFeRDProfile.Extended]); // not in XRechnung according to CII-SR-128
+          if tradeAllowanceCharge.ChargeIndicator then
+          begin
+            Writer.WriteOptionalElementString('ram:ReasonCode',
+               TZUGFeRDSpecialServiceDescriptionCodesExtensions.EnumToString(
+                                         tradeAllowanceCharge.ReasonCodeCharge));
+          end else
+          begin
+            Writer.WriteOptionalElementString('ram:ReasonCode',
+               TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.EnumToString(
+                                         tradeAllowanceCharge.ReasonCodeAllowance));
+          end;
+
+          //c# means not in XRechnung according to CII-SR-128
+          //TODO Theoretisch auch Basic, Comfort, XRechnung
+          Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason, [TZUGFeRDProfile.Extended]);
 
           Writer.WriteEndElement(); // !AppliedTradeAllowanceCharge
         end;
@@ -938,6 +954,18 @@ begin
     Writer.WriteStartElement('ram:ActualAmount');
     Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ActualAmount, 2));
     Writer.WriteEndElement();
+
+    if tradeAllowanceCharge.ChargeIndicator then
+    begin
+      Writer.WriteOptionalElementString('ram:ReasonCode',
+         TZUGFeRDSpecialServiceDescriptionCodesExtensions.EnumToString(
+                                   tradeAllowanceCharge.ReasonCodeCharge));
+    end else
+    begin
+      Writer.WriteOptionalElementString('ram:ReasonCode',
+         TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.EnumToString(
+                                   tradeAllowanceCharge.ReasonCodeAllowance));
+    end;
 
     Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason);
 

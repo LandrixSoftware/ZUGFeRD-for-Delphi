@@ -48,7 +48,6 @@ type
 
 implementation
 
-
 { TZUGFeRDCharge }
 
 constructor TZUGFeRDCharge.Create;

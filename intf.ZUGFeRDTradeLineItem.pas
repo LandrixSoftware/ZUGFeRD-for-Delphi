@@ -36,7 +36,9 @@ uses
   intf.ZUGFeRDTaxCategoryCodes,
   intf.ZUGFeRDDeliveryNoteReferencedDocument,
   intf.ZUGFeRDBuyerOrderReferencedDocument,
-  intf.ZUGFeRDAccountingAccountTypeCodes
+  intf.ZUGFeRDAccountingAccountTypeCodes,
+  intf.ZUGFeRDSpecialServiceDescriptionCodes,
+  intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
   ;
 
 type
@@ -94,9 +96,13 @@ type
     /// <param name="basisAmount">Basis aount for the allowance or surcharge, typicalls the net amount of the item</param>
     /// <param name="actualAmount">The actual allowance or surcharge amount</param>
     /// <param name="reason">Reason for the allowance or surcharge</param>
+    /// <param name="reasonCodeCharge"></param>
+    /// <param name="reasonCodeAllowance"></param>
     procedure AddTradeAllowanceCharge(isDiscount: Boolean;
       currency: TZUGFeRDCurrencyCodes; basisAmount, actualAmount: double;
-      reason: string); overload;
+      reason: string;
+      reasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes = TZUGFeRDSpecialServiceDescriptionCodes.Unknown;
+      reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes = TZUGFeRDAllowanceOrChargeIdentificationCodes.Unknown); overload;
 
     /// <summary>
     /// As an allowance or charge on item level, attaching it to the corresponding item.
@@ -107,9 +113,13 @@ type
     /// <param name="actualAmount">The actual allowance or surcharge amount</param>
     /// <param name="chargePercentage">Actual allowance or surcharge charge percentage</param>
     /// <param name="reason">Reason for the allowance or surcharge</param>
+    /// <param name="reasonCodeCharge"></param>
+    /// <param name="reasonCodeAllowance"></param>
     procedure AddTradeAllowanceCharge(isDiscount: Boolean;
       currency: TZUGFeRDCurrencyCodes; basisAmount, actualAmount: double;
-      chargePercentage : Currency; reason: string); overload;
+      chargePercentage : Currency; reason: string;
+      reasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes = TZUGFeRDSpecialServiceDescriptionCodes.Unknown;
+      reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes = TZUGFeRDAllowanceOrChargeIdentificationCodes.Unknown); overload;
 
     procedure SetContractReferencedDocument(contractReferencedId: string;
       contractReferencedDate: INullableParam<TDateTime>);
@@ -294,7 +304,8 @@ end;
 procedure TZUGFeRDTradeLineItem.AddTradeAllowanceCharge(
   isDiscount: Boolean; currency: TZUGFeRDCurrencyCodes;
   basisAmount: double; actualAmount: double;
-  reason: string);
+  reason: string; reasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes;
+  reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes);
 begin
   FTradeAllowanceCharges.Add(TZUGFeRDTradeAllowanceCharge.Create);
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ChargeIndicator := not isDiscount;
@@ -302,13 +313,17 @@ begin
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ActualAmount := actualAmount;
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].BasisAmount := basisAmount;
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ChargePercentage := 0;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ReasonCodeAllowance := reasonCodeAllowance;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ReasonCodeCharge := reasonCodeCharge;
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].Reason := reason;
 end;
 
 procedure TZUGFeRDTradeLineItem.AddTradeAllowanceCharge(
   isDiscount: Boolean; currency: TZUGFeRDCurrencyCodes;
   basisAmount: double; actualAmount: double;
-  chargePercentage : Currency; reason: string);
+  chargePercentage : Currency; reason: string;
+  reasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes;
+  reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes);
 begin
   FTradeAllowanceCharges.Add(TZUGFeRDTradeAllowanceCharge.Create);
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ChargeIndicator := not isDiscount;
@@ -316,6 +331,8 @@ begin
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ActualAmount := actualAmount;
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].BasisAmount := basisAmount;
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ChargePercentage := chargePercentage;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ReasonCodeAllowance := reasonCodeAllowance;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ReasonCodeCharge := reasonCodeCharge;
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].Reason := reason;
 end;
 
