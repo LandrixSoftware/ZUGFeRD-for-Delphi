@@ -77,10 +77,10 @@ type
     FInvoiceDate: TDateTime;
     FPaymentReference: string;
     FOrderNo: string;
-    FOrderDate: TZUGFeRDNullable<TDateTime>;
+    FOrderDate: Nullable<TDateTime>;
     FAdditionalReferencedDocuments: TObjectList<TZUGFeRDAdditionalReferencedDocument>;
     FDeliveryNoteReferencedDocument: TZUGFeRDDeliveryNoteReferencedDocument;
-    FActualDeliveryDate: TZUGFeRDNullable<TDateTime>;
+    FActualDeliveryDate: Nullable<TDateTime>;
     FContractReferencedDocument: TZUGFeRDContractReferencedDocument;
     FSpecifiedProcuringProject: TZUGFeRDSpecifiedProcuringProject;
     FCurrency: TZUGFeRDCurrencyCodes;
@@ -149,7 +149,7 @@ type
     /// <summary>
     /// Order date
     /// </summary>
-    property OrderDate: TZUGFeRDNullable<TDateTime> read FOrderDate write FOrderDate;
+    property OrderDate: Nullable<TDateTime> read FOrderDate write FOrderDate;
 
     /// <summary>
     /// Details of an additional document reference
@@ -171,7 +171,7 @@ type
     /// <summary>
     /// Actual delivery date
     /// </summary>
-    property ActualDeliveryDate: TZUGFeRDNullable<TDateTime> read FActualDeliveryDate write FActualDeliveryDate;
+    property ActualDeliveryDate: Nullable<TDateTime> read FActualDeliveryDate write FActualDeliveryDate;
 
     /// <summary>
     /// Detailed information on the associated contract
@@ -776,8 +776,6 @@ uses
 
 constructor TZUGFeRDInvoiceDescriptor.Create;
 begin
-  FOrderDate := TZUGFeRDNullable<TDateTime>.Create;
-  FActualDeliveryDate := TZUGFeRDNullable<TDateTime>.Create;
   FAdditionalReferencedDocuments := TObjectList<TZUGFeRDAdditionalReferencedDocument>.Create;
   FDespatchAdviceReferencedDocument := nil;
   FDeliveryNoteReferencedDocument:= nil;//TZUGFeRDDeliveryNoteReferencedDocument.Create;
@@ -811,8 +809,6 @@ end;
 
 destructor TZUGFeRDInvoiceDescriptor.Destroy;
 begin
-  if Assigned(FOrderDate) then begin FOrderDate.Free; FOrderDate := nil; end;
-  if Assigned(FActualDeliveryDate) then begin FActualDeliveryDate.Free; FActualDeliveryDate := nil; end;
   if Assigned(FAdditionalReferencedDocuments ) then begin FAdditionalReferencedDocuments.Free; FAdditionalReferencedDocuments  := nil; end;
   if Assigned(FDespatchAdviceReferencedDocument) then begin FDespatchAdviceReferencedDocument.Free; FDespatchAdviceReferencedDocument := nil; end;
   if Assigned(FDeliveryNoteReferencedDocument) then begin FDeliveryNoteReferencedDocument.Free; FDeliveryNoteReferencedDocument := nil; end;
@@ -1178,9 +1174,9 @@ procedure TZUGFeRDInvoiceDescriptor.SetBuyerOrderReferenceDocument(const orderNo
 begin
   FOrderNo := orderNo;
   if orderDate < 100 then
-    FOrderDate.ClearValue
+    FOrderDate:= Nil
   else
-    FOrderDate.SetValue(orderDate);
+    FOrderDate:= orderDate;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetDeliveryNoteReferenceDocument(const deliveryNoteNo: string; const deliveryNoteDate: TDateTime = 0);
@@ -1273,7 +1269,7 @@ procedure TZUGFeRDInvoiceDescriptor.SetTradePaymentTerms(const description: stri
 begin
   if PaymentTerms = nil then PaymentTerms := TZUGFeRDPaymentTerms.Create;
   PaymentTerms.Description := description;
-  PaymentTerms.DueDate.SetValue(dueDate);
+  PaymentTerms.DueDate:= dueDate;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetInvoiceReferencedDocument(const id: string; const IssueDateTime: TDateTime = 0);
