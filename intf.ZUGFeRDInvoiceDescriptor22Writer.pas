@@ -597,6 +597,26 @@ begin
   // TODO: implement SellerTaxRepresentativeTradeParty
   // BT-63: the tax registration of the SellerTaxRepresentativeTradeParty
 
+  //#region SellerOrderReferencedDocument (BT-14: Comfort, Extended)
+  if (Descriptor.SellerOrderReferencedDocument <> nil) then
+  if (Descriptor.SellerOrderReferencedDocument.ID <> '') then
+  begin
+    Writer.WriteStartElement('ram:SellerOrderReferencedDocument', [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung1, TZUGFeRDProfile.XRechnung]);
+    Writer.WriteElementString('ram:IssuerAssignedID', Descriptor.SellerOrderReferencedDocument.ID);
+    if (Descriptor.SellerOrderReferencedDocument.IssueDateTime.HasValue) then
+    begin
+      Writer.WriteStartElement('ram:FormattedIssueDateTime', [TZUGFeRDProfile.Extended]);
+      Writer.WriteStartElement('qdt:DateTimeString');
+      Writer.WriteAttributeString('format', '102');
+      Writer.WriteValue(_formatDate(Descriptor.SellerOrderReferencedDocument.IssueDateTime.Value));
+      Writer.WriteEndElement(); // !qdt:DateTimeString
+      Writer.WriteEndElement(); // !IssueDateTime()
+    end;
+
+    Writer.WriteEndElement(); // !SellerOrderReferencedDocument
+  end;
+  //#endregion
+
   //#region BuyerOrderReferencedDocument
   if (Descriptor.OrderNo <> '') then
   begin
@@ -613,26 +633,6 @@ begin
     end;
 
     Writer.WriteEndElement(); // !BuyerOrderReferencedDocument
-  end;
-  //#endregion
-
-  //#region SellerOrderReferencedDocument (BT-14: Comfort, Extended)
-  if (Descriptor.SellerOrderReferencedDocument <> nil) then
-  if (Descriptor.SellerOrderReferencedDocument.ID <> '') then
-  begin
-    Writer.WriteStartElement('ram:SellerOrderReferencedDocument', [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
-    Writer.WriteElementString('ram:IssuerAssignedID', Descriptor.SellerOrderReferencedDocument.ID);
-    if (Descriptor.SellerOrderReferencedDocument.IssueDateTime.HasValue) then
-    begin
-      Writer.WriteStartElement('ram:FormattedIssueDateTime', [TZUGFeRDProfile.Extended]);
-      Writer.WriteStartElement('qdt:DateTimeString');
-      Writer.WriteAttributeString('format', '102');
-      Writer.WriteValue(_formatDate(Descriptor.SellerOrderReferencedDocument.IssueDateTime.Value));
-      Writer.WriteEndElement(); // !qdt:DateTimeString
-      Writer.WriteEndElement(); // !IssueDateTime()
-    end;
-
-    Writer.WriteEndElement(); // !SellerOrderReferencedDocument
   end;
   //#endregion
 

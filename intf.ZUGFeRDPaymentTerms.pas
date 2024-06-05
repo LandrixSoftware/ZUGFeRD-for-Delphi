@@ -29,10 +29,7 @@ type
   TZUGFeRDPaymentTerms = class
   private
     FDescription: string;
-    FDueDate: TZUGFeRDNullable<TDateTime>;
-  public
-    constructor Create;
-    destructor Destroy; override;
+    FDueDate: Nullable<TDateTime>;
   public
     /// <summary>
     /// A textual description of the payment terms that apply to the amount due for payment (including description of possible penalties).
@@ -41,22 +38,11 @@ type
     /// <summary>
     /// The date when the payment is due
     /// </summary>
-    property DueDate: TZUGFeRDNullable<TDateTime> read FDueDate write FDueDate;
+    property DueDate: Nullable<TDateTime> read FDueDate write FDueDate;
   end;
 
 implementation
 
 { TZUGFeRDPaymentTerms }
-
-constructor TZUGFeRDPaymentTerms.Create;
-begin
-  FDueDate := TZUGFeRDNullable<TDateTime>.Create;
-end;
-
-destructor TZUGFeRDPaymentTerms.Destroy;
-begin
-  if Assigned(FDueDate) then begin FDueDate.Free; FDueDate := nil; end;
-  inherited;
-end;
 
 end.

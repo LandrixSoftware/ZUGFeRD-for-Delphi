@@ -175,7 +175,7 @@ begin
 
   Result.ShipTo := _nodeAsParty(doc.DocumentElement, '//ram:ApplicableSupplyChainTradeDelivery/ram:ShipToTradeParty');
   Result.ShipFrom := _nodeAsParty(doc.DocumentElement, '//ram:ApplicableSupplyChainTradeDelivery/ram:ShipFromTradeParty');
-  Result.ActualDeliveryDate.SetValue(_nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableSupplyChainTradeDelivery/ram:ActualDeliverySupplyChainEvent/ram:OccurrenceDateTime/udt:DateTimeString'));
+  Result.ActualDeliveryDate:=_nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableSupplyChainTradeDelivery/ram:ActualDeliverySupplyChainEvent/ram:OccurrenceDateTime/udt:DateTimeString');
 
   var _deliveryNoteNo : String := _nodeAsString(doc.DocumentElement, '//ram:ApplicableSupplyChainTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:ID');
   var _deliveryNoteDate : TDateTime := _nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableSupplyChainTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:IssueDateTime/udt:DateTimeString');
@@ -282,7 +282,7 @@ begin
 
   Result.PaymentTerms := TZUGFeRDPaymentTerms.Create;
   Result.PaymentTerms.Description := _nodeAsString(doc.DocumentElement, '//ram:SpecifiedTradePaymentTerms/ram:Description');
-  Result.PaymentTerms.DueDate.SetValue(_nodeAsDateTime(doc.DocumentElement, '//ram:SpecifiedTradePaymentTerms/ram:DueDateDateTime'));
+  Result.PaymentTerms.DueDate:= _nodeAsDateTime(doc.DocumentElement, '//ram:SpecifiedTradePaymentTerms/ram:DueDateDateTime');
 
   Result.LineTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:LineTotalAmount', 0);
   Result.ChargeTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:ChargeTotalAmount', 0);
@@ -295,9 +295,9 @@ begin
   Result.DuePayableAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:DuePayableAmount', 0);
 
   if (doc.DocumentElement.SelectSingleNode('//ram:ApplicableSupplyChainTradeAgreement/ram:BuyerOrderReferencedDocument/ram:IssueDateTime/udt:DateTimeString') <> nil) then
-    Result.OrderDate.SetValue(_nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableSupplyChainTradeAgreement/ram:BuyerOrderReferencedDocument/ram:IssueDateTime/udt:DateTimeString'))
+    Result.OrderDate:= _nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableSupplyChainTradeAgreement/ram:BuyerOrderReferencedDocument/ram:IssueDateTime/udt:DateTimeString')
   else
-    Result.OrderDate.SetValue(_nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableSupplyChainTradeAgreement/ram:BuyerOrderReferencedDocument/ram:IssueDateTime'));
+    Result.OrderDate:= _nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableSupplyChainTradeAgreement/ram:BuyerOrderReferencedDocument/ram:IssueDateTime');
   Result.OrderNo := _nodeAsString(doc.DocumentElement, '//ram:ApplicableSupplyChainTradeAgreement/ram:BuyerOrderReferencedDocument/ram:ID');
 
   nodes := doc.SelectNodes('//ram:IncludedSupplyChainTradeLineItem');
