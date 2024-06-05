@@ -973,8 +973,8 @@ begin
 
   //  15. SpecifiedTradePaymentTerms (optional)
   //TODO check if (this.Descriptor.PaymentTerms != null || !string.IsNullOrWhiteSpace(Descriptor.PaymentMeans?.SEPAMandateReference))
-  if (Descriptor.PaymentTerms <> nil) and (Descriptor.PaymentMeans<> nil) then
-  if (Descriptor.PaymentMeans.SEPAMandateReference <> '') then
+  if ((Descriptor.PaymentTerms <> nil) and (Descriptor.PaymentMeans<> nil))
+  or (Descriptor.PaymentMeans.SEPAMandateReference <> '') then
   begin
     Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
     Writer.WriteOptionalElementString('ram:Description', Descriptor.PaymentTerms.Description);
