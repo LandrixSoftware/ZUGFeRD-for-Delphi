@@ -36,7 +36,9 @@ uses
   intf.ZUGFeRDTaxCategoryCodes,
   intf.ZUGFeRDDeliveryNoteReferencedDocument,
   intf.ZUGFeRDBuyerOrderReferencedDocument,
-  intf.ZUGFeRDAccountingAccountTypeCodes
+  intf.ZUGFeRDAccountingAccountTypeCodes,
+  intf.ZUGFeRDSpecialServiceDescriptionCodes,
+  intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
   ;
 
 type
@@ -94,9 +96,13 @@ type
     /// <param name="basisAmount">Basis aount for the allowance or surcharge, typicalls the net amount of the item</param>
     /// <param name="actualAmount">The actual allowance or surcharge amount</param>
     /// <param name="reason">Reason for the allowance or surcharge</param>
+    /// <param name="reasonCodeCharge"></param>
+    /// <param name="reasonCodeAllowance"></param>
     procedure AddTradeAllowanceCharge(isDiscount: Boolean;
       currency: TZUGFeRDCurrencyCodes; basisAmount, actualAmount: double;
-      reason: string); overload;
+      reason: string;
+      reasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes = TZUGFeRDSpecialServiceDescriptionCodes.Unknown;
+      reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes = TZUGFeRDAllowanceOrChargeIdentificationCodes.Unknown); overload;
 
     /// <summary>
     /// As an allowance or charge on item level, attaching it to the corresponding item.
@@ -107,9 +113,13 @@ type
     /// <param name="actualAmount">The actual allowance or surcharge amount</param>
     /// <param name="chargePercentage">Actual allowance or surcharge charge percentage</param>
     /// <param name="reason">Reason for the allowance or surcharge</param>
+    /// <param name="reasonCodeCharge"></param>
+    /// <param name="reasonCodeAllowance"></param>
     procedure AddTradeAllowanceCharge(isDiscount: Boolean;
       currency: TZUGFeRDCurrencyCodes; basisAmount, actualAmount: double;
-      chargePercentage : Currency; reason: string); overload;
+      chargePercentage : Currency; reason: string;
+      reasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes = TZUGFeRDSpecialServiceDescriptionCodes.Unknown;
+      reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes = TZUGFeRDAllowanceOrChargeIdentificationCodes.Unknown); overload;
 
     procedure SetContractReferencedDocument(contractReferencedId: string;
       contractReferencedDate: INullableParam<TDateTime>);
@@ -294,7 +304,8 @@ end;
 procedure TZUGFeRDTradeLineItem.AddTradeAllowanceCharge(
   isDiscount: Boolean; currency: TZUGFeRDCurrencyCodes;
   basisAmount: double; actualAmount: double;
-  reason: string);
+  reason: string; reasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes;
+  reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes);
 begin
   FTradeAllowanceCharges.Add(TZUGFeRDTradeAllowanceCharge.Create);
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ChargeIndicator := not isDiscount;
@@ -302,13 +313,17 @@ begin
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ActualAmount := actualAmount;
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].BasisAmount := basisAmount;
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ChargePercentage := 0;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ReasonCodeAllowance := reasonCodeAllowance;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ReasonCodeCharge := reasonCodeCharge;
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].Reason := reason;
 end;
 
 procedure TZUGFeRDTradeLineItem.AddTradeAllowanceCharge(
   isDiscount: Boolean; currency: TZUGFeRDCurrencyCodes;
   basisAmount: double; actualAmount: double;
-  chargePercentage : Currency; reason: string);
+  chargePercentage : Currency; reason: string;
+  reasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes;
+  reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes);
 begin
   FTradeAllowanceCharges.Add(TZUGFeRDTradeAllowanceCharge.Create);
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ChargeIndicator := not isDiscount;
@@ -316,25 +331,20 @@ begin
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ActualAmount := actualAmount;
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].BasisAmount := basisAmount;
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ChargePercentage := chargePercentage;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ReasonCodeAllowance := reasonCodeAllowance;
+  FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ReasonCodeCharge := reasonCodeCharge;
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].Reason := reason;
 end;
 
 procedure TZUGFeRDTradeLineItem.SetDeliveryNoteReferencedDocument(
   deliveryNoteId: string; deliveryNoteDate: INullableParam<TDateTime>);
 begin
-  //FDeliveryNoteReferencedDocument := TZUGFeRDDeliveryNoteReferencedDocument.Create;
+  if FDeliveryNoteReferencedDocument = nil then
+    FDeliveryNoteReferencedDocument := TZUGFeRDDeliveryNoteReferencedDocument.Create;
   with FDeliveryNoteReferencedDocument do
   begin
     ID := deliveryNoteId;
     IssueDateTime:= deliveryNoteDate;
-(*    if deliveryNoteDate = nil then
-      IssueDateTime.ClearValue
-    else
-    if deliveryNoteDate.HasValue then
-      IssueDateTime.SetValue(deliveryNoteDate.GetValue)
-    else
-      IssueDateTime.ClearValue;
-      *)
   end;
 end;
 
@@ -357,39 +367,24 @@ end;
 procedure TZUGFeRDTradeLineItem.SetOrderReferencedDocument(
   orderReferencedId: string; orderReferencedDate: INullableParam<TDateTime>);
 begin
-  //FBuyerOrderReferencedDocument := BuyerOrderReferencedDocument.Create;
+  if FBuyerOrderReferencedDocument = nil then
+    FBuyerOrderReferencedDocument := BuyerOrderReferencedDocument.Create;
   with FBuyerOrderReferencedDocument do
   begin
     ID := orderReferencedId;
     IssueDateTime:= orderReferencedDate;
-    (*
-    if orderReferencedDate = nil then
-      IssueDateTime.ClearValue
-    else
-    if orderReferencedDate.HasValue then
-      IssueDateTime.SetValue(orderReferencedDate.GetValue)
-    else
-      IssueDateTime.ClearValue;
-      *)
   end;
 end;
 
 procedure TZUGFeRDTradeLineItem.SetContractReferencedDocument(
   contractReferencedId: string; contractReferencedDate: INullableParam<TDateTime>);
 begin
-  //FContractReferencedDocument := ContractReferencedDocument.Create;
+  if FContractReferencedDocument = nil then
+    FContractReferencedDocument := ContractReferencedDocument.Create;
   with FContractReferencedDocument do
   begin
     ID := contractReferencedId;
     IssueDateTime:= contractReferencedDate;
-    (*if contractReferencedDate = nil then
-      IssueDateTime.ClearValue
-    else
-    if contractReferencedDate.HasValue then
-      IssueDateTime.SetValue(contractReferencedDate.GetValue)
-    else
-      IssueDateTime.ClearValue;
-      *)
   end;
 end;
 

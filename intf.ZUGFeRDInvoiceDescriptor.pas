@@ -62,7 +62,9 @@ uses
   intf.ZUGFeRDLegalOrganization,
   intf.ZUGFeRDElectronicAddress,
   intf.ZUGFeRDElectronicAddressSchemeIdentifiers,
-  intf.ZUGFeRDDespatchAdviceReferencedDocument
+  intf.ZUGFeRDDespatchAdviceReferencedDocument,
+  intf.ZUGFeRDSpecialServiceDescriptionCodes,
+  intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
   ;
 
 type
@@ -559,10 +561,19 @@ type
     /// <param name="currency">Curency of the allowance</param>
     /// <param name="actualAmount">Actual allowance charge amount</param>
     /// <param name="reason">Reason for the allowance</param>
+    /// <param name="reasonCodeCharge"></param>
+    /// <param name="reasonCodeAllowance"></param>
     /// <param name="taxTypeCode">VAT type code for document level allowance/ charge</param>
     /// <param name="taxCategoryCode">VAT type code for document level allowance/ charge</param>
     /// <param name="taxPercent">VAT rate for the allowance</param>
-    procedure AddTradeAllowanceCharge(const isDiscount: Boolean; const basisAmount: Currency; const currency: TZUGFeRDCurrencyCodes; const actualAmount: Currency; const reason: string; const taxTypeCode: TZUGFeRDTaxTypes; const taxCategoryCode: TZUGFeRDTaxCategoryCodes; const taxPercent: Currency); overload;
+    procedure AddTradeAllowanceCharge(const isDiscount: Boolean;
+             const basisAmount: Currency; const currency: TZUGFeRDCurrencyCodes;
+             const actualAmount: Currency; const reason: string;
+             const reasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes;
+             const reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes;
+             const taxTypeCode: TZUGFeRDTaxTypes;
+             const taxCategoryCode: TZUGFeRDTaxCategoryCodes;
+             const taxPercent: Currency); overload;
 
     /// <summary>
     /// Adds an allowance or charge on document level.
@@ -575,10 +586,20 @@ type
     /// <param name="actualAmount">Actual allowance charge amount</param>
     /// <param name="chargePercentage">Actual allowance charge percentage</param>
     /// <param name="reason">Reason for the allowance</param>
+    /// <param name="reasonCodeCharge"></param>
+    /// <param name="reasonCodeAllowance"></param>
     /// <param name="taxTypeCode">VAT type code for document level allowance/ charge</param>
     /// <param name="taxCategoryCode">VAT type code for document level allowance/ charge</param>
     /// <param name="taxPercent">VAT rate for the allowance</param>
-    procedure AddTradeAllowanceCharge(const isDiscount: Boolean; const basisAmount: Currency; const currency: TZUGFeRDCurrencyCodes; const actualAmount: Currency; const chargePercentage : Currency; const reason: string; const taxTypeCode: TZUGFeRDTaxTypes; const taxCategoryCode: TZUGFeRDTaxCategoryCodes; const taxPercent: Currency); overload;
+    procedure AddTradeAllowanceCharge(const isDiscount: Boolean;
+             const basisAmount: Currency; const currency: TZUGFeRDCurrencyCodes;
+             const actualAmount: Currency; const chargePercentage : Currency;
+             const reason: string;
+             const reasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes;
+             const reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes;
+             const taxTypeCode: TZUGFeRDTaxTypes;
+             const taxCategoryCode: TZUGFeRDTaxCategoryCodes;
+             const taxPercent: Currency); overload;
 
     procedure SetTradePaymentTerms(const description: string; const dueDate: TDateTime = 0);
 
@@ -1194,13 +1215,22 @@ begin
   FServiceCharges.Add(serviceCharge);
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.AddTradeAllowanceCharge(const isDiscount: Boolean; const basisAmount: Currency; const currency: TZUGFeRDCurrencyCodes; const actualAmount: Currency; const reason: string; const taxTypeCode: TZUGFeRDTaxTypes; const taxCategoryCode: TZUGFeRDTaxCategoryCodes; const taxPercent: Currency);
+procedure TZUGFeRDInvoiceDescriptor.AddTradeAllowanceCharge(
+  const isDiscount: Boolean; const basisAmount: Currency;
+  const currency: TZUGFeRDCurrencyCodes; const actualAmount: Currency;
+  const reason: string;
+  const reasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes;
+  const reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes;
+  const taxTypeCode: TZUGFeRDTaxTypes;
+  const taxCategoryCode: TZUGFeRDTaxCategoryCodes; const taxPercent: Currency);
 var
   tradeAllowanceCharge: TZUGFeRDTradeAllowanceCharge;
 begin
   tradeAllowanceCharge := TZUGFeRDTradeAllowanceCharge.Create;
   tradeAllowanceCharge.ChargeIndicator := not isDiscount;
   tradeAllowanceCharge.Reason := reason;
+  tradeAllowanceCharge.ReasonCodeAllowance := reasonCodeAllowance;
+  tradeAllowanceCharge.ReasonCodeCharge := reasonCodeCharge;
   tradeAllowanceCharge.BasisAmount := basisAmount;
   tradeAllowanceCharge.ActualAmount := actualAmount;
   tradeAllowanceCharge.Currency := currency;
@@ -1216,6 +1246,8 @@ procedure TZUGFeRDInvoiceDescriptor.AddTradeAllowanceCharge(
   const isDiscount: Boolean; const basisAmount: Currency;
   const currency: TZUGFeRDCurrencyCodes; const actualAmount,
   chargePercentage: Currency; const reason: string;
+  const reasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes;
+  const reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes;
   const taxTypeCode: TZUGFeRDTaxTypes;
   const taxCategoryCode: TZUGFeRDTaxCategoryCodes; const taxPercent: Currency);
 var
@@ -1224,6 +1256,8 @@ begin
   tradeAllowanceCharge := TZUGFeRDTradeAllowanceCharge.Create;
   tradeAllowanceCharge.ChargeIndicator := not isDiscount;
   tradeAllowanceCharge.Reason := reason;
+  tradeAllowanceCharge.ReasonCodeAllowance := reasonCodeAllowance;
+  tradeAllowanceCharge.ReasonCodeCharge := reasonCodeCharge;
   tradeAllowanceCharge.BasisAmount := basisAmount;
   tradeAllowanceCharge.ActualAmount := actualAmount;
   tradeAllowanceCharge.Currency := currency;

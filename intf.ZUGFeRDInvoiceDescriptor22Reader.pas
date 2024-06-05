@@ -61,6 +61,8 @@ uses
   ,intf.ZUGFeRDNote
   ,intf.ZUGFeRDContentCodes
   ,intf.ZUGFeRDDespatchAdviceReferencedDocument
+  ,intf.ZUGFeRDSpecialServiceDescriptionCodes
+  ,intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
   ;
 
 type
@@ -390,6 +392,8 @@ begin
                                    _nodeAsDecimal(nodes[i], './/ram:ActualAmount', 0),
                                    _nodeAsDecimal(node, './/ram:CalculationPercent', 0),
                                    _nodeAsString(nodes[i], './/ram:Reason'),
+                                   TZUGFeRDSpecialServiceDescriptionCodesExtensions.FromString(_nodeAsString(nodes[i], './ram:ReasonCode')),
+                                   TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.FromString(_nodeAsString(nodes[i], './ram:ReasonCode')),
                                    TZUGFeRDTaxTypesExtensions.FromString(_nodeAsString(nodes[i], './/ram:CategoryTradeTax/ram:TypeCode')),
                                    TZUGFeRDTaxCategoryCodesExtensions.FromString(_nodeAsString(nodes[i], './/ram:CategoryTradeTax/ram:CategoryCode')),
                                    _nodeAsDecimal(nodes[i], './/ram:CategoryTradeTax/ram:RateApplicablePercent', 0));
@@ -654,6 +658,12 @@ begin
     var actualAmount : Currency := _nodeAsDecimal(nodes[i], './ram:ActualAmount',0);
     var actualAmountCurrency : String := _nodeAsString(nodes[i], './ram:ActualAmount/@currencyID');
     var reason : String := _nodeAsString(nodes[i], './ram:Reason');
+    var reasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes := TZUGFeRDSpecialServiceDescriptionCodes.Unknown;
+    var reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes := TZUGFeRDAllowanceOrChargeIdentificationCodes.Unknown;
+    if chargeIndicator then
+      reasonCodeCharge := TZUGFeRDSpecialServiceDescriptionCodesExtensions.FromString(_nodeAsString(nodes[i], './ram:ReasonCode'))
+    else
+      reasonCodeAllowance := TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.FromString(_nodeAsString(nodes[i], './ram:ReasonCode'));
     var chargePercentage : Currency := _nodeAsDecimal(nodes[i], './ram:CalculationPercent',0);
 
     Result.AddTradeAllowanceCharge(not chargeIndicator, // wichtig: das not beachten
@@ -661,7 +671,9 @@ begin
                                     basisAmount,
                                     actualAmount,
                                     chargePercentage,
-                                    reason);
+                                    reason,
+                                    reasonCodeCharge,
+                                    reasonCodeAllowance);
   end;
 
   if (Result.UnitCode = TZUGFeRDQuantityCodes.Unknown) then

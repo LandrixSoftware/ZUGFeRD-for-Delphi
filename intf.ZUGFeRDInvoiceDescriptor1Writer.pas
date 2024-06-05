@@ -51,6 +51,8 @@ uses
   ,intf.ZUGFeRDTradeAllowanceCharge
   ,intf.ZUGFeRDServiceCharge
   ,intf.ZUGFeRDQuantityCodes
+  ,intf.ZUGFeRDSpecialServiceDescriptionCodes
+  ,intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
   ;
 
 type
@@ -263,6 +265,7 @@ begin
         Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
         Writer.WriteElementString('ram:Information', Descriptor.PaymentMeans.Information);
 
+        if (Descriptor.PaymentMeans <> nil) then
         if (Descriptor.PaymentMeans.SEPACreditorIdentifier <> '') and
            (Descriptor.PaymentMeans.SEPAMandateReference <> '') then
         begin
@@ -287,6 +290,7 @@ begin
         Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
         Writer.WriteElementString('ram:Information', Descriptor.PaymentMeans.Information);
 
+        if (Descriptor.PaymentMeans <> nil) then
         if (Descriptor.PaymentMeans.SEPACreditorIdentifier <> '') and
            (Descriptor.PaymentMeans.SEPAMandateReference <> '') then
         begin
@@ -324,6 +328,7 @@ begin
         Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
         Writer.WriteElementString('ram:Information', Descriptor.PaymentMeans.Information);
 
+        if (Descriptor.PaymentMeans <> nil) then
         if (Descriptor.PaymentMeans.SEPACreditorIdentifier <> '') and
            (Descriptor.PaymentMeans.SEPAMandateReference <> '') then
         begin
@@ -370,6 +375,17 @@ begin
     Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ActualAmount, 4));
     Writer.WriteEndElement();
 
+    if tradeAllowanceCharge.ChargeIndicator then
+    begin
+      Writer.WriteOptionalElementString('ram:ReasonCode',
+         TZUGFeRDSpecialServiceDescriptionCodesExtensions.EnumToString(
+                                   tradeAllowanceCharge.ReasonCodeCharge));
+    end else
+    begin
+      Writer.WriteOptionalElementString('ram:ReasonCode',
+         TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.EnumToString(
+                                   tradeAllowanceCharge.ReasonCodeAllowance));
+    end;
 
     Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason, [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
 

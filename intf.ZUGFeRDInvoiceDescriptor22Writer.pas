@@ -60,6 +60,8 @@ uses
   ,intf.ZUGFeRDReceivableSpecifiedTradeAccountingAccount
   ,intf.ZUGFeRDAccountingAccountTypeCodes
   ,intf.ZUGFeRDMimeTypeMapper
+  ,intf.ZUGFeRDSpecialServiceDescriptionCodes
+  ,intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
   ;
 
 type
@@ -376,7 +378,21 @@ begin
           Writer.WriteEndElement();
           //#endregion
 
-          Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason, [TZUGFeRDProfile.Extended]); // not in XRechnung according to CII-SR-128
+          if tradeAllowanceCharge.ChargeIndicator then
+          begin
+            Writer.WriteOptionalElementString('ram:ReasonCode',
+               TZUGFeRDSpecialServiceDescriptionCodesExtensions.EnumToString(
+                                         tradeAllowanceCharge.ReasonCodeCharge));
+          end else
+          begin
+            Writer.WriteOptionalElementString('ram:ReasonCode',
+               TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.EnumToString(
+                                         tradeAllowanceCharge.ReasonCodeAllowance));
+          end;
+
+          //c# means not in XRechnung according to CII-SR-128
+          //TODO Theoretisch auch Basic, Comfort, XRechnung
+          Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason, [TZUGFeRDProfile.Extended]);
 
           Writer.WriteEndElement(); // !AppliedTradeAllowanceCharge
         end;
@@ -939,6 +955,18 @@ begin
     Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ActualAmount, 2));
     Writer.WriteEndElement();
 
+    if tradeAllowanceCharge.ChargeIndicator then
+    begin
+      Writer.WriteOptionalElementString('ram:ReasonCode',
+         TZUGFeRDSpecialServiceDescriptionCodesExtensions.EnumToString(
+                                   tradeAllowanceCharge.ReasonCodeCharge));
+    end else
+    begin
+      Writer.WriteOptionalElementString('ram:ReasonCode',
+         TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.EnumToString(
+                                   tradeAllowanceCharge.ReasonCodeAllowance));
+    end;
+
     Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason);
 
     if (tradeAllowanceCharge.Tax <> nil) then
@@ -972,19 +1000,27 @@ begin
   end;
 
   //  15. SpecifiedTradePaymentTerms (optional)
-  //TODO check if (this.Descriptor.PaymentTerms != null || !string.IsNullOrWhiteSpace(Descriptor.PaymentMeans?.SEPAMandateReference))
-  if ((Descriptor.PaymentTerms <> nil) and (Descriptor.PaymentMeans<> nil))
-  or (Descriptor.PaymentMeans.SEPAMandateReference <> '') then
+  var lOutSpecifiedTradePaymentTerms : Boolean := false;
+  if (Descriptor.PaymentTerms <> nil) then
+    lOutSpecifiedTradePaymentTerms := true;
+  if (Descriptor.PaymentMeans<> nil) then
+    if (Descriptor.PaymentMeans.SEPAMandateReference <> '') then
+      lOutSpecifiedTradePaymentTerms := true;
+  if lOutSpecifiedTradePaymentTerms then
   begin
     Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
-    Writer.WriteOptionalElementString('ram:Description', Descriptor.PaymentTerms.Description);
-    if (Descriptor.PaymentTerms.DueDate.HasValue) then
+    if (Descriptor.PaymentTerms <> nil) then
     begin
-      Writer.WriteStartElement('ram:DueDateDateTime');
-      _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(Descriptor.PaymentTerms.DueDate.Value));
-      Writer.WriteEndElement(); // !ram:DueDateDateTime
+      Writer.WriteOptionalElementString('ram:Description', Descriptor.PaymentTerms.Description);
+      if (Descriptor.PaymentTerms.DueDate.HasValue) then
+      begin
+        Writer.WriteStartElement('ram:DueDateDateTime');
+        _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(Descriptor.PaymentTerms.DueDate.Value));
+        Writer.WriteEndElement(); // !ram:DueDateDateTime
+      end;
     end;
-    Writer.WriteOptionalElementString('ram:DirectDebitMandateID', Descriptor.PaymentMeans.SEPAMandateReference);
+    if (Descriptor.PaymentMeans<> nil) then
+      Writer.WriteOptionalElementString('ram:DirectDebitMandateID', Descriptor.PaymentMeans.SEPAMandateReference);
     Writer.WriteEndElement();
   end;
 
