@@ -280,15 +280,15 @@ begin
   Result.PaymentTerms.Description := _nodeAsString(doc.DocumentElement, '//ram:SpecifiedTradePaymentTerms/ram:Description');
   Result.PaymentTerms.DueDate.SetValue(_nodeAsDateTime(doc.DocumentElement, '//ram:SpecifiedTradePaymentTerms/ram:DueDateDateTime'));
 
-  Result.LineTotalAmount.SetValue(_nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:LineTotalAmount', 0));
-  Result.ChargeTotalAmount.SetValue(_nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:ChargeTotalAmount', 0));
-  Result.AllowanceTotalAmount.SetValue(_nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:AllowanceTotalAmount', 0));
-  Result.TaxBasisAmount.SetValue(_nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:TaxBasisTotalAmount',0));
-  Result.TaxTotalAmount.SetValue(_nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:TaxTotalAmount', 0));
-  Result.GrandTotalAmount.SetValue(_nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:GrandTotalAmount', 0));
-  Result.RoundingAmount.SetValue(_nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:RoundingAmount', 0));
-  Result.TotalPrepaidAmount.SetValue(_nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:TotalPrepaidAmount', 0));
-  Result.DuePayableAmount.SetValue(_nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:DuePayableAmount', 0));
+  Result.LineTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:LineTotalAmount', 0);
+  Result.ChargeTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:ChargeTotalAmount', 0);
+  Result.AllowanceTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:AllowanceTotalAmount', 0);
+  Result.TaxBasisAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:TaxBasisTotalAmount',0);
+  Result.TaxTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:TaxTotalAmount', 0);
+  Result.GrandTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:GrandTotalAmount', 0);
+  Result.RoundingAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:RoundingAmount', 0);
+  Result.TotalPrepaidAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:TotalPrepaidAmount', 0);
+  Result.DuePayableAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:DuePayableAmount', 0);
 
   if (doc.DocumentElement.SelectSingleNode('//ram:ApplicableSupplyChainTradeAgreement/ram:BuyerOrderReferencedDocument/ram:IssueDateTime/udt:DateTimeString') <> nil) then
     Result.OrderDate.SetValue(_nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableSupplyChainTradeAgreement/ram:BuyerOrderReferencedDocument/ram:IssueDateTime/udt:DateTimeString'))
@@ -356,18 +356,18 @@ begin
   Result.BuyerAssignedID := _nodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:BuyerAssignedID');
   Result.Name := _nodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:Name');
   Result.Description := _nodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:Description');
-  Result.UnitQuantity.SetValue(_nodeAsDecimal(tradeLineItem, './/ram:BasisQuantity', 1));
+  Result.UnitQuantity:=_nodeAsDecimal(tradeLineItem, './/ram:BasisQuantity', 1);
   Result.BilledQuantity := _nodeAsDecimal(tradeLineItem, './/ram:BilledQuantity', 0);
 //  Result.LineTotalAmount.SetValue(_nodeAsDecimal(tradeLineItem, './/ram:LineTotalAmount', 0));
   Result.LineTotalAmount:= _nodeAsDecimal(tradeLineItem, './/ram:LineTotalAmount', 0);
   Result.TaxCategoryCode := TZUGFeRDTaxCategoryCodesExtensions.FromString(_nodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:CategoryCode'));
   Result.TaxType := TZUGFeRDTaxTypesExtensions.FromString(_nodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:TypeCode'));
   Result.TaxPercent := _nodeAsDecimal(tradeLineItem, './/ram:ApplicableTradeTax/ram:ApplicablePercent', 0);
-  Result.NetUnitPrice.SetValue(_nodeAsDecimal(tradeLineItem, './/ram:NetPriceProductTradePrice/ram:ChargeAmount', 0));
-  Result.GrossUnitPrice.SetValue(_nodeAsDecimal(tradeLineItem, './/ram:GrossPriceProductTradePrice/ram:ChargeAmount', 0));
+  Result.NetUnitPrice:= _nodeAsDecimal(tradeLineItem, './/ram:NetPriceProductTradePrice/ram:ChargeAmount', 0);
+  Result.GrossUnitPrice:= _nodeAsDecimal(tradeLineItem, './/ram:GrossPriceProductTradePrice/ram:ChargeAmount', 0);
   Result.UnitCode := TZUGFeRDQuantityCodesExtensions.FromString(_nodeAsString(tradeLineItem, './/ram:BasisQuantity/@unitCode'));
-  Result.BillingPeriodStart.SetValue(_nodeAsDateTime(tradeLineItem, './/ram:BillingSpecifiedPeriod/ram:StartDateTime/udt:DateTimeString'));
-  Result.BillingPeriodEnd.SetValue(_nodeAsDateTime(tradeLineItem, './/ram:BillingSpecifiedPeriod/ram:EndDateTime/udt:DateTimeString'));
+  Result.BillingPeriodStart:= _nodeAsDateTime(tradeLineItem, './/ram:BillingSpecifiedPeriod/ram:StartDateTime/udt:DateTimeString');
+  Result.BillingPeriodEnd:= _nodeAsDateTime(tradeLineItem, './/ram:BillingSpecifiedPeriod/ram:EndDateTime/udt:DateTimeString');
 
   if (tradeLineItem.SelectSingleNode('.//ram:AssociatedDocumentLineDocument') <> nil) then
   begin
@@ -413,19 +413,19 @@ begin
   begin
     Result.BuyerOrderReferencedDocument := TZUGFeRDBuyerOrderReferencedDocument.Create;
     Result.BuyerOrderReferencedDocument.ID := _nodeAsString(tradeLineItem, './/ram:SpecifiedSupplyChainTradeAgreement/ram:BuyerOrderReferencedDocument/ram:ID');
-    Result.BuyerOrderReferencedDocument.IssueDateTime.SetValue(_nodeAsDateTime(tradeLineItem, './/ram:SpecifiedSupplyChainTradeAgreement/ram:BuyerOrderReferencedDocument/ram:IssueDateTime'));
+    Result.BuyerOrderReferencedDocument.IssueDateTime:= _nodeAsDateTime(tradeLineItem, './/ram:SpecifiedSupplyChainTradeAgreement/ram:BuyerOrderReferencedDocument/ram:IssueDateTime');
   end;
 
   if (tradeLineItem.SelectSingleNode('.//ram:SpecifiedSupplyChainTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:ID') <> nil) then
   begin
     Result.DeliveryNoteReferencedDocument := TZUGFeRDDeliveryNoteReferencedDocument.Create;
     Result.DeliveryNoteReferencedDocument.ID := _nodeAsString(tradeLineItem, './/ram:SpecifiedSupplyChainTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:ID');
-    Result.DeliveryNoteReferencedDocument.IssueDateTime.SetValue(_nodeAsDateTime(tradeLineItem, './/ram:SpecifiedSupplyChainTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:IssueDateTime'));
+    Result.DeliveryNoteReferencedDocument.IssueDateTime:= _nodeAsDateTime(tradeLineItem, './/ram:SpecifiedSupplyChainTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:IssueDateTime');
   end;
 
   if (tradeLineItem.SelectSingleNode('.//ram:SpecifiedSupplyChainTradeDelivery/ram:ActualDeliverySupplyChainEvent/ram:OccurrenceDateTime') <> nil) then
   begin
-    Result.ActualDeliveryDate.SetValue(_nodeAsDateTime(tradeLineItem, './/ram:SpecifiedSupplyChainTradeDelivery/ram:ActualDeliverySupplyChainEvent/ram:OccurrenceDateTime/udt:DateTimeString'));
+    Result.ActualDeliveryDate:= _nodeAsDateTime(tradeLineItem, './/ram:SpecifiedSupplyChainTradeDelivery/ram:ActualDeliverySupplyChainEvent/ram:OccurrenceDateTime/udt:DateTimeString');
   end;
 
   //Get all referenced AND embedded documents
