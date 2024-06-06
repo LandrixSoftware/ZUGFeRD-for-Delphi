@@ -825,7 +825,7 @@ begin
     begin
       Writer.WriteStartElement('ram:SpecifiedTradeSettlementPaymentMeans', [TZUGFeRDProfile.BasicWL,TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
       Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
-      Writer.WriteElementString('ram:Information', Descriptor.PaymentMeans.Information);
+      Writer.WriteOptionalElementString('ram:Information', Descriptor.PaymentMeans.Information);
 
       if (Descriptor.PaymentMeans.FinancialCard <> nil) then
       begin
@@ -847,7 +847,7 @@ begin
       if (Descriptor.PaymentMeans.TypeCode <> TZUGFeRDPaymentMeansTypeCodes.Unknown) then
       begin
         Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
-        Writer.WriteElementString('ram:Information', Descriptor.PaymentMeans.Information);
+        Writer.WriteOptionalElementString('ram:Information', Descriptor.PaymentMeans.Information);
 
         if (Descriptor.PaymentMeans.FinancialCard <> nil) then
         begin
@@ -882,7 +882,7 @@ begin
       if (Descriptor.PaymentMeans.TypeCode <> TZUGFeRDPaymentMeansTypeCodes.Unknown) then
       begin
         Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
-        Writer.WriteElementString('ram:Information', Descriptor.PaymentMeans.Information);
+        Writer.WriteOptionalElementString('ram:Information', Descriptor.PaymentMeans.Information);
       end;
 
       Writer.WriteStartElement('ram:PayerPartyDebtorFinancialAccount');
