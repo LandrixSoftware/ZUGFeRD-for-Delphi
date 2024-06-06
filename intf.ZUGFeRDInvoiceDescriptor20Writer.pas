@@ -46,6 +46,7 @@ uses
   ,intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes
   ,intf.ZUGFeRDReferenceTypeCodes
   ,intf.ZUGFeRDPaymentMeansTypeCodes
+  ,intf.ZUGFeRDPaymentTerms
   ,intf.ZUGFeRDBankAccount
   ,intf.ZUGFeRDTradeAllowanceCharge
   ,intf.ZUGFeRDServiceCharge
@@ -588,7 +589,7 @@ begin
     begin
       Writer.WriteStartElement('ram:SpecifiedTradeSettlementPaymentMeans');
       Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
-      Writer.WriteElementString('ram:Information', Descriptor.PaymentMeans.Information);
+      Writer.WriteOptionalElementString('ram:Information', Descriptor.PaymentMeans.Information);
 
       if (Descriptor.PaymentMeans.FinancialCard <> nil) then
       begin
@@ -610,7 +611,7 @@ begin
       if (Descriptor.PaymentMeans.TypeCode <> TZUGFeRDPaymentMeansTypeCodes.Unknown) then
       begin
         Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
-        Writer.WriteElementString('ram:Information', Descriptor.PaymentMeans.Information);
+        Writer.WriteOptionalElementString('ram:Information', Descriptor.PaymentMeans.Information);
 
         if (Descriptor.PaymentMeans.FinancialCard <> nil) then
         begin
@@ -646,7 +647,7 @@ begin
       if (Descriptor.PaymentMeans.TypeCode <> TZUGFeRDPaymentMeansTypeCodes.Unknown) then
       begin
         Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
-        Writer.WriteElementString('ram:Information', Descriptor.PaymentMeans.Information);
+        Writer.WriteOptionalElementString('ram:Information', Descriptor.PaymentMeans.Information);
       end;
 
       Writer.WriteStartElement('ram:PayerPartyDebtorFinancialAccount');
@@ -777,24 +778,27 @@ begin
   end;
 
   //  15. SpecifiedTradePaymentTerms (optional)
-  var lOutSpecifiedTradePaymentTerms : Boolean := false;
-  if (Descriptor.PaymentTerms <> nil) then
-    lOutSpecifiedTradePaymentTerms := true;
-  if (Descriptor.PaymentMeans<> nil) then
-    if (Descriptor.PaymentMeans.SEPAMandateReference <> '') then
-      lOutSpecifiedTradePaymentTerms := true;
-  if lOutSpecifiedTradePaymentTerms then
+  if Descriptor.PaymentTermsList.Count=0 then
+  begin
+    // no PaymentTerms but SEPAMandateReference given
+    if (Descriptor.PaymentMeans<> nil) then
+      if (Descriptor.PaymentMeans.SEPAMandateReference <> '') then
+      begin
+        Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
+        Writer.WriteOptionalElementString('ram:DirectDebitMandateID', Descriptor.PaymentMeans.SEPAMandateReference);
+        Writer.WriteEndElement();
+      end;
+  end
+  else
+  for var PaymentTerms: TZUGFeRDPaymentTerms in Descriptor.PaymentTermsList do
   begin
     Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
-    if (Descriptor.PaymentTerms <> nil) then
+    Writer.WriteOptionalElementString('ram:Description', PaymentTerms.Description);
+    if (PaymentTerms.DueDate.HasValue) then
     begin
-      Writer.WriteOptionalElementString('ram:Description', Descriptor.PaymentTerms.Description);
-      if (Descriptor.PaymentTerms.DueDate.HasValue) then
-      begin
-        Writer.WriteStartElement('ram:DueDateDateTime');
-        _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(Descriptor.PaymentTerms.DueDate.Value));
-        Writer.WriteEndElement(); // !ram:DueDateDateTime
-      end;
+      Writer.WriteStartElement('ram:DueDateDateTime');
+      _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(PaymentTerms.DueDate.Value));
+      Writer.WriteEndElement(); // !ram:DueDateDateTime
     end;
     if (Descriptor.PaymentMeans<> nil) then
       Writer.WriteOptionalElementString('ram:DirectDebitMandateID', Descriptor.PaymentMeans.SEPAMandateReference);

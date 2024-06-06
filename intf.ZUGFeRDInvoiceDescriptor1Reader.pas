@@ -280,9 +280,8 @@ begin
                                      _nodeAsDecimal(nodes[i], './/ram:AppliedTradeTax/ram:ApplicablePercent', 0));
   end;
 
-  Result.PaymentTerms := TZUGFeRDPaymentTerms.Create;
-  Result.PaymentTerms.Description := _nodeAsString(doc.DocumentElement, '//ram:SpecifiedTradePaymentTerms/ram:Description');
-  Result.PaymentTerms.DueDate:= _nodeAsDateTime(doc.DocumentElement, '//ram:SpecifiedTradePaymentTerms/ram:DueDateDateTime');
+  Result.AddTradePaymentTerms(_nodeAsString(doc.DocumentElement, '//ram:SpecifiedTradePaymentTerms/ram:Description'),
+                         _nodeAsDateTime(doc.DocumentElement, '//ram:SpecifiedTradePaymentTerms/ram:DueDateDateTime'));
 
   Result.LineTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:LineTotalAmount', 0);
   Result.ChargeTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:ChargeTotalAmount', 0);

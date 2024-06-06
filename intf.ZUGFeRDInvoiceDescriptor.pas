@@ -115,7 +115,8 @@ type
     FTaxes: TObjectList<TZUGFeRDTax>;
     FServiceCharges: TObjectList<TZUGFeRDServiceCharge>;
     FTradeAllowanceCharges: TObjectList<TZUGFeRDTradeAllowanceCharge>;
-    FPaymentTerms: TZUGFeRDPaymentTerms;
+//    FPaymentTerms: TZUGFeRDPaymentTerms;
+    FPaymentTermsList: TObjectList<TZUGFeRDPaymentTerms>;
     FInvoiceReferencedDocument: TZUGFeRDInvoiceReferencedDocument;
     FReceivableSpecifiedTradeAccountingAccounts: TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>;
     FCreditorBankAccounts: TObjectList<TZUGFeRDBankAccount>;
@@ -360,7 +361,9 @@ type
     /// <summary>
     /// Detailed information about payment terms
     /// </summary>
-    property PaymentTerms: TZUGFeRDPaymentTerms read FPaymentTerms write FPaymentTerms;
+    ///
+//    property PaymentTerms: TZUGFeRDPaymentTerms read FPaymentTerms write FPaymentTerms;
+    property PaymentTermsList: TObjectList<TZUGFeRDPaymentTerms> read FPaymentTermsList;
 
     /// <summary>
     /// A group of business terms providing information about a preceding invoices.
@@ -601,7 +604,7 @@ type
              const taxCategoryCode: TZUGFeRDTaxCategoryCodes;
              const taxPercent: Currency); overload;
 
-    procedure SetTradePaymentTerms(const description: string; const dueDate: TDateTime = 0);
+    procedure AddTradePaymentTerms(const description: string; const dueDate: TDateTime = 0);
 
     /// <summary>
     /// Set Information about Preceding Invoice
@@ -798,7 +801,8 @@ begin
   FTaxes                         := TObjectList<TZUGFeRDTax>.Create;
   FServiceCharges                := TObjectList<TZUGFeRDServiceCharge>.Create;
   FTradeAllowanceCharges         := TObjectList<TZUGFeRDTradeAllowanceCharge>.Create;
-  FPaymentTerms                  := nil;//TZUGFeRDPaymentTerms.Create;
+//  FPaymentTerms                  := nil;//TZUGFeRDPaymentTerms.Create;
+  FPaymentTermsList              := TObjectList<TZUGFeRDPaymentTerms>.Create;
   FInvoiceReferencedDocument     := nil;//TZUGFeRDInvoiceReferencedDocument.Create;
   FReceivableSpecifiedTradeAccountingAccounts:= TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>.Create;
   FCreditorBankAccounts          := TObjectList<TZUGFeRDBankAccount>.Create;
@@ -831,7 +835,7 @@ begin
   if Assigned(FTaxes                         ) then begin FTaxes.Free; FTaxes                          := nil; end;
   if Assigned(FServiceCharges                ) then begin FServiceCharges.Free; FServiceCharges                 := nil; end;
   if Assigned(FTradeAllowanceCharges         ) then begin FTradeAllowanceCharges.Free; FTradeAllowanceCharges          := nil; end;
-  if Assigned(FPaymentTerms                  ) then begin FPaymentTerms.Free; FPaymentTerms                   := nil; end;
+  if Assigned(FPaymentTermsList              ) then begin FPaymentTermsList.Free; FPaymentTermsList                   := nil; end;
   if Assigned(FInvoiceReferencedDocument     ) then begin FInvoiceReferencedDocument.Free; FInvoiceReferencedDocument      := nil; end;
   if Assigned(FReceivableSpecifiedTradeAccountingAccounts) then begin FReceivableSpecifiedTradeAccountingAccounts.Free; FReceivableSpecifiedTradeAccountingAccounts := nil; end;
   if Assigned(FCreditorBankAccounts         ) then begin FCreditorBankAccounts.Free; FCreditorBankAccounts          := nil; end;
@@ -1265,11 +1269,14 @@ begin
   FTradeAllowanceCharges.Add(tradeAllowanceCharge);
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.SetTradePaymentTerms(const description: string; const dueDate: TDateTime = 0);
+procedure TZUGFeRDInvoiceDescriptor.AddTradePaymentTerms(const description: string; const dueDate: TDateTime = 0);
+var
+  PaymentTerms: TZUGFeRDPaymentTerms;
 begin
-  if PaymentTerms = nil then PaymentTerms := TZUGFeRDPaymentTerms.Create;
+  PaymentTerms := TZUGFeRDPaymentTerms.Create;
   PaymentTerms.Description := description;
   PaymentTerms.DueDate:= dueDate;
+  FPaymentTermsList.Add(PaymentTerms);
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetInvoiceReferencedDocument(const id: string; const IssueDateTime: TDateTime = 0);
