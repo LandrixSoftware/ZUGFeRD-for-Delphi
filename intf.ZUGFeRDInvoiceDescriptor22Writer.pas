@@ -49,6 +49,7 @@ uses
   ,intf.ZUGFeRDPaymentMeansTypeCodes
   ,intf.ZUGFeRDBankAccount
   ,intf.ZUGFeRDTradeAllowanceCharge
+  ,intf.ZUGFeRDPaymentTerms
   ,intf.ZUGFeRDServiceCharge
   ,intf.ZUGFeRDQuantityCodes
   ,intf.ZUGFeRDLegalOrganization
@@ -1000,24 +1001,27 @@ begin
   end;
 
   //  15. SpecifiedTradePaymentTerms (optional)
-  var lOutSpecifiedTradePaymentTerms : Boolean := false;
-  if (Descriptor.PaymentTerms <> nil) then
-    lOutSpecifiedTradePaymentTerms := true;
-  if (Descriptor.PaymentMeans<> nil) then
-    if (Descriptor.PaymentMeans.SEPAMandateReference <> '') then
-      lOutSpecifiedTradePaymentTerms := true;
-  if lOutSpecifiedTradePaymentTerms then
+  if Descriptor.PaymentTermsList.Count=0 then
+  begin
+    // no PaymentTerms but SEPAMandateReference given
+    if (Descriptor.PaymentMeans<> nil) then
+      if (Descriptor.PaymentMeans.SEPAMandateReference <> '') then
+      begin
+        Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
+        Writer.WriteOptionalElementString('ram:DirectDebitMandateID', Descriptor.PaymentMeans.SEPAMandateReference);
+        Writer.WriteEndElement();
+      end;
+  end
+  else
+  for var PaymentTerms: TZUGFeRDPaymentTerms in Descriptor.PaymentTermsList do
   begin
     Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
-    if (Descriptor.PaymentTerms <> nil) then
+    Writer.WriteOptionalElementString('ram:Description', PaymentTerms.Description);
+    if (PaymentTerms.DueDate.HasValue) then
     begin
-      Writer.WriteOptionalElementString('ram:Description', Descriptor.PaymentTerms.Description);
-      if (Descriptor.PaymentTerms.DueDate.HasValue) then
-      begin
-        Writer.WriteStartElement('ram:DueDateDateTime');
-        _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(Descriptor.PaymentTerms.DueDate.Value));
-        Writer.WriteEndElement(); // !ram:DueDateDateTime
-      end;
+      Writer.WriteStartElement('ram:DueDateDateTime');
+      _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(PaymentTerms.DueDate.Value));
+      Writer.WriteEndElement(); // !ram:DueDateDateTime
     end;
     if (Descriptor.PaymentMeans<> nil) then
       Writer.WriteOptionalElementString('ram:DirectDebitMandateID', Descriptor.PaymentMeans.SEPAMandateReference);
