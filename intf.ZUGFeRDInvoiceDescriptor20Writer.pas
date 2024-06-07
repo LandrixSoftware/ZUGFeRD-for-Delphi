@@ -63,7 +63,7 @@ type
   private
     Writer: TZUGFeRDProfileAwareXmlTextWriter;
     Descriptor: TZUGFeRDInvoiceDescriptor;
-    procedure _writeOptionalAmount(_writer : TZUGFeRDProfileAwareXmlTextWriter; tagName : string; value : Nullable<Currency>; numDecimals : Integer = 2; forceCurrency : Boolean = false; profile : TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
+    procedure _writeOptionalAmount(_writer : TZUGFeRDProfileAwareXmlTextWriter; tagName : string; value : ZUGFeRDNullable<Currency>; numDecimals : Integer = 2; forceCurrency : Boolean = false; profile : TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
     procedure _writeOptionalContact(_writer: TZUGFeRDProfileAwareXmlTextWriter; contactTag: String; contact: TZUGFeRDContact);
     procedure _writeOptionalParty(_writer: TZUGFeRDProfileAwareXmlTextWriter; PartyTag: String; Party: TZUGFeRDParty; Contact: TZUGFeRDContact = nil; TaxRegistrations: TObjectList<TZUGFeRDTaxRegistration> = nil);
     procedure _writeOptionalTaxes(_writer : TZUGFeRDProfileAwareXmlTextWriter);
@@ -1076,7 +1076,7 @@ end;
 
 procedure TZUGFeRDInvoiceDescriptor20Writer._writeOptionalAmount(
   _writer: TZUGFeRDProfileAwareXmlTextWriter; tagName: string;
-  value: Nullable<Currency>;
+  value: ZUGFeRDNullable<Currency>;
   numDecimals: Integer; forceCurrency: Boolean; profile: TZUGFeRDProfiles);
 begin
   if (value.HasValue) then // && (value.Value != decimal.MinValue))

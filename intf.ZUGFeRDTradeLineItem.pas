@@ -53,25 +53,25 @@ type
     FReceivableSpecifiedTradeAccountingAccounts: TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>;
     FAdditionalReferencedDocuments: TObjectList<TZUGFeRDAdditionalReferencedDocument>;
     FUnitCode: TZUGFeRDQuantityCodes;
-    FBillingPeriodStart: Nullable<TDateTime>;
+    FBillingPeriodStart: ZUGFeRDNullable<TDateTime>;
     FApplicableProductCharacteristics: TObjectList<TZUGFeRDApplicableProductCharacteristic>;
     FSellerAssignedID: string;
     FTradeAllowanceCharges: TObjectList<TZUGFeRDTradeAllowanceCharge>;
     FTaxPercent: Double;
     FTaxType: TZUGFeRDTaxTypes;
     FBuyerAssignedID: string;
-    FActualDeliveryDate: Nullable<TDateTime>;
-    FBillingPeriodEnd: Nullable<TDateTime>;
-    FUnitQuantity: Nullable<Double>;
+    FActualDeliveryDate: ZUGFeRDNullable<TDateTime>;
+    FBillingPeriodEnd: ZUGFeRDNullable<TDateTime>;
+    FUnitQuantity: ZUGFeRDNullable<Double>;
     FDescription: string;
     FAssociatedDocument: TZUGFeRDAssociatedDocument;
     FTaxCategoryCode: TZUGFeRDTaxCategoryCodes;
-    FNetUnitPrice: Nullable<Currency>;
-    FLineTotalAmount: Nullable<Double>; // TZUGFeRDNullable<Double>;
+    FNetUnitPrice: ZUGFeRDNullable<Currency>;
+    FLineTotalAmount: ZUGFeRDNullable<Double>; // TZUGFeRDZUGFeRDNullable<Double>;
     FDeliveryNoteReferencedDocument: TZUGFeRDDeliveryNoteReferencedDocument;
     FGlobalID: TZUGFeRDGlobalID;
     FBuyerOrderReferencedDocument: TZUGFeRDBuyerOrderReferencedDocument;
-    FGrossUnitPrice: Nullable<Currency>;
+    FGrossUnitPrice: ZUGFeRDNullable<Currency>;
   public
     /// <summary>
     /// Initialisiert ein neues, leeres Handelspositionsobjekt
@@ -122,13 +122,13 @@ type
       reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes = TZUGFeRDAllowanceOrChargeIdentificationCodes.Unknown); overload;
 
     procedure SetContractReferencedDocument(contractReferencedId: string;
-      contractReferencedDate: INullableParam<TDateTime>);
+      contractReferencedDate: IZUGFeRDNullableParam<TDateTime>);
 
     procedure SetDeliveryNoteReferencedDocument(deliveryNoteId: string;
-      deliveryNoteDate: INullableParam<TDateTime>);
+      deliveryNoteDate: IZUGFeRDNullableParam<TDateTime>);
 
     procedure SetOrderReferencedDocument(orderReferencedId: string;
-      orderReferencedDate: INullableParam<TDateTime>);
+      orderReferencedDate: IZUGFeRDNullableParam<TDateTime>);
   public
     /// <summary>
     /// The identification of articles based on a registered scheme
@@ -164,7 +164,7 @@ type
     /// <summary>
     /// Included amount
     /// </summary>
-    property UnitQuantity: Nullable<Double> read FUnitQuantity write FUnitQuantity;
+    property UnitQuantity: ZUGFeRDNullable<Double> read FUnitQuantity write FUnitQuantity;
 
     /// <summary>
     /// Invoiced quantity
@@ -175,21 +175,21 @@ type
     /// Invoice line net amount including (!) trade allowance charges for the line item
     /// BT-131
     /// </summary>
-    property LineTotalAmount: Nullable<Double> {TZUGFeRDNullable<Double>} read FLineTotalAmount write FLineTotalAmount;
+    property LineTotalAmount: ZUGFeRDNullable<Double> {TZUGFeRDZUGFeRDNullable<Double>} read FLineTotalAmount write FLineTotalAmount;
 
     /// <summary>
     /// Detailed information about the invoicing period
     ///
     /// Invoicing period start date
     /// </summary>
-    property BillingPeriodStart: Nullable<TDateTime> read FBillingPeriodStart write FBillingPeriodStart;
+    property BillingPeriodStart: ZUGFeRDNullable<TDateTime> read FBillingPeriodStart write FBillingPeriodStart;
 
     /// <summary>
     /// Detailed information about the invoicing period
     ///
     /// Invoicing period end date
     /// </summary>
-    property BillingPeriodEnd: Nullable<TDateTime> read FBillingPeriodEnd write FBillingPeriodEnd;
+    property BillingPeriodEnd: ZUGFeRDNullable<TDateTime> read FBillingPeriodEnd write FBillingPeriodEnd;
 
     /// <summary>
     /// he code valid for the invoiced goods sales tax category
@@ -209,12 +209,12 @@ type
     /// <summary>
     /// net unit price of the item
     /// </summary>
-    property NetUnitPrice: Nullable<Currency> read FNetUnitPrice write FNetUnitPrice;
+    property NetUnitPrice: ZUGFeRDNullable<Currency> read FNetUnitPrice write FNetUnitPrice;
 
     /// <summary>
     /// gross unit price of the item
     /// </summary>
-    property GrossUnitPrice: Nullable<Currency> read FGrossUnitPrice write FGrossUnitPrice;
+    property GrossUnitPrice: ZUGFeRDNullable<Currency> read FGrossUnitPrice write FGrossUnitPrice;
 
     /// <summary>
     /// Item Base Quantity Unit Code
@@ -229,7 +229,7 @@ type
     /// <summary>
     /// Detailed information about the actual Delivery
     /// </summary>
-    property ActualDeliveryDate: Nullable<TDateTime> read FActualDeliveryDate write FActualDeliveryDate;
+    property ActualDeliveryDate: ZUGFeRDNullable<TDateTime> read FActualDeliveryDate write FActualDeliveryDate;
 
     /// <summary>
     /// Details of the associated order
@@ -337,7 +337,7 @@ begin
 end;
 
 procedure TZUGFeRDTradeLineItem.SetDeliveryNoteReferencedDocument(
-  deliveryNoteId: string; deliveryNoteDate: INullableParam<TDateTime>);
+  deliveryNoteId: string; deliveryNoteDate: IZUGFeRDNullableParam<TDateTime>);
 begin
   if FDeliveryNoteReferencedDocument = nil then
     FDeliveryNoteReferencedDocument := TZUGFeRDDeliveryNoteReferencedDocument.Create;
@@ -365,7 +365,7 @@ begin
 end;
 
 procedure TZUGFeRDTradeLineItem.SetOrderReferencedDocument(
-  orderReferencedId: string; orderReferencedDate: INullableParam<TDateTime>);
+  orderReferencedId: string; orderReferencedDate: IZUGFeRDNullableParam<TDateTime>);
 begin
   if FBuyerOrderReferencedDocument = nil then
     FBuyerOrderReferencedDocument := BuyerOrderReferencedDocument.Create;
@@ -377,7 +377,7 @@ begin
 end;
 
 procedure TZUGFeRDTradeLineItem.SetContractReferencedDocument(
-  contractReferencedId: string; contractReferencedDate: INullableParam<TDateTime>);
+  contractReferencedId: string; contractReferencedDate: IZUGFeRDNullableParam<TDateTime>);
 begin
   if FContractReferencedDocument = nil then
     FContractReferencedDocument := ContractReferencedDocument.Create;

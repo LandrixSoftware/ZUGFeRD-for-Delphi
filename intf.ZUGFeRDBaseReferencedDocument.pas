@@ -28,7 +28,7 @@ type
   TZUGFeRDBaseReferencedDocument = class
   private
     FID: string;
-    FIssueDateTime: Nullable<TDateTime>;
+    FIssueDateTime: ZUGFeRDNullable<TDateTime>;
   public
     constructor Create;
     destructor Destroy; override;
@@ -41,7 +41,7 @@ type
     /// <summary>
     /// Bestelldatum / Lieferdatum
     /// </summary>
-    property IssueDateTime: Nullable<TDateTime> read FIssueDateTime write FIssueDateTime;
+    property IssueDateTime: ZUGFeRDNullable<TDateTime> read FIssueDateTime write FIssueDateTime;
   end;
 
 implementation
@@ -50,7 +50,7 @@ implementation
 
 constructor TZUGFeRDBaseReferencedDocument.Create;
 begin
-//  FIssueDateTime := Nullable<TDateTime>.Create;
+//  FIssueDateTime := ZUGFeRDNullable<TDateTime>.Create;
 end;
 
 destructor TZUGFeRDBaseReferencedDocument.Destroy;

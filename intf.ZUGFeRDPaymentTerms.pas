@@ -29,7 +29,7 @@ type
   TZUGFeRDPaymentTerms = class
   private
     FDescription: string;
-    FDueDate: Nullable<TDateTime>;
+    FDueDate: ZUGFeRDNullable<TDateTime>;
   public
     /// <summary>
     /// A textual description of the payment terms that apply to the amount due for payment (including description of possible penalties).
@@ -38,7 +38,7 @@ type
     /// <summary>
     /// The date when the payment is due
     /// </summary>
-    property DueDate: Nullable<TDateTime> read FDueDate write FDueDate;
+    property DueDate: ZUGFeRDNullable<TDateTime> read FDueDate write FDueDate;
   end;
 
 implementation

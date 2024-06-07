@@ -53,15 +53,15 @@ type
   function GetZUGFeRDPdfHelper : IZUGFeRDPdfHelper;
 
 type
-  // NullableParam wird für die Parameterübergabe verwendet, da dies die Möglichkeit schafft, Default Parameter zu realisieren
+  // ZUGFeRDNullableParam wird für die Parameterübergabe verwendet, da dies die Möglichkeit schafft, Default Parameter zu realisieren
   // entweder Nil, dann ohne Wert oder mit Wert, das <> Nil
-  INullableParam<T> = interface
+  IZUGFeRDNullableParam<T> = interface
     function GetValue: T;
     procedure SetValue(const AValue: T);
     Property Value: T read GetValue Write SetValue;
   end;
 
-  TNullableParam<T> = class (TInterfacedObject, INullableParam<T>)
+  TZUGFeRDNullableParam<T> = class (TInterfacedObject, IZUGFeRDNullableParam<T>)
     FValue: T;
     function GetValue: T;
     procedure SetValue(const AValue: T);
@@ -70,12 +70,12 @@ type
     constructor Create (AValue: T);
   end;
 
-  // Nullable as managed record
-  Nullable<T> = record
+  // ZUGFeRDNullable as managed record
+  ZUGFeRDNullable<T> = record
   private
     FValue: T;
     FHasValue: Boolean;
-    class operator Initialize (out Dest: Nullable<T>);
+    class operator Initialize (out Dest: ZUGFeRDNullable<T>);
     function GetValue: T;
   public
     constructor Create (Dummy: Boolean); overload;
@@ -85,21 +85,21 @@ type
     property HasValue: Boolean read FHasValue;
     property Value: T read GetValue;
 
-    class operator NotEqual(ALeft, ARight: Nullable<T>): Boolean;
-    class operator Equal(ALeft, ARight: Nullable<T>): Boolean;
+    class operator NotEqual(ALeft, ARight: ZUGFeRDNullable<T>): Boolean;
+    class operator Equal(ALeft, ARight: ZUGFeRDNullable<T>): Boolean;
 
-    class operator Implicit(Value: Nullable<T>): T;
-    class operator Implicit(Value: T): Nullable<T>;
-    class operator Implicit(Param: INullableParam<T>): Nullable<T>;
-    class operator Implicit(Param: Nullable<T>): INullableParam<T>;
-    class operator Explicit(Value: Nullable<T>): T;
+    class operator Implicit(Value: ZUGFeRDNullable<T>): T;
+    class operator Implicit(Value: T): ZUGFeRDNullable<T>;
+    class operator Implicit(Param: IZUGFeRDNullableParam<T>): ZUGFeRDNullable<T>;
+    class operator Implicit(Param: ZUGFeRDNullable<T>): IZUGFeRDNullableParam<T>;
+    class operator Explicit(Value: ZUGFeRDNullable<T>): T;
     procedure ClearValue;
   end;
 
-  NullableDouble = Nullable<Double>;
-  NullableInt = Nullable<Integer>;
-  NullableDateTime = Nullable<TDateTime>;
-  NullableCurrency = Nullable<Currency>;
+  ZUGFeRDNullableDouble = ZUGFeRDNullable<Double>;
+  ZUGFeRDNullableInt = ZUGFeRDNullable<Integer>;
+  ZUGFeRDNullableDateTime = ZUGFeRDNullable<TDateTime>;
+  ZUGFeRDNullableCurrency = ZUGFeRDNullable<Currency>;
 
 implementation
 
@@ -477,31 +477,31 @@ begin
   end;
 end;
 
-{ Nullable<T> }
+{ ZUGFeRDNullable<T> }
 
-constructor Nullable<T>.Create(Dummy: Boolean);
+constructor ZUGFeRDNullable<T>.Create(Dummy: Boolean);
 // constructor to create an uninitialzed Instance
 begin
   FHasValue:= False;
 end;
 
-procedure Nullable<T>.ClearValue;
+procedure ZUGFeRDNullable<T>.ClearValue;
 begin
   FHasValue:= False;
 end;
 
-constructor Nullable<T>.Create(AValue: T);
+constructor ZUGFeRDNullable<T>.Create(AValue: T);
 begin
   FValue := AValue;
   FHasValue:= true
 end;
 
-class operator Nullable<T>.Initialize (out Dest: Nullable<T>);
+class operator ZUGFeRDNullable<T>.Initialize (out Dest: ZUGFeRDNullable<T>);
 begin
   Dest.FHasValue:= false
 end;
 
-class operator Nullable<T>.Equal(ALeft, ARight: Nullable<T>): Boolean;
+class operator ZUGFeRDNullable<T>.Equal(ALeft, ARight: ZUGFeRDNullable<T>): Boolean;
 var
   Comparer: IEqualityComparer<T>;
 begin
@@ -513,19 +513,19 @@ begin
     Result := ALeft.HasValue = ARight.HasValue;
 end;
 
-class operator Nullable<T>.Explicit(Value: Nullable<T>): T;
+class operator ZUGFeRDNullable<T>.Explicit(Value: ZUGFeRDNullable<T>): T;
 begin
   Result := Value.Value;
 end;
 
-function Nullable<T>.GetValue: T;
+function ZUGFeRDNullable<T>.GetValue: T;
 begin
   if not HasValue then
-    raise Exception.Create('Invalid operation, Nullable type has no value');
+    raise Exception.Create('Invalid operation, ZUGFeRDNullable type has no value');
   Result := FValue;
 end;
 
-function Nullable<T>.GetValueOrDefault: T;
+function ZUGFeRDNullable<T>.GetValueOrDefault: T;
 begin
   if HasValue then
     Result := FValue
@@ -533,7 +533,7 @@ begin
     Result := Default(T);
 end;
 
-function Nullable<T>.GetValueOrDefault(Default: T): T;
+function ZUGFeRDNullable<T>.GetValueOrDefault(Default: T): T;
 begin
   if not HasValue then
     Result := Default
@@ -541,33 +541,33 @@ begin
     Result := FValue;
 end;
 
-class operator Nullable<T>.Implicit(Value: Nullable<T>): T;
+class operator ZUGFeRDNullable<T>.Implicit(Value: ZUGFeRDNullable<T>): T;
 begin
   Result := Value.Value;
 end;
 
-class operator Nullable<T>.Implicit(Value: T): Nullable<T>;
+class operator ZUGFeRDNullable<T>.Implicit(Value: T): ZUGFeRDNullable<T>;
 begin
-  Result := Nullable<T>.Create(Value);
+  Result := ZUGFeRDNullable<T>.Create(Value);
 end;
 
-class operator Nullable<T>.Implicit(Param: INullableParam<T>): Nullable<T>;
+class operator ZUGFeRDNullable<T>.Implicit(Param: IZUGFeRDNullableParam<T>): ZUGFeRDNullable<T>;
 begin
   if Param=Nil then
-    Result:= Nullable<T>.Create(false)
+    Result:= ZUGFeRDNullable<T>.Create(false)
   else
-    Result:= Nullable<T>.Create(Param.Value);
+    Result:= ZUGFeRDNullable<T>.Create(Param.Value);
 end;
 
-class operator Nullable<T>.Implicit(Param: Nullable<T>): INullableParam<T>;
+class operator ZUGFeRDNullable<T>.Implicit(Param: ZUGFeRDNullable<T>): IZUGFeRDNullableParam<T>;
 begin
   if not Param.HasValue then
     Result := nil
   else
-    Result := TNullableParam<T>.Create(Param.Value);
+    Result := TZUGFeRDNullableParam<T>.Create(Param.Value);
 end;
 
-class operator Nullable<T>.NotEqual(ALeft, ARight: Nullable<T>): Boolean;
+class operator ZUGFeRDNullable<T>.NotEqual(ALeft, ARight: ZUGFeRDNullable<T>): Boolean;
 var
   Comparer: IEqualityComparer<T>;
 begin
@@ -579,19 +579,19 @@ begin
     Result := ALeft.HasValue <> ARight.HasValue;
 end;
 
-{ NullableParam<T> }
+{ ZUGFeRDNullableParam<T> }
 
-constructor TNullableParam<T>.Create(AValue: T);
+constructor TZUGFeRDNullableParam<T>.Create(AValue: T);
 begin
   Value:= AValue;
 end;
 
-function TNullableParam<T>.GetValue: T;
+function TZUGFeRDNullableParam<T>.GetValue: T;
 begin
   Result:= FValue
 end;
 
-procedure TNullableParam<T>.SetValue(const AValue: T);
+procedure TZUGFeRDNullableParam<T>.SetValue(const AValue: T);
 begin
   FValue:= AValue
 end;
