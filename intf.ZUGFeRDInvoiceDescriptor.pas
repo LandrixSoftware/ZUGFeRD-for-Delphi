@@ -77,10 +77,10 @@ type
     FInvoiceDate: TDateTime;
     FPaymentReference: string;
     FOrderNo: string;
-    FOrderDate: Nullable<TDateTime>;
+    FOrderDate: ZUGFeRDNullable<TDateTime>;
     FAdditionalReferencedDocuments: TObjectList<TZUGFeRDAdditionalReferencedDocument>;
     FDeliveryNoteReferencedDocument: TZUGFeRDDeliveryNoteReferencedDocument;
-    FActualDeliveryDate: Nullable<TDateTime>;
+    FActualDeliveryDate: ZUGFeRDNullable<TDateTime>;
     FContractReferencedDocument: TZUGFeRDContractReferencedDocument;
     FSpecifiedProcuringProject: TZUGFeRDSpecifiedProcuringProject;
     FCurrency: TZUGFeRDCurrencyCodes;
@@ -103,15 +103,15 @@ type
     FType: TZUGFeRDInvoiceType;
     FReferenceOrderNo: string;
     FTradeLineItems: TObjectList<TZUGFeRDTradeLineItem>;
-    FLineTotalAmount: Nullable<Currency>;
-    FChargeTotalAmount: Nullable<Currency>;
-    FAllowanceTotalAmount: Nullable<Currency>;
-    FTaxBasisAmount: Nullable<Currency>;
-    FTaxTotalAmount: Nullable<Currency>;
-    FGrandTotalAmount: Nullable<Currency>;
-    FTotalPrepaidAmount: Nullable<Currency>;
-    FRoundingAmount: Nullable<Currency>;
-    FDuePayableAmount: Nullable<Currency>;
+    FLineTotalAmount: ZUGFeRDNullable<Currency>;
+    FChargeTotalAmount: ZUGFeRDNullable<Currency>;
+    FAllowanceTotalAmount: ZUGFeRDNullable<Currency>;
+    FTaxBasisAmount: ZUGFeRDNullable<Currency>;
+    FTaxTotalAmount: ZUGFeRDNullable<Currency>;
+    FGrandTotalAmount: ZUGFeRDNullable<Currency>;
+    FTotalPrepaidAmount: ZUGFeRDNullable<Currency>;
+    FRoundingAmount: ZUGFeRDNullable<Currency>;
+    FDuePayableAmount: ZUGFeRDNullable<Currency>;
     FTaxes: TObjectList<TZUGFeRDTax>;
     FServiceCharges: TObjectList<TZUGFeRDServiceCharge>;
     FTradeAllowanceCharges: TObjectList<TZUGFeRDTradeAllowanceCharge>;
@@ -150,7 +150,7 @@ type
     /// <summary>
     /// Order date
     /// </summary>
-    property OrderDate: Nullable<TDateTime> read FOrderDate write FOrderDate;
+    property OrderDate: ZUGFeRDNullable<TDateTime> read FOrderDate write FOrderDate;
 
     /// <summary>
     /// Details of an additional document reference
@@ -172,7 +172,7 @@ type
     /// <summary>
     /// Actual delivery date
     /// </summary>
-    property ActualDeliveryDate: Nullable<TDateTime> read FActualDeliveryDate write FActualDeliveryDate;
+    property ActualDeliveryDate: ZUGFeRDNullable<TDateTime> read FActualDeliveryDate write FActualDeliveryDate;
 
     /// <summary>
     /// Detailed information on the associated contract
@@ -281,28 +281,28 @@ type
     /// <summary>
     /// Sum of all invoice line net amounts in the invoice
     /// </summary>
-    property LineTotalAmount: Nullable<Currency> read FLineTotalAmount write FLineTotalAmount;
+    property LineTotalAmount: ZUGFeRDNullable<Currency> read FLineTotalAmount write FLineTotalAmount;
 
     /// <summary>
     /// Sum of all surcharges on document level in the invoice
     ///
     /// Surcharges on line level are included in the invoice line net amount which is summed up into the sum of invoice line net amount.
     /// </summary>
-    property ChargeTotalAmount: Nullable<Currency> read FChargeTotalAmount write FChargeTotalAmount;
+    property ChargeTotalAmount: ZUGFeRDNullable<Currency> read FChargeTotalAmount write FChargeTotalAmount;
 
     /// <summary>
     /// Sum of discounts on document level in the invoice
     ///
     /// Discounts on line level are included in the invoice line net amount which is summed up into the sum of invoice line net amount.
     /// </summary>
-    property AllowanceTotalAmount: Nullable<Currency> read FAllowanceTotalAmount write FAllowanceTotalAmount;
+    property AllowanceTotalAmount: ZUGFeRDNullable<Currency> read FAllowanceTotalAmount write FAllowanceTotalAmount;
 
     /// <summary>
     /// The total amount of the invoice without VAT.
     ///
     /// The invoice total amount without VAT is the sum of invoice line net amount minus sum of discounts on document level plus sum of surcharges on document level.
     /// </summary>
-    property TaxBasisAmount: Nullable<Currency> read FTaxBasisAmount write FTaxBasisAmount;
+    property TaxBasisAmount: ZUGFeRDNullable<Currency> read FTaxBasisAmount write FTaxBasisAmount;
 
     /// <summary>
     /// The total VAT amount for the invoice.
@@ -312,26 +312,26 @@ type
     /// with article 230 of Directive 2006/112 / EC on VAT. The VAT amount in accounting currency is not used
     /// in the calculation of the Invoice totals..
     /// </summary>
-    property TaxTotalAmount: Nullable<Currency> read FTaxTotalAmount write FTaxTotalAmount;
+    property TaxTotalAmount: ZUGFeRDNullable<Currency> read FTaxTotalAmount write FTaxTotalAmount;
 
     /// <summary>
     /// Invoice total amount with VAT
     ///
     /// The invoice total amount with VAT is the invoice without VAT plus the invoice total VAT amount.
     /// </summary>
-    property GrandTotalAmount: Nullable<Currency> read FGrandTotalAmount write FGrandTotalAmount;
+    property GrandTotalAmount: ZUGFeRDNullable<Currency> read FGrandTotalAmount write FGrandTotalAmount;
 
     /// <summary>
     /// Sum of amount paid in advance
     ///
     /// This amount is subtracted from the invoice total amount with VAT to calculate the amount due for payment.
     /// </summary>
-    property TotalPrepaidAmount: Nullable<Currency> read FTotalPrepaidAmount write FTotalPrepaidAmount;
+    property TotalPrepaidAmount: ZUGFeRDNullable<Currency> read FTotalPrepaidAmount write FTotalPrepaidAmount;
 
     /// <summary>
     /// The amount to be added to the invoice total to round the amount to be paid.
     /// </summary>
-    property RoundingAmount: Nullable<Currency> read FRoundingAmount write FRoundingAmount;
+    property RoundingAmount: ZUGFeRDNullable<Currency> read FRoundingAmount write FRoundingAmount;
 
     /// <summary>
     /// The outstanding amount that is requested to be paid.
@@ -340,7 +340,7 @@ type
     /// been paid in advance. The amount is zero in case of a fully paid invoice.
     /// The amount may be negative; in that case the seller owes the amount to the buyer.
     /// </summary>
-    property DuePayableAmount: Nullable<Currency> read FDuePayableAmount write FDuePayableAmount;
+    property DuePayableAmount: ZUGFeRDNullable<Currency> read FDuePayableAmount write FDuePayableAmount;
 
     /// <summary>
     /// A group of business terms providing information about VAT breakdown by different categories, rates and exemption reasons
@@ -706,26 +706,26 @@ type
     /// <param name="billingPeriodEnd"></param>
     /// <returns></returns>
     function AddTradeLineItem(const name: string; const description: string;
-                  const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown; const unitQuantity: INullableParam<Double> = nil;
-                  const grossUnitPrice: INullableParam<Currency> = nil; const netUnitPrice: INullableParam<Currency> = nil; const billedQuantity: Double = 0; const lineTotalAmount : Currency = 0;
+                  const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown; const unitQuantity: IZUGFeRDNullableParam<Double> = nil;
+                  const grossUnitPrice: IZUGFeRDNullableParam<Currency> = nil; const netUnitPrice: IZUGFeRDNullableParam<Currency> = nil; const billedQuantity: Double = 0; const lineTotalAmount : Currency = 0;
                   const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const taxPercent: Double = 0;
                   const comment: string = ''; const id: TZUGFeRDGlobalID = nil; const sellerAssignedID: string = '';
-                  const buyerAssignedID: string = ''; const deliveryNoteID: string = ''; const deliveryNoteDate: INullableParam<TDateTime> = nil;
-                  const buyerOrderID: string = ''; const buyerOrderDate: INullableParam<TDateTime> = nil; const billingPeriodStart: INullableParam<TDateTime> = nil;
-                  const billingPeriodEnd: INullableParam<TDateTime> = nil): TZUGFeRDTradeLineItem; overload;
+                  const buyerAssignedID: string = ''; const deliveryNoteID: string = ''; const deliveryNoteDate: IZUGFeRDNullableParam<TDateTime> = nil;
+                  const buyerOrderID: string = ''; const buyerOrderDate: IZUGFeRDNullableParam<TDateTime> = nil; const billingPeriodStart: IZUGFeRDNullableParam<TDateTime> = nil;
+                  const billingPeriodEnd: IZUGFeRDNullableParam<TDateTime> = nil): TZUGFeRDTradeLineItem; overload;
 
 
     /// <summary>
     /// Adds a new line to the invoice. The line id is passed as a parameter.
     /// </summary>
     function AddTradeLineItem(const lineID: string; const name: string; const description: string;
-                  const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown; const unitQuantity: INullableParam<Double> = nil;
-                  const grossUnitPrice: INullableParam<Currency> = nil; const netUnitPrice: INullableParam<Currency> = nil; const billedQuantity: Double = 0; const lineTotalAmount : Currency = 0;
+                  const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown; const unitQuantity: IZUGFeRDNullableParam<Double> = nil;
+                  const grossUnitPrice: IZUGFeRDNullableParam<Currency> = nil; const netUnitPrice: IZUGFeRDNullableParam<Currency> = nil; const billedQuantity: Double = 0; const lineTotalAmount : Currency = 0;
                   const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const taxPercent: Double = 0;
                   const comment: string = ''; const id: TZUGFeRDGlobalID = nil; const sellerAssignedID: string = ''; const buyerAssignedID: string = '';
-                  const deliveryNoteID: string = ''; const deliveryNoteDate: INullableParam<TDateTime> = nil; const buyerOrderID: string = '';
-                  const buyerOrderDate: INullableParam<TDateTime> = nil; const billingPeriodStart: INullableParam<TDateTime> = nil;
-                  const billingPeriodEnd: INullableParam<TDateTime> = nil): TZUGFeRDTradeLineItem; overload;
+                  const deliveryNoteID: string = ''; const deliveryNoteDate: IZUGFeRDNullableParam<TDateTime> = nil; const buyerOrderID: string = '';
+                  const buyerOrderDate: IZUGFeRDNullableParam<TDateTime> = nil; const billingPeriodStart: IZUGFeRDNullableParam<TDateTime> = nil;
+                  const billingPeriodEnd: IZUGFeRDNullableParam<TDateTime> = nil): TZUGFeRDTradeLineItem; overload;
 
     procedure SetPaymentMeans(paymentCode: TZUGFeRDPaymentMeansTypeCodes; const information: string = '';
                   const identifikationsnummer: string = ''; const mandatsnummer: string = '');
@@ -1413,9 +1413,9 @@ end;
 function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const name: string;
   const description: string;
   const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown;
-  const unitQuantity: INullableParam<Double> = nil;
-  const grossUnitPrice: INullableParam<Currency> = nil;
-  const netUnitPrice: INullableParam<Currency> = nil;
+  const unitQuantity: IZUGFeRDNullableParam<Double> = nil;
+  const grossUnitPrice: IZUGFeRDNullableParam<Currency> = nil;
+  const netUnitPrice: IZUGFeRDNullableParam<Currency> = nil;
   const billedQuantity: Double = 0;
   const lineTotalAmount: Currency = 0;
   const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown;
@@ -1426,11 +1426,11 @@ function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const name: string;
   const sellerAssignedID: string = '';
   const buyerAssignedID: string = '';
   const deliveryNoteID: string = '';
-  const deliveryNoteDate: INullableParam<TDateTime> = nil;
+  const deliveryNoteDate: IZUGFeRDNullableParam<TDateTime> = nil;
   const buyerOrderID: string = '';
-  const buyerOrderDate: INullableParam<TDateTime> = nil;
-  const billingPeriodStart: INullableParam<TDateTime> = nil;
-  const billingPeriodEnd: INullableParam<TDateTime> = nil): TZUGFeRDTradeLineItem;
+  const buyerOrderDate: IZUGFeRDNullableParam<TDateTime> = nil;
+  const billingPeriodStart: IZUGFeRDNullableParam<TDateTime> = nil;
+  const billingPeriodEnd: IZUGFeRDNullableParam<TDateTime> = nil): TZUGFeRDTradeLineItem;
 begin
   Result := AddTradeLineItem(_getNextLineId(), name, description, unitCode,
     unitQuantity, grossUnitPrice, netUnitPrice, billedQuantity, lineTotalAmount,
@@ -1442,9 +1442,9 @@ end;
 function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const lineID: string;
   const name: string; const description: string;
   const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown;
-  const unitQuantity: INullableParam<Double> = nil;
-  const grossUnitPrice: INullableParam<Currency> = nil;
-  const netUnitPrice: INullableParam<Currency> = nil;
+  const unitQuantity: IZUGFeRDNullableParam<Double> = nil;
+  const grossUnitPrice: IZUGFeRDNullableParam<Currency> = nil;
+  const netUnitPrice: IZUGFeRDNullableParam<Currency> = nil;
   const billedQuantity: Double = 0;
   const lineTotalAmount: Currency = 0;
   const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown;
@@ -1455,11 +1455,11 @@ function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const lineID: string;
   const sellerAssignedID: string = '';
   const buyerAssignedID: string = '';
   const deliveryNoteID: string = '';
-  const deliveryNoteDate: INullableParam<TDateTime> = nil;
+  const deliveryNoteDate: IZUGFeRDNullableParam<TDateTime> = nil;
   const buyerOrderID: string = '';
-  const buyerOrderDate: INullableParam<TDateTime> = nil;
-  const billingPeriodStart: INullableParam<TDateTime> = nil;
-  const billingPeriodEnd: INullableParam<TDateTime> = nil): TZUGFeRDTradeLineItem;
+  const buyerOrderDate: IZUGFeRDNullableParam<TDateTime> = nil;
+  const billingPeriodStart: IZUGFeRDNullableParam<TDateTime> = nil;
+  const billingPeriodEnd: IZUGFeRDNullableParam<TDateTime> = nil): TZUGFeRDTradeLineItem;
 var
   newItem: TZUGFeRDTradeLineItem;
 begin
