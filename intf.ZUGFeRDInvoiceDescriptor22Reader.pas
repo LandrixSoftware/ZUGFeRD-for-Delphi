@@ -309,7 +309,6 @@ begin
   _tempPaymentMeans.TypeCode := TZUGFeRDPaymentMeansTypeCodesExtensions.FromString(_nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:SpecifiedTradeSettlementPaymentMeans/ram:TypeCode'));
   _tempPaymentMeans.Information := _nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:SpecifiedTradeSettlementPaymentMeans/ram:Information');
   _tempPaymentMeans.SEPACreditorIdentifier := _nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:CreditorReferenceID');
-  _tempPaymentMeans.SEPAMandateReference := _nodeAsString(doc.DocumentElement, '//ram:SpecifiedTradePaymentTerms/ram:DirectDebitMandateID');
 
   var financialCardId : String := _nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:SpecifiedTradeSettlementPaymentMeans/ram:ApplicableTradeSettlementFinancialCard/ram:ID');
   var financialCardCardholderName : String := _nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:SpecifiedTradeSettlementPaymentMeans/ram:ApplicableTradeSettlementFinancialCard/ram:CardholderName');
@@ -413,8 +412,19 @@ begin
   Result.InvoiceReferencedDocument.ID := _nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument/ram:IssuerAssignedID');
   Result.InvoiceReferencedDocument.IssueDateTime:= _nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument/ram:FormattedIssueDateTime');
 
-  Result.AddTradePaymentTerms(_nodeAsString(doc.DocumentElement, '//ram:SpecifiedTradePaymentTerms/ram:Description'),
-                              _nodeAsDateTime(doc.DocumentElement, '//ram:SpecifiedTradePaymentTerms/ram:DueDateDateTime'));
+  nodes := doc.SelectNodes('//ram:SpecifiedTradePaymentTerms');
+  for i := 0 to nodes.length-1 do
+  begin
+    var paymentTerm : TZUGFeRDPaymentTerms := TZUGFeRDPaymentTerms.Create;
+    paymentTerm.Description := _nodeAsString(nodes[i], './/ram:Description');
+    paymentTerm.DueDate:= _nodeAsDateTime(nodes[i], './/ram:DueDateDateTime');
+    paymentTerm.DirectDebitMandateID := _nodeAsString(nodes[i], './/ram:DirectDebitMandateID');
+    //TODO paymentTerm.PartialPaymentAmount
+    //TODO paymentTerm.ApplicableTradePaymentPenaltyTerms
+    paymentTerm.ApplicableTradePaymentDiscountTerms.BasisAmount := _nodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisAmount');
+    paymentTerm.ApplicableTradePaymentDiscountTerms.CalculationPercent := _nodeAsDouble(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:CalculationPercent');
+    Result.PaymentTermsList.Add(paymentTerm);
+  end;
 
   Result.LineTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:LineTotalAmount', 0);
   Result.ChargeTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:ChargeTotalAmount', 0);

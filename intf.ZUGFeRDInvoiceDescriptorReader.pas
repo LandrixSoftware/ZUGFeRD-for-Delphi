@@ -44,6 +44,7 @@ type
     /// <summary>
     ///  reads the value from given xpath and interprets the value as date time
     /// </summary>
+    function _nodeAsDouble(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: Double = 0): Double;
     function _nodeAsDateTime(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: TDateTime = 0): TDateTime;
     function SafeParseDateTime(const year: string = '0'; const month: string = '0'; const day: string = '0'; const hour: string = '0'; const minute: string = '0'; const second: string = '0'): TDateTime;
     function IsReadableByThisReaderVersion(stream: TStream; const validURIs: TArray<string>): Boolean; overload;
@@ -154,6 +155,20 @@ begin
 
   temp := _nodeAsString(node, xpath{, nsmgr});
   TryStrToCurr(temp, Result, FormatSettings.Invariant);
+end;
+
+function TZUGFeRDInvoiceDescriptorReader._nodeAsDouble(node: IXmlDomNode;
+  const xpath: string; defaultValue: Double): Double;
+var
+  temp: string;
+begin
+  Result := defaultValue;
+
+  if node = nil then
+    exit;
+
+  temp := _nodeAsString(node, xpath{, nsmgr});
+  TryStrToFloat(temp, Result, FormatSettings.Invariant);
 end;
 
 function TZUGFeRDInvoiceDescriptorReader._nodeAsDateTime(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager;}

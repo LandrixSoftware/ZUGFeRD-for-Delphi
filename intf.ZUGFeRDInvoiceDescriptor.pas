@@ -604,8 +604,6 @@ type
              const taxCategoryCode: TZUGFeRDTaxCategoryCodes;
              const taxPercent: Currency); overload;
 
-    procedure AddTradePaymentTerms(const description: string; const dueDate: TDateTime = 0);
-
     /// <summary>
     /// Set Information about Preceding Invoice
     /// </summary>
@@ -728,13 +726,13 @@ type
                   const billingPeriodEnd: IZUGFeRDNullableParam<TDateTime> = nil): TZUGFeRDTradeLineItem; overload;
 
     procedure SetPaymentMeans(paymentCode: TZUGFeRDPaymentMeansTypeCodes; const information: string = '';
-                  const identifikationsnummer: string = ''; const mandatsnummer: string = '');
+                  const identifikationsnummer: string = '');
 
     /// <summary>
     ///     Sets up the payment means for SEPA direct debit.
     /// </summary>
     procedure SetPaymentMeansSepaDirectDebit(const sepaCreditorIdentifier: string;
-  const sepaMandateReference: string; const information: string = '');
+  const information: string = '');
 
     /// <summary>
     ///     Sets up the payment means for payment via financial card.
@@ -1269,16 +1267,6 @@ begin
   FTradeAllowanceCharges.Add(tradeAllowanceCharge);
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.AddTradePaymentTerms(const description: string; const dueDate: TDateTime = 0);
-var
-  PaymentTerms: TZUGFeRDPaymentTerms;
-begin
-  PaymentTerms := TZUGFeRDPaymentTerms.Create;
-  PaymentTerms.Description := description;
-  PaymentTerms.DueDate:= dueDate;
-  FPaymentTermsList.Add(PaymentTerms);
-end;
-
 procedure TZUGFeRDInvoiceDescriptor.SetInvoiceReferencedDocument(const id: string; const IssueDateTime: TDateTime = 0);
 begin
   FInvoiceReferencedDocument.ID := id;
@@ -1512,25 +1500,23 @@ begin
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetPaymentMeans(paymentCode: TZUGFeRDPaymentMeansTypeCodes; const information: string = '';
-  const identifikationsnummer: string = ''; const mandatsnummer: string = '');
+  const identifikationsnummer: string = '');
 begin
   if Self.PaymentMeans = nil then Self.PaymentMeans := TZUGFeRDPaymentMeans.Create;
 
   Self.PaymentMeans.TypeCode := paymentCode;
   Self.PaymentMeans.Information := information;
   Self.PaymentMeans.SEPACreditorIdentifier := identifikationsnummer;
-  Self.PaymentMeans.SEPAMandateReference := mandatsnummer;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetPaymentMeansSepaDirectDebit(const sepaCreditorIdentifier: string;
-  const sepaMandateReference: string; const information: string = '');
+  const information: string = '');
 begin
   if Self.PaymentMeans = nil then Self.PaymentMeans := TZUGFeRDPaymentMeans.Create;
 
   Self.PaymentMeans.TypeCode := TZUGFeRDPaymentMeansTypeCodes.SEPADirectDebit;
   Self.PaymentMeans.Information := information;
   Self.PaymentMeans.SEPACreditorIdentifier := sepaCreditorIdentifier;
-  Self.PaymentMeans.SEPAMandateReference := sepaMandateReference;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetPaymentMeansFinancialCard(const financialCardId: string;

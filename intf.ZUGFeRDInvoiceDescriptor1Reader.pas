@@ -202,7 +202,6 @@ begin
   _tempPaymentMeans.TypeCode := TZUGFeRDPaymentMeansTypeCodesExtensions.FromString(_nodeAsString(doc.DocumentElement, '//ram:ApplicableSupplyChainTradeSettlement/ram:SpecifiedTradeSettlementPaymentMeans/ram:TypeCode'));
   _tempPaymentMeans.Information := _nodeAsString(doc.DocumentElement, '//ram:ApplicableSupplyChainTradeSettlement/ram:SpecifiedTradeSettlementPaymentMeans/ram:Information');
   _tempPaymentMeans.SEPACreditorIdentifier := _nodeAsString(doc.DocumentElement, '//ram:ApplicableSupplyChainTradeSettlement/ram:SpecifiedTradeSettlementPaymentMeans/ram:ID');
-  _tempPaymentMeans.SEPAMandateReference := _nodeAsString(doc.DocumentElement, '//ram:ApplicableSupplyChainTradeSettlement/ram:SpecifiedTradeSettlementPaymentMeans/ram:ID/@schemeAgencyID');
 
   Result.PaymentMeans := _tempPaymentMeans;
 
@@ -280,8 +279,19 @@ begin
                                      _nodeAsDecimal(nodes[i], './/ram:AppliedTradeTax/ram:ApplicablePercent', 0));
   end;
 
-  Result.AddTradePaymentTerms(_nodeAsString(doc.DocumentElement, '//ram:SpecifiedTradePaymentTerms/ram:Description'),
-                         _nodeAsDateTime(doc.DocumentElement, '//ram:SpecifiedTradePaymentTerms/ram:DueDateDateTime'));
+  nodes := doc.SelectNodes('//ram:SpecifiedTradePaymentTerms');
+  for i := 0 to nodes.length-1 do
+  begin
+    var paymentTerm : TZUGFeRDPaymentTerms := TZUGFeRDPaymentTerms.Create;
+    paymentTerm.Description := _nodeAsString(nodes[i], './/ram:Description');
+    paymentTerm.DueDate:= _nodeAsDateTime(nodes[i], './/ram:DueDateDateTime');
+    paymentTerm.DirectDebitMandateID := _nodeAsString(nodes[i], './/ram:DirectDebitMandateID');
+    //TODO paymentTerm.PartialPaymentAmount
+    //TODO paymentTerm.ApplicableTradePaymentPenaltyTerms
+    paymentTerm.ApplicableTradePaymentDiscountTerms.BasisAmount := _nodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisAmount');
+    paymentTerm.ApplicableTradePaymentDiscountTerms.CalculationPercent := _nodeAsDouble(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:CalculationPercent');
+    Result.PaymentTermsList.Add(paymentTerm);
+  end;
 
   Result.LineTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:LineTotalAmount', 0);
   Result.ChargeTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:ChargeTotalAmount', 0);

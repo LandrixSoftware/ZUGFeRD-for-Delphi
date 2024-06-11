@@ -778,18 +778,6 @@ begin
   end;
 
   //  15. SpecifiedTradePaymentTerms (optional)
-  if Descriptor.PaymentTermsList.Count=0 then
-  begin
-    // no PaymentTerms but SEPAMandateReference given
-    if (Descriptor.PaymentMeans<> nil) then
-      if (Descriptor.PaymentMeans.SEPAMandateReference <> '') then
-      begin
-        Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
-        Writer.WriteOptionalElementString('ram:DirectDebitMandateID', Descriptor.PaymentMeans.SEPAMandateReference);
-        Writer.WriteEndElement();
-      end;
-  end
-  else
   for var PaymentTerms: TZUGFeRDPaymentTerms in Descriptor.PaymentTermsList do
   begin
     Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
@@ -800,8 +788,18 @@ begin
       _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(PaymentTerms.DueDate.Value));
       Writer.WriteEndElement(); // !ram:DueDateDateTime
     end;
-    if (Descriptor.PaymentMeans<> nil) then
-      Writer.WriteOptionalElementString('ram:DirectDebitMandateID', Descriptor.PaymentMeans.SEPAMandateReference);
+    Writer.WriteOptionalElementString('ram:DirectDebitMandateID', PaymentTerms.DirectDebitMandateID);
+    //TODO PaymentTerms.PartialPaymentAmount
+    //TODO PaymentTerms.ApplicableTradePaymentPenaltyTerms
+    if (PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount <> 0.0) and
+       (PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent <> 0.0) then
+    begin
+      Writer.WriteStartElement('ram:ApplicableTradePaymentDiscountTerms');
+      _writeOptionalAmount(Writer, 'ram:BasisAmount', PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount);
+      _writeOptionalAmount(Writer, 'ram:CalculationPercent', PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent,4);
+      Writer.WriteEndElement();
+      //TODO PaymentTerms.ApplicableTradePaymentDiscountTerms.ActualPenaltyAmount
+    end;
     Writer.WriteEndElement();
   end;
 
