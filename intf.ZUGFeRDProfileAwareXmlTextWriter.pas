@@ -22,7 +22,7 @@ interface
 uses
   System.Classes, System.SysUtils, System.Generics.Collections,
   System.StrUtils,
-  Xml.xmldom,Xml.XMLDoc,Xml.XMLIntf,Xml.XMLSchema,intf.MSXML2_TLB,
+  Xml.xmldom,Xml.XMLDoc,Xml.XMLIntf,Xml.XMLSchema,intf.ZUGFeRDMSXML2_TLB,
   intf.ZUGFeRDProfile
   ;
 

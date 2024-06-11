@@ -10,7 +10,7 @@ This is provided as is, expressly without a warranty of any kind.
 You use it at your own risc.
 }
 
-unit intf.MSXML2_TLB;
+unit intf.ZUGFeRDMSXML2_TLB;
 
 // ************************************************************************ //
 // WARNUNG

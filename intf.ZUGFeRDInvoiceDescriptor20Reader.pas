@@ -22,7 +22,7 @@ interface
 uses
   System.SysUtils, System.Classes, System.DateUtils
   ,System.NetEncoding
-  ,Xml.XMLDoc, Xml.xmldom, Xml.XMLIntf,intf.MSXML2_TLB
+  ,Xml.XMLDoc, Xml.xmldom, Xml.XMLIntf,intf.ZUGFeRDMSXML2_TLB
   ,intf.ZUGFeRDXmlHelper
   ,intf.ZUGFeRDInvoiceDescriptorReader
   ,intf.ZUGFeRDTradeLineItem

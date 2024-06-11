@@ -21,7 +21,7 @@ interface
 
 uses
   System.SysUtils, System.Classes, System.DateUtils
-  ,Xml.XMLDoc, Xml.XMLIntf, intf.MSXML2_TLB
+  ,Xml.XMLDoc, Xml.XMLIntf, intf.ZUGFeRDMSXML2_TLB
   ,intf.ZUGFeRDXmlHelper
   ,intf.ZUGFeRDInvoiceDescriptorReader
   ,intf.ZUGFeRDInvoiceDescriptor
