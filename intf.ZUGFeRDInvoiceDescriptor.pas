@@ -964,6 +964,17 @@ begin
     reader.Free;
   end;
 
+  reader := TZUGFeRDInvoiceDescriptor22UblReader.Create;
+  try
+    if reader.IsReadableByThisReaderVersion(stream) then
+    begin
+      Result := reader.Load(stream);
+      exit;
+    end;
+  finally
+    reader.Free;
+  end;
+
   reader := TZUGFeRDInvoiceDescriptor22Reader.Create;
   try
     if reader.IsReadableByThisReaderVersion(stream) then
@@ -1004,6 +1015,17 @@ begin
     reader.Free;
   end;
 
+  reader := TZUGFeRDInvoiceDescriptor22UBLReader.Create;
+  try
+    if reader.IsReadableByThisReaderVersion(filename) then
+    begin
+      Result := reader.Load(filename);
+      exit;
+    end;
+  finally
+    reader.Free;
+  end;
+
   reader := TZUGFeRDInvoiceDescriptor22Reader.Create;
   try
     if reader.IsReadableByThisReaderVersion(filename) then
@@ -1034,6 +1056,17 @@ var
   reader: TZUGFeRDInvoiceDescriptorReader;
 begin
   reader := TZUGFeRDInvoiceDescriptor1Reader.Create;
+  try
+    if reader.IsReadableByThisReaderVersion(xmldocument) then
+    begin
+      Result := reader.Load(xmldocument);
+      exit;
+    end;
+  finally
+    reader.Free;
+  end;
+
+  reader := TZUGFeRDInvoiceDescriptor22UBLReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(xmldocument) then
     begin

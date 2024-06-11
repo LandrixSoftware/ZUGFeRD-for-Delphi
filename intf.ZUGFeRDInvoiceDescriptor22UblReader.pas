@@ -65,12 +65,14 @@ uses
 type
   TZUGFeRDInvoiceDescriptor22UblReader = class(TZUGFeRDInvoiceDescriptorReader)
   private
+    function GetValidURIs : TArray<string>;
     function _parseTradeLineItem(tradeLineItem : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDTradeLineItem;
     function _nodeAsParty(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDParty;
     function _getAdditionalReferencedDocument(a_oXmlNode : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDAdditionalReferencedDocument;
     function _nodeAsLegalOrganization(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDLegalOrganization;
   public
     function IsReadableByThisReaderVersion(stream: TStream): Boolean; override;
+    function IsReadableByThisReaderVersion(xmldocument: IXMLDocument): Boolean; override;
 
     /// <summary>
     /// Parses the ZUGFeRD invoice from the given stream.
@@ -81,29 +83,55 @@ type
     /// <param name="stream"></param>
     /// <returns>The parsed ZUGFeRD invoice</returns>
     function Load(stream: TStream): TZUGFeRDInvoiceDescriptor; override;
+
+    function Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor; override;
   end;
 
 implementation
 
 { TZUGFeRDInvoiceDescriptor22UblReader }
 
-function TZUGFeRDInvoiceDescriptor22UblReader.IsReadableByThisReaderVersion(
-  stream: TStream): Boolean;
-var
-  validURIs: TArray<string>;
+function TZUGFeRDInvoiceDescriptor22UblReader.GetValidURIs : TArray<string>;
 begin
-  validURIs := TArray<string>.Create(
+  Result := TArray<string>.Create(
     'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2',
     'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
     'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2'
   );
+end;
 
-  Result := IsReadableByThisReaderVersion(stream, validURIs);
+function TZUGFeRDInvoiceDescriptor22UblReader.IsReadableByThisReaderVersion(
+  stream: TStream): Boolean;
+begin
+  Result := IsReadableByThisReaderVersion(stream, GetValidURIs);
+end;
+
+function TZUGFeRDInvoiceDescriptor22UblReader.IsReadableByThisReaderVersion(
+  xmldocument : IXMLDocument): Boolean;
+begin
+  Result := IsReadableByThisReaderVersion(xmldocument, GetValidURIs);
 end;
 
 function TZUGFeRDInvoiceDescriptor22UblReader.Load(stream: TStream): TZUGFeRDInvoiceDescriptor;
 var
   xml : IXMLDocument;
+begin
+  if Stream = nil then
+    raise TZUGFeRDIllegalStreamException.Create('Cannot read from stream');
+
+  xml := NewXMLDocument;
+  try
+    xml.LoadFromStream(stream,TXMLEncodingType.xetUTF_8);
+    xml.Active := True;
+    Result := Load(xml);
+  finally
+    xml := nil;
+  end;
+end;
+
+function TZUGFeRDInvoiceDescriptor22UblReader.Load(
+  xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor;
+var
   doc : IXMLDOMDocument2;
   node : IXMLDOMNode;
 //  node,node2,node3,node4,nodeSupplyChainTradeTransaction,
@@ -111,14 +139,7 @@ var
   nodes : IXMLDOMNodeList;
   i : Integer;
 begin
-  if Stream = nil then
-    raise TZUGFeRDIllegalStreamException.Create('Cannot read from stream');
-
-//  xml := NewXMLDocument;
-//  xml.LoadFromStream(stream,TXMLEncodingType.xetUTF_8);
-//  xml.Active := True;
-//
-//  doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(xml);
+  doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(xmldocument);
 //
 //  //nsmgr.AddNamespace("qdt", "urn:un:unece:uncefact:data:standard:QualifiedDataType:100");
 //  //nsmgr.AddNamespace("a", "urn:un:unece:uncefact:data:standard:QualifiedDataType:100");
@@ -126,7 +147,7 @@ begin
 //  //nsmgr.AddNamespace("ram", "urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100");
 //  //nsmgr.AddNamespace("udt", "urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100");
 //
-//  Result := TZUGFeRDInvoiceDescriptor.Create;
+  Result := TZUGFeRDInvoiceDescriptor.Create;
 //
 //  Result.IsTest := _nodeAsBool(doc.documentElement,'//*[local-name()="ExchangedDocumentContext"]/ram:TestIndicator');
 //  Result.BusinessProcess := _nodeAsString(doc.DocumentElement, '//*[local-name()="BusinessProcessSpecifiedDocumentContextParameter"]/ram:ID');//, nsmgr),
