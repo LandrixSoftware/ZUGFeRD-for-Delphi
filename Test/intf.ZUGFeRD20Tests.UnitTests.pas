@@ -27,6 +27,7 @@ uses
   ,intf.ZUGFeRDInvoiceProvider
   ,intf.ZUGFeRDVersion
   ,intf.ZUGFeRDCurrencyCodes
+  ,intf.ZUGFeRDPaymentTerms
   ;
 
 type
@@ -163,8 +164,9 @@ begin
 //      d.AddDebitorFinancialAccount(
 //          "DE21860000000086001055",
 //          null);
-      d.AddTradePaymentTerms(
-          'Der Betrag in Höhe von EUR 529,87 wird am 20.03.2018 von Ihrem Konto per SEPA-Lastschrift eingezogen.');
+      var paymentTerm : TZUGFeRDPaymentTerms := TZUGFeRDPaymentTerms.Create;
+      paymentTerm.Description := 'Der Betrag in Höhe von EUR 529,87 wird am 20.03.2018 von Ihrem Konto per SEPA-Lastschrift eingezogen.';
+      d.PaymentTermsList.Add(paymentTerm);
 //      d.SetTotals(
 //          473.00m,
 //          0.00m,
@@ -203,7 +205,7 @@ begin
 
     var d2 : TZUGFeRDInvoiceDescriptor := TZUGFeRDInvoiceDescriptor.Load(stream);
     Assert.AreEqual('DE98ZZZ09999999999', d2.PaymentMeans.SEPACreditorIdentifier);
-    Assert.AreEqual('REF A-123', d2.PaymentMeans.SEPAMandateReference);
+    Assert.AreEqual('REF A-123', d2.PaymentTermsList[0].DirectDebitMandateID);
     Assert.AreEqual(Int64(1), Int64(d2.DebitorBankAccounts.Count));
     if d2.DebitorBankAccounts.Count = 1 then
     Assert.AreEqual('DE21860000000086001055', d2.DebitorBankAccounts[0].IBAN);

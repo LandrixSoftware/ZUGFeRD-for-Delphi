@@ -54,10 +54,12 @@ uses
 type
   TZUGFeRDInvoiceDescriptor1Reader = class(TZUGFeRDInvoiceDescriptorReader)
   private
+    function GetValidURIs : TArray<string>;
     function _parseTradeLineItem(tradeLineItem : IXmlDomNode) : TZUGFeRDTradeLineItem;
     function _nodeAsParty(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDParty;
   public
     function IsReadableByThisReaderVersion(stream: TStream): Boolean; override;
+    function IsReadableByThisReaderVersion(xmldocument: IXMLDocument): Boolean; override;
     /// <summary>
     /// Parses the ZUGFeRD invoice from the given stream.
     ///
@@ -67,18 +69,17 @@ type
     /// <param name="stream"></param>
     /// <returns>The parsed ZUGFeRD invoice</returns>
     function Load(stream: TStream): TZUGFeRDInvoiceDescriptor; override;
+
+    function Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor; override;
   end;
 
 implementation
 
 { TZUGFeRDInvoiceDescriptor1Reader }
 
-function TZUGFeRDInvoiceDescriptor1Reader.IsReadableByThisReaderVersion(
-  stream: TStream): Boolean;
-var
-  validURIs: TArray<string>;
+function TZUGFeRDInvoiceDescriptor1Reader.GetValidURIs : TArray<string>;
 begin
-  validURIs := TArray<string>.Create(
+  Result :=  TArray<string>.Create(
     'urn:ferd:invoice:1.0:basic',
     'urn:ferd:invoice:1.0:comfort',
     'urn:ferd:invoice:1.0:extended',
@@ -86,25 +87,44 @@ begin
     'urn:ferd:CrossIndustryDocument:invoice:1p0:comfort',
     'urn:ferd:CrossIndustryDocument:invoice:1p0:extended'
   );
+end;
 
-  Result := IsReadableByThisReaderVersion(stream, validURIs);
+function TZUGFeRDInvoiceDescriptor1Reader.IsReadableByThisReaderVersion(
+  stream: TStream): Boolean;
+begin
+  Result := IsReadableByThisReaderVersion(stream, GetValidURIs);
+end;
+
+function TZUGFeRDInvoiceDescriptor1Reader.IsReadableByThisReaderVersion(
+  xmldocument: IXMLDocument): Boolean;
+begin
+  Result := IsReadableByThisReaderVersion(xmldocument, GetValidURIs);
 end;
 
 function TZUGFeRDInvoiceDescriptor1Reader.Load(Stream: TStream): TZUGFeRDInvoiceDescriptor;
 var
   xml : IXMLDocument;
-  doc : IXMLDOMDocument2;
-  nodes : IXMLDOMNodeList;
-  i : Integer;
 begin
   if Stream = nil then
     raise TZUGFeRDIllegalStreamException.Create('Cannot read from stream');
 
   xml := NewXMLDocument;
-  xml.LoadFromStream(stream,TXMLEncodingType.xetUTF_8);
-  xml.Active := True;
+  try
+    xml.LoadFromStream(stream,TXMLEncodingType.xetUTF_8);
+    xml.Active := True;
+    Result := Load(xml);
+  finally
+    xml := nil;
+  end;
+end;
 
-  doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(xml);
+function TZUGFeRDInvoiceDescriptor1Reader.Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor;
+var
+  doc : IXMLDOMDocument2;
+  nodes : IXMLDOMNodeList;
+  i : Integer;
+begin
+  doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(xmldocument);
 
   //XmlNamespaceManager nsmgr := new XmlNamespaceManager(doc.DocumentElement.OwnerDocument.NameTable);
   //nsmgr.AddNamespace("rsm", "urn:ferd:CrossIndustryDocument:invoice:1p0");

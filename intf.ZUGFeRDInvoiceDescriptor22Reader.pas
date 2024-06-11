@@ -68,12 +68,14 @@ uses
 type
   TZUGFeRDInvoiceDescriptor22Reader = class(TZUGFeRDInvoiceDescriptorReader)
   private
+    function GetValidURIs : TArray<string>;
     function _parseTradeLineItem(tradeLineItem : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDTradeLineItem;
     function _nodeAsParty(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDParty;
     function _getAdditionalReferencedDocument(a_oXmlNode : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDAdditionalReferencedDocument;
     function _nodeAsLegalOrganization(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDLegalOrganization;
   public
     function IsReadableByThisReaderVersion(stream: TStream): Boolean; override;
+    function IsReadableByThisReaderVersion(xmldocument: IXMLDocument): Boolean; override;
 
     /// <summary>
     /// Parses the ZUGFeRD invoice from the given stream.
@@ -84,18 +86,17 @@ type
     /// <param name="stream"></param>
     /// <returns>The parsed ZUGFeRD invoice</returns>
     function Load(stream: TStream): TZUGFeRDInvoiceDescriptor; override;
+
+    function Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor; override;
   end;
 
 implementation
 
 { TZUGFeRDInvoiceDescriptor22Reader }
 
-function TZUGFeRDInvoiceDescriptor22Reader.IsReadableByThisReaderVersion(
-  stream: TStream): Boolean;
-var
-  validURIs: TArray<string>;
+function TZUGFeRDInvoiceDescriptor22Reader.GetValidURIs : TArray<string>;
 begin
-  validURIs := TArray<string>.Create(
+  Result := TArray<string>.Create(
     'urn:cen.eu:en16931:2017#conformant#urn:factur-x.eu:1p0:extended', // Factur-X 1.03 EXTENDED
     'urn:cen.eu:en16931:2017',  // Profil EN 16931 (COMFORT)
     'urn:cen.eu:en16931:2017#compliant#urn:factur-x.eu:1p0:basic', // BASIC
@@ -109,28 +110,46 @@ begin
     'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0', // XRechnung 3.0
     'urn.cpro.gouv.fr:1p0:ereporting' //Factur-X E-reporting
   );
+end;
 
-  Result := IsReadableByThisReaderVersion(stream, validURIs);
+function TZUGFeRDInvoiceDescriptor22Reader.IsReadableByThisReaderVersion(
+  stream: TStream): Boolean;
+begin
+  Result := IsReadableByThisReaderVersion(stream, GetValidURIs);
+end;
+
+function TZUGFeRDInvoiceDescriptor22Reader.IsReadableByThisReaderVersion(
+  xmldocument: IXMLDocument): Boolean;
+begin
+  Result := IsReadableByThisReaderVersion(xmldocument, GetValidURIs);
 end;
 
 function TZUGFeRDInvoiceDescriptor22Reader.Load(stream: TStream): TZUGFeRDInvoiceDescriptor;
 var
   xml : IXMLDocument;
-  doc : IXMLDOMDocument2;
-  node : IXMLDOMNode;
-//  node,node2,node3,node4,nodeSupplyChainTradeTransaction,
-//  nodeApplicableHeaderTradeAgreement : IXMLDOMNode;
-  nodes : IXMLDOMNodeList;
-  i : Integer;
 begin
   if Stream = nil then
     raise TZUGFeRDIllegalStreamException.Create('Cannot read from stream');
 
   xml := NewXMLDocument;
-  xml.LoadFromStream(stream,TXMLEncodingType.xetUTF_8);
-  xml.Active := True;
+  try
+    xml.LoadFromStream(stream,TXMLEncodingType.xetUTF_8);
+    xml.Active := True;
+    Result := Load(xml);
+  finally
+    xml := nil;
+  end;
+end;
 
-  doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(xml);
+function TZUGFeRDInvoiceDescriptor22Reader.Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor;
+var
+  xml : IXMLDocument;
+  doc : IXMLDOMDocument2;
+  node : IXMLDOMNode;
+  nodes : IXMLDOMNodeList;
+  i : Integer;
+begin
+  doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(xmldocument);
 
   //nsmgr.AddNamespace("qdt", "urn:un:unece:uncefact:data:standard:QualifiedDataType:100");
   //nsmgr.AddNamespace("a", "urn:un:unece:uncefact:data:standard:QualifiedDataType:100");

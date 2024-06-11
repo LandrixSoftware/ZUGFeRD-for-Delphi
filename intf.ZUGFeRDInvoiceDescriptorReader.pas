@@ -23,15 +23,18 @@ uses
   System.Classes, System.SysUtils, System.IOUtils, System.DateUtils
   ,Xml.XMLDoc, Xml.xmldom, Xml.XMLIntf,intf.MSXML2_TLB
   ,intf.ZUGFeRDInvoiceDescriptor
-  ,intf.ZUGFeRDExceptions;
+  ,intf.ZUGFeRDExceptions
+  ,intf.ZUGFeRDXmlHelper;
 
 type
   TZUGFeRDInvoiceDescriptorReader = class abstract
   public
     function Load(stream: TStream): TZUGFeRDInvoiceDescriptor; overload; virtual; abstract;
     function IsReadableByThisReaderVersion(stream: TStream): Boolean; overload; virtual; abstract;
+    function IsReadableByThisReaderVersion(xmldocument: IXMLDocument): Boolean; overload; virtual; abstract;
 
     function Load(const filename: string): TZUGFeRDInvoiceDescriptor; overload;
+    function Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor; overload; virtual; abstract;
     function IsReadableByThisReaderVersion(const filename: string): Boolean; overload;
   protected
     function _nodeAsBool(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: Boolean = False): Boolean;
@@ -48,6 +51,7 @@ type
     function _nodeAsDateTime(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: TDateTime = 0): TDateTime;
     function SafeParseDateTime(const year: string = '0'; const month: string = '0'; const day: string = '0'; const hour: string = '0'; const minute: string = '0'; const second: string = '0'): TDateTime;
     function IsReadableByThisReaderVersion(stream: TStream; const validURIs: TArray<string>): Boolean; overload;
+    function IsReadableByThisReaderVersion(xmldocument: IXMLDocument; const validURIs: TArray<string>): Boolean; overload;
   end;
 
 implementation
@@ -335,6 +339,50 @@ begin
   end;
 
   stream.Position := oldStreamPosition;
+end;
+
+function TZUGFeRDInvoiceDescriptorReader.IsReadableByThisReaderVersion(
+  xmldocument: IXMLDocument; const validURIs: TArray<string>): Boolean;
+var
+  toValidate,validURI: string;
+  node,node2 : IXMLNode;
+begin
+  Result := false;
+
+  if xmldocument = nil then
+    exit;
+
+  toValidate := '';
+
+  if (SameText(xmldocument.DocumentElement.NodeName,'Invoice') or
+      SameText(xmldocument.DocumentElement.NodeName,'ubl:Invoice')) then
+  begin
+    if not TZUGFeRDXmlHelper.FindChild(xmldocument.DocumentElement,'cbc:CustomizationID',node) then
+      exit;
+
+    toValidate := node.Text;
+  end else
+  if (SameText(xmldocument.DocumentElement.NodeName,'CrossIndustryInvoice') or
+      SameText(xmldocument.DocumentElement.NodeName,'rsm:CrossIndustryInvoice')) then
+  begin
+    if not (TZUGFeRDXmlHelper.FindChild(xmldocument.DocumentElement,'rsm:ExchangedDocumentContext',node) or
+            TZUGFeRDXmlHelper.FindChild(xmldocument.DocumentElement,'ExchangedDocumentContext',node)) then
+      exit;
+    if not TZUGFeRDXmlHelper.FindChild(node,'ram:GuidelineSpecifiedDocumentContextParameter',node2) then
+      exit;
+    if not TZUGFeRDXmlHelper.FindChild(node2,'ram:ID',node) then
+      exit;
+
+    toValidate := node.Text;
+  end;
+
+  if toValidate <> '' then
+  for validURI in validURIs do
+  if SameText(toValidate,validURI) then
+  begin
+    Result := true;
+    break;
+  end;
 end;
 
 end.
