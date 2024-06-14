@@ -408,7 +408,7 @@ begin
                                    _nodeAsDecimal(nodes[i], './/ram:BasisAmount', 0),
                                    Result.Currency,
                                    _nodeAsDecimal(nodes[i], './/ram:ActualAmount', 0),
-                                   _nodeAsDecimal(node, './/ram:CalculationPercent', 0),
+                                   _nodeAsDecimal(nodes[i], './/ram:CalculationPercent', 0),
                                    _nodeAsString(nodes[i], './/ram:Reason'),
                                    TZUGFeRDSpecialServiceDescriptionCodesExtensions.FromString(_nodeAsString(nodes[i], './ram:ReasonCode')),
                                    TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.FromString(_nodeAsString(nodes[i], './ram:ReasonCode')),
