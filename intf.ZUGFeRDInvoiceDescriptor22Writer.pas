@@ -149,7 +149,7 @@ begin
 
   Writer.WriteStartElement('ram:GuidelineSpecifiedDocumentContextParameter');
   //Gruppierung der Anwendungsempfehlungsinformationen
-  Writer.WriteElementString('ram:ID', TZUGFeRDProfileExtensions.EnumToString(Descriptor.Profile,TZUGFeRDVersion.Version21));
+  Writer.WriteElementString('ram:ID', TZUGFeRDProfileExtensions.EnumToString(Descriptor.Profile,TZUGFeRDVersion.Version22));
   Writer.WriteEndElement(); // !ram:GuidelineSpecifiedDocumentContextParameter
   Writer.WriteEndElement(); // !rsm:ExchangedDocumentContext
   //#endregion
@@ -427,7 +427,7 @@ begin
 
     if (tradeLineItem.DeliveryNoteReferencedDocument <> nil) then
     begin
-        Writer.WriteStartElement('ram:DeliveryNoteReferencedDocument', ALL_PROFILES - [TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung]);
+        Writer.WriteStartElement('ram:DeliveryNoteReferencedDocument', ALL_PROFILES - [TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung]); // this violates CII-SR-175 for XRechnung 3
         Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.DeliveryNoteReferencedDocument.ID);
 
         if (tradeLineItem.DeliveryNoteReferencedDocument.IssueDateTime.HasValue) then
@@ -436,7 +436,7 @@ begin
           Writer.WriteStartElement('qdt:DateTimeString');
           Writer.WriteAttributeString('format', '102');
           Writer.WriteValue(_formatDate(tradeLineItem.DeliveryNoteReferencedDocument.IssueDateTime.Value));
-          Writer.WriteEndElement(); // 'qdt:DateTimeString
+          Writer.WriteEndElement(); // !qdt:DateTimeString
           Writer.WriteEndElement(); // !ram:FormattedIssueDateTime
         end;
 
@@ -445,12 +445,12 @@ begin
 
     if (tradeLineItem.ActualDeliveryDate.HasValue) then
     begin
-      Writer.WriteStartElement('ram:ActualDeliverySupplyChainEvent');
+      Writer.WriteStartElement('ram:ActualDeliverySupplyChainEvent', ALL_PROFILES - [TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung]); // this violates CII-SR-170 for XRechnung 3
       Writer.WriteStartElement('ram:OccurrenceDateTime');
       Writer.WriteStartElement('udt:DateTimeString');
       Writer.WriteAttributeString('format', '102');
       Writer.WriteValue(_formatDate(tradeLineItem.ActualDeliveryDate.Value));
-      Writer.WriteEndElement(); // 'udt:DateTimeString
+      Writer.WriteEndElement(); // !udt:DateTimeString
       Writer.WriteEndElement(); // !OccurrenceDateTime()
       Writer.WriteEndElement(); // !ActualDeliverySupplyChainEvent
     end;
@@ -876,7 +876,7 @@ begin
 
     for var debitorAccount : TZUGFeRDBankAccount in Descriptor.DebitorBankAccounts do
     begin
-      Writer.WriteStartElement('ram:SpecifiedTradeSettlementPaymentMeans');
+      Writer.WriteStartElement('ram:SpecifiedTradeSettlementPaymentMeans'); // BG-16
 
       if (Descriptor.PaymentMeans <> nil) then
       if (Descriptor.PaymentMeans.TypeCode <> TZUGFeRDPaymentMeansTypeCodes.Unknown) then
