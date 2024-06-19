@@ -25,7 +25,7 @@ var pdfAsStream : TStream;
 var cmdOutput : String;
 
 if GetZUGFeRDPdfHelper.SetPdfTkServerPath('C:\Program Files (x86)\PDFtk Server')
-                      .GetZUGFeRDPdfAttachment('zugferd.pdf',
+                      .PdfTkServerGetZUGFeRDPdfAttachment('zugferd.pdf',
                       pdfAsStream,
                       cmdOutput) then
 try
