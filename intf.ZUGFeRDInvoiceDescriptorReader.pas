@@ -363,10 +363,14 @@ begin
     toValidate := node.Text;
   end else
   if (SameText(xmldocument.DocumentElement.NodeName,'CrossIndustryInvoice') or
-      SameText(xmldocument.DocumentElement.NodeName,'rsm:CrossIndustryInvoice')) then
+      SameText(xmldocument.DocumentElement.NodeName,'rsm:CrossIndustryInvoice') or
+      SameText(xmldocument.DocumentElement.NodeName,'CrossIndustryDocument') or
+      SameText(xmldocument.DocumentElement.NodeName,'rsm:CrossIndustryDocument')) then
   begin
     if not (TZUGFeRDXmlHelper.FindChild(xmldocument.DocumentElement,'rsm:ExchangedDocumentContext',node) or
-            TZUGFeRDXmlHelper.FindChild(xmldocument.DocumentElement,'ExchangedDocumentContext',node)) then
+            TZUGFeRDXmlHelper.FindChild(xmldocument.DocumentElement,'ExchangedDocumentContext',node) or
+            TZUGFeRDXmlHelper.FindChild(xmldocument.DocumentElement,'rsm:SpecifiedExchangedDocumentContext',node) or
+            TZUGFeRDXmlHelper.FindChild(xmldocument.DocumentElement,'SpecifiedExchangedDocumentContext',node)) then
       exit;
     if not TZUGFeRDXmlHelper.FindChild(node,'ram:GuidelineSpecifiedDocumentContextParameter',node2) then
       exit;

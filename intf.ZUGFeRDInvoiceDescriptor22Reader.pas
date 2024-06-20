@@ -143,7 +143,6 @@ end;
 
 function TZUGFeRDInvoiceDescriptor22Reader.Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor;
 var
-  xml : IXMLDocument;
   doc : IXMLDOMDocument2;
   node : IXMLDOMNode;
   nodes : IXMLDOMNodeList;
