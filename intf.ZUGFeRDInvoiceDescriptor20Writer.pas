@@ -1040,7 +1040,7 @@ begin
 
   case type_ of
     TZUGFeRDInvoiceType.CorrectionOld: Result := Integer(TZUGFeRDInvoiceType.Correction);
-    else Result := Integer(TZUGFeRDInvoiceType.Invoice);
+    else Result := Integer(type_);
   end;
 end;
 
