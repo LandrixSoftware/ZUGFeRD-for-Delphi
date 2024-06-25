@@ -400,7 +400,7 @@ begin
                                  _nodeAsString(nodes[i], './/ram:ExemptionReason'));
   end;
 
-  nodes := doc.SelectNodes('//ram:SpecifiedTradeAllowanceCharge');
+  nodes := doc.SelectNodes('//ram:ApplicableHeaderTradeSettlement/ram:SpecifiedTradeAllowanceCharge');
   for i := 0 to nodes.length-1 do
   begin
     Result.AddTradeAllowanceCharge(not _nodeAsBool(nodes[i], './/ram:ChargeIndicator'), // wichtig: das not (!) beachten
