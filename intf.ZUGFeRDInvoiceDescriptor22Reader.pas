@@ -171,7 +171,8 @@ begin
     var content : String := _nodeAsString(nodes[i], './/ram:Content');
     var _subjectCode : String := _nodeAsString(nodes[i], './/ram:SubjectCode');
     var subjectCode : TZUGFeRDSubjectCodes := TZUGFeRDSubjectCodesExtensions.FromString(_subjectCode);
-    Result.AddNote(content, subjectCode);
+    var contentCode : TZUGFeRDContentCodes := TZUGFeRDContentCodesExtensions.FromString(_nodeAsString(nodes[i], './/ram:ContentCode'));
+    Result.AddNote(content, subjectCode, contentCode);
   end;
 
   Result.ReferenceOrderNo := _nodeAsString(doc, '//ram:ApplicableHeaderTradeAgreement/ram:BuyerReference');
