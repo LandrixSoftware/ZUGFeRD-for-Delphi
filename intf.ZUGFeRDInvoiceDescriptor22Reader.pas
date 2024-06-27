@@ -440,8 +440,11 @@ begin
     paymentTerm.DirectDebitMandateID := _nodeAsString(nodes[i], './/ram:DirectDebitMandateID');
     //TODO paymentTerm.PartialPaymentAmount
     //TODO paymentTerm.ApplicableTradePaymentPenaltyTerms
+    paymentTerm.ApplicableTradePaymentDiscountTerms.BasisPeriodMeasure := _nodeAsDouble(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisPeriodMeasure');
+    paymentTerm.ApplicableTradePaymentDiscountTerms.UnitCode := TZUGFeRDQuantityCodesExtensions.FromString(_nodeAsString(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisPeriodMeasure/@unitCode'));
     paymentTerm.ApplicableTradePaymentDiscountTerms.BasisAmount := _nodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisAmount');
     paymentTerm.ApplicableTradePaymentDiscountTerms.CalculationPercent := _nodeAsDouble(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:CalculationPercent');
+
     Result.PaymentTermsList.Add(paymentTerm);
   end;
 

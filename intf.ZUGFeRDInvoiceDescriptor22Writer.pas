@@ -1014,12 +1014,17 @@ begin
     Writer.WriteOptionalElementString('ram:DirectDebitMandateID', PaymentTerms.DirectDebitMandateID);
     //TODO PaymentTerms.PartialPaymentAmount
     //TODO PaymentTerms.ApplicableTradePaymentPenaltyTerms
-    if (PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount <> 0.0) and
-       (PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent <> 0.0) then
+    if (PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount <> 0.0) or
+       (PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent <> 0.0) or
+       PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisPeriodMeasure.HasValue then
     begin
       Writer.WriteStartElement('ram:ApplicableTradePaymentDiscountTerms');
-      _writeOptionalAmount(Writer, 'ram:BasisAmount', PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount);
-      _writeOptionalAmount(Writer, 'ram:CalculationPercent', PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent,4);
+      if PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisPeriodMeasure.HasValue then
+        _writeElementWithAttribute(Writer, 'ram:BasisPeriodMeasure', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(PaymentTerms.ApplicableTradePaymentDiscountTerms.UnitCode), _formatDecimal(paymentTerms.ApplicableTradePaymentDiscountTerms.BasisPeriodMeasure, 4));
+      if PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount <> 0.0 then
+        _writeOptionalAmount(Writer, 'ram:BasisAmount', PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount);
+      if PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent <> 0.0 then
+        _writeOptionalAmount(Writer, 'ram:CalculationPercent', PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent,4);
       Writer.WriteEndElement();
       //TODO PaymentTerms.ApplicableTradePaymentDiscountTerms.ActualPenaltyAmount
     end;
