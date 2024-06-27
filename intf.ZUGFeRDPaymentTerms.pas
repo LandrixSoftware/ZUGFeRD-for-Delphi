@@ -20,22 +20,27 @@ unit intf.ZUGFeRDPaymentTerms;
 interface
 
 uses
-  intf.ZUGFeRDHelper;
+  intf.ZUGFeRDHelper,
+  intf.ZUGFeRDQuantityCodes;
 
 type
 
   TZUGFeRDApplicableTradePaymentTerms = class
   private
     FCalculationPercent: double;
+    FBasisPeriodMeasure: ZUGFeRDNullable<double>;
     FBasisAmount: Currency;
     FActualPenaltyAmount: Currency;
+    FUnitCode: TZUGFeRDQuantityCodes;
+
     //TODO FBasisDateTime: ZUGFeRDNullable<TDateTime>;
   public
     //TODO property BasisDateTime: ZUGFeRDNullable<TDateTime> read FBasisDateTime write FBasisDateTime;
-    //TODO BasisPeriodMeasure
+    property BasisPeriodMeasure : ZUGFeRDNullable<double> read FBasisPeriodMeasure write FBasisPeriodMeasure;
     property BasisAmount : Currency read FBasisAmount write FBasisAmount;
     property CalculationPercent : double read FCalculationPercent write FCalculationPercent;
     property ActualPenaltyAmount : Currency read FActualPenaltyAmount write FActualPenaltyAmount;
+    property UnitCode: TZUGFeRDQuantityCodes read FUnitCode write FUnitCode;
   end;
 
   /// <summary>
