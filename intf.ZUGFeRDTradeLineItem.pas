@@ -48,11 +48,15 @@ type
   TZUGFeRDTradeLineItem = class
   private
     FBilledQuantity: Double;
+    FChargeFreeQuantity: ZUGFeRDNullable<Double>;
+    FPackageQuantity: ZUGFeRDNullable<Double>;
     FName: string;
     FContractReferencedDocument: TZUGFeRDContractReferencedDocument;
     FReceivableSpecifiedTradeAccountingAccounts: TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>;
     FAdditionalReferencedDocuments: TObjectList<TZUGFeRDAdditionalReferencedDocument>;
     FUnitCode: TZUGFeRDQuantityCodes;
+    FChargeFreeUnitCode: TZUGFeRDQuantityCodes;
+    FPackageUnitCode: TZUGFeRDQuantityCodes;
     FBillingPeriodStart: ZUGFeRDNullable<TDateTime>;
     FApplicableProductCharacteristics: TObjectList<TZUGFeRDApplicableProductCharacteristic>;
     FSellerAssignedID: string;
@@ -172,6 +176,16 @@ type
     property BilledQuantity: Double read FBilledQuantity write FBilledQuantity;
 
     /// <summary>
+    /// No charge quantity
+    /// </summary>
+    property ChargeFreeQuantity: ZUGFeRDNullable<Double> read FChargeFreeQuantity write FChargeFreeQuantity;
+
+    /// <summary>
+    /// Package quantity
+    /// </summary>
+    property PackageQuantity: ZUGFeRDNullable<Double> read FPackageQuantity write FPackageQuantity;
+
+    /// <summary>
     /// Invoice line net amount including (!) trade allowance charges for the line item
     /// BT-131
     /// </summary>
@@ -220,6 +234,16 @@ type
     /// Item Base Quantity Unit Code
     /// </summary>
     property UnitCode: TZUGFeRDQuantityCodes read FUnitCode write FUnitCode;
+
+    /// <summary>
+    /// Charge Free Quantity Unit Code
+    /// </summary>
+    property ChargeFreeUnitCode: TZUGFeRDQuantityCodes read FChargeFreeUnitCode write FChargeFreeUnitCode;
+
+    /// <summary>
+    /// Package Quantity Unit Code
+    /// </summary>
+    property PackageUnitCode: TZUGFeRDQuantityCodes read FPackageUnitCode write FPackageUnitCode;
 
     /// <summary>
     /// Identifier of the invoice line item
