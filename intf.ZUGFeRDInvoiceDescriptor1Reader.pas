@@ -146,7 +146,8 @@ begin
     var content : String := _nodeAsString(nodes[i], './/ram:Content');
     var _subjectCode : String := _nodeAsString(nodes[i], './/ram:SubjectCode');
     var subjectCode : TZUGFeRDSubjectCodes := TZUGFeRDSubjectCodesExtensions.FromString(_subjectCode);
-    Result.AddNote(content, subjectCode);
+    var contentCode : TZUGFeRDContentCodes := TZUGFeRDContentCodesExtensions.FromString(_nodeAsString(nodes[i], './/ram:ContentCode'));
+    Result.AddNote(content, subjectCode, contentCode);
   end;
 
   Result.ReferenceOrderNo := _nodeAsString(doc, '//ram:ApplicableSupplyChainTradeAgreement/ram:BuyerReference');
@@ -416,7 +417,7 @@ begin
       var noteItem : TZUGFeRDNote := TZUGFeRDNote.Create(
           _nodeAsString(nodes[i], './/ram:Content'),
           TZUGFeRDSubjectCodesExtensions.FromString(_nodeAsString(nodes[i], './/ram:SubjectCode')),
-          TZUGFeRDContentCodes.Unknown
+          TZUGFeRDContentCodesExtensions.FromString(_nodeAsString(nodes[i], './/ram:ContentCode'))
         );
       Result.AssociatedDocument.Notes.Add(noteItem);
     end;

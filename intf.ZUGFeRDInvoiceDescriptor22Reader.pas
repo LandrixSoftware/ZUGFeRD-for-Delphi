@@ -677,7 +677,7 @@ begin
       var noteItem : TZUGFeRDNote := TZUGFeRDNote.Create(
           _nodeAsString(nodes[i], './/ram:Content'),
           TZUGFeRDSubjectCodesExtensions.FromString(_nodeAsString(nodes[i], './/ram:SubjectCode')),
-          TZUGFeRDContentCodes.Unknown
+          TZUGFeRDContentCodesExtensions.FromString(_nodeAsString(nodes[i], './/ram:ContentCode'))
         );
       Result.AssociatedDocument.Notes.Add(noteItem);
     end;
