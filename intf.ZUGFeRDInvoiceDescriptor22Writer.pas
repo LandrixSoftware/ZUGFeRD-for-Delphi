@@ -1281,18 +1281,14 @@ begin
     begin
       writer.WriteElementString('ram:ID', legalOrganization.ID.ID);
     end;
-    if (legalOrganization.TradingBusinessName<>'') then
+    // filter according to https://github.com/stephanstapel/ZUGFeRD-csharp/pull/221
+    if (((partyType = TZUGFeRDPartyTypes.SellerTradeParty) and (Descriptor.Profile <> TZUGFeRDProfile.Minimum)) or
+        ((partyType = TZUGFeRDPartyTypes.PayeeTradeParty) and (Descriptor.Profile <> TZUGFeRDProfile.Minimum)) or
+        ((partyType = TZUGFeRDPartyTypes.BuyerTradeParty) and (Descriptor.Profile <> TZUGFeRDProfile.Minimum)) or
+         (Descriptor.Profile = TZUGFeRDProfile.Extended) // remaining party types
+       ) then
     begin
-      // filter according to https://github.com/stephanstapel/ZUGFeRD-csharp/pull/221
-      if (((partyType = TZUGFeRDPartyTypes.SellerTradeParty) and (Descriptor.Profile <> TZUGFeRDProfile.Minimum)) or
-              ((partyType = TZUGFeRDPartyTypes.PayeeTradeParty) and (Descriptor.Profile <> TZUGFeRDProfile.Minimum)) or
-              ((partyType = TZUGFeRDPartyTypes.BuyerTradeParty) and (Descriptor.Profile = TZUGFeRDProfile.Comfort)) or
-              ((partyType = TZUGFeRDPartyTypes.BuyerTradeParty) and (Descriptor.Profile = TZUGFeRDProfile.Extended)) or
-              (Descriptor.Profile = TZUGFeRDProfile.Extended) // remaining party types
-              ) then
-      begin
-        writer.WriteElementString('ram:TradingBusinessName', legalOrganization.TradingBusinessName, [Descriptor.Profile]);
-      end;
+      writer.WriteOptionalElementString('ram:TradingBusinessName', legalOrganization.TradingBusinessName, [Descriptor.Profile]);
     end;
   end;
   writer.WriteEndElement();

@@ -37,6 +37,7 @@ type
     function Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor; overload; virtual; abstract;
     function IsReadableByThisReaderVersion(const filename: string): Boolean; overload;
   protected
+    //function _GenerateNamespaceManagerFromNode(node: IXmlDomNode) : XmlNamespaceManager;
     function _nodeAsBool(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: Boolean = False): Boolean;
     function _nodeAsString(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: string = ''): string;
     function _nodeAsInt(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: Integer = 0): Integer;
@@ -388,6 +389,25 @@ begin
     break;
   end;
 end;
+
+//function TZUGFeRDInvoiceDescriptorReader._GenerateNamespaceManagerFromNode(
+//  node: IXmlDomNode) : XmlNamespaceManager;
+//begin
+//  XmlNamespaceManager nsmgr = new XmlNamespaceManager(node.OwnerDocument.NameTable);
+//  foreach (XmlAttribute attr in node.Attributes)
+//  {
+//      if (attr.Prefix == "xmlns")
+//      {
+//          nsmgr.AddNamespace(attr.LocalName, attr.Value);
+//      }
+//      else if (attr.Name == "xmlns")
+//      {
+//          nsmgr.AddNamespace(string.Empty, attr.Value);
+//      }
+//  }
+//
+//  return nsmgr;
+//end;
 
 end.
 

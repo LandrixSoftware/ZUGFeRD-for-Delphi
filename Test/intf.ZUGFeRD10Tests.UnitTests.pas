@@ -80,9 +80,9 @@ begin
 end;
 
 procedure TZUGFeRD10Tests.TestStoringInvoiceViaFile;
-var
-  path : String;
-  desc : TZUGFeRDInvoiceDescriptor;
+//var
+//  path : String;
+//  desc : TZUGFeRDInvoiceDescriptor;
 begin
 //            string path = "output.xml";
 //            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
@@ -94,7 +94,7 @@ end;
 
 procedure TZUGFeRD10Tests.TestStoringInvoiceViaStreams;
 var
-  path : String;
+//  path : String;
   desc : TZUGFeRDInvoiceDescriptor;
 begin
   desc := TZUGFeRDInvoiceProvider.CreateInvoice;

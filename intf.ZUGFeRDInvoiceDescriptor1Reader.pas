@@ -126,10 +126,7 @@ var
 begin
   doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(xmldocument);
 
-  //XmlNamespaceManager nsmgr := new XmlNamespaceManager(doc.DocumentElement.OwnerDocument.NameTable);
-  //nsmgr.AddNamespace("rsm", "urn:ferd:CrossIndustryDocument:invoice:1p0");
-  //nsmgr.AddNamespace("ram", "urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:12");
-  //nsmgr.AddNamespace("udt", "urn:un:unece:uncefact:data:standard:UnqualifiedDataType:15");
+  //XmlNamespaceManager nsmgr = _GenerateNamespaceManagerFromNode(doc.DocumentElement);
 
   Result := TZUGFeRDInvoiceDescriptor.Create;
 

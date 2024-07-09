@@ -555,6 +555,13 @@ type
     /// <param name="contractDate">Date of the contract</param>
     procedure SetContractReferencedDocument(const contractNo: string; const contractDate: TDateTime);
 
+    /// <summary>
+    /// The logistics service charge (ram:SpecifiedLogisticsServiceCharge) is part of the ZUGFeRD specification.
+    /// Please note that it is not part of the XRechnung specification, thus, everything passed to this function will not
+    /// be written when writing XRechnung format.
+    ///
+    /// You might use AddTradeAllowanceCharge() instead.
+    /// </summary>
     procedure AddLogisticsServiceCharge(const amount: Currency; const description: string; const taxTypeCode: TZUGFeRDTaxTypes; const taxCategoryCode: TZUGFeRDTaxCategoryCodes; const taxPercent: Currency);
 
     /// <summary>

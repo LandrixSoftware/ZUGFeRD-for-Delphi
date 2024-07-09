@@ -89,6 +89,10 @@ type
     procedure AddReceivableSpecifiedTradeAccountingAccount(
       AccountID: string); overload;
 
+    /// <summary>
+		/// Adds an invoice line Buyer accounting reference. BT-133
+    /// Please note that XRechnung/ FacturX allows a maximum of one such reference
+		/// </summary>
     procedure AddReceivableSpecifiedTradeAccountingAccount(
       AccountID: string; AccountTypeCode: TZUGFeRDAccountingAccountTypeCodes); overload;
 
@@ -131,6 +135,10 @@ type
     procedure SetDeliveryNoteReferencedDocument(deliveryNoteId: string;
       deliveryNoteDate: IZUGFeRDNullableParam<TDateTime>);
 
+    /// <summary>
+		/// Sets a purchase order line reference. BT-132
+		/// Please note that XRechnung/ FacturX allows a maximum of one such reference
+		/// </summary>
     procedure SetOrderReferencedDocument(orderReferencedId: string;
       orderReferencedDate: IZUGFeRDNullableParam<TDateTime>);
   public
