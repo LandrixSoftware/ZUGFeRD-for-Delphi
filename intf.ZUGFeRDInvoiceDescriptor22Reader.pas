@@ -642,7 +642,28 @@ begin
       end else
       if SameText(nodes[i].nodeName,'ram:SpecifiedTradeAllowanceCharge') then
       begin
-        //TODO
+        var chargeIndicator : Boolean := _nodeAsBool(nodes[i], './ram:ChargeIndicator/udt:Indicator');
+        var basisAmount : Currency := _nodeAsDecimal(nodes[i], './ram:BasisAmount',0);
+        var basisAmountCurrency : String := _nodeAsString(nodes[i], './ram:BasisAmount/@currencyID');
+        var actualAmount : Currency := _nodeAsDecimal(nodes[i], './ram:ActualAmount',0);
+        var actualAmountCurrency : String := _nodeAsString(nodes[i], './ram:ActualAmount/@currencyID');
+        var reason : String := _nodeAsString(nodes[i], './ram:Reason');
+        var reasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes := TZUGFeRDSpecialServiceDescriptionCodes.Unknown;
+        var reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes := TZUGFeRDAllowanceOrChargeIdentificationCodes.Unknown;
+        if chargeIndicator then
+          reasonCodeCharge := TZUGFeRDSpecialServiceDescriptionCodesExtensions.FromString(_nodeAsString(nodes[i], './ram:ReasonCode'))
+        else
+          reasonCodeAllowance := TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.FromString(_nodeAsString(nodes[i], './ram:ReasonCode'));
+        var chargePercentage : Currency := _nodeAsDecimal(nodes[i], './ram:CalculationPercent',0);
+
+        Result.AddSpecifiedTradeAllowanceCharge(not chargeIndicator, // wichtig: das not beachten
+                                        TZUGFeRDCurrencyCodesExtensions.FromString(basisAmountCurrency),
+                                        basisAmount,
+                                        actualAmount,
+                                        chargePercentage,
+                                        reason,
+                                        reasonCodeCharge,
+                                        reasonCodeAllowance);
       end else
       if SameText(nodes[i].nodeName,'ram:SpecifiedTradeSettlementLineMonetarySummation') then
       begin

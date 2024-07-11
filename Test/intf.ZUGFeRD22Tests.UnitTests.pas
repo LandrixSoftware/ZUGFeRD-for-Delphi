@@ -125,6 +125,8 @@ type
     procedure TestTradeAllowanceChargeWithoutExplicitPercentage;
     [Test]
     procedure TestWriteAndReadDespatchAdviceDocumentReferenceXRechnung;
+    [Test]
+    procedure TestSpecifiedTradeAllowanceCharge;
   end;
 
 implementation
@@ -1262,6 +1264,28 @@ begin
 //            Assert.AreEqual(Profile.Extended, loadedInvoice.Profile);
 //            Assert.AreEqual(uuid, loadedInvoice.SellerOrderReferencedDocument.ID);
 //            Assert.AreEqual(issueDateTime, loadedInvoice.SellerOrderReferencedDocument.IssueDateTime);
+end;
+
+procedure TZUGFeRD22Tests.TestSpecifiedTradeAllowanceCharge;
+begin
+//  InvoiceDescriptor invoice = InvoiceProvider.CreateInvoice();
+//
+//  invoice.TradeLineItems[0].AddSpecifiedTradeAllowanceCharge(true, CurrencyCodes.EUR, 198m, 19.8m, 10m, "Discount 10%");
+//
+//  MemoryStream ms = new MemoryStream();
+//  invoice.Save(ms, ZUGFeRDVersion.Version22, Profile.Extended);
+//  ms.Position = 0;
+//
+//  InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
+//  TradeAllowanceCharge allowanceCharge = loadedInvoice.TradeLineItems[0].GetSpecifiedTradeAllowanceCharges().First();
+//
+//  Assert.AreEqual(allowanceCharge.ChargeIndicator, false);//false = discount
+//  //CurrencyCodes are not written bei InvoiceDescriptor22Writer
+//  //Assert.AreEqual(allowanceCharge.Currency, CurrencyCodes.EUR);
+//  Assert.AreEqual(allowanceCharge.BasisAmount, 198m);
+//  Assert.AreEqual(allowanceCharge.ActualAmount, 19.8m);
+//  Assert.AreEqual(allowanceCharge.ChargePercentage, 10m);
+//  Assert.AreEqual(allowanceCharge.Reason, "Discount 10%");
 end;
 
 procedure TZUGFeRD22Tests.TestWriteAndReadBusinessProcess;

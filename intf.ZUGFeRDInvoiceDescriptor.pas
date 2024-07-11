@@ -690,6 +690,9 @@ type
 
     /// <summary>
     /// Adds a new line to the invoice. The line id is generated automatically.
+    ///
+    /// Please note that this function returns the new trade line item object that you might use
+    /// in your code to add more detailed information to the trade line item.
     /// </summary>
     /// <param name="name"></param>
     /// <param name="description"></param>
@@ -712,6 +715,7 @@ type
     /// <param name="buyerOrderDate"></param>
     /// <param name="billingPeriodStart"></param>
     /// <param name="billingPeriodEnd"></param>
+    /// <returns>Returns the instance of the trade line item. You might use this object to add details such as trade allowance charges</returns>
     /// <returns></returns>
     function AddTradeLineItem(const name: string; const description: string;
                   const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown; const unitQuantity: IZUGFeRDNullableParam<Double> = nil;

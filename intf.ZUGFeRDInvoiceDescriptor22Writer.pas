@@ -499,9 +499,62 @@ begin
     end;
     //#endregion
 
-    //#region SpecifiedTradeAllowanceCharge
+    //#region SpecifiedTradeAllowanceCharge (Basic, Comfort, Extended)
     //Abschläge auf Ebene der Rechnungsposition (Basic, Comfort, Extended)
-    //ToDo: SpecifiedTradeAllowanceCharge für Basic, Comfort und Extended
+    if (descriptor.Profile in [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]) then
+    if (tradeLineItem.SpecifiedTradeAllowanceCharges.Count > 0) then
+    begin
+      Writer.WriteStartElement('ram:SpecifiedTradeAllowanceCharge', [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
+      for var specifiedTradeAllowanceCharge : TZUGFeRDTradeAllowanceCharge in tradeLineItem.SpecifiedTradeAllowanceCharges do // BG-27 BG-28
+      begin
+        //#region ChargeIndicator
+        Writer.WriteStartElement('ram:ChargeIndicator');
+        Writer.WriteElementString('udt:Indicator', ifthen(specifiedTradeAllowanceCharge.ChargeIndicator,'true','false'));
+        Writer.WriteEndElement(); // !ram:ChargeIndicator
+        //#endregion
+
+        //#region ChargePercentage
+        if (specifiedTradeAllowanceCharge.ChargePercentage <> 0.0) then
+        begin
+          Writer.WriteStartElement('ram:CalculationPercent', [TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
+          Writer.WriteValue(_formatDecimal(specifiedTradeAllowanceCharge.ChargePercentage, 2));
+          Writer.WriteEndElement();
+        end;
+        //#endregion
+
+        //#region BasisAmount
+        if (specifiedTradeAllowanceCharge.BasisAmount <> 0.0) then
+        begin
+          Writer.WriteStartElement('ram:BasisAmount', [TZUGFeRDProfile.Extended]); // not in XRechnung, according to CII-SR-123
+          Writer.WriteValue(_formatDecimal(specifiedTradeAllowanceCharge.BasisAmount, 2));
+          Writer.WriteEndElement();
+        end;
+        //#endregion
+
+        //#region ActualAmount
+        Writer.WriteStartElement('ram:ActualAmount');
+        Writer.WriteValue(_formatDecimal(specifiedTradeAllowanceCharge.ActualAmount, 2));
+        Writer.WriteEndElement();
+        //#endregion
+
+        if specifiedTradeAllowanceCharge.ChargeIndicator then
+        begin
+          Writer.WriteOptionalElementString('ram:ReasonCode',
+             TZUGFeRDSpecialServiceDescriptionCodesExtensions.EnumToString(
+                                       specifiedTradeAllowanceCharge.ReasonCodeCharge));
+        end else
+        begin
+          Writer.WriteOptionalElementString('ram:ReasonCode',
+             TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.EnumToString(
+                                       specifiedTradeAllowanceCharge.ReasonCodeAllowance));
+        end;
+
+        //c# means not in XRechnung according to CII-SR-128
+        //TODO Theoretisch auch Basic, Comfort, XRechnung
+        Writer.WriteOptionalElementString('ram:Reason', specifiedTradeAllowanceCharge.Reason, [TZUGFeRDProfile.Extended]);
+      end;
+      Writer.WriteEndElement(); // !ram:SpecifiedTradeAllowanceCharge
+    end;
     //#endregion
 
     //#region SpecifiedTradeSettlementLineMonetarySummation (Basic, Comfort, Extended)
