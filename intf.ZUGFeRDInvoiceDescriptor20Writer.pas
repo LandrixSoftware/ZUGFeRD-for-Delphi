@@ -135,7 +135,7 @@ begin
 
   Writer.WriteStartElement('rsm:ExchangedDocument');
   Writer.WriteElementString('ram:ID', Descriptor.InvoiceNo);
-  Writer.WriteElementString('ram:Name', Descriptor.Name, [TZUGFeRDProfile.Extended]);
+  Writer.WriteElementString('ram:Name', ifthen(Descriptor.Name<>'',Descriptor.Name,_translateInvoiceType(Descriptor.Type_)), [TZUGFeRDProfile.Extended]);
   Writer.WriteElementString('ram:TypeCode', Format('%d',[_encodeInvoiceType(Descriptor.Type_)]));
 
   if (Descriptor.InvoiceDate > 100) then
