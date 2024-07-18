@@ -135,7 +135,7 @@ begin
 
   Writer.WriteStartElement('rsm:HeaderExchangedDocument');
   Writer.WriteElementString('ram:ID', Descriptor.InvoiceNo);
-  Writer.WriteElementString('ram:Name', _translateInvoiceType(Descriptor.Type_));
+  Writer.WriteElementString('ram:Name', Descriptor.Name);
   Writer.WriteElementString('ram:TypeCode', Format('%d',[_encodeInvoiceType(Descriptor.Type_)]));
 
   if (Trunc(Descriptor.InvoiceDate) > 0) then

@@ -101,6 +101,7 @@ type
     FBusinessProcess: string;
     FIsTest: Boolean;
     FProfile: TZUGFeRDProfile;
+    FName: string;
     FType: TZUGFeRDInvoiceType;
     FReferenceOrderNo: string;
     FTradeLineItems: TObjectList<TZUGFeRDTradeLineItem>;
@@ -265,6 +266,11 @@ type
     /// Indicates the type of the document, if it represents an invoice, a credit note or one of the available 'sub types'
     /// </summary>
     property Type_: TZUGFeRDInvoiceType read FType write FType default TZUGFeRDInvoiceType.Invoice;
+
+    /// <summary>
+    /// Indicates the type of the document as freetext
+    /// </summary>
+    property Name: string read FName write FName;
 
     /// <summary>
     /// The identifier is defined by the buyer (e.g. contact ID, department, office ID, project code), but provided by the seller in the invoice.
