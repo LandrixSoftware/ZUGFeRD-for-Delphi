@@ -127,6 +127,10 @@ type
     procedure TestWriteAndReadDespatchAdviceDocumentReferenceXRechnung;
     [Test]
     procedure TestSpecifiedTradeAllowanceCharge;
+    [Test]
+    procedure TestUBLInvoiceCreation;
+    [Test]
+    procedure TestUBLTradelineitemProductCharacterstics;
   end;
 
 implementation
@@ -1750,7 +1754,57 @@ begin
 //            Assert.AreEqual(allowanceCharges[0].BasisAmount, 100m);
 //            Assert.AreEqual(allowanceCharges[0].Amount, 10m);
 //            Assert.AreEqual(allowanceCharges[0].ChargePercentage, null);
-end; // !TestTradeAllowanceChargeWithoutExplicitPercentage()
+end;
+
+procedure TZUGFeRD22Tests.TestUBLInvoiceCreation;
+begin
+//            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
+//            MemoryStream ms = new MemoryStream();
+//
+//            desc.Save(ms, ZUGFeRDVersion.Version22,Profile.XRechnung,ZUGFeRDFormats.UBL);
+//            ms.Seek(0, SeekOrigin.Begin);
+//
+//            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
+//
+//            Assert.AreEqual(loadedInvoice.Invoicee, null);
+//            Assert.AreNotEqual(loadedInvoice.Seller, null);
+//            Assert.AreEqual(loadedInvoice.Taxes.Count, 2);
+//            Assert.AreEqual(loadedInvoice.SellerContact.Name, "Max Mustermann");
+//            Assert.IsNull(loadedInvoice.BuyerContact);
+end;
+
+procedure TZUGFeRD22Tests.TestUBLTradelineitemProductCharacterstics;
+begin
+//    InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
+//
+//            desc.TradeLineItems[0].ApplicableProductCharacteristics = new ApplicableProductCharacteristic[]
+//                    {
+//                        new ApplicableProductCharacteristic()
+//                        {
+//                            Description = "Test Description",
+//                            Value = "1.5 kg"
+//                        },
+//                        new ApplicableProductCharacteristic()
+//                        {
+//                            Description = "UBL Characterstics 2",
+//                            Value = "3 kg"
+//                        },
+//                    }.ToList();
+//
+//            MemoryStream ms = new MemoryStream();
+//
+//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.XRechnung, ZUGFeRDFormats.UBL);
+//            ms.Seek(0, SeekOrigin.Begin);
+//
+//            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
+//
+//            Assert.IsNotNull(loadedInvoice.TradeLineItems);
+//            Assert.AreEqual(loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics.Count, 2);
+//            Assert.AreEqual(loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics[0].Description, "Test Description");
+//            Assert.AreEqual(loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics[1].Value, "3 kg");
+end;
+
+// !TestTradeAllowanceChargeWithoutExplicitPercentage()
 
 procedure TZUGFeRD22Tests.TestTradeAllowanceChargeWithExplicitPercentage;
 begin
