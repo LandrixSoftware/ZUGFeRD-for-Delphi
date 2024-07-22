@@ -351,6 +351,7 @@ begin
   Result.GlobalID.ID := _nodeAsString(node, 'ram:GlobalID');
   Result.GlobalID.SchemeID := TZUGFeRDGlobalIDSchemeIdentifiersExtensions.FromString(_nodeAsString(node, 'ram:GlobalID/@schemeID'));
   Result.Name := _nodeAsString(node, 'ram:Name');
+  Result.Description := _nodeAsString(node, 'ram:Description'); // Seller only BT-33
   Result.Postcode := _nodeAsString(node, 'ram:PostalTradeAddress/ram:PostcodeCode');
   Result.City := _nodeAsString(node, 'ram:PostalTradeAddress/ram:CityName');
   Result.Country := TZUGFeRDCountryCodesExtensions.FromString(_nodeAsString(node, 'ram:PostalTradeAddress/ram:CountryID'));
