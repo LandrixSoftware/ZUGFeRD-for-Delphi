@@ -33,6 +33,7 @@ type
   private
     FID: TZUGFeRDGlobalID;
     FName: string;
+    FDescription: string;
     FContactName: string;
     FCity: string;
     FPostcode: string;
@@ -55,6 +56,11 @@ type
     /// Party name, e.g. company name
     /// </summary>
     property Name: string read FName write FName;
+
+    /// <summary>
+    /// other legal information of the seller (BT-33)
+    /// </summary>
+    property Description: string read FDescription write FDescription;
 
     /// <summary>
     /// Name of the contact at the party
