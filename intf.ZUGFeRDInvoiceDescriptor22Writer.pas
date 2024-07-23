@@ -1363,7 +1363,6 @@ begin
     TZUGFeRDPartyTypes.BuyerTradeParty: ;
     TZUGFeRDPartyTypes.ShipToTradeParty:
       if (Descriptor.Profile <> TZUGFeRDProfile.Extended) and
-         (Descriptor.Profile <> TZUGFeRDProfile.Comfort) and
          (Descriptor.Profile <> TZUGFeRDProfile.XRechnung1) and
          (Descriptor.Profile <> TZUGFeRDProfile.XRechnung) then
            exit; // extended, XRechnung1, XRechnung profile only
