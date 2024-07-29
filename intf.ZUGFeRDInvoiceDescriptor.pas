@@ -446,6 +446,18 @@ type
     class function GetVersion(const stream: TStream): TZUGFeRDVersion; overload;
 
     /// <summary>
+    /// Tests if the stream is readable by one of the readers, without actually reading
+    ///
+    /// Please make sure that the stream is open, otherwise this call will raise an IllegalStreamException.
+    ///
+    /// Important: the stream will not be closed by this function, make sure to close it by yourself!
+    ///
+    /// </summary>
+    /// <param name="stream">Stream where to read the ZUGFeRD invoice</param>
+    /// <returns>true if the stream can be interpreted by one of the readers</returns>
+    class function IsReadable(stream: TStream): boolean;
+
+    /// <summary>
     /// Loads a ZUGFeRD invoice from a stream.
     ///
     /// Please make sure that the stream is open, otherwise this call will raise an IllegalStreamException.
@@ -964,6 +976,45 @@ begin
   end;
 
   raise TZUGFeRDUnsupportedException.Create('No ZUGFeRD invoice reader was able to parse this stream!');
+end;
+
+class function TZUGFeRDInvoiceDescriptor.IsReadable(stream: TStream): boolean;
+var
+  reader: TZUGFeRDInvoiceDescriptorReader;
+begin
+  reader := TZUGFeRDInvoiceDescriptor1Reader.Create;
+  try
+    if reader.IsReadableByThisReaderVersion(stream) then
+      exit(true);
+  finally
+    reader.Free;
+  end;
+
+  reader := TZUGFeRDInvoiceDescriptor22UblReader.Create;
+  try
+    if reader.IsReadableByThisReaderVersion(stream) then
+      exit(true);
+  finally
+    reader.Free;
+  end;
+
+  reader := TZUGFeRDInvoiceDescriptor22Reader.Create;
+  try
+    if reader.IsReadableByThisReaderVersion(stream) then
+      exit(true);
+  finally
+    reader.Free;
+  end;
+
+  reader := TZUGFeRDInvoiceDescriptor20Reader.Create;
+  try
+    if reader.IsReadableByThisReaderVersion(stream) then
+      exit(true);
+  finally
+    reader.Free;
+  end;
+
+  result:= false;
 end;
 
 class function TZUGFeRDInvoiceDescriptor.Load(stream: TStream): TZUGFeRDInvoiceDescriptor;
