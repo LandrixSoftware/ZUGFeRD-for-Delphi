@@ -1196,6 +1196,7 @@ procedure TZUGFeRDInvoiceDescriptor.SetBuyer(const name, postcode, city, street:
   globalID: TZUGFeRDGlobalID = nil; const receiver: string = '';
   legalOrganization: TZUGFeRDLegalOrganization = nil);
 begin
+  if Self.Buyer = nil then Self.Buyer := TZUGFeRDParty.Create;
   FBuyer.ID.ID := id;
   FBuyer.ID.SchemeID := TZUGFeRDGlobalIDSchemeIdentifiers.Unknown;
   FBuyer.Name := name;
@@ -1215,6 +1216,7 @@ procedure TZUGFeRDInvoiceDescriptor.SetSeller(const name, postcode, city, street
   globalID: TZUGFeRDGlobalID = nil;
   legalOrganization: TZUGFeRDLegalOrganization = nil);
 begin
+  if Self.Seller = nil then Self.Seller := TZUGFeRDParty.Create;
   FSeller.ID.ID := id;
   FSeller.ID.SchemeID := TZUGFeRDGlobalIDSchemeIdentifiers.Unknown;
   FSeller.Name := name;
@@ -1231,6 +1233,7 @@ end;
 procedure TZUGFeRDInvoiceDescriptor.SetSellerContact(const name: string = ''; const orgunit: string = '';
   const emailAddress: string = ''; const phoneno: string = ''; const faxno: string = '');
 begin
+  if Self.SellerContact = nil then Self.SellerContact := TZUGFeRDContact.Create;
   FSellerContact.Name := name;
   FSellerContact.OrgUnit := orgunit;
   FSellerContact.EmailAddress := emailAddress;
@@ -1241,6 +1244,7 @@ end;
 procedure TZUGFeRDInvoiceDescriptor.SetBuyerContact(const name: string; const orgunit: string = '';
   const emailAddress: string = ''; const phoneno: string = ''; const faxno: string = '');
 begin
+  if Self.BuyerContact = nil then Self.BuyerContact := TZUGFeRDContact.Create;
   FBuyerContact.Name := name;
   FBuyerContact.OrgUnit := orgunit;
   FBuyerContact.EmailAddress := emailAddress;

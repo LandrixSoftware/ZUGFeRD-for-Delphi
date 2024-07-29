@@ -1180,6 +1180,7 @@ begin
   Writer.WriteEndElement(); // !ram:Invoice
   Writer.WriteEndDocument();
   Writer.Flush();
+  Writer.Free;
 
   _stream.Seek(streamPosition, soFromBeginning);
 end;
