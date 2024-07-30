@@ -131,6 +131,8 @@ type
     procedure TestUBLInvoiceCreation;
     [Test]
     procedure TestUBLTradelineitemProductCharacterstics;
+    [Test]
+    procedure TestSellerDescription;
   end;
 
 implementation
@@ -144,7 +146,7 @@ begin
 
   desc := TZUGFeRDInvoiceDescriptor.Load(path);
   try
-    desc.Save(ExtractFilePath(ParamStr(0))+'test_zugferd21.xml', TZUGFeRDVersion.Version21, TZUGFeRDProfile.Basic);
+    desc.Save(ExtractFilePath(ParamStr(0))+'test_zugferd21.xml', TZUGFeRDVersion.Version22, TZUGFeRDProfile.Basic);
 
     Assert.AreEqual(desc.Profile, TZUGFeRDProfile.Basic);
     Assert.AreEqual(desc.Type_, TZUGFeRDInvoiceType.Invoice);
@@ -1241,6 +1243,33 @@ begin
 //            Assert.AreEqual(timestamp, loadedInvoice.OrderDate);
 //            Assert.AreEqual("12345", loadedInvoice.OrderNo);
 //
+end;
+
+procedure TZUGFeRD22Tests.TestSellerDescription;
+begin
+//            InvoiceDescriptor invoice = InvoiceProvider.CreateInvoice();
+//
+//            string description = "Test description";
+//
+//			invoice.SetSeller(name: "Lieferant GmbH",
+//                              postcode: "80333",
+//                              city: "München",
+//                              street: "Lieferantenstraße 20",
+//                              country: CountryCodes.DE,
+//                              id: "",
+//                              globalID: new GlobalID(GlobalIDSchemeIdentifiers.GLN, "4000001123452"),
+//                              legalOrganization: new LegalOrganization(GlobalIDSchemeIdentifiers.GLN, "4000001123452", "Lieferant GmbH"),
+//                              description: description
+//                              );
+//
+//            MemoryStream ms = new MemoryStream();
+//            invoice.Save(ms, ZUGFeRDVersion.Version22, Profile.Extended);
+//            ms.Position = 0;
+//
+//            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
+//
+//            Assert.AreEqual(loadedInvoice.Seller.Description, description);
+//        } // !TestSellerDescription()
 end;
 
 procedure TZUGFeRD22Tests.TestSellerOrderReferencedDocument;

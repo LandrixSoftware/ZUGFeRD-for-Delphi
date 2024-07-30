@@ -20,9 +20,11 @@ unit ZUGFeRDUnit1;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs
-  ,intf.ZUGFeRDHelper, Vcl.StdCtrls, Vcl.OleCtrls, SHDocVw
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+  System.Classes, Vcl.Graphics, SHDocVw,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.OleCtrls
+  ,intf.ZUGFeRDHelper
+  ,intf.ZUGFeRDInvoiceDescriptor
   ;
 
 type
@@ -31,9 +33,11 @@ type
     WebBrowser2: TWebBrowser;
     Memo3: TMemo;
     Button2: TButton;
+    Button3: TButton;
     procedure FormCreate(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
   private
     WebBrowserContent : TStringList;
     WebBrowserContentFilename : String;
@@ -104,7 +108,7 @@ var
 begin
   WebBrowser2.Navigate2('about:blank');
 
-  ShowMessage('Geht nicht nicht: https://github.com/ZUGFeRD/mustangproject/issues/387');
+  ShowMessage('Geht nicht: https://github.com/ZUGFeRD/mustangproject/issues/387');
 
   od := TOpenDialog.Create(nil);
   try
@@ -125,6 +129,46 @@ begin
     end else
     begin
       WebBrowserContent.Text := '<html><body>Visualisierung nicht erfolgreich. Siehe Verzeichnis ./Distribution/Read.Me</body></html>';
+      WebBrowserContent.SaveToFile(WebBrowserContentFilename,TEncoding.UTF8);
+      WebBrowser2.Navigate2('file:///'+WebBrowserContentFilename);
+    end;
+
+  finally
+    od.Free;
+  end;
+end;
+
+procedure TForm1.Button3Click(Sender: TObject);
+var
+  od : TOpenDialog;
+  cmdoutput : String;
+  xmlresult : TStream;
+begin
+  WebBrowser2.Navigate2('about:blank');
+
+  od := TOpenDialog.Create(nil);
+  try
+    if not od.Execute then
+      exit;
+
+    GetZUGFeRDPdfHelper.SetPdfTkServerPath('C:\Program Files (x86)\PDFtk Server\')
+        .PdfTkServerGetZUGFeRDPdfAttachment(od.FileName,xmlresult,cmdoutput);
+
+    //Memo3.Lines.Text := cmdoutput;
+
+    if xmlresult <> nil then
+    begin
+      xmlresult.Position := 0;
+      Memo3.Lines.LoadFromStream(xmlresult);
+      xmlresult.Position := 0;
+
+      var inv : TZUGFeRDInvoiceDescriptor := TZUGFeRDInvoiceDescriptor.Load(xmlresult);
+      inv.Free;
+      xmlresult.Free;
+      //WebBrowser2.Navigate2('file:///'+WebBrowserContentFilenamePdf);
+    end else
+    begin
+      WebBrowserContent.Text := '<html><body>Export nicht erfolgreich.</body></html>';
       WebBrowserContent.SaveToFile(WebBrowserContentFilename,TEncoding.UTF8);
       WebBrowser2.Navigate2('file:///'+WebBrowserContentFilename);
     end;

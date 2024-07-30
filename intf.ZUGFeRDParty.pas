@@ -58,7 +58,7 @@ type
     property Name: string read FName write FName;
 
     /// <summary>
-    /// other legal information of the seller (BT-33)
+    /// other legal information of the seller (BT-33) Seller only
     /// </summary>
     property Description: string read FDescription write FDescription;
 

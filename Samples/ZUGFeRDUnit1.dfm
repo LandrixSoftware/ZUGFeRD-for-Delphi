@@ -53,4 +53,13 @@ object Form1: TForm1
     TabOrder = 3
     OnClick = Button2Click
   end
+  object Button3: TButton
+    Left = 8
+    Top = 70
+    Width = 209
+    Height = 25
+    Caption = 'XML-Datei aus PDF mit PdfTkServer'
+    TabOrder = 7
+    OnClick = Button3Click
+  end
 end

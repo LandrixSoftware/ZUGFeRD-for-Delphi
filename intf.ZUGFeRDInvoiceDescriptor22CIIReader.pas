@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.}
 
-unit intf.ZUGFeRDInvoiceDescriptor22Reader;
+unit intf.ZUGFeRDInvoiceDescriptor22CIIReader;
 
 interface
 
@@ -63,10 +63,11 @@ uses
   ,intf.ZUGFeRDDespatchAdviceReferencedDocument
   ,intf.ZUGFeRDSpecialServiceDescriptionCodes
   ,intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
+  ,intf.ZUGFeRDDesignatedProductClassificationClassCodes
   ;
 
 type
-  TZUGFeRDInvoiceDescriptor22Reader = class(TZUGFeRDInvoiceDescriptorReader)
+  TZUGFeRDInvoiceDescriptor22CIIReader = class(TZUGFeRDInvoiceDescriptorReader)
   private
     function GetValidURIs : TArray<string>;
     function _parseTradeLineItem(tradeLineItem : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDTradeLineItem;
@@ -92,9 +93,9 @@ type
 
 implementation
 
-{ TZUGFeRDInvoiceDescriptor22Reader }
+{ TZUGFeRDInvoiceDescriptor22CIIReader }
 
-function TZUGFeRDInvoiceDescriptor22Reader.GetValidURIs : TArray<string>;
+function TZUGFeRDInvoiceDescriptor22CIIReader.GetValidURIs : TArray<string>;
 begin
   Result := TArray<string>.Create(
     'urn:cen.eu:en16931:2017#conformant#urn:factur-x.eu:1p0:extended', // Factur-X 1.03 EXTENDED
@@ -112,19 +113,19 @@ begin
   );
 end;
 
-function TZUGFeRDInvoiceDescriptor22Reader.IsReadableByThisReaderVersion(
+function TZUGFeRDInvoiceDescriptor22CIIReader.IsReadableByThisReaderVersion(
   stream: TStream): Boolean;
 begin
   Result := IsReadableByThisReaderVersion(stream, GetValidURIs);
 end;
 
-function TZUGFeRDInvoiceDescriptor22Reader.IsReadableByThisReaderVersion(
+function TZUGFeRDInvoiceDescriptor22CIIReader.IsReadableByThisReaderVersion(
   xmldocument: IXMLDocument): Boolean;
 begin
   Result := IsReadableByThisReaderVersion(xmldocument, GetValidURIs);
 end;
 
-function TZUGFeRDInvoiceDescriptor22Reader.Load(stream: TStream): TZUGFeRDInvoiceDescriptor;
+function TZUGFeRDInvoiceDescriptor22CIIReader.Load(stream: TStream): TZUGFeRDInvoiceDescriptor;
 var
   xml : IXMLDocument;
 begin
@@ -141,7 +142,7 @@ begin
   end;
 end;
 
-function TZUGFeRDInvoiceDescriptor22Reader.Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor;
+function TZUGFeRDInvoiceDescriptor22CIIReader.Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor;
 var
   doc : IXMLDOMDocument2;
   node : IXMLDOMNode;
@@ -315,10 +316,12 @@ begin
   end;
 
   Result.Invoicee := _nodeAsParty(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceeTradeParty');
+  Result.Invoicer := _nodeAsParty(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:InvoicerTradeParty');
   Result.Payee := _nodeAsParty(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:PayeeTradeParty');
 
   Result.PaymentReference := _nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:PaymentReference');
   Result.Currency :=  TZUGFeRDCurrencyCodesExtensions.FromString(_nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceCurrencyCode'));
+  Result.TaxCurrency := TZUGFeRDCurrencyCodesExtensions.FromString(_nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:TaxCurrencyCode')); // BT-6
 
   // TODO: Multiple SpecifiedTradeSettlementPaymentMeans can exist for each account/institution (with different SEPA?)
   var _tempPaymentMeans : TZUGFeRDPaymentMeans := TZUGFeRDPaymentMeans.Create;
@@ -424,9 +427,12 @@ begin
                                      _nodeAsDecimal(nodes[i], './/ram:AppliedTradeTax/ram:RateApplicablePercent', 0));
   end;
 
-  Result.InvoiceReferencedDocument := TZUGFeRDInvoiceReferencedDocument.Create;
-  Result.InvoiceReferencedDocument.ID := _nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument/ram:IssuerAssignedID');
-  Result.InvoiceReferencedDocument.IssueDateTime:= _nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument/ram:FormattedIssueDateTime');
+  if TZUGFeRDXmlHelper.FindNode(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument') then
+  begin
+    Result.InvoiceReferencedDocument := TZUGFeRDInvoiceReferencedDocument.Create;
+    Result.InvoiceReferencedDocument.ID := _nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument/ram:IssuerAssignedID');
+    Result.InvoiceReferencedDocument.IssueDateTime:= _nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument/ram:FormattedIssueDateTime');
+  end;
 
   nodes := doc.SelectNodes('//ram:SpecifiedTradePaymentTerms');
   for i := 0 to nodes.length-1 do
@@ -494,7 +500,7 @@ begin
     Result.TradeLineItems.Add(_parseTradeLineItem(nodes[i]));
 end;
 
-function TZUGFeRDInvoiceDescriptor22Reader._getAdditionalReferencedDocument(
+function TZUGFeRDInvoiceDescriptor22CIIReader._getAdditionalReferencedDocument(
   a_oXmlNode: IXmlDomNode): TZUGFeRDAdditionalReferencedDocument;
 begin
   var strBase64BinaryData : String := _nodeAsString(a_oXmlNode, 'ram:AttachmentBinaryObject');
@@ -513,7 +519,7 @@ begin
   Result.ReferenceTypeCode := TZUGFeRDReferenceTypeCodesExtensions.FromString(_nodeAsString(a_oXmlNode, 'ram:ReferenceTypeCode'));
 end;
 
-function TZUGFeRDInvoiceDescriptor22Reader._nodeAsLegalOrganization(
+function TZUGFeRDInvoiceDescriptor22CIIReader._nodeAsLegalOrganization(
   basenode: IXmlDomNode; const xpath: string) : TZUGFeRDLegalOrganization;
 var
   node : IXmlDomNode;
@@ -530,7 +536,7 @@ begin
                _nodeAsString(node, 'ram:TradingBusinessName'));
 end;
 
-function TZUGFeRDInvoiceDescriptor22Reader._nodeAsParty(basenode: IXmlDomNode;
+function TZUGFeRDInvoiceDescriptor22CIIReader._nodeAsParty(basenode: IXmlDomNode;
   const xpath: string) : TZUGFeRDParty;
 var
   node : IXmlDomNode;
@@ -570,7 +576,7 @@ begin
   Result.CountrySubdivisionName := _nodeAsString(node, 'ram:PostalTradeAddress/ram:CountrySubDivisionName');
 end;
 
-function TZUGFeRDInvoiceDescriptor22Reader._parseTradeLineItem(
+function TZUGFeRDInvoiceDescriptor22CIIReader._parseTradeLineItem(
   tradeLineItem: IXmlDomNode): TZUGFeRDTradeLineItem;
 var
   nodes : IXMLDOMNodeList;
@@ -589,7 +595,7 @@ begin
   Result.BuyerAssignedID := _nodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:BuyerAssignedID');
   Result.Name := _nodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:Name');
   Result.Description := _nodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:Description');
-  Result.UnitQuantity:= _nodeAsDecimal(tradeLineItem, './/ram:BasisQuantity', 1);
+  Result.UnitQuantity:= _nodeAsDecimal(tradeLineItem, './/ram:BasisQuantity', 0);
   Result.BilledQuantity := _nodeAsDecimal(tradeLineItem, './/ram:BilledQuantity', 0);
   Result.PackageQuantity := _nodeAsDecimal(tradeLineItem, './/ram:PackageQuantity', 0);
   Result.ChargeFreeQuantity := _nodeAsDecimal(tradeLineItem, './/ram:ChargeFreeQuantity', 0);
@@ -762,6 +768,16 @@ begin
   for i := 0 to nodes.length-1 do
   begin
     Result.AdditionalReferencedDocuments.Add(_getAdditionalReferencedDocument(nodes[i]));
+  end;
+
+  nodes := tradeLineItem.SelectNodes('ram:DesignatedProductClassification');
+  for i := 0 to nodes.length-1 do
+  begin
+    var className : String := _nodeAsString(nodes[i], './/ram:ClassName');
+    var classCode : TZUGFeRDDesignatedProductClassificationClassCodes := TZUGFeRDDesignatedProductClassificationClassCodesExtensions.FromString(_nodeAsString(nodes[i], './/ram:ClassCode'));
+    var listID : String := _nodeAsString(nodes[i], './/ram:ClassCode/@listID');
+    var listVersionID : String := _nodeAsString(nodes[i], './/ram:ClassCode/@listVersionID');
+    Result.AddDesignatedProductClassification(classCode, className, listID, listVersionID);
   end;
 end;
 

@@ -56,6 +56,7 @@ uses
   ,intf.ZUGFeRDApplicableProductCharacteristic
   ,intf.ZUGFeRDSpecialServiceDescriptionCodes
   ,intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
+  ,intf.ZUGFeRDFormats
   ;
 
 type
@@ -77,9 +78,10 @@ type
     /// Saves the given invoice to the given stream.
     /// Make sure that the stream is open and writeable. Otherwise, an IllegalStreamException will be thron.
     /// </summary>
-    /// <param name="descriptor"></param>
-    /// <param name="stream"></param>
-    procedure Save(_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream); override;
+    /// <param name="descriptor">The invoice object that should be saved</param>
+    /// <param name="stream">The target stream for saving the invoice</param>
+    /// <param name="format">Format of the target file</param>
+    procedure Save(_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream; _format : TZUGFeRDFormats = TZUGFeRDFormats.CII); override;
   end;
 
 implementation
@@ -87,12 +89,16 @@ implementation
 { TZUGFeRDInvoiceDescriptor20Writer }
 
 procedure TZUGFeRDInvoiceDescriptor20Writer.Save(
-  _descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream);
+  _descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream;
+  _format : TZUGFeRDFormats = TZUGFeRDFormats.CII);
 var
   streamPosition : Int64;
 begin
   if (_stream = nil) then
     raise TZUGFeRDIllegalStreamException.Create('Cannot write to stream');
+
+  if _format = TZUGFeRDFormats.UBL then
+    raise TZUGFeRDUnsupportedException.Create('UBL format is not supported for ZUGFeRD 2.0');
 
   // write data
   streamPosition := _stream.Position;
@@ -574,8 +580,19 @@ begin
   //   2. PaymentReference (optional)
   Writer.WriteOptionalElementString('ram:PaymentReference', Descriptor.PaymentReference);
 
+  //   3. TaxCurrencyCode (optional)
+  //   BT-6
+	if (Descriptor.TaxCurrency <> TZUGFeRDCurrencyCodes.Unknown) then
+  	Writer.WriteElementString('ram:TaxCurrencyCode', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.TaxCurrency), [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
+
   //   4. InvoiceCurrencyCode (optional)
   Writer.WriteElementString('ram:InvoiceCurrencyCode', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
+
+  //   5. InvoiceIssuerReference (optional)
+	Writer.WriteElementString('ram:InvoiceIssuerReference', Descriptor.SellerReferenceNo, [TZUGFeRDProfile.Extended]);
+
+	//   6. InvoicerTradeParty (optional)
+	_writeOptionalParty(Writer, 'ram:InvoicerTradeParty', Descriptor.Invoicer);
 
   //   7. InvoiceeTradeParty (optional)
   if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
@@ -937,16 +954,19 @@ begin
   _writer.WriteStartElement(PartyTag);
 
   if (Party.ID <> nil) then
-  if (Party.ID.ID <> '') and (Party.ID.SchemeID <> TZUGFeRDGlobalIDSchemeIdentifiers.Unknown) then
+  if (Party.ID.ID <> '')  then
   begin
-    _writer.WriteStartElement('ram:ID');
-    _writer.WriteAttributeString('schemeID', TZUGFeRDGlobalIDSchemeIdentifiersExtensions.EnumToString(Party.ID.SchemeID));
-    _writer.WriteValue(Party.ID.ID);
-    _writer.WriteEndElement();
-  end
-  else
-  begin
-    _writer.WriteElementString('ram:ID', Party.ID.ID);
+    if (Party.ID.SchemeID <> TZUGFeRDGlobalIDSchemeIdentifiers.Unknown) then
+    begin
+      _writer.WriteStartElement('ram:ID');
+      _writer.WriteAttributeString('schemeID', TZUGFeRDGlobalIDSchemeIdentifiersExtensions.EnumToString(Party.ID.SchemeID));
+      _writer.WriteValue(Party.ID.ID);
+      _writer.WriteEndElement();
+    end
+    else
+    begin
+      _writer.WriteElementString('ram:ID', Party.ID.ID);
+    end;
   end;
 
   if (Party.GlobalID <> nil) then

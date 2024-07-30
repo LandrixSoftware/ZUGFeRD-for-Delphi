@@ -65,7 +65,8 @@ uses
   intf.ZUGFeRDElectronicAddressSchemeIdentifiers,
   intf.ZUGFeRDDespatchAdviceReferencedDocument,
   intf.ZUGFeRDSpecialServiceDescriptionCodes,
-  intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
+  intf.ZUGFeRDAllowanceOrChargeIdentificationCodes,
+  intf.ZUGFeRDFormats
   ;
 
 type
@@ -85,6 +86,7 @@ type
     FContractReferencedDocument: TZUGFeRDContractReferencedDocument;
     FSpecifiedProcuringProject: TZUGFeRDSpecifiedProcuringProject;
     FCurrency: TZUGFeRDCurrencyCodes;
+    FTaxCurrency: TZUGFeRDCurrencyCodes;
     FBuyer: TZUGFeRDParty;
     FBuyerContact: TZUGFeRDContact;
     FBuyerTaxRegistration: TObjectList<TZUGFeRDTaxRegistration>;
@@ -128,6 +130,8 @@ type
     FBillingPeriodEnd: TDateTime;
     FSellerOrderReferencedDocument: TZUGFeRDSellerOrderReferencedDocument;
     FDespatchAdviceReferencedDocument: TZUGFeRDDespatchAdviceReferencedDocument;
+    FInvoicer: TZUGFeRDParty;
+    FSellerReferenceNo: String;
   public
     /// <summary>
     /// Invoice Number
@@ -194,6 +198,25 @@ type
     property Currency: TZUGFeRDCurrencyCodes read FCurrency write FCurrency;
 
     /// <summary>
+		/// The VAT total amount expressed in the accounting currency accepted or
+    /// required in the country of the seller.
+    ///
+    /// Note: Shall be used in combination with the invoice total VAT amount
+    /// in accounting currency (BT-111), if the VAT accounting currency code
+    /// differs from the invoice currency code.
+    ///
+    /// In normal invoicing scenarios, leave this property empty!
+    ///
+    /// The lists of valid currencies are
+    /// registered with the ISO 4217 Maintenance Agency „Codes for the
+    /// representation of currencies and funds”. Please refer to Article 230
+    /// of the Council Directive 2006/112/EC [2] for further information.
+    ///
+    /// BT-6
+		/// </summary>
+		property TaxCurrency : TZUGFeRDCurrencyCodes read FTaxCurrency write FTaxCurrency;
+
+    /// <summary>
     /// Information about the buyer
     /// </summary>
     property Buyer: TZUGFeRDParty read FBuyer write FBuyer;
@@ -212,10 +235,24 @@ type
     property SellerTaxRegistration: TObjectList<TZUGFeRDTaxRegistration> read FSellerTaxRegistration;
     property SellerElectronicAddress : TZUGFeRDElectronicAddress read FSellerElectronicAddress;
 
+  	/// <summary>
+		/// Given seller reference number for routing purposes after biliteral agreement
+    ///
+    /// This field seems not to be used in common scenarios.
+		/// </summary>
+		property SellerReferenceNo : String read FSellerReferenceNo write FSellerReferenceNo;
+
     /// <summary>
     /// This party is optional and only relevant for Extended profile
     /// </summary>
     property Invoicee: TZUGFeRDParty read FInvoicee write FInvoicee;
+
+    /// <summary>
+		/// This party is optional and only relevant for Extended profile.
+    ///
+    /// It seems to be used under rate condition only.
+		/// </summary>
+		property Invoicer: TZUGFeRDParty read FInvoicer write FInvoicer;
 
     /// <summary>
     /// This party is optional and only relevant for Extended profile
@@ -263,14 +300,14 @@ type
     property Profile: TZUGFeRDProfile read FProfile write FProfile default TZUGFeRDProfile.Basic;
 
     /// <summary>
+    /// Document name (free text)
+    /// </summary>
+    property Name: string read FName write FName;
+
+    /// <summary>
     /// Indicates the type of the document, if it represents an invoice, a credit note or one of the available 'sub types'
     /// </summary>
     property Type_: TZUGFeRDInvoiceType read FType write FType default TZUGFeRDInvoiceType.Invoice;
-
-    /// <summary>
-    /// Indicates the type of the document as freetext
-    /// </summary>
-    property Name: string read FName write FName;
 
     /// <summary>
     /// The identifier is defined by the buyer (e.g. contact ID, department, office ID, project code), but provided by the seller in the invoice.
@@ -498,7 +535,7 @@ type
                      globalID: TZUGFeRDGlobalID = nil; const receiver: string = ''; legalOrganization: TZUGFeRDLegalOrganization = nil);
 
     procedure SetSeller(const name, postcode, city, street: string; country: TZUGFeRDCountryCodes; const id: string = '';
-                     globalID: TZUGFeRDGlobalID = nil; legalOrganization: TZUGFeRDLegalOrganization = nil);
+                     globalID: TZUGFeRDGlobalID = nil; legalOrganization: TZUGFeRDLegalOrganization = nil; description : String = '');
 
     procedure SetSellerContact(const name: string = ''; const orgunit: string = '';
   const emailAddress: string = ''; const phoneno: string = ''; const faxno: string = '');
@@ -679,7 +716,8 @@ type
     /// <param name="stream">The stream where the data should be saved to.</param>
     /// <param name="version">The ZUGFeRD version you want to use. Defaults to version 1.</param>
     /// <param name="profile">The ZUGFeRD profile you want to use. Defaults to Basic.</param>
-    procedure Save(const stream: TStream; const version: TZUGFeRDVersion = TZUGFeRDVersion.Version1; const profile: TZUGFeRDProfile = TZUGFeRDProfile.Basic); overload;
+    /// <param name="format">The format of the target file that may be CII or UBL</param>
+    procedure Save(const stream: TStream; const version: TZUGFeRDVersion = TZUGFeRDVersion.Version1; const profile: TZUGFeRDProfile = TZUGFeRDProfile.Basic; format : TZUGFeRDFormats = TZUGFeRDFormats.CII); overload;
 
     /// <summary>
     /// Saves the descriptor object into a file with given name.
@@ -687,7 +725,8 @@ type
     /// <param name="filename">The filename where the data should be saved to.</param>
     /// <param name="version">The ZUGFeRD version you want to use. Defaults to version 1.</param>
     /// <param name="profile">The ZUGFeRD profile you want to use. Defaults to Basic.</param>
-    procedure Save(const filename: string; const version: TZUGFeRDVersion = TZUGFeRDVersion.Version1; const profile: TZUGFeRDProfile = TZUGFeRDProfile.Basic); overload;
+    /// <param name="format">The format of the target file that may be CII or UBL</param>
+    procedure Save(const filename: string; const version: TZUGFeRDVersion = TZUGFeRDVersion.Version1; const profile: TZUGFeRDProfile = TZUGFeRDProfile.Basic; format : TZUGFeRDFormats = TZUGFeRDFormats.CII); overload;
 
     /// <summary>
     /// Adds a new comment as a dedicated line of the invoice.
@@ -801,8 +840,9 @@ uses
   intf.ZUGFeRDInvoiceDescriptorReader,intf.ZUGFeRDInvoiceDescriptorWriter,
   intf.ZUGFeRDInvoiceDescriptor1Reader,intf.ZUGFeRDInvoiceDescriptor1Writer,
   intf.ZUGFeRDInvoiceDescriptor20Reader,intf.ZUGFeRDInvoiceDescriptor20Writer,
-  intf.ZUGFeRDInvoiceDescriptor22Reader,intf.ZUGFeRDInvoiceDescriptor22Writer,
-  intf.ZUGFeRDInvoiceDescriptor22UblReader
+  intf.ZUGFeRDInvoiceDescriptor22CIIReader,intf.ZUGFeRDInvoiceDescriptor22UBLReader,
+  intf.ZUGFeRDInvoiceDescriptor22Writer,
+  intf.ZUGFeRDInvoiceDescriptor22CIIWriter,intf.ZUGFeRDInvoiceDescriptor22UBLWriter
   ;
 
 { TZUGFeRDInvoiceDescriptor }
@@ -823,6 +863,7 @@ begin
   FSellerTaxRegistration         := TObjectList<TZUGFeRDTaxRegistration>.Create;
   FSellerElectronicAddress       := TZUGFeRDElectronicAddress.Create;
   FInvoicee                      := nil;//TZUGFeRDParty.Create;
+  FInvoicer                      := nil;//TZUGFeRDParty.Create;
   FShipTo                        := nil;//TZUGFeRDParty.Create;
   FPayee                         := nil;//TZUGFeRDParty.Create;
   FShipFrom                      := nil;//TZUGFeRDParty.Create;
@@ -839,6 +880,7 @@ begin
   FDebitorBankAccounts           := TObjectList<TZUGFeRDBankAccount>.Create;
   FPaymentMeans                  := nil;//TZUGFeRDPaymentMeans.Create;
   FSellerOrderReferencedDocument := nil;//TZUGFeRDSellerOrderReferencedDocument.Create;
+  FTaxCurrency                   := TZUGFeRDCurrencyCodes.Unknown;
 end;
 
 destructor TZUGFeRDInvoiceDescriptor.Destroy;
@@ -846,31 +888,32 @@ begin
   if Assigned(FAdditionalReferencedDocuments ) then begin FAdditionalReferencedDocuments.Free; FAdditionalReferencedDocuments  := nil; end;
   if Assigned(FDespatchAdviceReferencedDocument) then begin FDespatchAdviceReferencedDocument.Free; FDespatchAdviceReferencedDocument := nil; end;
   if Assigned(FDeliveryNoteReferencedDocument) then begin FDeliveryNoteReferencedDocument.Free; FDeliveryNoteReferencedDocument := nil; end;
-  if Assigned(FContractReferencedDocument    ) then begin FContractReferencedDocument.Free; FContractReferencedDocument     := nil; end;
-  if Assigned(FSpecifiedProcuringProject     ) then begin FSpecifiedProcuringProject.Free; FSpecifiedProcuringProject      := nil; end;
-  if Assigned(FBuyer                         ) then begin FBuyer.Free; FBuyer                          := nil; end;
-  if Assigned(FBuyerContact                  ) then begin FBuyerContact.Free; FBuyerContact                   := nil; end;
-  if Assigned(FBuyerTaxRegistration          ) then begin FBuyerTaxRegistration.Free; FBuyerTaxRegistration           := nil; end;
-  if Assigned(FBuyerElectronicAddress        ) then begin FBuyerElectronicAddress        .Free; FBuyerElectronicAddress         := nil; end;
-  if Assigned(FSeller                        ) then begin FSeller.Free; FSeller                         := nil; end;
-  if Assigned(FSellerContact                 ) then begin FSellerContact.Free; FSellerContact                  := nil; end;
-  if Assigned(FSellerTaxRegistration         ) then begin FSellerTaxRegistration.Free; FSellerTaxRegistration          := nil; end;
-  if Assigned(FSellerElectronicAddress       ) then begin FSellerElectronicAddress       .Free; FSellerElectronicAddress        := nil; end;
-  if Assigned(FInvoicee                      ) then begin FInvoicee.Free; FInvoicee                       := nil; end;
-  if Assigned(FShipTo                        ) then begin FShipTo.Free; FShipTo                         := nil; end;
-  if Assigned(FPayee                         ) then begin FPayee.Free; FPayee                          := nil; end;
-  if Assigned(FShipFrom                      ) then begin FShipFrom.Free; FShipFrom                       := nil; end;
-  if Assigned(FNotes                         ) then begin FNotes.Free; FNotes                          := nil; end;
-  if Assigned(FTradeLineItems                ) then begin FTradeLineItems.Free; FTradeLineItems                 := nil; end;
-  if Assigned(FTaxes                         ) then begin FTaxes.Free; FTaxes                          := nil; end;
-  if Assigned(FServiceCharges                ) then begin FServiceCharges.Free; FServiceCharges                 := nil; end;
-  if Assigned(FTradeAllowanceCharges         ) then begin FTradeAllowanceCharges.Free; FTradeAllowanceCharges          := nil; end;
-  if Assigned(FPaymentTermsList              ) then begin FPaymentTermsList.Free; FPaymentTermsList                   := nil; end;
-  if Assigned(FInvoiceReferencedDocument     ) then begin FInvoiceReferencedDocument.Free; FInvoiceReferencedDocument      := nil; end;
+  if Assigned(FContractReferencedDocument    ) then begin FContractReferencedDocument.Free; FContractReferencedDocument := nil; end;
+  if Assigned(FSpecifiedProcuringProject     ) then begin FSpecifiedProcuringProject.Free; FSpecifiedProcuringProject := nil; end;
+  if Assigned(FBuyer                         ) then begin FBuyer.Free; FBuyer := nil; end;
+  if Assigned(FBuyerContact                  ) then begin FBuyerContact.Free; FBuyerContact := nil; end;
+  if Assigned(FBuyerTaxRegistration          ) then begin FBuyerTaxRegistration.Free; FBuyerTaxRegistration := nil; end;
+  if Assigned(FBuyerElectronicAddress        ) then begin FBuyerElectronicAddress.Free; FBuyerElectronicAddress := nil; end;
+  if Assigned(FSeller                        ) then begin FSeller.Free; FSeller := nil; end;
+  if Assigned(FSellerContact                 ) then begin FSellerContact.Free; FSellerContact := nil; end;
+  if Assigned(FSellerTaxRegistration         ) then begin FSellerTaxRegistration.Free; FSellerTaxRegistration := nil; end;
+  if Assigned(FSellerElectronicAddress       ) then begin FSellerElectronicAddress.Free; FSellerElectronicAddress := nil; end;
+  if Assigned(FInvoicee                      ) then begin FInvoicee.Free; FInvoicee := nil; end;
+  if Assigned(FInvoicer                      ) then begin FInvoicer.Free; FInvoicer := nil; end;
+  if Assigned(FShipTo                        ) then begin FShipTo.Free; FShipTo := nil; end;
+  if Assigned(FPayee                         ) then begin FPayee.Free; FPayee := nil; end;
+  if Assigned(FShipFrom                      ) then begin FShipFrom.Free; FShipFrom := nil; end;
+  if Assigned(FNotes                         ) then begin FNotes.Free; FNotes := nil; end;
+  if Assigned(FTradeLineItems                ) then begin FTradeLineItems.Free; FTradeLineItems := nil; end;
+  if Assigned(FTaxes                         ) then begin FTaxes.Free; FTaxes := nil; end;
+  if Assigned(FServiceCharges                ) then begin FServiceCharges.Free; FServiceCharges := nil; end;
+  if Assigned(FTradeAllowanceCharges         ) then begin FTradeAllowanceCharges.Free; FTradeAllowanceCharges := nil; end;
+  if Assigned(FPaymentTermsList              ) then begin FPaymentTermsList.Free; FPaymentTermsList := nil; end;
+  if Assigned(FInvoiceReferencedDocument     ) then begin FInvoiceReferencedDocument.Free; FInvoiceReferencedDocument := nil; end;
   if Assigned(FReceivableSpecifiedTradeAccountingAccounts) then begin FReceivableSpecifiedTradeAccountingAccounts.Free; FReceivableSpecifiedTradeAccountingAccounts := nil; end;
-  if Assigned(FCreditorBankAccounts         ) then begin FCreditorBankAccounts.Free; FCreditorBankAccounts          := nil; end;
-  if Assigned(FDebitorBankAccounts          ) then begin FDebitorBankAccounts.Free; FDebitorBankAccounts           := nil; end;
-  if Assigned(FPaymentMeans                 ) then begin FPaymentMeans.Free; FPaymentMeans                  := nil; end;
+  if Assigned(FCreditorBankAccounts         ) then begin FCreditorBankAccounts.Free; FCreditorBankAccounts := nil; end;
+  if Assigned(FDebitorBankAccounts          ) then begin FDebitorBankAccounts.Free; FDebitorBankAccounts := nil; end;
+  if Assigned(FPaymentMeans                 ) then begin FPaymentMeans.Free; FPaymentMeans := nil; end;
   if Assigned(FSellerOrderReferencedDocument) then begin FSellerOrderReferencedDocument.Free; FSellerOrderReferencedDocument := nil; end;
   inherited;
 end;
@@ -890,7 +933,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22UblReader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22UBLReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(filename) then
     begin
@@ -901,7 +944,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22Reader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(filename) then
     begin
@@ -942,7 +985,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22UblReader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22UBLReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(stream) then
     begin
@@ -953,7 +996,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22Reader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(stream) then
     begin
@@ -990,7 +1033,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22UblReader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22UBLReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(stream) then
       exit(true);
@@ -998,7 +1041,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22Reader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(stream) then
       exit(true);
@@ -1032,7 +1075,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22UblReader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22UBLReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(stream) then
     begin
@@ -1043,7 +1086,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22Reader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(stream) then
     begin
@@ -1094,7 +1137,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22Reader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(filename) then
     begin
@@ -1145,7 +1188,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22Reader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(xmldocument) then
     begin
@@ -1214,7 +1257,8 @@ end;
 procedure TZUGFeRDInvoiceDescriptor.SetSeller(const name, postcode, city, street: string;
   country: TZUGFeRDCountryCodes; const id: string = '';
   globalID: TZUGFeRDGlobalID = nil;
-  legalOrganization: TZUGFeRDLegalOrganization = nil);
+  legalOrganization: TZUGFeRDLegalOrganization = nil;
+  description : String = '');
 begin
   if Self.Seller = nil then Self.Seller := TZUGFeRDParty.Create;
   FSeller.ID.ID := id;
@@ -1228,6 +1272,7 @@ begin
   FSeller.GlobalID := globalID; //TODO Mem Leak
   if FSeller.SpecifiedLegalOrganization <> nil then FSeller.SpecifiedLegalOrganization.Free;
   FSeller.SpecifiedLegalOrganization := legalOrganization; //TODO Mem Leak
+  FSeller.Description := description;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetSellerContact(const name: string = ''; const orgunit: string = '';
@@ -1440,7 +1485,8 @@ end;
 
 procedure TZUGFeRDInvoiceDescriptor.Save(const stream: TStream;
   const version: TZUGFeRDVersion = TZUGFeRDVersion.Version1;
-  const profile: TZUGFeRDProfile = TZUGFeRDProfile.Basic);
+  const profile: TZUGFeRDProfile = TZUGFeRDProfile.Basic;
+  format : TZUGFeRDFormats = TZUGFeRDFormats.CII);
 var
   writer: TZUGFeRDInvoiceDescriptorWriter;
 begin
@@ -1457,13 +1503,16 @@ begin
       raise TZUGFeRDUnsupportedException.Create('New ZUGFeRDVersion defined but not implemented!');
   end;
   try
-    writer.Save(Self, stream);
+    writer.Save(Self, stream, format);
   finally
     writer.Free;
   end;
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.Save(const filename: string; const version: TZUGFeRDVersion = TZUGFeRDVersion.Version1; const profile: TZUGFeRDProfile = TZUGFeRDProfile.Basic);
+procedure TZUGFeRDInvoiceDescriptor.Save(const filename: string;
+  const version: TZUGFeRDVersion = TZUGFeRDVersion.Version1;
+  const profile: TZUGFeRDProfile = TZUGFeRDProfile.Basic;
+  format : TZUGFeRDFormats = TZUGFeRDFormats.CII);
 var
   writer: TZUGFeRDInvoiceDescriptorWriter;
 begin
@@ -1474,7 +1523,6 @@ begin
       writer := TZUGFeRDInvoiceDescriptor1Writer.Create;
     TZUGFeRDVersion.Version20:
       writer := TZUGFeRDInvoiceDescriptor20Writer.Create;
-    TZUGFeRDVersion.Version21,
     TZUGFeRDVersion.Version22:
       writer := TZUGFeRDInvoiceDescriptor22Writer.Create;
     else

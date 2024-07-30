@@ -57,9 +57,9 @@ begin
   Assert.AreEqual(TZUGFeRDQuantityCodes.MTQ, TZUGFeRDQuantityCodesExtensions.FromString('MTQ'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.MTR, TZUGFeRDQuantityCodesExtensions.FromString('MTR'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.NAR, TZUGFeRDQuantityCodesExtensions.FromString('NAR'));
-  Assert.AreEqual(TZUGFeRDQuantityCodes.NPR, TZUGFeRDQuantityCodesExtensions.FromString('NPR'));
+  Assert.AreEqual(TZUGFeRDQuantityCodes.PR, TZUGFeRDQuantityCodesExtensions.FromString('NPR'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.P1, TZUGFeRDQuantityCodesExtensions.FromString('P1'));
-  Assert.AreEqual(TZUGFeRDQuantityCodes.PCE, TZUGFeRDQuantityCodesExtensions.FromString('PCE'));
+  Assert.AreEqual(TZUGFeRDQuantityCodes.C62, TZUGFeRDQuantityCodesExtensions.FromString('PCE'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.SET_, TZUGFeRDQuantityCodesExtensions.FromString('SET'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.TNE, TZUGFeRDQuantityCodesExtensions.FromString('TNE'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.WEE, TZUGFeRDQuantityCodesExtensions.FromString('WEE'));
@@ -113,9 +113,7 @@ begin
   Assert.AreEqual('MTQ', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.MTQ));
   Assert.AreEqual('MTR', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.MTR));
   Assert.AreEqual('NAR', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.NAR));
-  Assert.AreEqual('NPR', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.NPR));
   Assert.AreEqual('P1', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.P1));
-  Assert.AreEqual('PCE', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.PCE));
   Assert.AreEqual('SET', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.SET_));
   Assert.AreEqual('TNE', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.TNE));
   Assert.AreEqual('WEE', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.WEE));

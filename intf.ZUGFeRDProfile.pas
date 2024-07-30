@@ -196,7 +196,6 @@ begin
       else
         raise Exception.Create('Unsupported profile for ZUGFeRD version 20');
       end;
-    TZUGFeRDVersion.Version21,
     TZUGFeRDVersion.Version22:
       case profile of
         TZUGFeRDProfile.Minimum:

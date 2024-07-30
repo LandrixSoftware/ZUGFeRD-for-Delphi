@@ -46,6 +46,9 @@ type
   TZUGFeRDArgumentException = class(Exception)
   end;
 
+  TZUGFeRDNotImplementedException = class(Exception)
+  end;
+
 implementation
 
 

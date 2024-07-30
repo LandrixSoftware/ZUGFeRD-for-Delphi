@@ -38,7 +38,9 @@ uses
   intf.ZUGFeRDBuyerOrderReferencedDocument,
   intf.ZUGFeRDAccountingAccountTypeCodes,
   intf.ZUGFeRDSpecialServiceDescriptionCodes,
-  intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
+  intf.ZUGFeRDAllowanceOrChargeIdentificationCodes,
+  intf.ZUGFeRDDesignatedProductClassification,
+  intf.ZUGFeRDDesignatedProductClassificationClassCodes
   ;
 
 type
@@ -62,6 +64,7 @@ type
     FPackageUnitCode: TZUGFeRDQuantityCodes;
     FBillingPeriodStart: ZUGFeRDNullable<TDateTime>;
     FApplicableProductCharacteristics: TObjectList<TZUGFeRDApplicableProductCharacteristic>;
+    FDesignedProductClassifications: TObjectList<TZUGFeRDDesignatedProductClassification>;
     FSellerAssignedID: string;
     FTradeAllowanceCharges: TObjectList<TZUGFeRDTradeAllowanceCharge>;
     FSpecifiedTradeAllowanceCharges : TObjectList<TZUGFeRDTradeAllowanceCharge>;
@@ -161,6 +164,15 @@ type
       chargePercentage : Currency; reason: string;
       reasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes = TZUGFeRDSpecialServiceDescriptionCodes.Unknown;
       reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes = TZUGFeRDAllowanceOrChargeIdentificationCodes.Unknown); overload;
+
+    /// <summary>
+    /// Adds a product classification
+    /// </summary>
+    /// <param name="classCode">Identifier of the item classification</param>
+    /// <param name="className">Classification name</param>
+    /// <param name="listID">Product classification name</param>
+    /// <param name="listVersionID">Version of product classification</param>
+    procedure AddDesignatedProductClassification(classCode: TZUGFeRDDesignatedProductClassificationClassCodes; className : String; listID  : String = ''; listVersionID : String = '');
 
     procedure SetContractReferencedDocument(contractReferencedId: string;
       contractReferencedDate: IZUGFeRDNullableParam<TDateTime>);
@@ -336,6 +348,8 @@ type
     /// Additional product information
     /// </summary>
     property ApplicableProductCharacteristics: TObjectList<TZUGFeRDApplicableProductCharacteristic> read FApplicableProductCharacteristics write FApplicableProductCharacteristics;
+
+    property DesignedProductClassifications: TObjectList<TZUGFeRDDesignatedProductClassification> read FDesignedProductClassifications write FDesignedProductClassifications;
   end;
 
 implementation
@@ -355,6 +369,7 @@ begin
   FSpecifiedTradeAllowanceCharges := TObjectList<TZUGFeRDTradeAllowanceCharge>.Create;
   FReceivableSpecifiedTradeAccountingAccounts:= TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>.Create;
   FApplicableProductCharacteristics := TObjectList<TZUGFeRDApplicableProductCharacteristic>.Create;
+  FDesignedProductClassifications:= TObjectList<TZUGFeRDDesignatedProductClassification>.Create;
 end;
 
 destructor TZUGFeRDTradeLineItem.Destroy;
@@ -369,6 +384,7 @@ begin
   if Assigned(FSpecifiedTradeAllowanceCharges) then begin FSpecifiedTradeAllowanceCharges.Free; FSpecifiedTradeAllowanceCharges := nil; end;
   if Assigned(FReceivableSpecifiedTradeAccountingAccounts) then begin FReceivableSpecifiedTradeAccountingAccounts.Free; FReceivableSpecifiedTradeAccountingAccounts := nil; end;
   if Assigned(FApplicableProductCharacteristics) then begin FApplicableProductCharacteristics.Free; FApplicableProductCharacteristics := nil; end;
+  if Assigned(FDesignedProductClassifications) then begin FDesignedProductClassifications.Free; FDesignedProductClassifications := nil; end;
   inherited;
 end;
 
@@ -462,6 +478,17 @@ end;
 procedure TZUGFeRDTradeLineItem.AddReceivableSpecifiedTradeAccountingAccount(AccountID: string);
 begin
   AddReceivableSpecifiedTradeAccountingAccount(AccountID, TZUGFeRDAccountingAccountTypeCodes.Unknown);
+end;
+
+procedure TZUGFeRDTradeLineItem.AddDesignatedProductClassification(
+  classCode: TZUGFeRDDesignatedProductClassificationClassCodes; className,
+  listID, listVersionID: String);
+begin
+  DesignedProductClassifications.Add(TZUGFeRDDesignatedProductClassification.Create);
+  DesignedProductClassifications.Last.ClassCode := classCode;
+  DesignedProductClassifications.Last.ClassName := className;
+  DesignedProductClassifications.Last.ListID := listID;
+  DesignedProductClassifications.Last.ListVersionID := listVersionID;
 end;
 
 procedure TZUGFeRDTradeLineItem.AddReceivableSpecifiedTradeAccountingAccount(

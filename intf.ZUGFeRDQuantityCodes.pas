@@ -45,6 +45,8 @@ type
     /// <summary>
     /// Eins (Stück)
     /// Abkürzung: Stk.
+    ///
+    /// Previously, PCE was also used. This has been removed.
     /// </summary>
     C62,
     /// <summary>
@@ -143,27 +145,18 @@ type
     /// </summary>
     NAR,
     /// <summary>
-    /// Anzahl Paare
-    /// Abkürzung: Pr.
-    /// </summary>
-    ///[Obsolete("This enum will be removed in the next major version. Please use PR instead")]
-    NPR,
-    /// <summary>
     /// Prozent
     /// Abkürzung: %
     /// </summary>
     P1,
-    /// <summary>
-    /// Stück
-    /// </summary>
-    //[Obsolete("Does not conform to ZUGFeRD standard. Use H87 ('piece') or C62 ('one') instead")]
-    PCE,
     /// <summary>
     /// Paar
     /// Pair
     /// </summary>
     /// <remarks>
     /// A unit of count defining the number of pairs (pair: item described by two's).
+    ///
+    /// Previously, NPR was used to indicate pairs. This has been removed.
     /// </remarks>
     PR,
     /// <summary>
@@ -335,6 +328,17 @@ begin
   if SameText(s,'SET') then
   begin
     Result := TZUGFeRDQuantityCodes.SET_;
+    exit;
+  end;
+  // mapping of legacy unit codes
+  if SameText(s,'NPR') then
+  begin
+    Result := TZUGFeRDQuantityCodes.PR;
+    exit;
+  end;
+  if SameText(s,'PCE') then
+  begin
+    Result := TZUGFeRDQuantityCodes.C62;
     exit;
   end;
 

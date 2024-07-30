@@ -21,27 +21,29 @@ interface
 
 uses
   System.Classes, System.SysUtils, System.DateUtils, System.StrUtils
-  , System.Math
-  ,intf.ZUGFeRDInvoiceDescriptor,intf.ZUGFeRDProfileAwareXmlTextWriter
-  ,intf.ZUGFeRDProfile;
+  ,System.Math
+  ,intf.ZUGFeRDInvoiceDescriptor
+  ,intf.ZUGFeRDProfileAwareXmlTextWriter
+  ,intf.ZUGFeRDProfile
+  ,intf.ZUGFeRDFormats;
 
 type
   TZUGFeRDInvoiceDescriptorWriter = class abstract
   public
-    procedure Save(descriptor: TZUGFeRDInvoiceDescriptor; stream: TStream); overload; virtual; abstract;
-    procedure Save(descriptor: TZUGFeRDInvoiceDescriptor; const filename: string); overload;
+    procedure Save(descriptor: TZUGFeRDInvoiceDescriptor; stream: TStream; format :TZUGFeRDFormats = TZUGFeRDFormats.CII); overload; virtual; abstract;
+    procedure Save(descriptor: TZUGFeRDInvoiceDescriptor; const filename: string; format :TZUGFeRDFormats = TZUGFeRDFormats.CII); overload;
     function Validate(descriptor: TZUGFeRDInvoiceDescriptor; throwExceptions: Boolean = True): Boolean; virtual; abstract;
   public
     procedure WriteOptionalElementString(writer: TZUGFeRDProfileAwareXmlTextWriter; const tagName, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
     function _formatDecimal(value: Currency; numDecimals: Integer = 2): string;
-    function _formatDate(date: TDateTime; formatAs102: Boolean = True): string;
+    function _formatDate(date: TDateTime; formatAs102: Boolean = True; toUBLDate : Boolean = false): string;
   end;
 
 implementation
 
 procedure TZUGFeRDInvoiceDescriptorWriter.Save(
   descriptor: TZUGFeRDInvoiceDescriptor;
-  const filename: string);
+  const filename: string; format :TZUGFeRDFormats = TZUGFeRDFormats.CII);
 var
   fs: TFileStream;
 begin
@@ -49,7 +51,7 @@ begin
   begin
     fs := TFileStream.Create(filename, fmCreate or fmOpenWrite);
     try
-      Save(descriptor, fs);
+      Save(descriptor, fs, format);
       //fs.Flush;
       //fs.Close;
     finally
@@ -83,12 +85,18 @@ begin
   Result := ReplaceText(Result,',','.');
 end;
 
-function TZUGFeRDInvoiceDescriptorWriter._formatDate(date: TDateTime; formatAs102: Boolean): string;
+function TZUGFeRDInvoiceDescriptorWriter._formatDate(date: TDateTime;
+  formatAs102: Boolean = true; toUBLDate : Boolean = false): string;
 begin
   if formatAs102 then
     Result := FormatDateTime('yyyymmdd', date)
   else
-    Result := FormatDateTime('yyyy-mm-ddThh:nn:ss', date);
+  begin
+    if toUBLDate then
+      Result := FormatDateTime('yyyy-mm-dd', date)
+    else
+      Result := FormatDateTime('yyyy-mm-ddThh:nn:ss', date);
+  end;
 end;
 
 end.

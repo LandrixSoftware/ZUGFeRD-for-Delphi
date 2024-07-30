@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.}
 
-unit intf.ZUGFeRDInvoiceDescriptor22UblReader;
+unit intf.ZUGFeRDInvoiceDescriptor22UBLReader;
 
 interface
 
@@ -89,9 +89,9 @@ type
 
 implementation
 
-{ TZUGFeRDInvoiceDescriptor22UblReader }
+{ TZUGFeRDInvoiceDescriptor22UBLReader }
 
-function TZUGFeRDInvoiceDescriptor22UblReader.GetValidURIs : TArray<string>;
+function TZUGFeRDInvoiceDescriptor22UBLReader.GetValidURIs : TArray<string>;
 begin
   Result := TArray<string>.Create(
     'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2',
@@ -100,19 +100,19 @@ begin
   );
 end;
 
-function TZUGFeRDInvoiceDescriptor22UblReader.IsReadableByThisReaderVersion(
+function TZUGFeRDInvoiceDescriptor22UBLReader.IsReadableByThisReaderVersion(
   stream: TStream): Boolean;
 begin
   Result := IsReadableByThisReaderVersion(stream, GetValidURIs);
 end;
 
-function TZUGFeRDInvoiceDescriptor22UblReader.IsReadableByThisReaderVersion(
+function TZUGFeRDInvoiceDescriptor22UBLReader.IsReadableByThisReaderVersion(
   xmldocument : IXMLDocument): Boolean;
 begin
   Result := IsReadableByThisReaderVersion(xmldocument, GetValidURIs);
 end;
 
-function TZUGFeRDInvoiceDescriptor22UblReader.Load(stream: TStream): TZUGFeRDInvoiceDescriptor;
+function TZUGFeRDInvoiceDescriptor22UBLReader.Load(stream: TStream): TZUGFeRDInvoiceDescriptor;
 var
   xml : IXMLDocument;
 begin
@@ -129,7 +129,7 @@ begin
   end;
 end;
 
-function TZUGFeRDInvoiceDescriptor22UblReader.Load(
+function TZUGFeRDInvoiceDescriptor22UBLReader.Load(
   xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor;
 var
   doc : IXMLDOMDocument2;
@@ -473,7 +473,7 @@ begin
 //    Result.TradeLineItems.Add(_parseTradeLineItem(nodes[i]));
 end;
 
-function TZUGFeRDInvoiceDescriptor22UblReader._getAdditionalReferencedDocument(
+function TZUGFeRDInvoiceDescriptor22UBLReader._getAdditionalReferencedDocument(
   a_oXmlNode: IXmlDomNode): TZUGFeRDAdditionalReferencedDocument;
 begin
 //  var strBase64BinaryData : String := _nodeAsString(a_oXmlNode, 'ram:AttachmentBinaryObject');
@@ -492,7 +492,7 @@ begin
 //  Result.ReferenceTypeCode := TZUGFeRDReferenceTypeCodesExtensions.FromString(_nodeAsString(a_oXmlNode, 'ram:ReferenceTypeCode'));
 end;
 
-function TZUGFeRDInvoiceDescriptor22UblReader._nodeAsLegalOrganization(
+function TZUGFeRDInvoiceDescriptor22UBLReader._nodeAsLegalOrganization(
   basenode: IXmlDomNode; const xpath: string) : TZUGFeRDLegalOrganization;
 //var
 //  node : IXmlDomNode;
@@ -509,7 +509,7 @@ begin
 //               _nodeAsString(node, 'ram:TradingBusinessName'));
 end;
 
-function TZUGFeRDInvoiceDescriptor22UblReader._nodeAsParty(basenode: IXmlDomNode;
+function TZUGFeRDInvoiceDescriptor22UBLReader._nodeAsParty(basenode: IXmlDomNode;
   const xpath: string) : TZUGFeRDParty;
 var
   node : IXmlDomNode;
@@ -548,7 +548,7 @@ begin
 //  Result.CountrySubdivisionName := _nodeAsString(node, 'ram:PostalTradeAddress/ram:CountrySubDivisionName');
 end;
 
-function TZUGFeRDInvoiceDescriptor22UblReader._parseTradeLineItem(
+function TZUGFeRDInvoiceDescriptor22UBLReader._parseTradeLineItem(
   tradeLineItem: IXmlDomNode): TZUGFeRDTradeLineItem;
 var
   nodes : IXMLDOMNodeList;
