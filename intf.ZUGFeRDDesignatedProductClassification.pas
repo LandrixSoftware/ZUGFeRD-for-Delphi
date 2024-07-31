@@ -55,7 +55,7 @@ type
     /// <summary>
     /// Classification name
     /// </summary>
-    property ClassName : String read FClassName write FClassName;
+    property ClassName_ : String read FClassName write FClassName;
   end;
 
 implementation

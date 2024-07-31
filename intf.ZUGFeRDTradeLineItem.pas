@@ -486,7 +486,7 @@ procedure TZUGFeRDTradeLineItem.AddDesignatedProductClassification(
 begin
   DesignedProductClassifications.Add(TZUGFeRDDesignatedProductClassification.Create);
   DesignedProductClassifications.Last.ClassCode := classCode;
-  DesignedProductClassifications.Last.ClassName := className;
+  DesignedProductClassifications.Last.ClassName_ := className;
   DesignedProductClassifications.Last.ListID := listID;
   DesignedProductClassifications.Last.ListVersionID := listVersionID;
 end;
