@@ -1255,7 +1255,8 @@ begin
     _writer.WriteValue(_formatDecimal(tax.BasisAmount));
     _writer.WriteEndElement(); // !BasisAmount
 
-    if (tax.AllowanceChargeBasisAmount <> 0.0) then
+    if (tax.AllowanceChargeBasisAmount <> 0.0) and
+       (not(Descriptor.Profile in [TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1])) then
     begin
       _writer.WriteStartElement('ram:AllowanceChargeBasisAmount');
       _writer.WriteValue(_formatDecimal(tax.AllowanceChargeBasisAmount));
@@ -1318,10 +1319,8 @@ begin
          (Descriptor.Profile <> TZUGFeRDProfile.XRechnung) then
            exit; // extended, XRechnung1, XRechnung profile only
     TZUGFeRDPartyTypes.ShipFromTradeParty:
-      if (Descriptor.Profile <> TZUGFeRDProfile.Extended) and
-         (Descriptor.Profile <> TZUGFeRDProfile.XRechnung1) and
-         (Descriptor.Profile <> TZUGFeRDProfile.XRechnung) then
-           exit; // extended, XRechnung1, XRechnung profile only
+      if (Descriptor.Profile <> TZUGFeRDProfile.Extended) then
+           exit; // extended, profile only
     TZUGFeRDPartyTypes.InvoiceeTradeParty:
       if (Descriptor.Profile <> TZUGFeRDProfile.Extended) and
          (Descriptor.Profile <> TZUGFeRDProfile.XRechnung1) and
