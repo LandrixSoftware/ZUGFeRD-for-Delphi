@@ -107,8 +107,11 @@ begin
     _writer := TZUGFeRDInvoiceDescriptor22UBLWriter.Create
   else
     _writer := TZUGFeRDInvoiceDescriptor22CIIWriter.Create;
-
-  _writer.Save(_descriptor, _stream, _format);
+  try
+    _writer.Save(_descriptor, _stream, _format);
+  finally
+    _writer.Free;
+  end;
 end;
 
 function TZUGFeRDInvoiceDescriptor22Writer.Validate(
