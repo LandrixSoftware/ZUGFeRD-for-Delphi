@@ -281,7 +281,7 @@ begin
 
         //#region IssuerAssignedID
         //Bestellnummer
-        Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.BuyerOrderReferencedDocument.ID);
+        Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.BuyerOrderReferencedDocument.ID,[TZUGFeRDProfile.Extended]);
         //#endregion
 
         //#region LineID
@@ -292,7 +292,7 @@ begin
         //#region IssueDateTime
         if (tradeLineItem.BuyerOrderReferencedDocument.IssueDateTime.HasValue) then
         begin
-          Writer.WriteStartElement('ram:FormattedIssueDateTime');
+          Writer.WriteStartElement('ram:FormattedIssueDateTime',[TZUGFeRDProfile.Extended]);
           Writer.WriteStartElement('qdt:DateTimeString');
           Writer.WriteAttributeString('format', '102');
           Writer.WriteValue(_formatDate(tradeLineItem.BuyerOrderReferencedDocument.IssueDateTime.Value));

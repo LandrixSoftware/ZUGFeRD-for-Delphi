@@ -128,11 +128,9 @@ type
     [Test]
     procedure TestSpecifiedTradeAllowanceCharge;
     [Test]
-    procedure TestUBLInvoiceCreation;
-    [Test]
-    procedure TestUBLTradelineitemProductCharacterstics;
-    [Test]
     procedure TestSellerDescription;
+    [Test]
+    procedure TestSellerContact;
   end;
 
 implementation
@@ -1245,6 +1243,45 @@ begin
 //
 end;
 
+procedure TZUGFeRD22Tests.TestSellerContact;
+begin
+//            InvoiceDescriptor invoice = InvoiceProvider.CreateInvoice();
+//
+//            string description = "Test description";
+//
+//            invoice.SetSeller(name: "Lieferant GmbH",
+//                              postcode: "80333",
+//                              city: "München",
+//                              street: "Lieferantenstraße 20",
+//                              country: CountryCodes.DE,
+//                              id: "",
+//                              globalID: new GlobalID(GlobalIDSchemeIdentifiers.GLN, "4000001123452"),
+//                              legalOrganization: new LegalOrganization(GlobalIDSchemeIdentifiers.GLN, "4000001123452", "Lieferant GmbH"),
+//                              description: description
+//                              );
+//
+//            string SELLER_CONTACT = "1-123";
+//            string ORG_UNIT = "2-123";
+//            string EMAIL_ADDRESS = "3-123";
+//            string PHONE_NO = "4-123";
+//            string FAX_NO = "5-123";
+//            invoice.SetSellerContact(SELLER_CONTACT, ORG_UNIT, EMAIL_ADDRESS, PHONE_NO, FAX_NO);
+//
+//            MemoryStream ms = new MemoryStream();
+//            invoice.Save(ms, ZUGFeRDVersion.Version22, Profile.Extended);
+//            ms.Position = 0;
+//
+//            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
+//
+//            Assert.AreEqual(SELLER_CONTACT, loadedInvoice.SellerContact.Name);
+//            Assert.AreEqual(ORG_UNIT, loadedInvoice.SellerContact.OrgUnit);
+//            Assert.AreEqual(EMAIL_ADDRESS, loadedInvoice.SellerContact.EmailAddress);
+//            Assert.AreEqual(PHONE_NO, loadedInvoice.SellerContact.PhoneNo);
+//            Assert.AreEqual(FAX_NO, loadedInvoice.SellerContact.FaxNo);
+//
+//            Assert.AreEqual(loadedInvoice.Seller.Description, description);
+end;
+
 procedure TZUGFeRD22Tests.TestSellerDescription;
 begin
 //            InvoiceDescriptor invoice = InvoiceProvider.CreateInvoice();
@@ -1783,54 +1820,6 @@ begin
 //            Assert.AreEqual(allowanceCharges[0].BasisAmount, 100m);
 //            Assert.AreEqual(allowanceCharges[0].Amount, 10m);
 //            Assert.AreEqual(allowanceCharges[0].ChargePercentage, null);
-end;
-
-procedure TZUGFeRD22Tests.TestUBLInvoiceCreation;
-begin
-//            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
-//            MemoryStream ms = new MemoryStream();
-//
-//            desc.Save(ms, ZUGFeRDVersion.Version22,Profile.XRechnung,ZUGFeRDFormats.UBL);
-//            ms.Seek(0, SeekOrigin.Begin);
-//
-//            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
-//
-//            Assert.AreEqual(loadedInvoice.Invoicee, null);
-//            Assert.AreNotEqual(loadedInvoice.Seller, null);
-//            Assert.AreEqual(loadedInvoice.Taxes.Count, 2);
-//            Assert.AreEqual(loadedInvoice.SellerContact.Name, "Max Mustermann");
-//            Assert.IsNull(loadedInvoice.BuyerContact);
-end;
-
-procedure TZUGFeRD22Tests.TestUBLTradelineitemProductCharacterstics;
-begin
-//    InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
-//
-//            desc.TradeLineItems[0].ApplicableProductCharacteristics = new ApplicableProductCharacteristic[]
-//                    {
-//                        new ApplicableProductCharacteristic()
-//                        {
-//                            Description = "Test Description",
-//                            Value = "1.5 kg"
-//                        },
-//                        new ApplicableProductCharacteristic()
-//                        {
-//                            Description = "UBL Characterstics 2",
-//                            Value = "3 kg"
-//                        },
-//                    }.ToList();
-//
-//            MemoryStream ms = new MemoryStream();
-//
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.XRechnung, ZUGFeRDFormats.UBL);
-//            ms.Seek(0, SeekOrigin.Begin);
-//
-//            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
-//
-//            Assert.IsNotNull(loadedInvoice.TradeLineItems);
-//            Assert.AreEqual(loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics.Count, 2);
-//            Assert.AreEqual(loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics[0].Description, "Test Description");
-//            Assert.AreEqual(loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics[1].Value, "3 kg");
 end;
 
 // !TestTradeAllowanceChargeWithoutExplicitPercentage()
