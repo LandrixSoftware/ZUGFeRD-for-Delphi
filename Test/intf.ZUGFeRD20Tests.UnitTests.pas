@@ -82,6 +82,7 @@ begin
     Assert.AreEqual(desc.InvoiceNo, '471102');
     Assert.AreEqual(Int64(desc.TradeLineItems.Count), Int64(1));
     Assert.AreEqual(desc.LineTotalAmount.Value, Currency(198.00));
+    Assert.IsFalse(desc.IsTest);
   finally
     desc.Free;
   end;
@@ -103,6 +104,7 @@ begin
     Assert.AreEqual(desc.InvoiceNo, 'R87654321012345');
     Assert.AreEqual(Int64(desc.TradeLineItems.Count), Int64(6));
     Assert.AreEqual(desc.LineTotalAmount.Value, Currency(457.20));
+    Assert.IsTrue(desc.IsTest);
 
   finally
     desc.Free;
@@ -278,6 +280,7 @@ begin
 //
 //      desc.AddAdditionalReferencedDocument(
 //          id: "My-File-PDF",
+//          issueDateTime: timestamp,
 //          typeCode: AdditionalReferencedDocumentTypeCode.ReferenceDocument,
 //          name: "EmbeddedPdf",
 //          attachmentBinaryObject: data,
@@ -285,6 +288,7 @@ begin
 //
 //      desc.AddAdditionalReferencedDocument(
 //          id: "My-File-BIN",
+//          issueDateTime: timestamp,
 //          typeCode: AdditionalReferencedDocumentTypeCode.ReferenceDocument,
 //          name: "EmbeddedPdf",
 //          attachmentBinaryObject: data,
