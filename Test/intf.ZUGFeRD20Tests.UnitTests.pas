@@ -553,7 +553,7 @@ begin
 //      lineItem.SetDeliveryNoteReferencedDocument("12345", timestamp);
 //      lineItem.SetContractReferencedDocument("12345", timestamp);
 //
-//      lineItem.AddAdditionalReferencedDocument("xyz", timestamp, ReferenceTypeCodes.AAB);
+//      lineItem.AddAdditionalReferencedDocument("xyz", ReferenceTypeCodes.AAB, timestamp);
 //
 //      lineItem.UnitQuantity = 3m;
 //      lineItem.ActualDeliveryDate = timestamp;

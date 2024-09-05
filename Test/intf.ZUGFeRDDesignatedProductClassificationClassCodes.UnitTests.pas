@@ -37,6 +37,7 @@ implementation
 
 procedure TZUGFeRDDesignatedProductClassificationClassCodesTest.TestFromString;
 begin
+  Assert.AreEqual(TZUGFeRDDesignatedProductClassificationClassCodes.AA, TZUGFeRDDesignatedProductClassificationClassCodesExtensions.FromString('AA'));
   Assert.AreEqual(TZUGFeRDDesignatedProductClassificationClassCodes.HS, TZUGFeRDDesignatedProductClassificationClassCodesExtensions.FromString('HS'));
   Assert.AreEqual(TZUGFeRDDesignatedProductClassificationClassCodes.Unknown, TZUGFeRDDesignatedProductClassificationClassCodesExtensions.FromString('Unknown'));
   Assert.AreEqual(TZUGFeRDDesignatedProductClassificationClassCodes.Unknown, TZUGFeRDDesignatedProductClassificationClassCodesExtensions.FromString('Invalid'));
@@ -44,6 +45,7 @@ end;
 
 procedure TZUGFeRDDesignatedProductClassificationClassCodesTest.TestEnumToString;
 begin
+  Assert.AreEqual('AA', TZUGFeRDDesignatedProductClassificationClassCodesExtensions.EnumToString(TZUGFeRDDesignatedProductClassificationClassCodes.AA));
   Assert.AreEqual('HS', TZUGFeRDDesignatedProductClassificationClassCodesExtensions.EnumToString(TZUGFeRDDesignatedProductClassificationClassCodes.HS));
   Assert.AreEqual('', TZUGFeRDDesignatedProductClassificationClassCodesExtensions.EnumToString(TZUGFeRDDesignatedProductClassificationClassCodes.Unknown));
 end;

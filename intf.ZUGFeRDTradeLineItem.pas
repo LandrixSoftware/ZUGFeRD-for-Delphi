@@ -20,7 +20,8 @@ unit intf.ZUGFeRDTradeLineItem;
 interface
 
 uses
-  System.SysUtils,System.Generics.Collections,System.Generics.Defaults,
+  System.SysUtils,System.Generics.Collections,
+  System.Generics.Defaults,System.Classes,
   intf.ZUGFeRDHelper,
   intf.ZUGFeRDGlobalID,
   intf.ZUGFeRDReferenceTypeCodes,
@@ -40,7 +41,8 @@ uses
   intf.ZUGFeRDSpecialServiceDescriptionCodes,
   intf.ZUGFeRDAllowanceOrChargeIdentificationCodes,
   intf.ZUGFeRDDesignatedProductClassification,
-  intf.ZUGFeRDDesignatedProductClassificationClassCodes
+  intf.ZUGFeRDDesignatedProductClassificationClassCodes,
+  intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes
   ;
 
 type
@@ -91,7 +93,23 @@ type
     destructor Destroy; override;
 
     procedure AddAdditionalReferencedDocument(id: string;
-      date: TDateTime = 0; code : TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown);
+      code : TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown; issueDateTime: TDateTime = 0); overload;
+
+    /// <summary>
+		/// Add an additional reference document
+		/// </summary>
+		/// <param name="id">Document number such as delivery note no or credit memo no</param>
+		/// <param name="typeCode"></param>
+		/// <param name="issueDateTime">Document Date</param>
+		/// <param name="name"></param>
+		/// <param name="referenceTypeCode">Type of the referenced document</param>
+		/// <param name="attachmentBinaryObject"></param>
+		/// <param name="filename"></param>
+    procedure AddAdditionalReferencedDocument(id: string;
+      typeCode : TZUGFeRDAdditionalReferencedDocumentTypeCode;
+      issueDateTime: TDateTime = 0; name : String = '';
+      referenceTypeCode : TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
+      attachmentBinaryObject : TStream = nil; filename : String = ''); overload;
 
     procedure AddReceivableSpecifiedTradeAccountingAccount(
       AccountID: string); overload;
@@ -166,13 +184,13 @@ type
       reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes = TZUGFeRDAllowanceOrChargeIdentificationCodes.Unknown); overload;
 
     /// <summary>
-    /// Adds a product classification
-    /// </summary>
-    /// <param name="classCode">Identifier of the item classification</param>
-    /// <param name="className">Classification name</param>
-    /// <param name="listID">Product classification name</param>
-    /// <param name="listVersionID">Version of product classification</param>
-    procedure AddDesignatedProductClassification(classCode: TZUGFeRDDesignatedProductClassificationClassCodes; className : String; listID  : String = ''; listVersionID : String = '');
+		/// Adds a product classification
+		/// </summary>
+		/// <param name="className">Classification name. If you leave className empty, it will be omitted in the output</param>
+		/// <param name="classCode">Identifier of the item classification (optional)</param>
+		/// <param name="listID">Product classification name (optional)</param>
+		/// <param name="listVersionID">Version of product classification (optional)</param>
+    procedure AddDesignatedProductClassification(className : String; classCode: TZUGFeRDDesignatedProductClassificationClassCodes; listID  : String = ''; listVersionID : String = '');
 
     procedure SetContractReferencedDocument(contractReferencedId: string;
       contractReferencedDate: IZUGFeRDNullableParam<TDateTime>);
@@ -436,19 +454,38 @@ begin
 end;
 
 procedure TZUGFeRDTradeLineItem.AddAdditionalReferencedDocument(
-  id: string; date: TDateTime = 0;
-  code: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown);
+  id: string; code: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
+  issueDateTime: TDateTime = 0);
 begin
   FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(true));
-  with FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1] do
-  begin
-    ID := id;
-    if date <= 0 then
-      IssueDateTime:= Nil
-    else
-      IssueDateTime:= date;
-    ReferenceTypeCode := code;
-  end;
+
+  FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].ID := id;
+  if date <= 0 then
+    FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].IssueDateTime:= Nil
+  else
+    FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].IssueDateTime:= date;
+  FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].ReferenceTypeCode := code;
+end;
+
+procedure TZUGFeRDTradeLineItem.AddAdditionalReferencedDocument(id: string;
+  typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
+  issueDateTime: TDateTime; name: String;
+  referenceTypeCode: TZUGFeRDReferenceTypeCodes;
+  attachmentBinaryObject: TStream; filename: String);
+begin
+  FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(true));
+
+  FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].ReferenceTypeCode := referenceTypeCode;
+  FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].ID := id;
+  if date <= 0 then
+    FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].IssueDateTime:= Nil
+  else
+    FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].IssueDateTime:= date;
+  FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].Name := name;
+  FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].AttachmentBinaryObject.Clear;
+  FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].AttachmentBinaryObject.LoadFromStream(attachmentBinaryObject);
+  FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].Filename := filename;
+  FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].TypeCode := typeCode;
 end;
 
 procedure TZUGFeRDTradeLineItem.SetOrderReferencedDocument(
@@ -481,7 +518,8 @@ begin
 end;
 
 procedure TZUGFeRDTradeLineItem.AddDesignatedProductClassification(
-  classCode: TZUGFeRDDesignatedProductClassificationClassCodes; className,
+  className : String;
+  classCode: TZUGFeRDDesignatedProductClassificationClassCodes;
   listID, listVersionID: String);
 begin
   DesignedProductClassifications.Add(TZUGFeRDDesignatedProductClassification.Create);

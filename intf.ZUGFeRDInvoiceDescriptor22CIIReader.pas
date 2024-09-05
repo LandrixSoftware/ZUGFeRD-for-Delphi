@@ -783,7 +783,7 @@ begin
     var classCode : TZUGFeRDDesignatedProductClassificationClassCodes := TZUGFeRDDesignatedProductClassificationClassCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ClassCode'));
     var listID : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ClassCode/@listID');
     var listVersionID : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ClassCode/@listVersionID');
-    Result.AddDesignatedProductClassification(classCode, className, listID, listVersionID);
+    Result.AddDesignatedProductClassification(className, classCode, listID, listVersionID);
   end;
 end;
 

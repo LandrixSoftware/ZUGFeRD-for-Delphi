@@ -24,8 +24,31 @@ uses
   ;
 
 type
+	/// <summary>
+	/// A code for the classification of an item according to type or kind or nature.
+	///
+	/// Classification codes are used for the aggregation of similar products, which might be useful for various
+	/// purposes,
+	/// for instance like public procurement, in accordance with the Common Vocabulary for Public Procurement
+	/// [CPV]), e-Commerce(UNSPSC) etc.
+	///
+	/// Source: UNTDID 7143
+	/// Business rule: BR-65
+	/// </summary>
   TZUGFeRDDesignatedProductClassificationClassCodes = (
+
+		/// <summary>
+		/// Product version number
+		/// Number assigned by manufacturer or seller to identify the release of a product.
+		/// </summary>
+    AA,
+
+		/// <summary>
+		/// Harmonised system
+		/// The item number is part of, or is generated in the context of the Harmonised Commodity Description and Coding System (Harmonised System), as developed and maintained by the World Customs Organization (WCO).
+		/// </summary>
     HS,
+
     Unknown
   );
 
@@ -43,6 +66,7 @@ class function TZUGFeRDDesignatedProductClassificationClassCodesExtensions.EnumT
   c: TZUGFeRDDesignatedProductClassificationClassCodes): string;
 begin
   case c of
+    TZUGFeRDDesignatedProductClassificationClassCodes.AA: Result := 'AA';
     TZUGFeRDDesignatedProductClassificationClassCodes.HS: Result := 'HS';
     else Result := '';
   end;
@@ -51,6 +75,9 @@ end;
 class function TZUGFeRDDesignatedProductClassificationClassCodesExtensions.FromString(
   const s: string): TZUGFeRDDesignatedProductClassificationClassCodes;
 begin
+  if SameText(s,'AA') then
+    Result := TZUGFeRDDesignatedProductClassificationClassCodes.AA
+  else
   if SameText(s,'HS') then
     Result := TZUGFeRDDesignatedProductClassificationClassCodes.HS
   else

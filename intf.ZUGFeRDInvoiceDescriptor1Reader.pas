@@ -475,8 +475,8 @@ begin
   begin
     Result.AddAdditionalReferencedDocument(
         TZUGFeRDXmlUtils.NodeAsString(nodes[i], 'ram:ID'),
-        TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], 'ram:IssueDateTim'),
-        TZUGFeRDReferenceTypeCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], 'ram:ReferenceTypeCode'))
+        TZUGFeRDReferenceTypeCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], 'ram:ReferenceTypeCode')),
+        TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], 'ram:IssueDateTime')
     );
   end;
 end;
