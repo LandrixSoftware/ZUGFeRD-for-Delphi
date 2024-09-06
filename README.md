@@ -38,3 +38,5 @@ end;
 ## Links
 You can find more information about ZUGFeRD here:
 http://www.ferd-net.de/
+
+https://www.ferd-net.de/standards/zugferd-2.2/zugferd-2.2.html
