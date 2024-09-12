@@ -40,3 +40,11 @@ You can find more information about ZUGFeRD here:
 http://www.ferd-net.de/
 
 https://www.ferd-net.de/standards/zugferd-2.2/zugferd-2.2.html
+
+## Validation
+
+https://ecosio.com/de/peppol-und-xml-dokumente-online-validieren/
+
+https://invoice-portal.de/xrechnung-peppol-bis-zugferd-validator/
+
+https://www.zugferd-community.net/de/open_community/validation

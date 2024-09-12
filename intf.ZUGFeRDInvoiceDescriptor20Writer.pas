@@ -224,7 +224,7 @@ begin
 
       //#region LineID
       //Referenz zur Bestellposition
-      //ToDo: fehlt ganz
+      Writer.WriteOptionalElementString('ram:LineID', tradeLineItem.BuyerOrderReferencedDocument.LineID);
       //#endregion
 
       //#region IssueDateTime

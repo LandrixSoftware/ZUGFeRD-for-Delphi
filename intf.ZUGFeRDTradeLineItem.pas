@@ -492,7 +492,7 @@ procedure TZUGFeRDTradeLineItem.SetOrderReferencedDocument(
   orderReferencedId: string; orderReferencedDate: IZUGFeRDNullableParam<TDateTime>);
 begin
   if FBuyerOrderReferencedDocument = nil then
-    FBuyerOrderReferencedDocument := BuyerOrderReferencedDocument.Create;
+    FBuyerOrderReferencedDocument := TZUGFeRDBuyerOrderReferencedDocument.Create;
   with FBuyerOrderReferencedDocument do
   begin
     ID := orderReferencedId;

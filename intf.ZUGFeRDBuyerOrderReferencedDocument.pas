@@ -26,7 +26,11 @@ type
   /// Structure containing details of the associated order
   /// </summary>
   TZUGFeRDBuyerOrderReferencedDocument = class(TZUGFeRDBaseReferencedDocument)
+  private
+    FLineID: string;
   public
+    //Referenz zur Bestellposition BT-132
+    property LineID: string read FLineID write FLineID;
   end;
 
 implementation
