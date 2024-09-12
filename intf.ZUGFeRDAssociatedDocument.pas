@@ -30,6 +30,8 @@ type
   private
     FNotes: TObjectList<TZUGFeRDNote>;
     FLineID: string;
+    FLineStatusCode: string;
+    FLineStatusReasonCode: string;
   public
     constructor Create(lineID: string);
     destructor Destroy; override;
@@ -38,10 +40,17 @@ type
     ///  Detailed information in free text form
     /// </summary>
     property Notes: TObjectList<TZUGFeRDNote> read FNotes;
+
     /// <summary>
     /// identifier of the invoice line item
     /// </summary>
     property LineID: string read FLineID write FLineID;
+
+    //Typ der Rechnungsposition (Code)
+    property LineStatusCode: string read FLineStatusCode write FLineStatusCode;
+
+    //Untertyp der Rechnungsposition
+    property LineStatusReasonCode: string read FLineStatusReasonCode write FLineStatusReasonCode;
   end;
 
 implementation
@@ -54,7 +63,7 @@ end;
 
 destructor TZUGFeRDAssociatedDocument.Destroy;
 begin
-  FNotes.Free;
+  if Assigned(FNotes) then begin FNotes.Free; FNotes := nil; end;
   inherited Destroy;
 end;
 

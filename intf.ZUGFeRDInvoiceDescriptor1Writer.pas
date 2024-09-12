@@ -470,9 +470,12 @@ begin
     Writer.WriteStartElement('ram:IncludedSupplyChainTradeLineItem');
 
     if (tradeLineItem.AssociatedDocument<> nil) then
+    if (tradeLineItem.AssociatedDocument.LineID <> '') then
     begin
       Writer.WriteStartElement('ram:AssociatedDocumentLineDocument');
-      Writer.WriteOptionalElementString('ram:LineID', tradeLineItem.AssociatedDocument.LineID);
+      Writer.WriteElementString('ram:LineID', tradeLineItem.AssociatedDocument.LineID);
+      Writer.WriteOptionalElementString('ram:LineStatusCode', tradeLineItem.AssociatedDocument.LineStatusCode);
+      Writer.WriteOptionalElementString('ram:LineStatusReasonCode', tradeLineItem.AssociatedDocument.LineStatusReasonCode);
       _writeNotes(Writer, tradeLineItem.AssociatedDocument.Notes);
       Writer.WriteEndElement(); // ram:AssociatedDocumentLineDocument
     end;

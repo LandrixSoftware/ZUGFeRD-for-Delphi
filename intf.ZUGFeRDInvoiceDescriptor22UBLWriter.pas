@@ -446,6 +446,7 @@ begin
 //      begin
 //        Writer.WriteElementString('ram:LineID', tradeLineItem.AssociatedDocument.LineID);
 //      end;
+//linestatuscode ...
 //      _writeNotes(Writer, tradeLineItem.AssociatedDocument.Notes);
 //      Writer.WriteEndElement(); // ram:AssociatedDocumentLineDocument(Basic|Comfort|Extended|XRechnung)
 //    end;

@@ -193,12 +193,12 @@ begin
     //#region AssociatedDocumentLineDocument
     //Gruppierung von allgemeinen Positionsangaben
     if (tradeLineItem.AssociatedDocument <> nil) then
+    if (tradeLineItem.AssociatedDocument.LineID <> '') then
     begin
       Writer.WriteStartElement('ram:AssociatedDocumentLineDocument', [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung]);
-      if (tradeLineItem.AssociatedDocument.LineID <> '') then
-      begin
-        Writer.WriteElementString('ram:LineID', tradeLineItem.AssociatedDocument.LineID);
-      end;
+      Writer.WriteElementString('ram:LineID', tradeLineItem.AssociatedDocument.LineID);
+      Writer.WriteOptionalElementString('ram:LineStatusCode', tradeLineItem.AssociatedDocument.LineStatusCode);
+      Writer.WriteOptionalElementString('ram:LineStatusReasonCode', tradeLineItem.AssociatedDocument.LineStatusReasonCode);
       _writeNotes(Writer, tradeLineItem.AssociatedDocument.Notes);
       Writer.WriteEndElement(); // ram:AssociatedDocumentLineDocument(Basic|Comfort|Extended|XRechnung)
     end;
