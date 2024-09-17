@@ -503,6 +503,7 @@ begin
           Writer.WriteValue(_formatDate(tradeLineItem.BuyerOrderReferencedDocument.IssueDateTime.Value, false));
           Writer.WriteEndElement(); // !ram:IssueDateTime
         end;
+        Writer.WriteOptionalElementString('ram:LineID', tradeLineItem.BuyerOrderReferencedDocument.LineID);
         Writer.WriteOptionalElementString('ram:ID', tradeLineItem.BuyerOrderReferencedDocument.ID);
         Writer.WriteEndElement(); // !ram:BuyerOrderReferencedDocument
       end;

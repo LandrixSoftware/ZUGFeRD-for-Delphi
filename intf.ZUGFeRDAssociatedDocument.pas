@@ -47,9 +47,26 @@ type
     property LineID: string read FLineID write FLineID;
 
     //Typ der Rechnungsposition (Code)
+    //qdt:LineStatusCodeType
+    //Zeigt an, ob die Rechnungsposition Preise beinhaltet, die bei der
+    //Berechnung des Rechnungsbetrags beruecksichtigt werden muessen, oder
+    //aber ob nur Informationen enthalten sind.
+    //Folgender Code sollte genutzt werden : TYPE_LINE
     property LineStatusCode: string read FLineStatusCode write FLineStatusCode;
 
     //Untertyp der Rechnungsposition
+    //udt:CodeType
+    //Ergaenzt den Typ, um zu praezisieren ob es sich bei der Rechnungsposition um
+    //Folgendes handelt:
+    //- Detail (normale Position)
+    //- Zwischensumme
+    //- Ausschliesslich Information
+    //Anwendung
+    //Wenn das Feld LineStatusCode benutzt wird, muss das Feld LineStatusReasonCode
+    //folgende Codes nutzen:
+    //- Detail
+    //- Gruppierung
+    //- Information
     property LineStatusReasonCode: string read FLineStatusReasonCode write FLineStatusReasonCode;
   end;
 
