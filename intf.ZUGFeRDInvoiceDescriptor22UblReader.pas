@@ -67,10 +67,12 @@ type
   TZUGFeRDInvoiceDescriptor22UblReader = class(TZUGFeRDInvoiceDescriptorReader)
   private
     function GetValidURIs : TArray<string>;
+  {$HINTS OFF} // private symbols not yet used so switch off the hint
     function _parseTradeLineItem(tradeLineItem : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDTradeLineItem;
     function _nodeAsParty(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDParty;
     function _getAdditionalReferencedDocument(a_oXmlNode : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDAdditionalReferencedDocument;
     function _nodeAsLegalOrganization(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDLegalOrganization;
+  {$HINTS ON}
   public
     function IsReadableByThisReaderVersion(stream: TStream): Boolean; override;
     function IsReadableByThisReaderVersion(xmldocument: IXMLDocument): Boolean; override;
@@ -134,11 +136,11 @@ function TZUGFeRDInvoiceDescriptor22UBLReader.Load(
   xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor;
 var
   doc : IXMLDOMDocument2;
-  node : IXMLDOMNode;
+//  node : IXMLDOMNode;
 //  node,node2,node3,node4,nodeSupplyChainTradeTransaction,
 //  nodeApplicableHeaderTradeAgreement : IXMLDOMNode;
-  nodes : IXMLDOMNodeList;
-  i : Integer;
+//  nodes : IXMLDOMNodeList;
+//  i : Integer;
 begin
   doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(xmldocument);
 //
@@ -477,6 +479,7 @@ end;
 function TZUGFeRDInvoiceDescriptor22UBLReader._getAdditionalReferencedDocument(
   a_oXmlNode: IXmlDomNode): TZUGFeRDAdditionalReferencedDocument;
 begin
+  Result:= Nil; // avoid warnig until implementation is complete
 //  var strBase64BinaryData : String := _nodeAsString(a_oXmlNode, 'ram:AttachmentBinaryObject');
 //  Result := TZUGFeRDAdditionalReferencedDocument.Create(false);
 //  Result.ID := _nodeAsString(a_oXmlNode, 'ram:IssuerAssignedID');
@@ -498,6 +501,7 @@ function TZUGFeRDInvoiceDescriptor22UBLReader._nodeAsLegalOrganization(
 //var
 //  node : IXmlDomNode;
 begin
+  Result:= Nil; // avoid warnig until implementation is complete
 //  Result := nil;
 //  if (baseNode = nil) then
 //    exit;
@@ -512,11 +516,11 @@ end;
 
 function TZUGFeRDInvoiceDescriptor22UBLReader._nodeAsParty(basenode: IXmlDomNode;
   const xpath: string) : TZUGFeRDParty;
-var
-  node : IXmlDomNode;
-  lineOne,lineTwo : String;
+//var
+//  node : IXmlDomNode;
+//  lineOne,lineTwo : String;
 begin
-//  Result := nil;
+  Result := nil;
 //  if (baseNode = nil) then
 //    exit;
 //  node := baseNode.SelectSingleNode(xpath);
@@ -551,11 +555,11 @@ end;
 
 function TZUGFeRDInvoiceDescriptor22UBLReader._parseTradeLineItem(
   tradeLineItem: IXmlDomNode): TZUGFeRDTradeLineItem;
-var
-  nodes : IXMLDOMNodeList;
-  i : Integer;
+//var
+//  nodes : IXMLDOMNodeList;
+//  i : Integer;
 begin
-//  Result := nil;
+  Result := nil;
 //
 //  if (tradeLineItem = nil) then
 //    exit;
