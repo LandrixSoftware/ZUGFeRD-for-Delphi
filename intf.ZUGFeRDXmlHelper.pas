@@ -135,6 +135,10 @@ begin
         continue;
       sNsLine := ' '+s + sNsLine;
     end;
+
+    if not ContainsText(sNsLine, 'xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100"') then
+      sNsLine := sNsLine+ ' xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100"';
+
     sNsLine := trim(sNsLine);
   finally
     hList := nil;
