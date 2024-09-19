@@ -71,6 +71,7 @@ type
   private
     Writer: TZUGFeRDProfileAwareXmlTextWriter;
     Descriptor: TZUGFeRDInvoiceDescriptor;
+{$HINTS OFF} // suppress hint for unused private function for now
     procedure _writeOptionalAmount(_writer : TZUGFeRDProfileAwareXmlTextWriter; tagName : string; value : ZUGFeRDNullable<Currency>; numDecimals : Integer = 2; forceCurrency : Boolean = false; profile : TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
     procedure _writeNotes(_writer : TZUGFeRDProfileAwareXmlTextWriter;notes : TObjectList<TZUGFeRDNote>);
 //    procedure _writeOptionalLegalOrganization(_writer : TZUGFeRDProfileAwareXmlTextWriter; legalOrganizationTag : String;legalOrganization : TZUGFeRDLegalOrganization; partyType : TZUGFeRDPartyTypes = TZUGFeRDPartyTypes.Unknown);
@@ -82,6 +83,7 @@ type
 //    function _translateTaxCategoryCode(taxCategoryCode : TZUGFeRDTaxCategoryCodes) : String;
 //    function _translateInvoiceType(type_ : TZUGFeRDInvoiceType) : String;
     function _encodeInvoiceType(type_ : TZUGFeRDInvoiceType) : Integer;
+{$HINTS ON}
   private const
     ALL_PROFILES = [TZUGFeRDProfile.Minimum,
                     TZUGFeRDProfile.BasicWL,
@@ -2132,6 +2134,7 @@ end;
 
 function TZUGFeRDInvoiceDescriptor22UBLWriter._encodeInvoiceType(type_ : TZUGFeRDInvoiceType) : Integer;
 begin
+Result:= 0; // avoid the warning
 //            if ((int)type > 1000)
 //            {
 //                type -= 1000;
