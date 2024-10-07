@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.}
 
-unit intf.ZUGFeRD22Tests.UnitTests;
+unit intf.ZUGFeRD23Tests.UnitTests;
 
 interface
 
@@ -30,12 +30,18 @@ uses
 
 type
   [TestFixture]
-  TZUGFeRD22Tests = class
+  TZUGFeRD23Tests = class
   public
     [Test]
     procedure TestAdditionalReferencedDocument;
     [Test]
     procedure TestContractReferencedDocumentWithExtended;
+    [Test]
+    procedure TestBuyerOrderReferencedDocumentWithExtended;
+    [Test]
+    procedure TestBuyerOrderReferencedDocumentWithXRechnung;
+    [Test]
+    procedure TestCreateInvoice_WithProfileEReporting;
     [Test]
     procedure TestContractReferencedDocumentWithXRechnung;
     [Test]
@@ -147,7 +153,7 @@ type
 
 implementation
 
-procedure TZUGFeRD22Tests.TestReferenceBasicFacturXInvoice;
+procedure TZUGFeRD23Tests.TestReferenceBasicFacturXInvoice;
 var
   path : String;
   desc : TZUGFeRDInvoiceDescriptor;
@@ -156,7 +162,7 @@ begin
 
   desc := TZUGFeRDInvoiceDescriptor.Load(path);
   try
-    desc.Save(ExtractFilePath(ParamStr(0))+'test_zugferd21.xml', TZUGFeRDVersion.Version22, TZUGFeRDProfile.Basic);
+    desc.Save(ExtractFilePath(ParamStr(0))+'test_zugferd21.xml', TZUGFeRDVersion.Version23, TZUGFeRDProfile.Basic);
 
     Assert.AreEqual(desc.Profile, TZUGFeRDProfile.Basic);
     Assert.AreEqual(desc.Type_, TZUGFeRDInvoiceType.Invoice);
@@ -168,7 +174,7 @@ begin
   end;
 end;
 
-procedure TZUGFeRD22Tests.TestStoringReferenceBasicFacturXInvoice;
+procedure TZUGFeRD23Tests.TestStoringReferenceBasicFacturXInvoice;
 begin
 //            string path = @"..\..\..\..\demodata\zugferd21\zugferd_2p1_BASIC_Einfach-factur-x.xml";
 //            path = _makeSurePathIsCrossPlatformCompatible(path);
@@ -190,8 +196,8 @@ begin
 //            originalDesc.IsTest = false;
 //
 //            Stream ms = new MemoryStream();
-//            originalDesc.Save(ms, ZUGFeRDVersion.Version22, Profile.Basic);
-//            originalDesc.Save(@"zugferd_2p1_BASIC_Einfach-factur-x_Result.xml", ZUGFeRDVersion.Version22);
+//            originalDesc.Save(ms, ZUGFeRDVersion.Version23, Profile.Basic);
+//            originalDesc.Save(@"zugferd_2p1_BASIC_Einfach-factur-x_Result.xml", ZUGFeRDVersion.Version23);
 //
 //            InvoiceDescriptor desc = InvoiceDescriptor.Load(ms);
 //
@@ -207,7 +213,7 @@ begin
 //            Assert.AreEqual(desc.Taxes[0].Percent, 19.0m);
 end;
 
-procedure TZUGFeRD22Tests.TestReferenceBasicWLInvoice;
+procedure TZUGFeRD23Tests.TestReferenceBasicWLInvoice;
 begin
 //            string path = @"..\..\..\..\demodata\zugferd21\zugferd_2p1_BASIC-WL_Einfach-factur-x.xml";
 //            path = _makeSurePathIsCrossPlatformCompatible(path);
@@ -223,7 +229,7 @@ begin
 //            Assert.AreEqual(desc.LineTotalAmount, 624.90m);
 end;
 
-procedure TZUGFeRD22Tests.TestReferenceEReportingFacturXInvoice;
+procedure TZUGFeRD23Tests.TestReferenceEReportingFacturXInvoice;
 begin
 //            string path = @"..\..\..\..\demodata\zugferd21\zugferd_2p1_EREPORTING-factur-x.xml";
 //            path = _makeSurePathIsCrossPlatformCompatible(path);
@@ -241,7 +247,7 @@ begin
 //            Assert.AreEqual(desc.IsTest, false); // not present in file
 end;
 
-procedure TZUGFeRD22Tests.TestReferenceExtendedInvoice;
+procedure TZUGFeRD23Tests.TestReferenceExtendedInvoice;
 begin
 //            string path = @"..\..\..\..\demodata\zugferd21\zugferd_2p1_EXTENDED_Warenrechnung-factur-x.xml";
 //            path = _makeSurePathIsCrossPlatformCompatible(path);
@@ -275,7 +281,7 @@ begin
 //            Assert.AreEqual(desc.ServiceCharges[0].Tax.Percent, 19m);
 end;
 
-procedure TZUGFeRD22Tests.TestReferenceMinimumInvoice;
+procedure TZUGFeRD23Tests.TestReferenceMinimumInvoice;
 begin
 //            string path = @"..\..\..\..\demodata\zugferd21\zugferd_2p1_MINIMUM_Rechnung-factur-x.xml";
 //            path = _makeSurePathIsCrossPlatformCompatible(path);
@@ -292,7 +298,7 @@ begin
 //            Assert.AreEqual(desc.TaxBasisAmount, 198.0m);
 end;
 
-procedure TZUGFeRD22Tests.TestReferenceXRechnung1CII;
+procedure TZUGFeRD23Tests.TestReferenceXRechnung1CII;
 begin
 //            string path = @"..\..\..\..\demodata\xRechnung\xRechnung CII.xml";
 //            path = _makeSurePathIsCrossPlatformCompatible(path);
@@ -306,7 +312,7 @@ begin
 //            Assert.AreEqual(desc.LineTotalAmount, 1445.98m);
 end;
 
-procedure TZUGFeRD22Tests.TestElectronicAddress;
+procedure TZUGFeRD23Tests.TestElectronicAddress;
 begin
 //            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
 //            desc.SetSellerElectronicAddress("DE123456789", ElectronicAddressSchemeIdentifiers.GermanyVatNumber);
@@ -314,7 +320,7 @@ begin
 //
 //            MemoryStream ms = new MemoryStream();
 //
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.XRechnung);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.XRechnung);
 //            ms.Seek(0, SeekOrigin.Begin);
 //            Assert.AreEqual(desc.SellerElectronicAddress.Address, "DE123456789");
 //            Assert.AreEqual(desc.SellerElectronicAddress.ElectronicAddressSchemeID, ElectronicAddressSchemeIdentifiers.GermanyVatNumber);
@@ -328,7 +334,7 @@ begin
 //            Assert.AreEqual(loadedInvoice.BuyerElectronicAddress.ElectronicAddressSchemeID, ElectronicAddressSchemeIdentifiers.LuxemburgVatNumber);
 end;
 
-procedure TZUGFeRD22Tests.TestMinimumInvoice;
+procedure TZUGFeRD23Tests.TestMinimumInvoice;
 begin
 //            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
 //            desc.Invoicee = new Party() // this information will not be stored in the output file since it is available in Extended profile only
@@ -346,7 +352,7 @@ begin
 //            desc.TaxBasisAmount = 73; // this information will not be stored in the output file since it is available in Extended profile only
 //            MemoryStream ms = new MemoryStream();
 //
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.Minimum);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.Minimum);
 //            ms.Seek(0, SeekOrigin.Begin);
 //
 //            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
@@ -356,7 +362,7 @@ begin
 //            Assert.AreEqual(loadedInvoice.Seller.SpecifiedLegalOrganization.TradingBusinessName, "");
 end;
 
-procedure TZUGFeRD22Tests.TestInvoiceWithAttachmentXRechnung;
+procedure TZUGFeRD23Tests.TestInvoiceWithAttachmentXRechnung;
 begin
 //            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
 //            string filename = "myrandomdata.bin";
@@ -372,7 +378,7 @@ begin
 //
 //            MemoryStream ms = new MemoryStream();
 //
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.XRechnung);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.XRechnung);
 //            ms.Seek(0, SeekOrigin.Begin);
 //
 //            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
@@ -390,7 +396,7 @@ begin
 //            }
 end;
 
-procedure TZUGFeRD22Tests.TestInvoiceWithAttachmentExtended;
+procedure TZUGFeRD23Tests.TestInvoiceWithAttachmentExtended;
 begin
 //            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
 //            string filename = "myrandomdata.bin";
@@ -406,7 +412,7 @@ begin
 //
 //            MemoryStream ms = new MemoryStream();
 //
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.Extended);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.Extended);
 //            ms.Seek(0, SeekOrigin.Begin);
 //
 //            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
@@ -424,7 +430,7 @@ begin
 //            }
 end;
 
-procedure TZUGFeRD22Tests.TestInvoiceWithAttachmentComfort;
+procedure TZUGFeRD23Tests.TestInvoiceWithAttachmentComfort;
 begin
 //            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
 //            string filename = "myrandomdata.bin";
@@ -440,7 +446,7 @@ begin
 //
 //            MemoryStream ms = new MemoryStream();
 //
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.Comfort);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.Comfort);
 //            ms.Seek(0, SeekOrigin.Begin);
 //
 //            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
@@ -458,7 +464,7 @@ begin
 //            }
 end;
 
-procedure TZUGFeRD22Tests.TestInvoiceWithAttachmentBasic;
+procedure TZUGFeRD23Tests.TestInvoiceWithAttachmentBasic;
 begin
 //            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
 //            string filename = "myrandomdata.bin";
@@ -474,7 +480,7 @@ begin
 //
 //            MemoryStream ms = new MemoryStream();
 //
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.Basic);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.Basic);
 //            ms.Seek(0, SeekOrigin.Begin);
 //
 //            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
@@ -482,13 +488,13 @@ begin
 //            Assert.AreEqual(loadedInvoice.AdditionalReferencedDocuments.Count, 0);
 end;
 
-procedure TZUGFeRD22Tests.TestXRechnung1;
+procedure TZUGFeRD23Tests.TestXRechnung1;
 begin
 //            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
 //
 //            MemoryStream ms = new MemoryStream();
 //
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.XRechnung1);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.XRechnung1);
 //            ms.Seek(0, SeekOrigin.Begin);
 //            Assert.AreEqual(desc.Profile, Profile.XRechnung1);
 //
@@ -496,13 +502,13 @@ begin
 //            Assert.AreEqual(loadedInvoice.Profile, Profile.XRechnung1);
 end;
 
-procedure TZUGFeRD22Tests.TestXRechnung2;
+procedure TZUGFeRD23Tests.TestXRechnung2;
 begin
 //            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
 //
 //            MemoryStream ms = new MemoryStream();
 //
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.XRechnung);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.XRechnung);
 //            Assert.AreEqual(desc.Profile, Profile.XRechnung);
 //
 //            ms.Seek(0, SeekOrigin.Begin);
@@ -510,7 +516,7 @@ begin
 //            Assert.AreEqual(loadedInvoice.Profile, Profile.XRechnung);
 end;
 
-procedure TZUGFeRD22Tests.TestContractReferencedDocumentWithXRechnung;
+procedure TZUGFeRD23Tests.TestContractReferencedDocumentWithXRechnung;
 begin
 //            string uuid = System.Guid.NewGuid().ToString();
 //            DateTime issueDateTime = DateTime.Today;
@@ -525,7 +531,7 @@ begin
 //
 //            MemoryStream ms = new MemoryStream();
 //
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.XRechnung);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.XRechnung);
 //            ms.Seek(0, SeekOrigin.Begin);
 //            Assert.AreEqual(desc.Profile, Profile.XRechnung);
 //
@@ -534,7 +540,21 @@ begin
 //            Assert.AreEqual(loadedInvoice.ContractReferencedDocument.IssueDateTime, null); // explicitly not to be set in XRechnung
 end;
 
-procedure TZUGFeRD22Tests.TestDesignatedProductClassificationWithEmptyListIdAndVersionId;
+procedure TZUGFeRD23Tests.TestCreateInvoice_WithProfileEReporting;
+begin
+//            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
+//
+//            MemoryStream ms = new MemoryStream();
+//
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.EReporting);
+//            Assert.AreEqual(desc.Profile, Profile.EReporting);
+//
+//            ms.Seek(0, SeekOrigin.Begin);
+//            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
+//            Assert.AreEqual(loadedInvoice.Profile, Profile.EReporting);
+end;
+
+procedure TZUGFeRD23Tests.TestDesignatedProductClassificationWithEmptyListIdAndVersionId;
 begin
 // test with empty version id value
 //			InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
@@ -544,7 +564,7 @@ begin
 //
 //			MemoryStream ms = new MemoryStream();
 //
-//			desc.Save(ms, ZUGFeRDVersion.Version22, Profile.XRechnung);
+//			desc.Save(ms, ZUGFeRDVersion.Version23, Profile.XRechnung);
 //
 //			ms.Seek(0, SeekOrigin.Begin);
 //			InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
@@ -555,7 +575,7 @@ begin
 //			Assert.IsNull(desc.TradeLineItems.First().GetDesignatedProductClassifications().First().ListVersionID);
 end;
 
-procedure TZUGFeRD22Tests.TestDesignatedProductClassificationWithEmptyVersionId;
+procedure TZUGFeRD23Tests.TestDesignatedProductClassificationWithEmptyVersionId;
 begin
 //			// test with empty version id value
 //			InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
@@ -567,7 +587,7 @@ begin
 //
 //			MemoryStream ms = new MemoryStream();
 //
-//			desc.Save(ms, ZUGFeRDVersion.Version22, Profile.XRechnung);
+//			desc.Save(ms, ZUGFeRDVersion.Version23, Profile.XRechnung);
 //
 //            ms.Seek(0, SeekOrigin.Begin);
 //			InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
@@ -578,7 +598,7 @@ begin
 //			Assert.IsNull(desc.TradeLineItems.First().GetDesignatedProductClassifications().First().ListVersionID);
 end;
 
-procedure TZUGFeRD22Tests.TestDesignatedProductClassificationWithFullClassification;
+procedure TZUGFeRD23Tests.TestDesignatedProductClassificationWithFullClassification;
 begin
 //            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
 //            desc.TradeLineItems.First().AddDesignatedProductClassification(
@@ -589,7 +609,7 @@ begin
 //
 //            MemoryStream ms = new MemoryStream();
 //
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.XRechnung);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.XRechnung);
 //
 //			// string comparison
 //			ms.Seek(0, SeekOrigin.Begin);
@@ -609,7 +629,7 @@ begin
 //            Assert.AreEqual("List Version ID Value", desc.TradeLineItems.First().GetDesignatedProductClassifications().First().ListVersionID);
 end;
 
-procedure TZUGFeRD22Tests.TestDesignatedProductClassificationWithoutClassCode;
+procedure TZUGFeRD23Tests.TestDesignatedProductClassificationWithoutClassCode;
 begin
 //			// test with empty version id value
 //			InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
@@ -617,7 +637,7 @@ begin
 //
 //			MemoryStream ms = new MemoryStream();
 //
-//			desc.Save(ms, ZUGFeRDVersion.Version22, Profile.XRechnung);
+//			desc.Save(ms, ZUGFeRDVersion.Version23, Profile.XRechnung);
 //
 //			ms.Seek(0, SeekOrigin.Begin);
 //			InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
@@ -628,7 +648,7 @@ begin
 //			Assert.IsNull(desc.TradeLineItems.First().GetDesignatedProductClassifications().First().ListVersionID);
 end;
 
-procedure TZUGFeRD22Tests.TestContractReferencedDocumentWithExtended;
+procedure TZUGFeRD23Tests.TestContractReferencedDocumentWithExtended;
 begin
 //            string uuid = System.Guid.NewGuid().ToString();
 //            DateTime issueDateTime = DateTime.Today;
@@ -643,7 +663,7 @@ begin
 //
 //            MemoryStream ms = new MemoryStream();
 //
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.Extended);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.Extended);
 //            ms.Seek(0, SeekOrigin.Begin);
 //            Assert.AreEqual(desc.Profile, Profile.Extended);
 //
@@ -652,7 +672,7 @@ begin
 //            Assert.AreEqual(loadedInvoice.ContractReferencedDocument.IssueDateTime, issueDateTime); // explicitly not to be set in XRechnung
 end;
 
-procedure TZUGFeRD22Tests.TestTotalRoundingExtended;
+procedure TZUGFeRD23Tests.TestTotalRoundingExtended;
 begin
 //            var uuid = Guid.NewGuid().ToString();
 //            var issueDateTime = DateTime.Today;
@@ -666,21 +686,21 @@ begin
 //            desc.SetTotals(1.99m, 0m, 0m, 0m, 0m, 2m, 0m, 2m, 0.01m);
 //
 //            var msExtended = new MemoryStream();
-//            desc.Save(msExtended, ZUGFeRDVersion.Version22, Profile.Extended);
+//            desc.Save(msExtended, ZUGFeRDVersion.Version23, Profile.Extended);
 //            msExtended.Seek(0, SeekOrigin.Begin);
 //
 //            var loadedInvoice = InvoiceDescriptor.Load(msExtended);
 //            Assert.AreEqual(loadedInvoice.RoundingAmount, 0.01m);
 //
 //            var msBasic = new MemoryStream();
-//            desc.Save(msBasic, ZUGFeRDVersion.Version22);
+//            desc.Save(msBasic, ZUGFeRDVersion.Version23);
 //            msBasic.Seek(0, SeekOrigin.Begin);
 //
 //            loadedInvoice = InvoiceDescriptor.Load(msBasic);
 //            Assert.AreEqual(loadedInvoice.RoundingAmount, 0m);
 end;
 
-procedure TZUGFeRD22Tests.TestTotalRoundingXRechnung;
+procedure TZUGFeRD23Tests.TestTotalRoundingXRechnung;
 begin
 //            var uuid = Guid.NewGuid().ToString();
 //            var issueDateTime = DateTime.Today;
@@ -694,21 +714,21 @@ begin
 //            desc.SetTotals(1.99m, 0m, 0m, 0m, 0m, 2m, 0m, 2m, 0.01m);
 //
 //            var msExtended = new MemoryStream();
-//            desc.Save(msExtended, ZUGFeRDVersion.Version22, Profile.XRechnung);
+//            desc.Save(msExtended, ZUGFeRDVersion.Version23, Profile.XRechnung);
 //            msExtended.Seek(0, SeekOrigin.Begin);
 //
 //            var loadedInvoice = InvoiceDescriptor.Load(msExtended);
 //            Assert.AreEqual(loadedInvoice.RoundingAmount, 0.01m);
 //
 //            var msBasic = new MemoryStream();
-//            desc.Save(msBasic, ZUGFeRDVersion.Version22);
+//            desc.Save(msBasic, ZUGFeRDVersion.Version23);
 //            msBasic.Seek(0, SeekOrigin.Begin);
 //
 //            loadedInvoice = InvoiceDescriptor.Load(msBasic);
 //            Assert.AreEqual(loadedInvoice.RoundingAmount, 0m);
 end;
 
-procedure TZUGFeRD22Tests.TestMissingPropertiesAreNull;
+procedure TZUGFeRD23Tests.TestMissingPropertiesAreNull;
 begin
 //            var path = @"..\..\..\..\demodata\zugferd21\zugferd_2p1_BASIC_Einfach-factur-x.xml";
 //            path = _makeSurePathIsCrossPlatformCompatible(path);
@@ -719,7 +739,7 @@ begin
 //            Assert.IsTrue(invoiceDescriptor.TradeLineItems.TrueForAll(x => x.BillingPeriodEnd == null));
 end;
 
-procedure TZUGFeRD22Tests.TestMissingPropertiesAreEmpty;
+procedure TZUGFeRD23Tests.TestMissingPropertiesAreEmpty;
 begin
 //            var path = @"..\..\..\..\demodata\zugferd21\zugferd_2p1_BASIC_Einfach-factur-x.xml";
 //            path = _makeSurePathIsCrossPlatformCompatible(path);
@@ -729,7 +749,7 @@ begin
 //            Assert.IsTrue(invoiceDescriptor.TradeLineItems.TrueForAll(x => x.ApplicableProductCharacteristics.Count == 0));
 end;
 
-procedure TZUGFeRD22Tests.TestReadTradeLineBillingPeriod;
+procedure TZUGFeRD23Tests.TestReadTradeLineBillingPeriod;
 begin
 //            var path = @"..\..\..\..\demodata\xRechnung\xrechnung with trade line settlement data.xml";
 //            path = _makeSurePathIsCrossPlatformCompatible(path);
@@ -741,7 +761,7 @@ begin
 //            Assert.AreEqual(new DateTime(2021, 01, 31), tradeLineItem.BillingPeriodEnd);
 end;
 
-procedure TZUGFeRD22Tests.TestReadTradeLineLineID;
+procedure TZUGFeRD23Tests.TestReadTradeLineLineID;
 begin
 //            var path = @"..\..\..\..\demodata\xRechnung\xrechnung with trade line settlement data.xml";
 //            path = _makeSurePathIsCrossPlatformCompatible(path);
@@ -751,7 +771,7 @@ begin
 //            Assert.AreEqual("2", tradeLineItem.AssociatedDocument.LineID);
 end;
 
-procedure TZUGFeRD22Tests.TestReadTradeLineProductCharacteristics;
+procedure TZUGFeRD23Tests.TestReadTradeLineProductCharacteristics;
 begin
 //            var path = @"..\..\..\..\demodata\xRechnung\xrechnung with trade line settlement data.xml";
 //            path = _makeSurePathIsCrossPlatformCompatible(path);
@@ -768,7 +788,7 @@ begin
 //            Assert.AreEqual("123", secondProductCharacteristic.Value);
 end;
 
-procedure TZUGFeRD22Tests.TestWriteTradeLineProductCharacteristics;
+procedure TZUGFeRD23Tests.TestWriteTradeLineProductCharacteristics;
 begin
 //            var path = @"..\..\..\..\demodata\xRechnung\xrechnung with trade line settlement empty.xml";
 //            path = _makeSurePathIsCrossPlatformCompatible(path);
@@ -818,8 +838,8 @@ begin
 //
 //            using (var memoryStream = new MemoryStream())
 //            {
-//                originalInvoiceDescriptor.Save(memoryStream, ZUGFeRDVersion.Version22, Profile.Basic);
-//                originalInvoiceDescriptor.Save(@"xrechnung with trade line settlement filled.xml", ZUGFeRDVersion.Version22);
+//                originalInvoiceDescriptor.Save(memoryStream, ZUGFeRDVersion.Version23, Profile.Basic);
+//                originalInvoiceDescriptor.Save(@"xrechnung with trade line settlement filled.xml", ZUGFeRDVersion.Version23);
 //
 //                // Load Invoice and compare to expected
 //                var invoiceDescriptor = InvoiceDescriptor.Load(memoryStream);
@@ -838,7 +858,7 @@ begin
 //            }
 end;
 
-procedure TZUGFeRD22Tests.TestWriteTradeLineBillingPeriod;
+procedure TZUGFeRD23Tests.TestWriteTradeLineBillingPeriod;
 begin
 //            // Read XRechnung
 //            string path = @"..\..\..\..\demodata\xRechnung\xrechnung with trade line settlement empty.xml";
@@ -867,8 +887,8 @@ begin
 //
 //            using (var memoryStream = new MemoryStream())
 //            {
-//                originalInvoiceDescriptor.Save(memoryStream, ZUGFeRDVersion.Version22, Profile.Basic);
-//                originalInvoiceDescriptor.Save(@"xrechnung with trade line settlement filled.xml", ZUGFeRDVersion.Version22);
+//                originalInvoiceDescriptor.Save(memoryStream, ZUGFeRDVersion.Version23, Profile.Basic);
+//                originalInvoiceDescriptor.Save(@"xrechnung with trade line settlement filled.xml", ZUGFeRDVersion.Version23);
 //
 //                // Load Invoice and compare to expected
 //                var invoiceDescriptor = InvoiceDescriptor.Load(memoryStream);
@@ -883,7 +903,7 @@ begin
 //            }
 end;
 
-procedure TZUGFeRD22Tests.TestWriteTradeLineBilledQuantity;
+procedure TZUGFeRD23Tests.TestWriteTradeLineBilledQuantity;
 begin
 //            // Read XRechnung
 //            var path = @"..\..\..\..\demodata\xRechnung\xrechnung with trade line settlement empty.xml";
@@ -905,8 +925,8 @@ begin
 //
 //            using (var memoryStream = new MemoryStream())
 //            {
-//                originalInvoiceDescriptor.Save(memoryStream, ZUGFeRDVersion.Version22, Profile.Basic);
-//                originalInvoiceDescriptor.Save(@"xrechnung with trade line settlement filled.xml", ZUGFeRDVersion.Version22);
+//                originalInvoiceDescriptor.Save(memoryStream, ZUGFeRDVersion.Version23, Profile.Basic);
+//                originalInvoiceDescriptor.Save(@"xrechnung with trade line settlement filled.xml", ZUGFeRDVersion.Version23);
 //
 //                // Load Invoice and compare to expected
 //                var invoiceDescriptor = InvoiceDescriptor.Load(memoryStream);
@@ -914,7 +934,7 @@ begin
 //            }
 end;
 
-procedure TZUGFeRD22Tests.TestWriteTradeLineNetUnitPrice;
+procedure TZUGFeRD23Tests.TestWriteTradeLineNetUnitPrice;
 begin
 //            // Read XRechnung
 //            var path = @"..\..\..\..\demodata\xRechnung\xrechnung with trade line settlement empty.xml";
@@ -935,8 +955,8 @@ begin
 //
 //            using (var memoryStream = new MemoryStream())
 //            {
-//                originalInvoiceDescriptor.Save(memoryStream, ZUGFeRDVersion.Version22, Profile.Basic);
-//                originalInvoiceDescriptor.Save(@"xrechnung with trade line settlement filled.xml", ZUGFeRDVersion.Version22);
+//                originalInvoiceDescriptor.Save(memoryStream, ZUGFeRDVersion.Version23, Profile.Basic);
+//                originalInvoiceDescriptor.Save(@"xrechnung with trade line settlement filled.xml", ZUGFeRDVersion.Version23);
 //
 //                // Load Invoice and compare to expected
 //                var invoiceDescriptor = InvoiceDescriptor.Load(memoryStream);
@@ -944,7 +964,7 @@ begin
 //            }
 end;
 
-procedure TZUGFeRD22Tests.TestWriteTradeLineLineID;
+procedure TZUGFeRD23Tests.TestWriteTradeLineLineID;
 begin
 //            // Read XRechnung
 //            var path = @"..\..\..\..\demodata\xRechnung\xrechnung with trade line settlement empty.xml";
@@ -963,8 +983,8 @@ begin
 //
 //            using (var memoryStream = new MemoryStream())
 //            {
-//                originalInvoiceDescriptor.Save(memoryStream, ZUGFeRDVersion.Version22, Profile.Basic);
-//                originalInvoiceDescriptor.Save(@"xrechnung with trade line settlement filled.xml", ZUGFeRDVersion.Version22);
+//                originalInvoiceDescriptor.Save(memoryStream, ZUGFeRDVersion.Version23, Profile.Basic);
+//                originalInvoiceDescriptor.Save(@"xrechnung with trade line settlement filled.xml", ZUGFeRDVersion.Version23);
 //
 //                // Load Invoice and compare to expected
 //                var invoiceDescriptor = InvoiceDescriptor.Load(@"xrechnung with trade line settlement filled.xml");
@@ -978,7 +998,7 @@ begin
 end;
 
 // BR-DE-13
-procedure TZUGFeRD22Tests.TestLoadingSepaPreNotification;
+procedure TZUGFeRD23Tests.TestLoadingSepaPreNotification;
 begin
 //            string path = @"..\..\..\..\demodata\zugferd21\zugferd_2p1_EN16931_SEPA_Prenotification.xml";
 //            path = _makeSurePathIsCrossPlatformCompatible(path);
@@ -995,7 +1015,7 @@ begin
 //            Assert.AreEqual("Der Betrag in Höhe von EUR 529,87 wird am 20.03.2018 von Ihrem Konto per SEPA-Lastschrift eingezogen.", invoiceDescriptor.PaymentTerms.Description.Trim());
 end;
 
-procedure TZUGFeRD22Tests.TestStoringSepaPreNotification;
+procedure TZUGFeRD23Tests.TestStoringSepaPreNotification;
 begin
 //            var d = new InvoiceDescriptor();
 //            d.Type = InvoiceType.Invoice;
@@ -1085,7 +1105,7 @@ begin
 //
 //            using (var stream = new MemoryStream())
 //            {
-//                d.Save(stream, ZUGFeRDVersion.Version22, Profile.Comfort);
+//                d.Save(stream, ZUGFeRDVersion.Version23, Profile.Comfort);
 //
 //                stream.Seek(0, SeekOrigin.Begin);
 //
@@ -1100,7 +1120,7 @@ begin
 //            }
 end;
 
-procedure TZUGFeRD22Tests.TestValidTaxTypes;
+procedure TZUGFeRD23Tests.TestValidTaxTypes;
 begin
 //            InvoiceDescriptor invoice = InvoiceProvider.CreateInvoice();
 //            invoice.TradeLineItems.ForEach(i => i.TaxType = TaxTypes.VAT);
@@ -1108,7 +1128,7 @@ begin
 //            MemoryStream ms = new MemoryStream();
 //            try
 //            {
-//                invoice.Save(ms, version: ZUGFeRDVersion.Version22, profile: Profile.Basic);
+//                invoice.Save(ms, version: ZUGFeRDVersion.Version23, profile: Profile.Basic);
 //            }
 //            catch (UnsupportedException)
 //            {
@@ -1117,7 +1137,7 @@ begin
 //
 //            try
 //            {
-//                invoice.Save(ms, version: ZUGFeRDVersion.Version22, profile: Profile.BasicWL);
+//                invoice.Save(ms, version: ZUGFeRDVersion.Version23, profile: Profile.BasicWL);
 //            }
 //            catch (UnsupportedException)
 //            {
@@ -1126,7 +1146,7 @@ begin
 //
 //            try
 //            {
-//                invoice.Save(ms, version: ZUGFeRDVersion.Version22, profile: Profile.Comfort);
+//                invoice.Save(ms, version: ZUGFeRDVersion.Version23, profile: Profile.Comfort);
 //            }
 //            catch (UnsupportedException)
 //            {
@@ -1135,7 +1155,7 @@ begin
 //
 //            try
 //            {
-//                invoice.Save(ms, version: ZUGFeRDVersion.Version22, profile: Profile.Extended);
+//                invoice.Save(ms, version: ZUGFeRDVersion.Version23, profile: Profile.Extended);
 //            }
 //            catch (UnsupportedException)
 //            {
@@ -1144,7 +1164,7 @@ begin
 //
 //            try
 //            {
-//                invoice.Save(ms, version: ZUGFeRDVersion.Version22, profile: Profile.XRechnung1);
+//                invoice.Save(ms, version: ZUGFeRDVersion.Version23, profile: Profile.XRechnung1);
 //            }
 //            catch (UnsupportedException)
 //            {
@@ -1154,7 +1174,7 @@ begin
 //            invoice.TradeLineItems.ForEach(i => i.TaxType = TaxTypes.AAA);
 //            try
 //            {
-//                invoice.Save(ms, version: ZUGFeRDVersion.Version22, profile: Profile.XRechnung);
+//                invoice.Save(ms, version: ZUGFeRDVersion.Version23, profile: Profile.XRechnung);
 //            }
 //            catch (UnsupportedException)
 //            {
@@ -1165,7 +1185,7 @@ begin
 //            invoice.TradeLineItems.ForEach(i => i.TaxType = TaxTypes.AAA);
 //            try
 //            {
-//                invoice.Save(ms, version: ZUGFeRDVersion.Version22, profile: Profile.Extended);
+//                invoice.Save(ms, version: ZUGFeRDVersion.Version23, profile: Profile.Extended);
 //            }
 //            catch (UnsupportedException)
 //            {
@@ -1173,7 +1193,7 @@ begin
 //            }
 end;
 
-procedure TZUGFeRD22Tests.TestInvalidTaxTypes;
+procedure TZUGFeRD23Tests.TestInvalidTaxTypes;
 begin
 //            InvoiceDescriptor invoice = InvoiceProvider.CreateInvoice();
 //            invoice.TradeLineItems.ForEach(i => i.TaxType = TaxTypes.AAA);
@@ -1181,7 +1201,7 @@ begin
 //            MemoryStream ms = new MemoryStream();
 //            try
 //            {
-//                invoice.Save(ms, version: ZUGFeRDVersion.Version22, profile: Profile.Basic);
+//                invoice.Save(ms, version: ZUGFeRDVersion.Version23, profile: Profile.Basic);
 //            }
 //            catch (UnsupportedException)
 //            {
@@ -1190,7 +1210,7 @@ begin
 //
 //            try
 //            {
-//                invoice.Save(ms, version: ZUGFeRDVersion.Version22, profile: Profile.BasicWL);
+//                invoice.Save(ms, version: ZUGFeRDVersion.Version23, profile: Profile.BasicWL);
 //            }
 //            catch (UnsupportedException)
 //            {
@@ -1199,7 +1219,7 @@ begin
 //
 //            try
 //            {
-//                invoice.Save(ms, version: ZUGFeRDVersion.Version22, profile: Profile.Comfort);
+//                invoice.Save(ms, version: ZUGFeRDVersion.Version23, profile: Profile.Comfort);
 //            }
 //            catch (UnsupportedException)
 //            {
@@ -1208,7 +1228,7 @@ begin
 //
 //            try
 //            {
-//                invoice.Save(ms, version: ZUGFeRDVersion.Version22, profile: Profile.Comfort);
+//                invoice.Save(ms, version: ZUGFeRDVersion.Version23, profile: Profile.Comfort);
 //            }
 //            catch (UnsupportedException)
 //            {
@@ -1219,7 +1239,7 @@ begin
 //
 //            try
 //            {
-//                invoice.Save(ms, version: ZUGFeRDVersion.Version22, profile: Profile.XRechnung1);
+//                invoice.Save(ms, version: ZUGFeRDVersion.Version23, profile: Profile.XRechnung1);
 //            }
 //            catch (UnsupportedException)
 //            {
@@ -1228,7 +1248,7 @@ begin
 //
 //            try
 //            {
-//                invoice.Save(ms, version: ZUGFeRDVersion.Version22, profile: Profile.XRechnung);
+//                invoice.Save(ms, version: ZUGFeRDVersion.Version23, profile: Profile.XRechnung);
 //            }
 //            catch (UnsupportedException)
 //            {
@@ -1236,7 +1256,7 @@ begin
 //            }
 end;
 
-procedure TZUGFeRD22Tests.ShouldLoadCiiWithoutQdtNamespace;
+procedure TZUGFeRD23Tests.ShouldLoadCiiWithoutQdtNamespace;
 begin
 // string path = @"..\..\..\..\demodata\xRechnung\xRechnung CII - without qdt.xml";
 //            path = _makeSurePathIsCrossPlatformCompatible(path);
@@ -1251,7 +1271,7 @@ begin
 //
 end;
 
-procedure TZUGFeRD22Tests.TestAdditionalReferencedDocument;
+procedure TZUGFeRD23Tests.TestAdditionalReferencedDocument;
 begin
 //            string uuid = Guid.NewGuid().ToString();
 //            DateTime issueDateTime = DateTime.Today;
@@ -1260,7 +1280,7 @@ begin
 //            desc.AddAdditionalReferencedDocument(uuid, AdditionalReferencedDocumentTypeCode.Unknown, issueDateTime, "Additional Test Document");
 //
 //            MemoryStream ms = new MemoryStream();
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.Extended);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.Extended);
 //
 //            ms.Seek(0, SeekOrigin.Begin);
 //            StreamReader reader = new StreamReader(ms);
@@ -1273,7 +1293,7 @@ begin
 //            Assert.AreEqual(issueDateTime, loadedInvoice.AdditionalReferencedDocuments[0].IssueDateTime);
 end;
 
-procedure TZUGFeRD22Tests.TestPartyExtensions;
+procedure TZUGFeRD23Tests.TestPartyExtensions;
 begin
 //            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
 //            desc.Invoicee = new Party() // this information will not be stored in the output file since it is available in Extended profile only
@@ -1289,7 +1309,7 @@ begin
 //            };
 //            MemoryStream ms = new MemoryStream();
 //
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.Extended);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.Extended);
 //            ms.Seek(0, SeekOrigin.Begin);
 //
 //            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
@@ -1303,7 +1323,7 @@ begin
 //            Assert.AreEqual(CountryCodes.DE, loadedInvoice.Invoicee.Country);
 end;
 
-procedure TZUGFeRD22Tests.TestMimetypeOfEmbeddedAttachment;
+procedure TZUGFeRD23Tests.TestMimetypeOfEmbeddedAttachment;
 begin
 //            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
 //            string filename1 = "myrandomdata.pdf";
@@ -1330,7 +1350,7 @@ begin
 //
 //            MemoryStream ms = new MemoryStream();
 //
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.Extended);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.Extended);
 //            ms.Seek(0, SeekOrigin.Begin);
 //
 //            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
@@ -1355,7 +1375,7 @@ begin
 //            }
 end;
 
-procedure TZUGFeRD22Tests.TestOrderInformation;
+procedure TZUGFeRD23Tests.TestOrderInformation;
 begin
 //            string path = @"..\..\..\..\demodata\zugferd21\zugferd_2p1_EXTENDED_Warenrechnung-factur-x.xml";
 //            path = _makeSurePathIsCrossPlatformCompatible(path);
@@ -1369,9 +1389,9 @@ begin
 //            s.Close();
 //
 //            MemoryStream ms = new MemoryStream();
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.Extended);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.Extended);
 //
-//            desc.Save("..\\output.xml", ZUGFeRDVersion.Version22, Profile.Extended);
+//            desc.Save("..\\output.xml", ZUGFeRDVersion.Version23, Profile.Extended);
 //
 //            ms.Seek(0, SeekOrigin.Begin);
 //            StreamReader reader = new StreamReader(ms);
@@ -1384,7 +1404,7 @@ begin
 //
 end;
 
-procedure TZUGFeRD22Tests.TestSellerContact;
+procedure TZUGFeRD23Tests.TestSellerContact;
 begin
 //            InvoiceDescriptor invoice = InvoiceProvider.CreateInvoice();
 //
@@ -1409,7 +1429,7 @@ begin
 //            invoice.SetSellerContact(SELLER_CONTACT, ORG_UNIT, EMAIL_ADDRESS, PHONE_NO, FAX_NO);
 //
 //            MemoryStream ms = new MemoryStream();
-//            invoice.Save(ms, ZUGFeRDVersion.Version22, Profile.Extended);
+//            invoice.Save(ms, ZUGFeRDVersion.Version23, Profile.Extended);
 //            ms.Position = 0;
 //
 //            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
@@ -1423,7 +1443,7 @@ begin
 //            Assert.AreEqual(loadedInvoice.Seller.Description, description);
 end;
 
-procedure TZUGFeRD22Tests.TestSellerDescription;
+procedure TZUGFeRD23Tests.TestSellerDescription;
 begin
 //            InvoiceDescriptor invoice = InvoiceProvider.CreateInvoice();
 //
@@ -1441,7 +1461,7 @@ begin
 //                              );
 //
 //            MemoryStream ms = new MemoryStream();
-//            invoice.Save(ms, ZUGFeRDVersion.Version22, Profile.Extended);
+//            invoice.Save(ms, ZUGFeRDVersion.Version23, Profile.Extended);
 //            ms.Position = 0;
 //
 //            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
@@ -1450,7 +1470,7 @@ begin
 //        } // !TestSellerDescription()
 end;
 
-procedure TZUGFeRD22Tests.TestSellerOrderReferencedDocument;
+procedure TZUGFeRD23Tests.TestSellerOrderReferencedDocument;
 begin
 //            string uuid = System.Guid.NewGuid().ToString();
 //            DateTime issueDateTime = DateTime.Today;
@@ -1463,7 +1483,7 @@ begin
 //            };
 //
 //            MemoryStream ms = new MemoryStream();
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.Extended);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.Extended);
 //
 //            ms.Seek(0, SeekOrigin.Begin);
 //            StreamReader reader = new StreamReader(ms);
@@ -1477,14 +1497,14 @@ begin
 //            Assert.AreEqual(issueDateTime, loadedInvoice.SellerOrderReferencedDocument.IssueDateTime);
 end;
 
-procedure TZUGFeRD22Tests.TestSpecifiedTradeAllowanceCharge;
+procedure TZUGFeRD23Tests.TestSpecifiedTradeAllowanceCharge;
 begin
 //  InvoiceDescriptor invoice = InvoiceProvider.CreateInvoice();
 //
 //  invoice.TradeLineItems[0].AddSpecifiedTradeAllowanceCharge(true, CurrencyCodes.EUR, 198m, 19.8m, 10m, "Discount 10%");
 //
 //  MemoryStream ms = new MemoryStream();
-//  invoice.Save(ms, ZUGFeRDVersion.Version22, Profile.Extended);
+//  invoice.Save(ms, ZUGFeRDVersion.Version23, Profile.Extended);
 //  ms.Position = 0;
 //
 //  InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
@@ -1499,13 +1519,13 @@ begin
 //  Assert.AreEqual(allowanceCharge.Reason, "Discount 10%");
 end;
 
-procedure TZUGFeRD22Tests.TestWriteAndReadBusinessProcess;
+procedure TZUGFeRD23Tests.TestWriteAndReadBusinessProcess;
 begin
 //            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
 //            desc.BusinessProcess = "A1";
 //
 //            MemoryStream ms = new MemoryStream();
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.Extended);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.Extended);
 //            ms.Seek(0, SeekOrigin.Begin);
 //            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
 //
@@ -1515,7 +1535,7 @@ end;
 /// <summary>
 /// This test ensure that Writer and Reader uses the same path and namespace for elements
 /// </summary>
-procedure TZUGFeRD22Tests.TestWriteAndReadExtended;
+procedure TZUGFeRD23Tests.TestWriteAndReadExtended;
 begin
 //            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
 //            string filename2 = "myrandomdata.bin";
@@ -1631,14 +1651,14 @@ begin
 //
 //
 //            MemoryStream ms = new MemoryStream();
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.Extended);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.Extended);
 //
 //            ms.Seek(0, SeekOrigin.Begin);
 //            StreamReader reader = new StreamReader(ms);
 //            string text = reader.ReadToEnd();
 //
 //            ms.Seek(0, SeekOrigin.Begin);
-//            Assert.AreEqual(InvoiceDescriptor.GetVersion(ms), ZUGFeRDVersion.Version22);
+//            Assert.AreEqual(InvoiceDescriptor.GetVersion(ms), ZUGFeRDVersion.Version23);
 //
 //            ms.Seek(0, SeekOrigin.Begin);
 //            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
@@ -1853,7 +1873,7 @@ end;
 /// <summary>
 /// This test ensure that BIC won't be written if empty
 /// </summary>
-procedure TZUGFeRD22Tests.TestFinancialInstitutionBICEmpty;
+procedure TZUGFeRD23Tests.TestFinancialInstitutionBICEmpty;
 begin
 //            string uuid = System.Guid.NewGuid().ToString();
 //            DateTime issueDateTime = DateTime.Today;
@@ -1865,7 +1885,7 @@ begin
 //            desc.AddDebitorFinancialAccount("DE02120300000000202051", "");
 //
 //            MemoryStream ms = new MemoryStream();
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.Comfort);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.Comfort);
 //
 //            ms.Seek(0, SeekOrigin.Begin);
 //            StreamReader reader = new StreamReader(ms);
@@ -1888,7 +1908,7 @@ begin
 //            Assert.AreEqual(debitorFinancialInstitutions.Count, 0);
 end;
 
-procedure TZUGFeRD22Tests.TestAltteilSteuer;
+procedure TZUGFeRD23Tests.TestAltteilSteuer;
 begin
 //            InvoiceDescriptor desc = InvoiceDescriptor.CreateInvoice("112233", new DateTime(2021, 04, 23), CurrencyCodes.EUR);
 //            desc.Notes.Clear();
@@ -1936,14 +1956,52 @@ begin
 //
 //            MemoryStream ms = new MemoryStream();
 //
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.XRechnung);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.XRechnung);
 //            ms.Seek(0, SeekOrigin.Begin);
 //
 //            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
 //            Assert.AreEqual(loadedInvoice.Invoicee, null);
 end;
 
-procedure TZUGFeRD22Tests.TestTradeAllowanceChargeWithoutExplicitPercentage;
+procedure TZUGFeRD23Tests.TestBuyerOrderReferencedDocumentWithExtended;
+begin
+//            string uuid = System.Guid.NewGuid().ToString();
+//            DateTime orderDate = DateTime.Today;
+//
+//            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
+//            desc.SetBuyerOrderReferenceDocument(uuid, orderDate);
+//
+//            MemoryStream ms = new MemoryStream();
+//
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.Extended);
+//            ms.Seek(0, SeekOrigin.Begin);
+//            Assert.AreEqual(desc.Profile, Profile.Extended);
+//
+//            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
+//            Assert.AreEqual(loadedInvoice.OrderNo, uuid);
+//            Assert.AreEqual(loadedInvoice.OrderDate, orderDate); // explicitly not to be set in XRechnung, see separate test case
+end;
+
+procedure TZUGFeRD23Tests.TestBuyerOrderReferencedDocumentWithXRechnung;
+begin
+//            string uuid = System.Guid.NewGuid().ToString();
+//            DateTime orderDate = DateTime.Today;
+//
+//            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
+//            desc.SetBuyerOrderReferenceDocument(uuid, orderDate);
+//
+//            MemoryStream ms = new MemoryStream();
+//
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.XRechnung);
+//            ms.Seek(0, SeekOrigin.Begin);
+//            Assert.AreEqual(desc.Profile, Profile.XRechnung);
+//
+//            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
+//            Assert.AreEqual(loadedInvoice.OrderNo, uuid);
+//            Assert.AreEqual(loadedInvoice.OrderDate, null); // explicitly not to be set in XRechnung, see separate test case
+end;
+
+procedure TZUGFeRD23Tests.TestTradeAllowanceChargeWithoutExplicitPercentage;
 begin
 //            InvoiceDescriptor invoice = InvoiceProvider.CreateInvoice();
 //
@@ -1951,7 +2009,7 @@ begin
 //            invoice.AddTradeAllowanceCharge(true, 100, CurrencyCodes.EUR, 10, "", TaxTypes.VAT, TaxCategoryCodes.S, 19);
 //
 //            MemoryStream ms = new MemoryStream();
-//            invoice.Save(ms, ZUGFeRDVersion.Version22, Profile.Extended);
+//            invoice.Save(ms, ZUGFeRDVersion.Version23, Profile.Extended);
 //            ms.Position = 0;
 //
 //            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
@@ -1965,7 +2023,7 @@ end;
 
 // !TestTradeAllowanceChargeWithoutExplicitPercentage()
 
-procedure TZUGFeRD22Tests.TestTradeAllowanceChargeWithExplicitPercentage;
+procedure TZUGFeRD23Tests.TestTradeAllowanceChargeWithExplicitPercentage;
 begin
 //            InvoiceDescriptor invoice = InvoiceProvider.CreateInvoice();
 //
@@ -1973,7 +2031,7 @@ begin
 //            invoice.AddTradeAllowanceCharge(true, 100, CurrencyCodes.EUR, 10, 12, "", TaxTypes.VAT, TaxCategoryCodes.S, 19);
 //
 //            MemoryStream ms = new MemoryStream();
-//            invoice.Save(ms, ZUGFeRDVersion.Version22, Profile.Extended);
+//            invoice.Save(ms, ZUGFeRDVersion.Version23, Profile.Extended);
 //            ms.Position = 0;
 //            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
 //            IList<TradeAllowanceCharge> allowanceCharges = loadedInvoice.GetTradeAllowanceCharges();
@@ -1984,7 +2042,7 @@ begin
 //            Assert.AreEqual(allowanceCharges[0].ChargePercentage, 12);
 end;// !TestTradeAllowanceChargeWithExplicitPercentage()
 
-procedure TZUGFeRD22Tests.TestReferenceXRechnung21UBL;
+procedure TZUGFeRD23Tests.TestReferenceXRechnung21UBL;
 begin
 //            string path = @"..\..\..\..\demodata\xRechnung\xRechnung UBL.xml";
 //            path = _makeSurePathIsCrossPlatformCompatible(path);
@@ -2064,7 +2122,7 @@ begin
 //            Assert.AreEqual(desc.PaymentMeans.TypeCode, (PaymentMeansTypeCodes)30);
 end;// !TestReferenceXRechnung21UBL()
 
-procedure TZUGFeRD22Tests.TestWriteAndReadDespatchAdviceDocumentReferenceXRechnung;
+procedure TZUGFeRD23Tests.TestWriteAndReadDespatchAdviceDocumentReferenceXRechnung;
 begin
 //            InvoiceDescriptor desc = this.InvoiceProvider.CreateInvoice();
 //            string despatchAdviceNo = "421567982";
@@ -2072,7 +2130,7 @@ begin
 //            desc.SetDespatchAdviceReferencedDocument(despatchAdviceNo, despatchAdviceDate);
 //
 //            MemoryStream ms = new MemoryStream();
-//            desc.Save(ms, ZUGFeRDVersion.Version22, Profile.XRechnung);
+//            desc.Save(ms, ZUGFeRDVersion.Version23, Profile.XRechnung);
 //            ms.Seek(0, SeekOrigin.Begin);
 //            InvoiceDescriptor loadedInvoice = InvoiceDescriptor.Load(ms);
 //

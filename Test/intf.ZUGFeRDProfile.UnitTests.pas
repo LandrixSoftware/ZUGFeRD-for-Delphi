@@ -84,17 +84,17 @@ begin
   Assert.AreEqual('urn:cen.eu:en16931:2017',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.Comfort, TZUGFeRDVersion.Version20));
   Assert.AreEqual('urn:cen.eu:en16931:2017#conformant#urn:zugferd.de:2p0:extended',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.Extended, TZUGFeRDVersion.Version20));
 
-  Assert.AreEqual('urn:factur-x.eu:1p0:minimum',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.Minimum, TZUGFeRDVersion.Version22));
-  Assert.AreEqual('urn:cen.eu:en16931:2017#compliant#urn:factur-x.eu:1p0:basic',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.Basic, TZUGFeRDVersion.Version22));
-  Assert.AreEqual('urn:factur-x.eu:1p0:basicwl',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.BasicWL, TZUGFeRDVersion.Version22));
-  Assert.AreEqual('urn:cen.eu:en16931:2017',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.Comfort, TZUGFeRDVersion.Version22));
-  Assert.AreEqual('urn:cen.eu:en16931:2017#conformant#urn:factur-x.eu:1p0:extended',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.Extended, TZUGFeRDVersion.Version22));
-  Assert.AreEqual('urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_1.2',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.XRechnung1, TZUGFeRDVersion.Version22));
+  Assert.AreEqual('urn:factur-x.eu:1p0:minimum',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.Minimum, TZUGFeRDVersion.Version23));
+  Assert.AreEqual('urn:cen.eu:en16931:2017#compliant#urn:factur-x.eu:1p0:basic',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.Basic, TZUGFeRDVersion.Version23));
+  Assert.AreEqual('urn:factur-x.eu:1p0:basicwl',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.BasicWL, TZUGFeRDVersion.Version23));
+  Assert.AreEqual('urn:cen.eu:en16931:2017',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.Comfort, TZUGFeRDVersion.Version23));
+  Assert.AreEqual('urn:cen.eu:en16931:2017#conformant#urn:factur-x.eu:1p0:extended',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.Extended, TZUGFeRDVersion.Version23));
+  Assert.AreEqual('urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_1.2',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.XRechnung1, TZUGFeRDVersion.Version23));
   if Now >= EncodeDate(2024, 2, 1) then
-    Assert.AreEqual('urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.XRechnung, TZUGFeRDVersion.Version22))
+    Assert.AreEqual('urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.XRechnung, TZUGFeRDVersion.Version23))
           else
-    Assert.AreEqual('urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.XRechnung, TZUGFeRDVersion.Version22));
-  Assert.AreEqual('urn.cpro.gouv.fr:1p0:ereporting',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.EReporting, TZUGFeRDVersion.Version22));
+    Assert.AreEqual('urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.XRechnung, TZUGFeRDVersion.Version23));
+  Assert.AreEqual('urn.cpro.gouv.fr:1p0:ereporting',TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.EReporting, TZUGFeRDVersion.Version23));
 end;
 
 initialization

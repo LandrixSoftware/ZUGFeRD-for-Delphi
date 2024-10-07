@@ -83,7 +83,7 @@ uses
   intf.ZUGFeRDInvoiceDescriptorReader,intf.ZUGFeRDInvoiceDescriptorWriter,
   intf.ZUGFeRDInvoiceDescriptor1Reader,intf.ZUGFeRDInvoiceDescriptor1Writer,intf.ZUGFeRD10Tests.UnitTests,
   intf.ZUGFeRDInvoiceDescriptor20Reader,intf.ZUGFeRDInvoiceDescriptor20Writer,intf.ZUGFeRD20Tests.UnitTests,
-  intf.ZUGFeRDInvoiceDescriptor22CIIReader,intf.ZUGFeRDInvoiceDescriptor22Writer,intf.ZUGFeRD22Tests.UnitTests,
+  intf.ZUGFeRDInvoiceDescriptor23CIIReader,intf.ZUGFeRDInvoiceDescriptor23Writer,intf.ZUGFeRD23Tests.UnitTests,
   intf.ZUGFeRDInvoiceDescriptor22UBLReader,
   intf.XRechnungUBLTests.UnitTests,
   intf.ZUGFeRDBaseTests.UnitTests

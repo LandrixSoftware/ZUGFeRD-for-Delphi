@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.}
 
-unit intf.ZUGFeRDInvoiceDescriptor22Writer;
+unit intf.ZUGFeRDInvoiceDescriptor23Writer;
 
 interface
 
@@ -69,7 +69,7 @@ uses
   ;
 
 type
-  TZUGFeRDInvoiceDescriptor22Writer = class(TZUGFeRDInvoiceDescriptorWriter)
+  TZUGFeRDInvoiceDescriptor23Writer = class(TZUGFeRDInvoiceDescriptorWriter)
   public
     /// <summary>
     /// This function is implemented in class InvoiceDescriptor22Writer.
@@ -88,13 +88,13 @@ type
 implementation
 
 uses
-  intf.ZUGFeRDInvoiceDescriptor22CIIWriter,
+  intf.ZUGFeRDInvoiceDescriptor23CIIWriter,
   intf.ZUGFeRDInvoiceDescriptor22UBLWriter
   ;
 
-{ TZUGFeRDInvoiceDescriptor22Writer }
+{ TZUGFeRDInvoiceDescriptor23Writer }
 
-procedure TZUGFeRDInvoiceDescriptor22Writer.Save(
+procedure TZUGFeRDInvoiceDescriptor23Writer.Save(
   _descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream;
   _format : TZUGFeRDFormats = TZUGFeRDFormats.CII);
 var
@@ -106,7 +106,7 @@ begin
   if _format = UBL then
     _writer := TZUGFeRDInvoiceDescriptor22UBLWriter.Create
   else
-    _writer := TZUGFeRDInvoiceDescriptor22CIIWriter.Create;
+    _writer := TZUGFeRDInvoiceDescriptor23CIIWriter.Create;
   try
     _writer.Save(_descriptor, _stream, _format);
   finally
@@ -114,7 +114,7 @@ begin
   end;
 end;
 
-function TZUGFeRDInvoiceDescriptor22Writer.Validate(
+function TZUGFeRDInvoiceDescriptor23Writer.Validate(
   _descriptor: TZUGFeRDInvoiceDescriptor; _throwExceptions: Boolean): Boolean;
 begin
   Result := false;

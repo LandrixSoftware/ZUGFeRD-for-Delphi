@@ -29,7 +29,9 @@ type
   private
     FLineID: string;
   public
-    //Referenz zur Bestellposition BT-132
+    /// <summary>
+    /// Reference to the order position BT-132
+    /// </summary>
     property LineID: string read FLineID write FLineID;
   end;
 

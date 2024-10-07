@@ -51,7 +51,7 @@ type
     /// </summary>
     property ID: TZUGFeRDGlobalID read FID write FID;
     /// <summary>
-    /// Trading business name
+    /// A name by which the party is known, other than party name (also known as Business name).
     /// </summary>
     property TradingBusinessName: string read FTradingBusinessName write FTradingBusinessName;
   end;

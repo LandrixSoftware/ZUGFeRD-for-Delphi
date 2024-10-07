@@ -199,8 +199,9 @@ type
       deliveryNoteDate: IZUGFeRDNullableParam<TDateTime>);
 
     /// <summary>
-		/// Sets a purchase order line reference. BT-132
 		/// Please note that XRechnung/ FacturX allows a maximum of one such reference
+    /// and will only output the referenced order line id
+    /// but not issuer assigned id and date
 		/// </summary>
     procedure SetOrderReferencedDocument(orderReferencedId: string;
       orderReferencedDate: IZUGFeRDNullableParam<TDateTime>);

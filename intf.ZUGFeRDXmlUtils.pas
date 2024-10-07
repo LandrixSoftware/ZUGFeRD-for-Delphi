@@ -162,9 +162,10 @@ begin
   if dateNode.Attributes.getNamedItem('format').text <> '' then
     format := dateNode.Attributes.getNamedItem('format').text;
 
-  rawValue := dateNode.text;
+  // to protect from space and /r /n characters
+  rawValue := Trim(dateNode.text);
 
-  if (Trim(rawValue) = '') then // we have to deal with real-life ZUGFeRD files :(
+  if (rawValue = '') then // we have to deal with real-life ZUGFeRD files :(
     exit;
 
   if (format='102') then

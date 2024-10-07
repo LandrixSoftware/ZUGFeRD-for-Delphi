@@ -19,7 +19,9 @@ unit intf.ZUGFeRDInvoiceReferencedDocument;
 
 interface
 
-uses intf.ZUGFeRDBaseReferencedDocument;
+uses
+  Contnrs,
+  intf.ZUGFeRDBaseReferencedDocument;
 
 type
   /// <summary>
@@ -29,6 +31,34 @@ type
   public
   end;
 
+  TZUGFeRDInvoiceReferencedDocumentObjectList = class(TObjectList)
+  protected
+    function GetItem(Index: Integer): TZUGFeRDInvoiceReferencedDocument;
+    procedure SetItem(Index: Integer; AItem: TZUGFeRDInvoiceReferencedDocument);
+  public
+	  function  Extract(Item: TObject): TZUGFeRDInvoiceReferencedDocument;
+	  function  First: TZUGFeRDInvoiceReferencedDocument;
+	  function  Last: TZUGFeRDInvoiceReferencedDocument;
+	  property  Items[Index: Integer]: TZUGFeRDInvoiceReferencedDocument read GetItem write SetItem; default;
+  end;
+
 implementation
+
+{ TZUGFeRDInvoiceReferencedDocumentObjectList }
+
+function TZUGFeRDInvoiceReferencedDocumentObjectList.Extract(Item: TObject): TZUGFeRDInvoiceReferencedDocument;
+begin Result := TZUGFeRDInvoiceReferencedDocument(inherited Extract(Item)); end;
+
+function TZUGFeRDInvoiceReferencedDocumentObjectList.First: TZUGFeRDInvoiceReferencedDocument;
+begin if Count = 0 then Result := nil else Result := TZUGFeRDInvoiceReferencedDocument(inherited First); end;
+
+function TZUGFeRDInvoiceReferencedDocumentObjectList.GetItem(Index: Integer): TZUGFeRDInvoiceReferencedDocument;
+begin Result := TZUGFeRDInvoiceReferencedDocument(inherited Items[Index]); end;
+
+function TZUGFeRDInvoiceReferencedDocumentObjectList.Last: TZUGFeRDInvoiceReferencedDocument;
+begin if Count = 0 then Result := nil else Result := TZUGFeRDInvoiceReferencedDocument(inherited Last); end;
+
+procedure TZUGFeRDInvoiceReferencedDocumentObjectList.SetItem(Index: Integer; AItem: TZUGFeRDInvoiceReferencedDocument);
+begin inherited Items[Index] := AItem; end;
 
 end.

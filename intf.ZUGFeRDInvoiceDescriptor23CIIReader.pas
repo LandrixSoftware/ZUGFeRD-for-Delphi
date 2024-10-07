@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.}
 
-unit intf.ZUGFeRDInvoiceDescriptor22CIIReader;
+unit intf.ZUGFeRDInvoiceDescriptor23CIIReader;
 
 interface
 
@@ -69,7 +69,7 @@ uses
   ;
 
 type
-  TZUGFeRDInvoiceDescriptor22CIIReader = class(TZUGFeRDInvoiceDescriptorReader)
+  TZUGFeRDInvoiceDescriptor23CIIReader = class(TZUGFeRDInvoiceDescriptorReader)
   private
     function GetValidURIs : TArray<string>;
     function _parseTradeLineItem(tradeLineItem : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDTradeLineItem;
@@ -95,9 +95,9 @@ type
 
 implementation
 
-{ TZUGFeRDInvoiceDescriptor22CIIReader }
+{ TZUGFeRDInvoiceDescriptor23CIIReader }
 
-function TZUGFeRDInvoiceDescriptor22CIIReader.GetValidURIs : TArray<string>;
+function TZUGFeRDInvoiceDescriptor23CIIReader.GetValidURIs : TArray<string>;
 begin
   Result := TArray<string>.Create(
     'urn:cen.eu:en16931:2017#conformant#urn:factur-x.eu:1p0:extended', // Factur-X 1.03 EXTENDED
@@ -115,19 +115,19 @@ begin
   );
 end;
 
-function TZUGFeRDInvoiceDescriptor22CIIReader.IsReadableByThisReaderVersion(
+function TZUGFeRDInvoiceDescriptor23CIIReader.IsReadableByThisReaderVersion(
   stream: TStream): Boolean;
 begin
   Result := IsReadableByThisReaderVersion(stream, GetValidURIs);
 end;
 
-function TZUGFeRDInvoiceDescriptor22CIIReader.IsReadableByThisReaderVersion(
+function TZUGFeRDInvoiceDescriptor23CIIReader.IsReadableByThisReaderVersion(
   xmldocument: IXMLDocument): Boolean;
 begin
   Result := IsReadableByThisReaderVersion(xmldocument, GetValidURIs);
 end;
 
-function TZUGFeRDInvoiceDescriptor22CIIReader.Load(stream: TStream): TZUGFeRDInvoiceDescriptor;
+function TZUGFeRDInvoiceDescriptor23CIIReader.Load(stream: TStream): TZUGFeRDInvoiceDescriptor;
 var
   xml : IXMLDocument;
 begin
@@ -144,7 +144,7 @@ begin
   end;
 end;
 
-function TZUGFeRDInvoiceDescriptor22CIIReader.Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor;
+function TZUGFeRDInvoiceDescriptor23CIIReader.Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor;
 var
   doc : IXMLDOMDocument2;
   node : IXMLDOMNode;
@@ -433,11 +433,13 @@ begin
                                      TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:AppliedTradeTax/ram:RateApplicablePercent', 0));
   end;
 
-  if TZUGFeRDXmlHelper.FindNode(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument') then
+  nodes := doc.SelectNodes('//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument');
+  for i := 0 to nodes.length-1 do
   begin
-    Result.InvoiceReferencedDocument := TZUGFeRDInvoiceReferencedDocument.Create;
-    Result.InvoiceReferencedDocument.ID := TZUGFeRDXmlUtils.NodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument/ram:IssuerAssignedID');
-    Result.InvoiceReferencedDocument.IssueDateTime:= TZUGFeRDXmlUtils.NodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument/ram:FormattedIssueDateTime');
+    Result.AddInvoiceReferencedDocument(
+      TZUGFeRDXmlUtils.NodeAsString(nodes[i], './ram:IssuerAssignedID'),
+      TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './ram:FormattedIssueDateTime')
+    );
   end;
 
   nodes := doc.SelectNodes('//ram:SpecifiedTradePaymentTerms');
@@ -506,7 +508,7 @@ begin
     Result.TradeLineItems.Add(_parseTradeLineItem(nodes[i]));
 end;
 
-function TZUGFeRDInvoiceDescriptor22CIIReader._getAdditionalReferencedDocument(
+function TZUGFeRDInvoiceDescriptor23CIIReader._getAdditionalReferencedDocument(
   a_oXmlNode: IXmlDomNode): TZUGFeRDAdditionalReferencedDocument;
 begin
   var strBase64BinaryData : String := TZUGFeRDXmlUtils.NodeAsString(a_oXmlNode, 'ram:AttachmentBinaryObject');
@@ -525,7 +527,7 @@ begin
   Result.ReferenceTypeCode := TZUGFeRDReferenceTypeCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(a_oXmlNode, 'ram:ReferenceTypeCode'));
 end;
 
-function TZUGFeRDInvoiceDescriptor22CIIReader._nodeAsLegalOrganization(
+function TZUGFeRDInvoiceDescriptor23CIIReader._nodeAsLegalOrganization(
   basenode: IXmlDomNode; const xpath: string) : TZUGFeRDLegalOrganization;
 var
   node : IXmlDomNode;
@@ -542,7 +544,7 @@ begin
                TZUGFeRDXmlUtils.NodeAsString(node, 'ram:TradingBusinessName'));
 end;
 
-function TZUGFeRDInvoiceDescriptor22CIIReader._nodeAsParty(basenode: IXmlDomNode;
+function TZUGFeRDInvoiceDescriptor23CIIReader._nodeAsParty(basenode: IXmlDomNode;
   const xpath: string) : TZUGFeRDParty;
 var
   node : IXmlDomNode;
@@ -582,7 +584,7 @@ begin
   Result.CountrySubdivisionName := TZUGFeRDXmlUtils.NodeAsString(node, 'ram:PostalTradeAddress/ram:CountrySubDivisionName');
 end;
 
-function TZUGFeRDInvoiceDescriptor22CIIReader._parseTradeLineItem(
+function TZUGFeRDInvoiceDescriptor23CIIReader._parseTradeLineItem(
   tradeLineItem: IXmlDomNode): TZUGFeRDTradeLineItem;
 var
   nodes : IXMLDOMNodeList;

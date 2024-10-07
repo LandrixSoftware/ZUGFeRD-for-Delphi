@@ -48,6 +48,11 @@ type
     HungaryVatNumber = 9910,
 
     /// <summary>
+    /// Austria VAT number
+    /// </summary>
+    AustriaVatNumber = 9914,
+
+    /// <summary>
     /// Andorra VAT number
     /// </summary>
     AndorraVatNumber = 9922,
@@ -275,6 +280,7 @@ begin
     TZUGFeRDElectronicAddressSchemeIdentifiers.EanLocationCode: Result := '0088';
     TZUGFeRDElectronicAddressSchemeIdentifiers.LeitwegID: Result := '0204';
     TZUGFeRDElectronicAddressSchemeIdentifiers.HungaryVatNumber: Result := '9910';
+    TZUGFeRDElectronicAddressSchemeIdentifiers.AustriaVatNumber: Result := '9914';
     TZUGFeRDElectronicAddressSchemeIdentifiers.AndorraVatNumber: Result := '9922';
     TZUGFeRDElectronicAddressSchemeIdentifiers.AlbaniaVatNumber: Result := '9923';
     TZUGFeRDElectronicAddressSchemeIdentifiers.BosniaAndHerzegovinaVatNumber: Result := '9924';
@@ -331,6 +337,8 @@ begin
     Result := TZUGFeRDElectronicAddressSchemeIdentifiers.LeitwegID else
   if SameText(s,'9910') then
     Result := TZUGFeRDElectronicAddressSchemeIdentifiers.HungaryVatNumber else
+  if SameText(s,'9914') then
+    Result := TZUGFeRDElectronicAddressSchemeIdentifiers.AustriaVatNumber else
   if SameText(s,'9922') then
     Result := TZUGFeRDElectronicAddressSchemeIdentifiers.AndorraVatNumber else
   if SameText(s,'9923') then

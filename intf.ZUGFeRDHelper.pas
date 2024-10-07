@@ -309,7 +309,7 @@ begin
     exit;
   if not FileExists(JavaRuntimeEnvironmentPath+'bin\java.exe') then
     exit;
-  if not FileExists(MustangprojectPath+'Mustang-CLI-2.11.0.jar') then
+  if not FileExists(MustangprojectPath+'Mustang-CLI-2.14.1.jar') then
     exit;
 
   tmpFilename := TPath.GetTempFileName;
@@ -323,7 +323,7 @@ begin
     cmd.Add('pushd '+QuoteIfContainsSpace(ExtractFilePath(tmpFilename)));
 
     cmd.Add(QuoteIfContainsSpace(JavaRuntimeEnvironmentPath+'bin\java.exe')+' -Xmx1G '+
-            '-Dfile.encoding=UTF-8 -jar '+QuoteIfContainsSpace(MustangprojectPath+'Mustang-CLI-2.11.0.jar')+
+            '-Dfile.encoding=UTF-8 -jar '+QuoteIfContainsSpace(MustangprojectPath+'Mustang-CLI-2.14.1.jar')+
             ' --action visualize ' +
             '-source-xml '+ QuoteIfContainsSpace(tmpFilename));
 
@@ -353,7 +353,7 @@ begin
     exit;
   if not FileExists(JavaRuntimeEnvironmentPath+'bin\java.exe') then
     exit;
-  if not FileExists(MustangprojectPath+'Mustang-CLI-2.11.0.jar') then
+  if not FileExists(MustangprojectPath+'Mustang-CLI-2.14.1.jar') then
     exit;
 
   tmpFilename := TPath.GetTempFileName;
@@ -363,7 +363,7 @@ begin
     cmd.Add('pushd '+QuoteIfContainsSpace(ExtractFilePath(tmpFilename)));
 
     cmd.Add(QuoteIfContainsSpace(JavaRuntimeEnvironmentPath+'bin\java.exe')+' -Xmx1G '+
-            '-Dfile.encoding=UTF-8 -jar '+QuoteIfContainsSpace(MustangprojectPath+'Mustang-CLI-2.11.0.jar')+
+            '-Dfile.encoding=UTF-8 -jar '+QuoteIfContainsSpace(MustangprojectPath+'Mustang-CLI-2.14.1.jar')+
             ' --action visualize' +
             ' --source '+ QuoteIfContainsSpace(_InvoiceXMLFilename)+
             ' --out '+tmpFilename+'.html'+
@@ -403,7 +403,7 @@ begin
     exit;
   if not FileExists(JavaRuntimeEnvironmentPath+'bin\java.exe') then
     exit;
-  if not FileExists(MustangprojectPath+'Mustang-CLI-2.11.0.jar') then
+  if not FileExists(MustangprojectPath+'Mustang-CLI-2.14.1.jar') then
     exit;
 
   tmpFilename := TPath.GetTempFileName;
@@ -413,7 +413,7 @@ begin
     cmd.Add('pushd '+QuoteIfContainsSpace(ExtractFilePath(tmpFilename)));
 
     cmd.Add(QuoteIfContainsSpace(JavaRuntimeEnvironmentPath+'bin\java.exe')+' -Xmx1G '+
-            '-Dfile.encoding=UTF-8 -jar '+QuoteIfContainsSpace(MustangprojectPath+'Mustang-CLI-2.11.0.jar')+
+            '-Dfile.encoding=UTF-8 -jar '+QuoteIfContainsSpace(MustangprojectPath+'Mustang-CLI-2.14.1.jar')+
             ' --action pdf' +
             ' --source '+ QuoteIfContainsSpace(_InvoiceXMLFilename)+
             ' --out '+tmpFilename+'.pdf'+

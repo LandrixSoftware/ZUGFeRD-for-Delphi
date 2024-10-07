@@ -39,6 +39,7 @@ begin
   Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.EanLocationCode, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('0088'));
   Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.LeitwegID, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('0204'));
   Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.HungaryVatNumber, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('9910'));
+  Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.AustriaVatNumber, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('9914'));
   Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.AndorraVatNumber, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('9922'));
   Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.AlbaniaVatNumber, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('9923'));
   Assert.AreEqual(TZUGFeRDElectronicAddressSchemeIdentifiers.BosniaAndHerzegovinaVatNumber, TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString('9924'));
@@ -89,6 +90,7 @@ begin
   Assert.AreEqual('0088', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.EanLocationCode));
   Assert.AreEqual('0204', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.LeitwegID));
   Assert.AreEqual('9910', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.HungaryVatNumber));
+  Assert.AreEqual('9914', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.AustriaVatNumber));
   Assert.AreEqual('9922', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.AndorraVatNumber));
   Assert.AreEqual('9923', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.AlbaniaVatNumber));
   Assert.AreEqual('9924', TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.EnumToString(TZUGFeRDElectronicAddressSchemeIdentifiers.BosniaAndHerzegovinaVatNumber));

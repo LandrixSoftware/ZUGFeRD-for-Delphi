@@ -121,7 +121,7 @@ type
     FTradeAllowanceCharges: TObjectList<TZUGFeRDTradeAllowanceCharge>;
 //    FPaymentTerms: TZUGFeRDPaymentTerms;
     FPaymentTermsList: TObjectList<TZUGFeRDPaymentTerms>;
-    FInvoiceReferencedDocument: TZUGFeRDInvoiceReferencedDocument;
+    FInvoiceReferencedDocuments: TZUGFeRDInvoiceReferencedDocumentObjectList;
     FReceivableSpecifiedTradeAccountingAccounts: TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>;
     FCreditorBankAccounts: TObjectList<TZUGFeRDBankAccount>;
     FDebitorBankAccounts: TObjectList<TZUGFeRDBankAccount>;
@@ -417,7 +417,7 @@ type
     /// — preceding partial invoices are referred to from a final invoice;
     /// — preceding pre-payment invoices are referred to from a final invoice.
     /// </summary>
-    property InvoiceReferencedDocument: TZUGFeRDInvoiceReferencedDocument read FInvoiceReferencedDocument write FInvoiceReferencedDocument;
+    property InvoiceReferencedDocuments: TZUGFeRDInvoiceReferencedDocumentObjectList read FInvoiceReferencedDocuments write FInvoiceReferencedDocuments;
 
     /// <summary>
     /// Detailed information about the accounting reference
@@ -670,11 +670,12 @@ type
              const taxPercent: Currency); overload;
 
     /// <summary>
-    /// Set Information about Preceding Invoice
+    /// Set Information about Preceding Invoice. Please note that all versions prior ZUGFeRD 2.3 and UBL only
+    /// allow one of such reference.
     /// </summary>
     /// <param name="id">Preceding InvoiceNo</param>
     /// <param name="IssueDateTime">Preceding Invoice Date</param>
-    procedure SetInvoiceReferencedDocument(const id: string; const IssueDateTime: TDateTime = 0);
+    procedure AddInvoiceReferencedDocument(const id: string; const IssueDateTime: TDateTime = 0);
 
     /// <summary>
     /// Detailinformationen zu Belegsummen
@@ -840,9 +841,9 @@ uses
   intf.ZUGFeRDInvoiceDescriptorReader,intf.ZUGFeRDInvoiceDescriptorWriter,
   intf.ZUGFeRDInvoiceDescriptor1Reader,intf.ZUGFeRDInvoiceDescriptor1Writer,
   intf.ZUGFeRDInvoiceDescriptor20Reader,intf.ZUGFeRDInvoiceDescriptor20Writer,
-  intf.ZUGFeRDInvoiceDescriptor22CIIReader,intf.ZUGFeRDInvoiceDescriptor22UBLReader,
-  intf.ZUGFeRDInvoiceDescriptor22Writer,
-  intf.ZUGFeRDInvoiceDescriptor22CIIWriter,intf.ZUGFeRDInvoiceDescriptor22UBLWriter
+  intf.ZUGFeRDInvoiceDescriptor23CIIReader,intf.ZUGFeRDInvoiceDescriptor22UBLReader,
+  intf.ZUGFeRDInvoiceDescriptor23Writer,
+  intf.ZUGFeRDInvoiceDescriptor23CIIWriter,intf.ZUGFeRDInvoiceDescriptor22UBLWriter
   ;
 
 { TZUGFeRDInvoiceDescriptor }
@@ -874,7 +875,7 @@ begin
   FTradeAllowanceCharges         := TObjectList<TZUGFeRDTradeAllowanceCharge>.Create;
 //  FPaymentTerms                  := nil;//TZUGFeRDPaymentTerms.Create;
   FPaymentTermsList              := TObjectList<TZUGFeRDPaymentTerms>.Create;
-  FInvoiceReferencedDocument     := nil;//TZUGFeRDInvoiceReferencedDocument.Create;
+  FInvoiceReferencedDocuments    := TZUGFeRDInvoiceReferencedDocumentObjectList.Create;
   FReceivableSpecifiedTradeAccountingAccounts:= TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>.Create;
   FCreditorBankAccounts          := TObjectList<TZUGFeRDBankAccount>.Create;
   FDebitorBankAccounts           := TObjectList<TZUGFeRDBankAccount>.Create;
@@ -909,7 +910,7 @@ begin
   if Assigned(FServiceCharges                ) then begin FServiceCharges.Free; FServiceCharges := nil; end;
   if Assigned(FTradeAllowanceCharges         ) then begin FTradeAllowanceCharges.Free; FTradeAllowanceCharges := nil; end;
   if Assigned(FPaymentTermsList              ) then begin FPaymentTermsList.Free; FPaymentTermsList := nil; end;
-  if Assigned(FInvoiceReferencedDocument     ) then begin FInvoiceReferencedDocument.Free; FInvoiceReferencedDocument := nil; end;
+  if Assigned(FInvoiceReferencedDocuments    ) then begin FInvoiceReferencedDocuments.Free; FInvoiceReferencedDocuments := nil; end;
   if Assigned(FReceivableSpecifiedTradeAccountingAccounts) then begin FReceivableSpecifiedTradeAccountingAccounts.Free; FReceivableSpecifiedTradeAccountingAccounts := nil; end;
   if Assigned(FCreditorBankAccounts         ) then begin FCreditorBankAccounts.Free; FCreditorBankAccounts := nil; end;
   if Assigned(FDebitorBankAccounts          ) then begin FDebitorBankAccounts.Free; FDebitorBankAccounts := nil; end;
@@ -937,18 +938,18 @@ begin
   try
     if reader.IsReadableByThisReaderVersion(filename) then
     begin
-      Result := TZUGFeRDVersion.Version22;
+      Result := TZUGFeRDVersion.Version23;
       Exit;
     end;
   finally
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
+  reader := TZUGFeRDInvoiceDescriptor23CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(filename) then
     begin
-      Result := TZUGFeRDVersion.Version22;
+      Result := TZUGFeRDVersion.Version23;
       Exit;
     end;
   finally
@@ -989,18 +990,18 @@ begin
   try
     if reader.IsReadableByThisReaderVersion(stream) then
     begin
-      Result := TZUGFeRDVersion.Version22;
+      Result := TZUGFeRDVersion.Version23;
       Exit;
     end;
   finally
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
+  reader := TZUGFeRDInvoiceDescriptor23CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(stream) then
     begin
-      Result := TZUGFeRDVersion.Version22;
+      Result := TZUGFeRDVersion.Version23;
       Exit;
     end;
   finally
@@ -1041,7 +1042,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
+  reader := TZUGFeRDInvoiceDescriptor23CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(stream) then
       exit(true);
@@ -1086,7 +1087,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
+  reader := TZUGFeRDInvoiceDescriptor23CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(stream) then
     begin
@@ -1137,7 +1138,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
+  reader := TZUGFeRDInvoiceDescriptor23CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(filename) then
     begin
@@ -1188,7 +1189,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
+  reader := TZUGFeRDInvoiceDescriptor23CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(xmldocument) then
     begin
@@ -1438,10 +1439,14 @@ begin
   FTradeAllowanceCharges.Add(tradeAllowanceCharge);
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.SetInvoiceReferencedDocument(const id: string; const IssueDateTime: TDateTime = 0);
+procedure TZUGFeRDInvoiceDescriptor.AddInvoiceReferencedDocument(const id: string; const IssueDateTime: TDateTime = 0);
+var
+  lItem : TZUGFeRDInvoiceReferencedDocument;
 begin
-  FInvoiceReferencedDocument.ID := id;
-  FInvoiceReferencedDocument.IssueDateTime:= IssueDateTime;
+  lItem := TZUGFeRDInvoiceReferencedDocument.Create;
+  lItem.ID := id;
+  lItem.IssueDateTime:= IssueDateTime;
+  FInvoiceReferencedDocuments.Add(lItem);
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetTotals(const aLineTotalAmount: Currency = 0; const aChargeTotalAmount: Currency = 0;
@@ -1497,8 +1502,8 @@ begin
       writer := TZUGFeRDInvoiceDescriptor1Writer.Create;
     TZUGFeRDVersion.Version20:
       writer := TZUGFeRDInvoiceDescriptor20Writer.Create;
-    TZUGFeRDVersion.Version22:
-      writer := TZUGFeRDInvoiceDescriptor22Writer.Create;
+    TZUGFeRDVersion.Version23:
+      writer := TZUGFeRDInvoiceDescriptor23Writer.Create;
     else
       raise TZUGFeRDUnsupportedException.Create('New ZUGFeRDVersion defined but not implemented!');
   end;
@@ -1523,8 +1528,8 @@ begin
       writer := TZUGFeRDInvoiceDescriptor1Writer.Create;
     TZUGFeRDVersion.Version20:
       writer := TZUGFeRDInvoiceDescriptor20Writer.Create;
-    TZUGFeRDVersion.Version22:
-      writer := TZUGFeRDInvoiceDescriptor22Writer.Create;
+    TZUGFeRDVersion.Version23:
+      writer := TZUGFeRDInvoiceDescriptor23Writer.Create;
     else
       raise TZUGFeRDUnsupportedException.Create('New ZUGFeRDVersion defined but not implemented!');
   end;

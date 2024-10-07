@@ -196,7 +196,7 @@ begin
       else
         raise Exception.Create('Unsupported profile for ZUGFeRD version 20');
       end;
-    TZUGFeRDVersion.Version22:
+    TZUGFeRDVersion.Version23:
       case profile of
         TZUGFeRDProfile.Minimum:
           Result := 'urn:factur-x.eu:1p0:minimum';
