@@ -21,7 +21,7 @@ interface
 
 uses
   System.SysUtils,System.Classes,System.Generics.Collections,
-  System.Generics.Defaults,Xml.XMLIntf,
+  System.Generics.Defaults, System.Contnrs, Xml.XMLIntf,
   intf.ZUGFeRDAdditionalReferencedDocument,
   intf.ZUGFeRDDeliveryNoteReferencedDocument,
   intf.ZUGFeRDAccountingAccountTypeCodes,
