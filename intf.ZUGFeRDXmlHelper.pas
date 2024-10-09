@@ -98,7 +98,7 @@ end;
 
 class function TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(_Xml: IXMLDocument): IXMLDOMDocument2;
 var
-  hList: IDOMNodeList;
+//  hList: IDOMNodeList;
   i: Integer;
   s, sNSN, sNSUri: string;
   sNsLine: string;

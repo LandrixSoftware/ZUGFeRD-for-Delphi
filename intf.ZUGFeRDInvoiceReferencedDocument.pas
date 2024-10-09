@@ -20,7 +20,7 @@ unit intf.ZUGFeRDInvoiceReferencedDocument;
 interface
 
 uses
-  Contnrs,
+  System.Types, System.Classes, System.Contnrs,
   intf.ZUGFeRDBaseReferencedDocument;
 
 type
