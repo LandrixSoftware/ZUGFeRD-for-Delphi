@@ -32,20 +32,18 @@ type
   TZUGFeRDTax = class
   private
     FBasisAmount: Currency;
-    FPercent: Currency;
+    FPercent: Double;
     FTypeCode: TZUGFeRDTaxTypes;
     FCategoryCode: TZUGFeRDTaxCategoryCodes;
     FAllowanceChargeBasisAmount: Currency;
     FExemptionReasonCode: TZUGFeRDTaxExemptionReasonCodes;
     FExemptionReason: string;
-    function GetTaxAmount: Currency;
+    FTaxAmount: Currency;
   public
     /// <summary>
     /// Returns the amount of the tax (Percent * BasisAmount)
-    ///
-    /// This information is calculated live.
     /// </summary>
-    property TaxAmount: Currency read GetTaxAmount;
+    property TaxAmount: Currency read FTaxAmount write FTaxAmount;
     /// <summary>
     /// VAT category taxable amount
     /// </summary>
@@ -53,7 +51,7 @@ type
     /// <summary>
     /// Tax rate
     /// </summary>
-    property Percent: Currency read FPercent write FPercent;
+    property Percent: Double read FPercent write FPercent;
     /// <summary>
     /// Type of tax.
     ///
@@ -79,13 +77,5 @@ type
   end;
 
 implementation
-
-{ TZUGFeRDTax }
-
-function TZUGFeRDTax.GetTaxAmount: Currency;
-begin
-  //TODO pruefen System.Math.Round(0.01m * this.Percent * this.BasisAmount, 2, MidpointRounding.AwayFromZero);
-  Result := RoundTo(0.01 * FPercent * FBasisAmount,-2);
-end;
 
 end.

@@ -699,6 +699,7 @@ type
     ///
     /// This tax is added per VAT/ tax rate.
     /// </summary>
+    /// <param name="calculatedAmount"></param>
     /// <param name="basisAmount"></param>
     /// <param name="percent">Tax rate where the tax belongs to</param>
     /// <param name="typeCode"></param>
@@ -706,7 +707,7 @@ type
     /// <param name="allowanceChargeBasisAmount"></param>
     /// <param name="exemptionReasonCode"></param>
     /// <param name="exemptionReason"></param>
-    procedure AddApplicableTradeTax(const basisAmount: Currency; const percent: Currency; const typeCode: TZUGFeRDTaxTypes; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const allowanceChargeBasisAmount: Currency = 0; const exemptionReasonCode: TZUGFeRDTaxExemptionReasonCodes = TZUGFeRDTaxExemptionReasonCodes.Unknown; const exemptionReason: string = '');
+    procedure AddApplicableTradeTax(const calculatedAmount, basisAmount: Currency; const percent: Double; const typeCode: TZUGFeRDTaxTypes; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const allowanceChargeBasisAmount: Currency = 0; const exemptionReasonCode: TZUGFeRDTaxExemptionReasonCodes = TZUGFeRDTaxExemptionReasonCodes.Unknown; const exemptionReason: string = '');
 
     /// <summary>
     /// Saves the descriptor object into a stream.
@@ -1465,8 +1466,8 @@ begin
   RoundingAmount:= aRoundingAmount;
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.AddApplicableTradeTax(const basisAmount: Currency;
-  const percent: Currency; const typeCode: TZUGFeRDTaxTypes;
+procedure TZUGFeRDInvoiceDescriptor.AddApplicableTradeTax(const calculatedAmount, basisAmount: Currency;
+  const percent: Double; const typeCode: TZUGFeRDTaxTypes;
   const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown;
   const allowanceChargeBasisAmount: Currency = 0;
   const exemptionReasonCode: TZUGFeRDTaxExemptionReasonCodes = TZUGFeRDTaxExemptionReasonCodes.Unknown;
@@ -1475,6 +1476,7 @@ var
   tax: TZUGFeRDTax;
 begin
   tax := TZUGFeRDTax.Create;
+  tax.TaxAmount := calculatedAmount;
   tax.BasisAmount := basisAmount;
   tax.Percent := percent;
   tax.TypeCode := typeCode;
