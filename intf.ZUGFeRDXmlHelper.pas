@@ -107,6 +107,11 @@ begin
   if not _Xml.Active then
     exit;
 
+  if SameText(_XML.DocumentElement.FindNamespaceURI('udt'), '') then
+    _XML.DocumentElement.DeclareNamespace('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100');
+  if SameText(_XML.DocumentElement.FindNamespaceURI('qdt'), '') then
+    _XML.documentElement.DeclareNamespace('qdt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100');
+
   for i := 0 to _XML.DocumentElement.AttributeNodes.Count - 1 do
   begin
     sNSN := StringReplace(_XML.DocumentElement.AttributeNodes[I].NodeName, 'xmlns:', '', []);
@@ -134,9 +139,6 @@ begin
     sNsLine := ' '+s + sNsLine;
   end;
   sNsLine := trim(sNsLine);
-
-//    if not ContainsText(sNsLine, 'xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100"') then
-//      sNsLine := sNsLine+ ' xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100"';
 
   Result := CoDOMDocument60.Create;
   Result.loadXML(_Xml.XML.Text);
