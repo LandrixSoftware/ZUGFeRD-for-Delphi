@@ -44,7 +44,7 @@ type
     function SetMustangprojectLibPath(const _Path : String) : IZUGFeRDPdfHelper;
 
 //    function Validate(const _InvoiceXMLData : String; out _CmdOutput,_ValidationResultAsXML,_ValidationResultAsHTML : String) : Boolean;
-//    function ValidateFile(const _InvoiceXMLFilename : String; out _CmdOutput,_ValidationResultAsXML,_ValidationResultAsHTML : String) : Boolean;
+    function ValidateFile(const _InvoiceXMLFilename : String; out _CmdOutput,_ValidationResultAsXML : String) : Boolean;
     function Visualize(const _InvoiceXMLData : String; out _CmdOutput,_VisualizationAsHTML : String) : Boolean;
     function VisualizeFile(const _InvoiceXMLFilename : String; out _CmdOutput,_VisualizationAsHTML : String) : Boolean;
     function VisualizeFileAsPdf(const _InvoiceXMLFilename : String; out _CmdOutput : String; out _VisualizationAsPdf : TMemoryStream) : Boolean;
@@ -126,6 +126,7 @@ type
     function Visualize(const _InvoiceXMLData : String; out _CmdOutput,_VisualizationAsHTML : String) : Boolean;
     function VisualizeFile(const _InvoiceXMLFilename : String; out _CmdOutput,_VisualizationAsHTML : String) : Boolean;
     function VisualizeFileAsPdf(const _InvoiceXMLFilename : String; out _CmdOutput : String; out _VisualizationAsPdf : TMemoryStream) : Boolean;
+    function ValidateFile(const _InvoiceXMLFilename : String; out _CmdOutput,_ValidationResultAsXML : String) : Boolean;
   end;
 
 function GetZUGFeRDPdfHelper : IZUGFeRDPdfHelper;
@@ -298,6 +299,51 @@ begin
   Result := self;
 end;
 
+function TZUGFeRDPdfHelper.ValidateFile(const _InvoiceXMLFilename: String;
+  out _CmdOutput, _ValidationResultAsXML: String): Boolean;
+var
+  cmd: TStringList;
+  tmpFilename : String;
+begin
+  Result := false;
+  if not FileExists(_InvoiceXMLFilename) then
+    exit;
+  if not FileExists(JavaRuntimeEnvironmentPath+'bin\java.exe') then
+    exit;
+  if not FileExists(MustangprojectPath+'Mustang-CLI-2.14.2.jar') then
+    exit;
+
+  tmpFilename := TPath.GetTempFileName;
+
+  cmd := TStringList.Create;
+  try
+    cmd.Add('pushd '+QuoteIfContainsSpace(ExtractFilePath(tmpFilename)));
+
+    cmd.Add(QuoteIfContainsSpace(JavaRuntimeEnvironmentPath+'bin\java.exe')+' -Xmx1G '+
+            '-Dfile.encoding=UTF-8 -jar '+QuoteIfContainsSpace(MustangprojectPath+'Mustang-CLI-2.14.2.jar')+
+            ' --action validate' +
+            ' --source '+ QuoteIfContainsSpace(_InvoiceXMLFilename)+
+            ' --out '+tmpFilename+'.xml');
+
+    cmd.SaveToFile(tmpFilename+'.bat',TEncoding.ANSI);
+
+    Result := ExecAndWait(tmpFilename+'.bat','');
+
+    if Result and FileExists(tmpFilename+'.html') then
+    begin
+      _ValidationResultAsXML := TFile.ReadAllText(tmpFilename+'.xml',TEncoding.UTF8);
+    end;
+
+    _CmdOutput := CmdOutput.Text;
+
+    DeleteFile(tmpFilename+'.bat');
+    if FileExists(tmpFilename+'.xml') then
+      DeleteFile(tmpFilename+'.xml');
+  finally
+    cmd.Free;
+  end;
+end;
+
 function TZUGFeRDPdfHelper.Visualize(const _InvoiceXMLData: String;
   out _CmdOutput, _VisualizationAsHTML: String): Boolean;
 var
@@ -309,7 +355,7 @@ begin
     exit;
   if not FileExists(JavaRuntimeEnvironmentPath+'bin\java.exe') then
     exit;
-  if not FileExists(MustangprojectPath+'Mustang-CLI-2.14.1.jar') then
+  if not FileExists(MustangprojectPath+'Mustang-CLI-2.14.2.jar') then
     exit;
 
   tmpFilename := TPath.GetTempFileName;
@@ -323,7 +369,7 @@ begin
     cmd.Add('pushd '+QuoteIfContainsSpace(ExtractFilePath(tmpFilename)));
 
     cmd.Add(QuoteIfContainsSpace(JavaRuntimeEnvironmentPath+'bin\java.exe')+' -Xmx1G '+
-            '-Dfile.encoding=UTF-8 -jar '+QuoteIfContainsSpace(MustangprojectPath+'Mustang-CLI-2.14.1.jar')+
+            '-Dfile.encoding=UTF-8 -jar '+QuoteIfContainsSpace(MustangprojectPath+'Mustang-CLI-2.14.2.jar')+
             ' --action visualize ' +
             '-source-xml '+ QuoteIfContainsSpace(tmpFilename));
 
@@ -353,7 +399,7 @@ begin
     exit;
   if not FileExists(JavaRuntimeEnvironmentPath+'bin\java.exe') then
     exit;
-  if not FileExists(MustangprojectPath+'Mustang-CLI-2.14.1.jar') then
+  if not FileExists(MustangprojectPath+'Mustang-CLI-2.14.2.jar') then
     exit;
 
   tmpFilename := TPath.GetTempFileName;
@@ -363,7 +409,7 @@ begin
     cmd.Add('pushd '+QuoteIfContainsSpace(ExtractFilePath(tmpFilename)));
 
     cmd.Add(QuoteIfContainsSpace(JavaRuntimeEnvironmentPath+'bin\java.exe')+' -Xmx1G '+
-            '-Dfile.encoding=UTF-8 -jar '+QuoteIfContainsSpace(MustangprojectPath+'Mustang-CLI-2.14.1.jar')+
+            '-Dfile.encoding=UTF-8 -jar '+QuoteIfContainsSpace(MustangprojectPath+'Mustang-CLI-2.14.2.jar')+
             ' --action visualize' +
             ' --source '+ QuoteIfContainsSpace(_InvoiceXMLFilename)+
             ' --out '+tmpFilename+'.html'+
@@ -403,7 +449,7 @@ begin
     exit;
   if not FileExists(JavaRuntimeEnvironmentPath+'bin\java.exe') then
     exit;
-  if not FileExists(MustangprojectPath+'Mustang-CLI-2.14.1.jar') then
+  if not FileExists(MustangprojectPath+'Mustang-CLI-2.14.2.jar') then
     exit;
 
   tmpFilename := TPath.GetTempFileName;
@@ -413,7 +459,7 @@ begin
     cmd.Add('pushd '+QuoteIfContainsSpace(ExtractFilePath(tmpFilename)));
 
     cmd.Add(QuoteIfContainsSpace(JavaRuntimeEnvironmentPath+'bin\java.exe')+' -Xmx1G '+
-            '-Dfile.encoding=UTF-8 -jar '+QuoteIfContainsSpace(MustangprojectPath+'Mustang-CLI-2.14.1.jar')+
+            '-Dfile.encoding=UTF-8 -jar '+QuoteIfContainsSpace(MustangprojectPath+'Mustang-CLI-2.14.2.jar')+
             ' --action pdf' +
             ' --source '+ QuoteIfContainsSpace(_InvoiceXMLFilename)+
             ' --out '+tmpFilename+'.pdf'+

@@ -34,10 +34,12 @@ type
     Memo3: TMemo;
     Button2: TButton;
     Button3: TButton;
+    Button4: TButton;
     procedure FormCreate(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
   private
     WebBrowserContent : TStringList;
     WebBrowserContentFilename : String;
@@ -172,6 +174,37 @@ begin
       WebBrowserContent.SaveToFile(WebBrowserContentFilename,TEncoding.UTF8);
       WebBrowser2.Navigate2('file:///'+WebBrowserContentFilename);
     end;
+
+  finally
+    od.Free;
+  end;
+end;
+
+procedure TForm1.Button4Click(Sender: TObject);
+var
+  od : TOpenDialog;
+  cmdoutput : String;
+  xmlresult : String;
+begin
+  WebBrowser2.Navigate2('about:blank');
+
+  od := TOpenDialog.Create(nil);
+  try
+    if not od.Execute then
+      exit;
+
+    GetZUGFeRDPdfHelper.SetJavaRuntimeEnvironmentPath(DistributionBasePath+'java\')
+        .SetMustangprojectLibPath(DistributionBasePath+'mustangproject\')
+        .ValidateFile(od.FileName, cmdoutput,xmlresult);
+
+    Memo3.Lines.Text := cmdoutput;
+
+    if xmlresult <> '' then
+      WebBrowserContent.Text := xmlresult
+    else
+      WebBrowserContent.Text := '<html><body>Visualisierung nicht erfolgreich. Siehe Verzeichnis ./Distribution/Read.Me</body></html>';
+    WebBrowserContent.SaveToFile(WebBrowserContentFilename,TEncoding.UTF8);
+    WebBrowser2.Navigate2('file:///'+WebBrowserContentFilename);
 
   finally
     od.Free;
