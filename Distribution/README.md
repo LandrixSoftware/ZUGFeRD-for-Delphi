@@ -10,6 +10,9 @@ https://github.com/ZUGFeRD/mustangproject/blob/master/Mustang-CLI/src/main/java/
 
 ## Historie
 
+- 19.11.2024 Update\
+  https://github.com/ZUGFeRD/mustangproject/releases/download/core-2.15.0/Mustang-CLI-2.15.0.jar
+
 - 23.05.2024 Update\
   https://github.com/ZUGFeRD/mustangproject/releases/download/core-2.1.1/Mustang-CLI-2.11.0.jar
 

@@ -9,10 +9,14 @@ If (Test-Path mustangproject){
 #If (Test-Path apachemaven){
 #  Remove-Item apachemaven -Recurse
 #}
+$LatestVersionContent = (Invoke-WebRequest 'https://api.github.com/repos/ZUGFeRD/mustangproject/releases/latest').Content | ConvertFrom-Json
 
 Invoke-WebRequest -Uri "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.6%2B10/OpenJDK17U-jre_x64_windows_hotspot_17.0.6_10.zip" -OutFile jre.zip
+
 New-Item -Name "mustangproject" -ItemType Directory
-Invoke-WebRequest -Uri "https://github.com/ZUGFeRD/mustangproject/releases/download/core-2.14.2/Mustang-CLI-2.14.2.jar" -OutFile mustangproject\Mustang-CLI-2.14.2.jar
+Invoke-WebRequest -Uri $LatestVersionContent.assets.browser_download_url -OutFile mustangproject\Mustang-CLI.jar
+New-Item -Name "mustangproject\Mustang-CLI-version.md" -ItemType File
+Set-Content mustangproject\Mustang-CLI-version.md -Value $LatestVersionContent.assets.name
 #Invoke-WebRequest -Uri "https://dlcdn.apache.org/maven/maven-3/3.9.6/binaries/apache-maven-3.9.6-bin.zip" -OutFile apachemaven.zip
 
 Expand-Archive jre.zip
