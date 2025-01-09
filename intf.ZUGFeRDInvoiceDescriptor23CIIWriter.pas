@@ -407,8 +407,9 @@ begin
           end;
 
           //c# means not in XRechnung according to CII-SR-128
-          //TODO Theoretisch auch Basic, Comfort, XRechnung
-          Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason, [TZUGFeRDProfile.Extended]);
+          // Reason is not rejected from the validator, so it is included here for XRechnung
+          //TODO Theoretisch auch Basic, Comfort
+          Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason, [TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung]);
 
           Writer.WriteEndElement(); // !AppliedTradeAllowanceCharge
         end;
@@ -565,8 +566,9 @@ begin
         end;
 
         //c# means not in XRechnung according to CII-SR-128
-        //TODO Theoretisch auch Basic, Comfort, XRechnung
-        Writer.WriteOptionalElementString('ram:Reason', specifiedTradeAllowanceCharge.Reason, [TZUGFeRDProfile.Extended]);
+        // Reason is not rejected from the validator, so it is included here for XRechnung
+       //TODO Theoretisch auch Basic, Comfort
+        Writer.WriteOptionalElementString('ram:Reason', specifiedTradeAllowanceCharge.Reason, [TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung]);
 
         Writer.WriteEndElement(); // !ram:SpecifiedTradeAllowanceCharge
       end;
