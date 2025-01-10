@@ -407,8 +407,9 @@ begin
           end;
 
           //c# means not in XRechnung according to CII-SR-128
-          //TODO Theoretisch auch Basic, Comfort, XRechnung
-          Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason, [TZUGFeRDProfile.Extended]);
+          // Reason is not rejected from the validator, so it is included here for XRechnung
+          //TODO Theoretisch auch Basic, Comfort
+          Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason, [TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung]);
 
           Writer.WriteEndElement(); // !AppliedTradeAllowanceCharge
         end;
@@ -519,9 +520,9 @@ begin
     if (descriptor.Profile in [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]) then
     if (tradeLineItem.SpecifiedTradeAllowanceCharges.Count > 0) then
     begin
-      Writer.WriteStartElement('ram:SpecifiedTradeAllowanceCharge', [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
       for var specifiedTradeAllowanceCharge : TZUGFeRDTradeAllowanceCharge in tradeLineItem.SpecifiedTradeAllowanceCharges do // BG-27 BG-28
       begin
+        Writer.WriteStartElement('ram:SpecifiedTradeAllowanceCharge', [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
         //#region ChargeIndicator
         Writer.WriteStartElement('ram:ChargeIndicator');
         Writer.WriteElementString('udt:Indicator', ifthen(specifiedTradeAllowanceCharge.ChargeIndicator,'true','false'));
@@ -565,10 +566,12 @@ begin
         end;
 
         //c# means not in XRechnung according to CII-SR-128
-        //TODO Theoretisch auch Basic, Comfort, XRechnung
-        Writer.WriteOptionalElementString('ram:Reason', specifiedTradeAllowanceCharge.Reason, [TZUGFeRDProfile.Extended]);
+        // Reason is not rejected from the validator, so it is included here for XRechnung
+       //TODO Theoretisch auch Basic, Comfort
+        Writer.WriteOptionalElementString('ram:Reason', specifiedTradeAllowanceCharge.Reason, [TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung]);
+
+        Writer.WriteEndElement(); // !ram:SpecifiedTradeAllowanceCharge
       end;
-      Writer.WriteEndElement(); // !ram:SpecifiedTradeAllowanceCharge
     end;
     //#endregion
 
