@@ -541,7 +541,8 @@ begin
         //#region BasisAmount
         if (specifiedTradeAllowanceCharge.BasisAmount <> 0.0) then
         begin
-          Writer.WriteStartElement('ram:BasisAmount', [TZUGFeRDProfile.Extended]); // not in XRechnung, according to CII-SR-123
+          // according to CII-SR-123 not in XRechnung for *Applied*TradeAllowanceCharge  but valid for *Specified*TradeAllowanceCharge!
+          Writer.WriteStartElement('ram:BasisAmount', [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort, TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung]);
           Writer.WriteValue(_formatDecimal(specifiedTradeAllowanceCharge.BasisAmount, 2));
           Writer.WriteEndElement();
         end;
@@ -565,10 +566,8 @@ begin
                                        specifiedTradeAllowanceCharge.ReasonCodeAllowance));
         end;
 
-        //c# means not in XRechnung according to CII-SR-128
-        // Reason is not rejected from the validator, so it is included here for XRechnung
-       //TODO Theoretisch auch Basic, Comfort
-        Writer.WriteOptionalElementString('ram:Reason', specifiedTradeAllowanceCharge.Reason, [TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung]);
+        // according to CII-SR-123 not in XRechnung for *Applied*TradeAllowanceCharge  but valid for *Specified*TradeAllowanceCharge!
+        Writer.WriteOptionalElementString('ram:Reason', specifiedTradeAllowanceCharge.Reason, [TZUGFeRDProfile.Basic, TZUGFeRDProfile.Comfort, TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung]);
 
         Writer.WriteEndElement(); // !ram:SpecifiedTradeAllowanceCharge
       end;
