@@ -28,6 +28,7 @@ type
     FTypeCode: TZUGFeRDPaymentMeansTypeCodes;
     FInformation: string;
     FSEPACreditorIdentifier: string;
+    FSEPAMandateReference: string;
     FFinancialCard: TZUGFeRDFinancialCard;
   public
     constructor Create;
@@ -50,6 +51,12 @@ type
     /// </summary>
     property SEPACreditorIdentifier: string read FSEPACreditorIdentifier write FSEPACreditorIdentifier;
 
+    /// <summary>
+    /// Mandatsreferenz
+    ///
+    /// https://de.wikipedia.org/wiki/Mandatsreferenz
+    /// </summary>
+    property SEPAMandateReference: string read FSEPAMandateReference write FSEPAMandateReference;
     /// <summary>
     /// Payment card information.
     /// </summary>

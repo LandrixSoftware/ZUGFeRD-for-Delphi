@@ -848,7 +848,7 @@ begin
   end;
 
   //   2. PaymentReference (optional)
-  Writer.WriteOptionalElementString('ram:PaymentReference', Descriptor.PaymentReference);
+  Writer.WriteOptionalElementString('ram:PaymentReference', Descriptor.PaymentReference, ALL_PROFILES  - [TZUGFeRDProfile.Minimum]);
 
   //   3. TaxCurrencyCode (optional)
   //   BT-6
@@ -878,9 +878,9 @@ begin
     if (Descriptor.PaymentMeans <> nil) then
     if (Descriptor.PaymentMeans.TypeCode <> TZUGFeRDPaymentMeansTypeCodes.Unknown) then
     begin
-      Writer.WriteStartElement('ram:SpecifiedTradeSettlementPaymentMeans', [TZUGFeRDProfile.BasicWL,TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
-      Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
-      Writer.WriteOptionalElementString('ram:Information', Descriptor.PaymentMeans.Information);
+      Writer.WriteStartElement('ram:SpecifiedTradeSettlementPaymentMeans', ALL_PROFILES  - [TZUGFeRDProfile.Minimum]);
+      Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode), ALL_PROFILES  - [TZUGFeRDProfile.Minimum]);
+      Writer.WriteOptionalElementString('ram:Information', Descriptor.PaymentMeans.Information, [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
 
       if (Descriptor.PaymentMeans.FinancialCard <> nil) then
       begin
@@ -896,13 +896,13 @@ begin
   begin
     for var creditorAccount : TZUGFeRDBankAccount in Descriptor.CreditorBankAccounts do
     begin
-      Writer.WriteStartElement('ram:SpecifiedTradeSettlementPaymentMeans');
+      Writer.WriteStartElement('ram:SpecifiedTradeSettlementPaymentMeans', ALL_PROFILES  - [TZUGFeRDProfile.Minimum]);
 
       if (Descriptor.PaymentMeans <> nil) then
       if (Descriptor.PaymentMeans.TypeCode <> TZUGFeRDPaymentMeansTypeCodes.Unknown) then
       begin
-        Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
-        Writer.WriteOptionalElementString('ram:Information', Descriptor.PaymentMeans.Information);
+        Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode), ALL_PROFILES  - [TZUGFeRDProfile.Minimum]);
+        Writer.WriteOptionalElementString('ram:Information', Descriptor.PaymentMeans.Information, [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
 
         if (Descriptor.PaymentMeans.FinancialCard <> nil) then
         begin
@@ -913,9 +913,9 @@ begin
         end;
       end;
 
-      Writer.WriteStartElement('ram:PayeePartyCreditorFinancialAccount');
+      Writer.WriteStartElement('ram:PayeePartyCreditorFinancialAccount', ALL_PROFILES  - [TZUGFeRDProfile.Minimum]);
       Writer.WriteElementString('ram:IBANID', creditorAccount.IBAN);
-      Writer.WriteOptionalElementString('ram:AccountName', creditorAccount.Name);
+      Writer.WriteOptionalElementString('ram:AccountName', creditorAccount.Name, [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
       Writer.WriteOptionalElementString('ram:ProprietaryID', creditorAccount.ID);
       Writer.WriteEndElement(); // !PayeePartyCreditorFinancialAccount
 
@@ -931,18 +931,18 @@ begin
 
     for var debitorAccount : TZUGFeRDBankAccount in Descriptor.DebitorBankAccounts do
     begin
-      Writer.WriteStartElement('ram:SpecifiedTradeSettlementPaymentMeans'); // BG-16
+      Writer.WriteStartElement('ram:SpecifiedTradeSettlementPaymentMeans', ALL_PROFILES  - [TZUGFeRDProfile.Minimum]); // BG-16
 
       if (Descriptor.PaymentMeans <> nil) then
       if (Descriptor.PaymentMeans.TypeCode <> TZUGFeRDPaymentMeansTypeCodes.Unknown) then
       begin
-        Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
-        Writer.WriteOptionalElementString('ram:Information', Descriptor.PaymentMeans.Information);
+        Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode), ALL_PROFILES  - [TZUGFeRDProfile.Minimum]);
+        Writer.WriteOptionalElementString('ram:Information', Descriptor.PaymentMeans.Information,[TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung]);
       end;
 
-      Writer.WriteStartElement('ram:PayerPartyDebtorFinancialAccount');
+      Writer.WriteStartElement('ram:PayerPartyDebtorFinancialAccount', ALL_PROFILES  - [TZUGFeRDProfile.Minimum]);
       Writer.WriteElementString('ram:IBANID', debitorAccount.IBAN);
-      Writer.WriteOptionalElementString('ram:AccountName', debitorAccount.Name);
+      Writer.WriteOptionalElementString('ram:AccountName', debitorAccount.Name,[TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung]);
       Writer.WriteOptionalElementString('ram:ProprietaryID', debitorAccount.ID);
       Writer.WriteEndElement(); // !PayerPartyDebtorFinancialAccount
 
@@ -967,7 +967,7 @@ begin
   //  12. BillingSpecifiedPeriod (optional)
   if (Descriptor.BillingPeriodStart>100) or (Descriptor.BillingPeriodEnd>100) then
   begin
-    Writer.WriteStartElement('ram:BillingSpecifiedPeriod', [TZUGFeRDProfile.BasicWL,TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
+    Writer.WriteStartElement('ram:BillingSpecifiedPeriod', ALL_PROFILES  - [TZUGFeRDProfile.Minimum]);
     if (Descriptor.BillingPeriodStart>100) then
     begin
         Writer.WriteStartElement('ram:StartDateTime');
@@ -988,7 +988,7 @@ begin
   //13. SpecifiedTradeAllowanceCharge (optional)
   for var tradeAllowanceCharge : TZUGFeRDTradeAllowanceCharge in Descriptor.TradeAllowanceCharges do
   begin
-    Writer.WriteStartElement('ram:SpecifiedTradeAllowanceCharge');
+    Writer.WriteStartElement('ram:SpecifiedTradeAllowanceCharge', ALL_PROFILES  - [TZUGFeRDProfile.Minimum]);
     Writer.WriteStartElement('ram:ChargeIndicator');
     Writer.WriteElementString('udt:Indicator', ifthen(tradeAllowanceCharge.ChargeIndicator,'true','false'));
     Writer.WriteEndElement(); // !ram:ChargeIndicator
@@ -1002,12 +1002,14 @@ begin
 
     if (tradeAllowanceCharge.BasisAmount <> 0.0) then
     begin
-      Writer.WriteStartElement('ram:BasisAmount', [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
+      Writer.WriteStartElement('ram:BasisAmount'); // BT-100
       Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.BasisAmount));
       Writer.WriteEndElement();
     end;
 
-    Writer.WriteStartElement('ram:ActualAmount');
+    // TODO: BasisQuantity (+unitCode), BT-X-269, Basismenge des Rabatts
+
+    Writer.WriteStartElement('ram:ActualAmount');  // BT-99
     Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ActualAmount, 2));
     Writer.WriteEndElement();
 
@@ -1056,24 +1058,43 @@ begin
   end;
 
   //  15. SpecifiedTradePaymentTerms (optional)
+  //  The cardinality depends on the profile.
   for var PaymentTerms: TZUGFeRDPaymentTerms in Descriptor.PaymentTermsList do
   begin
-    Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
-    Writer.WriteOptionalElementString('ram:Description', PaymentTerms.Description);
+    Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms', ALL_PROFILES  - [TZUGFeRDProfile.Unknown, TZUGFeRDProfile.Minimum]);
+    var PaymentNotes: string := PaymentTerms.Description;
+    var hasDiscount: Boolean :=
+        (PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount <> 0.0) or
+        (PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent <> 0.0) or
+         PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisPeriodMeasure.HasValue;
+    if _descriptor.Profile=TZUGFeRDProfile.XRechnung then
+    begin
+      PaymentNotes:= System.StrUtils.ReplaceText(PaymentNotes,'#',' ');
+      if hasDiscount and (PaymentTerms.ApplicableTradePaymentDiscountTerms.Unitcode=TZUGFeRDQuantityCodes.DAY) then
+      begin
+        var formatSettings: TFormatSettings;
+        formatSettings.DecimalSeparator := '.';
+        PaymentNotes:= PaymentNotes +
+          Format(#13#10'#SKONTO#TAGE=%d#PROZENT=%.2f#%s'#13#10, [
+            Round(PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisPeriodMeasure.Value),
+            PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent,
+            IfThen(PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount<>0.0, Format('BASISBETRAG=%.2f#', [PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount], formatSettings),'')
+          ], formatSettings);
+      end;
+    end;
+    Writer.WriteOptionalElementString('ram:Description', PaymentNotes);
     if (PaymentTerms.DueDate.HasValue) then
     begin
       Writer.WriteStartElement('ram:DueDateDateTime');
       _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(PaymentTerms.DueDate.Value));
       Writer.WriteEndElement(); // !ram:DueDateDateTime
     end;
-    Writer.WriteOptionalElementString('ram:DirectDebitMandateID', PaymentTerms.DirectDebitMandateID);
+
     //TODO PaymentTerms.PartialPaymentAmount
     //TODO PaymentTerms.ApplicableTradePaymentPenaltyTerms
-    if (PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount <> 0.0) or
-       (PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent <> 0.0) or
-       PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisPeriodMeasure.HasValue then
+    if hasDiscount and (_descriptor.Profile=TZUGFeRDProfile.Extended) then
     begin
-      Writer.WriteStartElement('ram:ApplicableTradePaymentDiscountTerms');
+          Writer.WriteStartElement('ram:ApplicableTradePaymentDiscountTerms');
       if PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisPeriodMeasure.HasValue then
         _writeElementWithAttribute(Writer, 'ram:BasisPeriodMeasure', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(PaymentTerms.ApplicableTradePaymentDiscountTerms.UnitCode), _formatDecimal(paymentTerms.ApplicableTradePaymentDiscountTerms.BasisPeriodMeasure, 4));
       if PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount <> 0.0 then
@@ -1082,7 +1103,20 @@ begin
         _writeOptionalAmount(Writer, 'ram:CalculationPercent', PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent,4);
       Writer.WriteEndElement();
       //TODO PaymentTerms.ApplicableTradePaymentDiscountTerms.ActualPenaltyAmount
+
     end;
+
+    if (_descriptor.Profile<>TZUGFeRDProfile.XRechnung) or
+      // BT-89 in XRechnung is required/allowed only on DirectDebit (BR-DE-29)
+      ((_descriptor.Profile=TZUGFeRDProfile.XRechnung) and (_descriptor.PaymentMeans.TypeCode in [TZUGFeRDPaymentMeansTypeCodes.DirectDebit, TZUGFeRDPaymentMeansTypeCodes.SEPADirectDebit])) then
+      Writer.WriteOptionalElementString('ram:DirectDebitMandateID', _descriptor.PaymentMeans.SEPAMandateReference);  // TZUGFeRDProfile.Unknown and TZUGFeRDProfile.Minimum are excluded anyway
+
+    Writer.WriteEndElement();
+  end;
+  if (_descriptor.Profile = TZUGFeRDProfile.Extended) and (_descriptor.PaymentTermsList.Count=0) and (_descriptor.PaymentMeans.SEPAMandateReference<>'') then
+  begin
+    Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
+    Writer.WriteOptionalElementString('ram:DirectDebitMandateID', _descriptor.PaymentMeans.SEPAMandateReference);
     Writer.WriteEndElement();
   end;
 
