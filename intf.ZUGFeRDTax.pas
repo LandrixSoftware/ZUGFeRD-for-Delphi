@@ -36,6 +36,7 @@ type
     FTypeCode: TZUGFeRDTaxTypes;
     FCategoryCode: TZUGFeRDTaxCategoryCodes;
     FAllowanceChargeBasisAmount: Currency;
+    FLineTotalBasisAmount: Currency;
     FExemptionReasonCode: TZUGFeRDTaxExemptionReasonCodes;
     FExemptionReason: string;
     FTaxAmount: Currency;
@@ -66,6 +67,10 @@ type
     /// Total amount of charges / allowances on document level
     /// </summary>
     property AllowanceChargeBasisAmount: Currency read FAllowanceChargeBasisAmount write FAllowanceChargeBasisAmount;
+    /// <summary>
+    /// A monetary value used as the line total basis on which this trade related tax, levy or duty is calculated
+    /// </summary>
+    property LineTotalBasisAmount: Currency read FLineTotalBasisAmount write FLineTotalBasisAmount;
     /// <summary>
     /// ExemptionReasonCode for no Tax
     /// </summary>
