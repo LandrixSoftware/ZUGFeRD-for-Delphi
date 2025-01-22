@@ -42,7 +42,9 @@ uses
   intf.ZUGFeRDAllowanceOrChargeIdentificationCodes,
   intf.ZUGFeRDDesignatedProductClassification,
   intf.ZUGFeRDDesignatedProductClassificationClassCodes,
-  intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes
+  intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes,
+  intf.ZUGFeRDIncludedReferencedProduct,
+  intf.ZUGFeRDParty
   ;
 
 type
@@ -61,12 +63,15 @@ type
     FContractReferencedDocument: TZUGFeRDContractReferencedDocument;
     FReceivableSpecifiedTradeAccountingAccounts: TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>;
     FAdditionalReferencedDocuments: TObjectList<TZUGFeRDAdditionalReferencedDocument>;
+    FIncludedReferencedProducts: TObjectList<TZUGFeRDIncludedReferencedProduct>;
     FUnitCode: TZUGFeRDQuantityCodes;
     FChargeFreeUnitCode: TZUGFeRDQuantityCodes;
     FPackageUnitCode: TZUGFeRDQuantityCodes;
     FBillingPeriodStart: ZUGFeRDNullable<TDateTime>;
     FApplicableProductCharacteristics: TObjectList<TZUGFeRDApplicableProductCharacteristic>;
     FDesignedProductClassifications: TObjectList<TZUGFeRDDesignatedProductClassification>;
+    FShipTo: TZUGFeRDParty;
+    FUltimateShipTo: TZUGFeRDParty;
     FSellerAssignedID: string;
     FTradeAllowanceCharges: TObjectList<TZUGFeRDTradeAllowanceCharge>;
     FSpecifiedTradeAllowanceCharges : TObjectList<TZUGFeRDTradeAllowanceCharge>;
@@ -110,6 +115,8 @@ type
       issueDateTime: TDateTime = 0; name : String = '';
       referenceTypeCode : TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
       attachmentBinaryObject : TStream = nil; filename : String = ''); overload;
+
+    procedure AddIncludedReferencedProduct(Name: String; UnitQuantity: ZUGFeRDNullable<Double>; UnitCode: TZUGFeRDQuantityCodes);
 
     procedure AddReceivableSpecifiedTradeAccountingAccount(
       AccountID: string); overload;
@@ -191,6 +198,20 @@ type
 		/// <param name="listID">Product classification name (optional)</param>
 		/// <param name="listVersionID">Version of product classification (optional)</param>
     procedure AddDesignatedProductClassification(className : String; classCode: TZUGFeRDDesignatedProductClassificationClassCodes; listID  : String = ''; listVersionID : String = '');
+
+    /// <summary>
+    /// Recipient of the delivered goods. This party is optional and is written in Extended profile only
+    ///
+    /// BG-X-7
+    /// </summary>
+    property ShipTo: TZUGFeRDParty read FShipTo write FShipTo;
+
+    /// <summary>
+    /// Detailed information on the deviating final recipient. This party is optional and only relevant for Extended profile
+    ///
+    /// BG-X-10
+    /// </summary>
+    property UltimateShipTo: TZUGFeRDParty read FUltimateShipTo write FUltimateShipTo;
 
     procedure SetContractReferencedDocument(contractReferencedId: string;
       contractReferencedDate: IZUGFeRDNullableParam<TDateTime>);
@@ -348,6 +369,13 @@ type
     property AdditionalReferencedDocuments: TObjectList<TZUGFeRDAdditionalReferencedDocument> read FAdditionalReferencedDocuments write FAdditionalReferencedDocuments;
 
     /// <summary>
+    /// Included Items referenced from this trade product.
+    ///
+    /// BG-X-1
+    /// </summary>
+    property IncludedReferencedProducts: TObjectList<TZUGFeRDIncludedReferencedProduct> read FIncludedReferencedProducts write FIncludedReferencedProducts;
+
+    /// <summary>
     /// A group of business terms providing information about the applicable surcharges or discounts on the total amount of the invoice
     /// </summary>
     property TradeAllowanceCharges: TObjectList<TZUGFeRDTradeAllowanceCharge> read FTradeAllowanceCharges write FTradeAllowanceCharges;
@@ -380,10 +408,13 @@ begin
   FNetUnitPrice:= 0.0;
   FGrossUnitPrice:= 0.0;
   FAssociatedDocument:= nil;
+  FShipTo:= nil;//TZUGFeRDParty.Create;
+  FUltimateShipTo:= nil;//TZUGFeRDParty.Create;
   FBuyerOrderReferencedDocument:= nil;//TZUGFeRDBuyerOrderReferencedDocument.Create;
   FDeliveryNoteReferencedDocument:= nil;//TZUGFeRDDeliveryNoteReferencedDocument.Create;
   FContractReferencedDocument:= nil;//TZUGFeRDContractReferencedDocument.Create;
   FAdditionalReferencedDocuments:= TObjectList<TZUGFeRDAdditionalReferencedDocument>.Create;
+  FIncludedReferencedProducts:= TObjectList<TZUGFeRDIncludedReferencedProduct>.Create;
   FTradeAllowanceCharges:= TObjectList<TZUGFeRDTradeAllowanceCharge>.Create;
   FSpecifiedTradeAllowanceCharges := TObjectList<TZUGFeRDTradeAllowanceCharge>.Create;
   FReceivableSpecifiedTradeAccountingAccounts:= TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>.Create;
@@ -395,10 +426,13 @@ destructor TZUGFeRDTradeLineItem.Destroy;
 begin
   if Assigned(FGlobalID) then begin FGlobalID.Free; FGlobalID := nil; end;
   if Assigned(FAssociatedDocument) then begin FAssociatedDocument.Free; FAssociatedDocument := nil; end;
+  if Assigned(FShipTo) then begin FShipTo.Free; FShipTo := nil; end;
+  if Assigned(FUltimateShipTo) then begin FUltimateShipTo.Free; FUltimateShipTo := nil; end;
   if Assigned(FBuyerOrderReferencedDocument) then begin FBuyerOrderReferencedDocument.Free; FBuyerOrderReferencedDocument := nil; end;
   if Assigned(FDeliveryNoteReferencedDocument) then begin FDeliveryNoteReferencedDocument.Free; FDeliveryNoteReferencedDocument := nil; end;
   if Assigned(FContractReferencedDocument) then begin FContractReferencedDocument.Free; FContractReferencedDocument := nil; end;
   if Assigned(FAdditionalReferencedDocuments) then begin FAdditionalReferencedDocuments.Free; FAdditionalReferencedDocuments := nil; end;
+  if Assigned(FIncludedReferencedProducts) then begin FIncludedReferencedProducts.Free; FIncludedReferencedProducts := nil; end;
   if Assigned(FTradeAllowanceCharges) then begin FTradeAllowanceCharges.Free; FTradeAllowanceCharges := nil; end;
   if Assigned(FSpecifiedTradeAllowanceCharges) then begin FSpecifiedTradeAllowanceCharges.Free; FSpecifiedTradeAllowanceCharges := nil; end;
   if Assigned(FReceivableSpecifiedTradeAccountingAccounts) then begin FReceivableSpecifiedTradeAccountingAccounts.Free; FReceivableSpecifiedTradeAccountingAccounts := nil; end;
@@ -487,6 +521,14 @@ begin
   FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].AttachmentBinaryObject.LoadFromStream(attachmentBinaryObject);
   FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].Filename := filename;
   FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].TypeCode := typeCode;
+end;
+
+procedure TZUGFeRDTradeLineItem.AddIncludedReferencedProduct(Name: String; UnitQuantity: ZUGFeRDNullable<Double>; UnitCode: TZUGFeRDQuantityCodes);
+begin
+  FIncludedReferencedProducts.Add(TZUGFeRDIncludedReferencedProduct.Create);
+  FIncludedReferencedProducts[FIncludedReferencedProducts.Count - 1].Name := Name;
+  FIncludedReferencedProducts[FIncludedReferencedProducts.Count - 1].UnitQuantity := UnitQuantity;
+  FIncludedReferencedProducts[FIncludedReferencedProducts.Count - 1].UnitCode := UnitCode;
 end;
 
 procedure TZUGFeRDTradeLineItem.SetOrderReferencedDocument(

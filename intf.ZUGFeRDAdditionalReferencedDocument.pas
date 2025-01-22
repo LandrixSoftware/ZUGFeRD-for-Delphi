@@ -37,6 +37,8 @@ type
   private
     FReferenceTypeCode: TZUGFeRDReferenceTypeCodes;
     FName: string;
+    FLineID: string;
+    FURIID: string;
     FAttachmentBinaryObject: TMemoryStream;
     FFilename: string;
     FTypeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
@@ -45,6 +47,18 @@ type
     constructor Create(CreateAttachmentBinaryObject : Boolean);
     destructor Destroy; override;
   public
+    /// <summary>
+    /// External document location
+    /// BT-124, BT-X-28
+    /// </summary>
+    property URIID: string read FURIID write FURIID;
+
+    /// <summary>
+    /// Referenced position
+    /// BT-X-29
+    /// </summary>
+    property LineID: string read FLineID write FLineID;
+
     /// <summary>
     /// Reference documents are strongly typed, specify ReferenceTypeCode to allow easy processing by invoicee
     /// </summary>

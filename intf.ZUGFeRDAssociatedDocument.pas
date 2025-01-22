@@ -32,6 +32,7 @@ type
     FLineID: string;
     FLineStatusCode: string;
     FLineStatusReasonCode: string;
+    FParentLineID: string;
   public
     constructor Create(lineID: string);
     destructor Destroy; override;
@@ -45,6 +46,19 @@ type
     /// identifier of the invoice line item
     /// </summary>
     property LineID: string read FLineID write FLineID;
+
+    /// <summary>
+    /// Refers to the superior line in a hierarchical structure.
+    /// This property is used to map a hierarchy tree of invoice items, allowing child items to reference their parent line.
+    /// BT-X-304
+    ///
+    /// Example usage:
+    /// <code>
+    /// var tradeLineItem:= TZUGFeRDTradeLineItem.Create;
+    /// tradeLineItem.SetParentLineId('1');
+    /// </code>
+    /// </summary>
+    property ParentLineID: string read FParentLineID write FParentLineID;
 
     //Typ der Rechnungsposition (Code)
     //qdt:LineStatusCodeType

@@ -97,6 +97,7 @@ type
     FSellerElectronicAddress: TZUGFeRDElectronicAddress;
     FInvoicee: TZUGFeRDParty;
     FShipTo: TZUGFeRDParty;
+    FUltimateShipTo: TZUGFeRDParty;
     FPayee: TZUGFeRDParty;
     FShipFrom: TZUGFeRDParty;
     FNotes: TObjectList<TZUGFeRDNote>;
@@ -258,6 +259,11 @@ type
     /// This party is optional and only relevant for Extended profile
     /// </summary>
     property ShipTo: TZUGFeRDParty read FShipTo write FShipTo;
+
+    /// <summary>
+    /// This party is optional and only relevant for Extended profile
+    /// </summary>
+    property UltimateShipTo: TZUGFeRDParty read FUltimateShipTo write FUltimateShipTo;
 
     /// <summary>
     /// This party is optional and only relevant for Extended profile
@@ -867,6 +873,7 @@ begin
   FInvoicee                      := nil;//TZUGFeRDParty.Create;
   FInvoicer                      := nil;//TZUGFeRDParty.Create;
   FShipTo                        := nil;//TZUGFeRDParty.Create;
+  FUltimateShipTo                := nil;//TZUGFeRDParty.Create;
   FPayee                         := nil;//TZUGFeRDParty.Create;
   FShipFrom                      := nil;//TZUGFeRDParty.Create;
   FNotes                         := TObjectList<TZUGFeRDNote>.Create;
@@ -903,6 +910,7 @@ begin
   if Assigned(FInvoicee                      ) then begin FInvoicee.Free; FInvoicee := nil; end;
   if Assigned(FInvoicer                      ) then begin FInvoicer.Free; FInvoicer := nil; end;
   if Assigned(FShipTo                        ) then begin FShipTo.Free; FShipTo := nil; end;
+  if Assigned(FUltimateShipTo                ) then begin FUltimateShipTo.Free; FUltimateShipTo := nil; end;
   if Assigned(FPayee                         ) then begin FPayee.Free; FPayee := nil; end;
   if Assigned(FShipFrom                      ) then begin FShipFrom.Free; FShipFrom := nil; end;
   if Assigned(FNotes                         ) then begin FNotes.Free; FNotes := nil; end;
