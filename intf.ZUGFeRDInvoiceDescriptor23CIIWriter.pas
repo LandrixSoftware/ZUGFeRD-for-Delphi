@@ -1135,6 +1135,8 @@ begin
         _writeOptionalAmount(Writer, 'ram:BasisAmount', PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount);
       if PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent <> 0.0 then
         _writeOptionalAmount(Writer, 'ram:CalculationPercent', PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent,4);
+      if PaymentTerms.ApplicableTradePaymentDiscountTerms.ActualPenaltyAmount <> 0.0 then
+        _writeOptionalAmount(Writer, 'ram:ActualPenaltyAmount', PaymentTerms.ApplicableTradePaymentDiscountTerms.ActualPenaltyAmount);
       Writer.WriteEndElement();
       //TODO PaymentTerms.ApplicableTradePaymentDiscountTerms.ActualPenaltyAmount
 

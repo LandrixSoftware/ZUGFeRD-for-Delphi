@@ -66,6 +66,7 @@ uses
   ,intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
   ,intf.ZUGFeRDDesignatedProductClassificationClassCodes
   ,intf.ZUGFeRDXmlUtils
+  ,intf.ZUGFeRDIncludedReferencedProduct
   ;
 
 type
@@ -111,6 +112,7 @@ begin
     'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.2', // XRechnung 2.2
     'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3', // XRechnung 2.3
     'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0', // XRechnung 3.0
+    'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0#conformant#urn:xeinkauf.de:kosit:extension:xrechnung_3.0', // XRechnung 3.0
     'urn.cpro.gouv.fr:1p0:ereporting' //Factur-X E-reporting
   );
 end;
@@ -157,7 +159,7 @@ begin
 
   Result := TZUGFeRDInvoiceDescriptor.Create;
 
-  Result.IsTest := TZUGFeRDXmlUtils.NodeAsBool(doc.documentElement,'//*[local-name()="ExchangedDocumentContext"]/ram:TestIndicator',false);
+  Result.IsTest := TZUGFeRDXmlUtils.NodeAsBool(doc.documentElement,'//*[local-name()="ExchangedDocumentContext"]/ram:TestIndicator/udt:Indicator',false);
   Result.BusinessProcess := TZUGFeRDXmlUtils.NodeAsString(doc.DocumentElement, '//*[local-name()="BusinessProcessSpecifiedDocumentContextParameter"]/ram:ID');//, nsmgr),
   Result.Profile := TZUGFeRDProfileExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(doc.DocumentElement, '//ram:GuidelineSpecifiedDocumentContextParameter/ram:ID'));//, nsmgr)),
   Result.Name := TZUGFeRDXmlUtils.NodeAsString(doc.DocumentElement, '//*[local-name()="ExchangedDocument"]/ram:Name');//, nsmgr)),
@@ -286,6 +288,7 @@ begin
 
 
   Result.ShipTo := _nodeAsParty(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:ShipToTradeParty');
+  Result.UltimateShipTo := _nodeAsParty(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:UltimateShipToTradeParty');
   Result.ShipFrom := _nodeAsParty(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:ShipFromTradeParty');
   Result.ActualDeliveryDate:= TZUGFeRDXmlUtils.NodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:ActualDeliverySupplyChainEvent/ram:OccurrenceDateTime/udt:DateTimeString');
 
@@ -308,7 +311,7 @@ begin
 
   if (_deliveryNoteDate < 100) then
   begin
-    _deliveryNoteDate := TZUGFeRDXmlUtils.NodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:IssueDateTime');
+    _deliveryNoteDate := TZUGFeRDXmlUtils.NodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:FormattedIssueDateTime');
   end;
 
   if ((_deliveryNoteDate > 100) or (_deliveryNoteNo <> '')) then
@@ -449,7 +452,7 @@ begin
   begin
     var paymentTerm : TZUGFeRDPaymentTerms := TZUGFeRDPaymentTerms.Create;
     paymentTerm.Description := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Description');
-    paymentTerm.DueDate:= TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './/ram:DueDateDateTime');
+    paymentTerm.DueDate:= TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './/ram:DueDateDateTime/udt:DateTimeString');
     paymentTerm.DirectDebitMandateID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:DirectDebitMandateID');
     //TODO paymentTerm.PartialPaymentAmount
     //TODO paymentTerm.ApplicableTradePaymentPenaltyTerms
@@ -457,6 +460,7 @@ begin
     paymentTerm.ApplicableTradePaymentDiscountTerms.UnitCode := TZUGFeRDQuantityCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisPeriodMeasure/@unitCode'));
     paymentTerm.ApplicableTradePaymentDiscountTerms.BasisAmount := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisAmount');
     paymentTerm.ApplicableTradePaymentDiscountTerms.CalculationPercent := TZUGFeRDXmlUtils.NodeAsDouble(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:CalculationPercent');
+    paymentTerm.ApplicableTradePaymentDiscountTerms.ActualPenaltyAmount := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:ActualPenaltyAmount');
 
     Result.PaymentTermsList.Add(paymentTerm);
   end;
@@ -527,6 +531,8 @@ begin
   end;
   Result.Filename := TZUGFeRDXmlUtils.NodeAsString(a_oXmlNode, 'ram:AttachmentBinaryObject/@filename');
   Result.ReferenceTypeCode := TZUGFeRDReferenceTypeCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(a_oXmlNode, 'ram:ReferenceTypeCode'));
+  Result.URIID := TZUGFeRDXmlUtils.NodeAsString(a_oXmlNode, 'ram:URIID');
+  Result.LineID := TZUGFeRDXmlUtils.NodeAsString(a_oXmlNode, 'ram:LineID');
 end;
 
 function TZUGFeRDInvoiceDescriptor23CIIReader._nodeAsLegalOrganization(
@@ -607,9 +613,10 @@ begin
   Result.Description := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:Description');
   Result.UnitQuantity:= TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:BasisQuantity', 0);
   Result.BilledQuantity := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:BilledQuantity', 0);
+  Result.ShipTo := _nodeAsParty(tradeLineItem, './/ram:SpecifiedLineTradeDelivery/ram:ShipToTradeParty');
+  Result.UltimateShipTo := _nodeAsParty(tradeLineItem, './/ram:SpecifiedLineTradeDelivery/ram:UltimateShipToTradeParty');
   Result.PackageQuantity := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:PackageQuantity', 0);
   Result.ChargeFreeQuantity := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:ChargeFreeQuantity', 0);
-//  Result.LineTotalAmount.SetValue(TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:LineTotalAmount', 0));
   Result.LineTotalAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:LineTotalAmount', 0);
   Result.TaxCategoryCode := TZUGFeRDTaxCategoryCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:CategoryCode'));
   Result.TaxType := TZUGFeRDTaxTypesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:TypeCode'));
@@ -631,9 +638,18 @@ begin
     Result.ApplicableProductCharacteristics.Add(apcItem);
   end;
 
+  nodes := tradeLineItem.SelectNodes('.//ram:SpecifiedTradeProduct/ram:IncludedReferencedProduct');
+  for i := 0 to nodes.length-1 do
+  begin
+    var irpItem: TZUGFeRDIncludedReferencedProduct := TZUGFeRDIncludedReferencedProduct.Create;
+    irpItem.Name := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Name');
+    irpItem.UnitCode := TZUGFeRDQuantityCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:UnitQuantity/@unitCode'));
+    irpItem.UnitQuantity:= TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:UnitQuantity', 0);
+    Result.IncludedReferencedProducts.Add(irpItem);
+  end;
+
   if (tradeLineItem.SelectSingleNode('.//ram:SpecifiedLineTradeAgreement/ram:BuyerOrderReferencedDocument') <> nil) then
   begin
-    Result.BuyerOrderReferencedDocument := TZUGFeRDBuyerOrderReferencedDocument.Create;
     Result.BuyerOrderReferencedDocument.ID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedLineTradeAgreement/ram:BuyerOrderReferencedDocument/ram:IssuerAssignedID');
     Result.BuyerOrderReferencedDocument.IssueDateTime := TZUGFeRDXmlUtils.NodeAsDateTime(tradeLineItem, './/ram:SpecifiedLineTradeAgreement/ram:BuyerOrderReferencedDocument/ram:FormattedIssueDateTime/qdt:DateTimeString');
     Result.BuyerOrderReferencedDocument.LineID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedLineTradeAgreement/ram:BuyerOrderReferencedDocument/ram:LineID');
@@ -688,9 +704,9 @@ begin
       begin
         //TODO
       end else
-      if SameText(nodes[i].nodeName,'ram:AdditionalReferencedDocument') then
+      if SameText(nodes[i].nodeName,'ram:AdditionalReferencedDocument') then  // BT-128-00
       begin
-        //TODO
+        Result.AdditionalReferencedDocuments.Add(_getAdditionalReferencedDocument(nodes[i]));
       end else
       if SameText(nodes[i].nodeName,'ram:ReceivableSpecifiedTradeAccountingAccount') then
       begin
@@ -706,6 +722,7 @@ begin
   if (tradeLineItem.SelectSingleNode('.//ram:AssociatedDocumentLineDocument') <> nil) then
   begin
     Result.AssociatedDocument := TZUGFeRDAssociatedDocument.Create(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:AssociatedDocumentLineDocument/ram:LineID'));
+    Result.AssociatedDocument.ParentLineId := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:AssociatedDocumentLineDocument/ram:ParentLineID');
     Result.AssociatedDocument.LineStatusCode := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:AssociatedDocumentLineDocument/ram:LineStatusCode');
     Result.AssociatedDocument.LineStatusReasonCode := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:AssociatedDocumentLineDocument/ram:LineStatusReasonCode');
 
