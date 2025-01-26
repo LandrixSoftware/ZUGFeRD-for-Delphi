@@ -24,6 +24,7 @@ uses
   ,System.NetEncoding
   ,Xml.XMLDoc, Xml.xmldom, Xml.XMLIntf
   ,Xml.Win.msxmldom, Winapi.MSXMLIntf, Winapi.msxml
+  ,intf.ZUGFeRDHelper
   ,intf.ZUGFeRDXmlHelper
   ,intf.ZUGFeRDInvoiceDescriptorReader
   ,intf.ZUGFeRDTradeLineItem
@@ -74,6 +75,7 @@ type
   private
     function GetValidURIs : TArray<string>;
     function _parseTradeLineItem(tradeLineItem : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDTradeLineItem;
+    function _nodeAsContact(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDContact;
     function _nodeAsParty(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDParty;
     function _getAdditionalReferencedDocument(a_oXmlNode : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDAdditionalReferencedDocument;
     function _nodeAsLegalOrganization(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDLegalOrganization;
@@ -288,33 +290,35 @@ begin
 
 
   Result.ShipTo := _nodeAsParty(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:ShipToTradeParty');
+  Result.ShipToContact := _nodeAsContact(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:ShipToTradeParty');
   Result.UltimateShipTo := _nodeAsParty(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:UltimateShipToTradeParty');
+  Result.UltimateShipToContact := _nodeAsContact(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:UltimateShipToTradeParty');
   Result.ShipFrom := _nodeAsParty(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:ShipFromTradeParty');
   Result.ActualDeliveryDate:= TZUGFeRDXmlUtils.NodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:ActualDeliverySupplyChainEvent/ram:OccurrenceDateTime/udt:DateTimeString');
 
   var _despatchAdviceNo : String := TZUGFeRDXmlUtils.NodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DespatchAdviceReferencedDocument/ram:IssuerAssignedID');
-  var _despatchAdviceDate : TDateTime := TZUGFeRDXmlUtils.NodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DespatchAdviceReferencedDocument/ram:FormattedIssueDateTime/udt:DateTimeString');
+  var _despatchAdviceDate : ZUGFeRDNullable<TDateTime> := TZUGFeRDXmlUtils.NodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DespatchAdviceReferencedDocument/ram:FormattedIssueDateTime/udt:DateTimeString');
 
-  if (_despatchAdviceDate < 100) then
+  if Not(_despatchAdviceDate.HasValue) then
   begin
     _despatchAdviceDate := TZUGFeRDXmlUtils.NodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DespatchAdviceReferencedDocument/ram:FormattedIssueDateTime');
   end;
 
-  if ((_despatchAdviceDate > 100) or (_despatchAdviceNo <> '')) then
+  if ((_despatchAdviceDate.HasValue) or (_despatchAdviceNo <> '')) then
   begin
     Result.DespatchAdviceReferencedDocument := TZUGFeRDDespatchAdviceReferencedDocument.Create;
     Result.SetDespatchAdviceReferencedDocument(_despatchAdviceNo,_despatchAdviceDate);
   end;
 
   var _deliveryNoteNo : String := TZUGFeRDXmlUtils.NodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:IssuerAssignedID');
-  var _deliveryNoteDate : TDateTime := TZUGFeRDXmlUtils.NodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:IssueDateTime/udt:DateTimeString');
+  var _deliveryNoteDate : ZUGFeRDNullable<TDateTime> := TZUGFeRDXmlUtils.NodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:IssueDateTime/udt:DateTimeString');
 
-  if (_deliveryNoteDate < 100) then
+  if Not(_deliveryNoteDate.HasValue) then
   begin
     _deliveryNoteDate := TZUGFeRDXmlUtils.NodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:FormattedIssueDateTime');
   end;
 
-  if ((_deliveryNoteDate > 100) or (_deliveryNoteNo <> '')) then
+  if ((_deliveryNoteDate.HasValue) or (_deliveryNoteNo <> '')) then
   begin
     Result.DeliveryNoteReferencedDocument := TZUGFeRDDeliveryNoteReferencedDocument.Create;
     Result.SetDeliveryNoteReferenceDocument(_deliveryNoteNo,_deliveryNoteDate);
@@ -552,8 +556,25 @@ begin
                TZUGFeRDXmlUtils.NodeAsString(node, 'ram:TradingBusinessName'));
 end;
 
-function TZUGFeRDInvoiceDescriptor23CIIReader._nodeAsParty(basenode: IXmlDomNode;
-  const xpath: string) : TZUGFeRDParty;
+function TZUGFeRDInvoiceDescriptor23CIIReader._nodeAsContact(basenode: IXmlDomNode;  const xpath: string) : TZUGFeRDContact;
+var
+  node : IXmlDomNode;
+begin
+  Result := nil;
+  if (baseNode = nil) then
+    exit;
+  node := baseNode.SelectSingleNode(xpath);
+  if (node = nil) then
+    exit;
+  Result := TZUGFeRDContact.Create;
+  Result.Name := TZUGFeRDXmlUtils.NodeAsString(node, 'ram:PersonName');
+  Result.OrgUnit := TZUGFeRDXmlUtils.NodeAsString(node, 'ram:DepartmentName');
+  Result.PhoneNo := TZUGFeRDXmlUtils.NodeAsString(node, 'ram:TelephoneUniversalCommunication/ram:CompleteNumber');
+  Result.FaxNo := TZUGFeRDXmlUtils.NodeAsString(node, 'ram:FaxUniversalCommunication/ram:CompleteNumber');
+  Result.EmailAddress := TZUGFeRDXmlUtils.NodeAsString(node, 'ram:EmailURIUniversalCommunication/ram:URIID');
+end;
+
+function TZUGFeRDInvoiceDescriptor23CIIReader._nodeAsParty(basenode: IXmlDomNode;  const xpath: string) : TZUGFeRDParty;
 var
   node : IXmlDomNode;
   lineOne,lineTwo : String;
@@ -615,8 +636,8 @@ begin
   Result.BilledQuantity := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:BilledQuantity', 0);
   Result.ShipTo := _nodeAsParty(tradeLineItem, './/ram:SpecifiedLineTradeDelivery/ram:ShipToTradeParty');
   Result.UltimateShipTo := _nodeAsParty(tradeLineItem, './/ram:SpecifiedLineTradeDelivery/ram:UltimateShipToTradeParty');
-  Result.PackageQuantity := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:PackageQuantity', 0);
   Result.ChargeFreeQuantity := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:ChargeFreeQuantity', 0);
+  Result.PackageQuantity := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:PackageQuantity', 0);
   Result.LineTotalAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:LineTotalAmount', 0);
   Result.TaxCategoryCode := TZUGFeRDTaxCategoryCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:CategoryCode'));
   Result.TaxType := TZUGFeRDTaxTypesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:TypeCode'));
@@ -660,6 +681,7 @@ begin
     Result.ContractReferencedDocument := TZUGFeRDContractReferencedDocument.Create;
     Result.ContractReferencedDocument.ID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedLineTradeAgreement/ram:ContractReferencedDocument/ram:IssuerAssignedID');
     Result.ContractReferencedDocument.IssueDateTime:= TZUGFeRDXmlUtils.NodeAsDateTime(tradeLineItem, './/ram:SpecifiedLineTradeAgreement/ram:ContractReferencedDocument/ram:FormattedIssueDateTime/qdt:DateTimeString');
+    Result.ContractReferencedDocument.LineID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedLineTradeAgreement/ram:ContractReferencedDocument/ram:LineID');
   end;
 
   if (tradeLineItem.SelectSingleNode('.//ram:SpecifiedLineTradeSettlement') <> nil) then
@@ -673,7 +695,7 @@ begin
       end else
       if SameText(nodes[i].nodeName,'ram:BillingSpecifiedPeriod') then
       begin
-        //TODO
+        // TODO
       end else
       if SameText(nodes[i].nodeName,'ram:SpecifiedTradeAllowanceCharge') then
       begin
@@ -777,21 +799,13 @@ begin
     Result.DeliveryNoteReferencedDocument := TZUGFeRDDeliveryNoteReferencedDocument.Create;
     Result.DeliveryNoteReferencedDocument.ID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedLineTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:IssuerAssignedID');
     Result.DeliveryNoteReferencedDocument.IssueDateTime:= TZUGFeRDXmlUtils.NodeAsDateTime(tradeLineItem, './/ram:SpecifiedLineTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:FormattedIssueDateTime/qdt:DateTimeString');
+    Result.DeliveryNoteReferencedDocument.LineID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedLineTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:LineID');
   end;
 
   if (tradeLineItem.SelectSingleNode('.//ram:SpecifiedLineTradeDelivery/ram:ActualDeliverySupplyChainEvent/ram:OccurrenceDateTime') <> nil) then
   begin
     Result.ActualDeliveryDate:= TZUGFeRDXmlUtils.NodeAsDateTime(tradeLineItem, './/ram:SpecifiedLineTradeDelivery/ram:ActualDeliverySupplyChainEvent/ram:OccurrenceDateTime/udt:DateTimeString');
   end;
-
-  //if (tradeLineItem.SelectSingleNode(".//ram:SpecifiedLineTradeAgreement/ram:ContractReferencedDocument/ram:IssuerAssignedID", nsmgr) != null)
-  //{
-  //    item.ContractReferencedDocument = new ContractReferencedDocument()
-  //    {
-  //        ID = TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, ".//ram:SpecifiedLineTradeAgreement/ram:ContractReferencedDocument/ram:IssuerAssignedID", nsmgr),
-  //        IssueDateTime = TZUGFeRDXmlUtils.NodeAsDateTime(tradeLineItem, ".//ram:SpecifiedLineTradeAgreement/ram:ContractReferencedDocument/ram:FormattedIssueDateTime/qdt:DateTimeString", nsmgr),
-  //    };
-  //}
 
   //Get all referenced AND embedded documents
   nodes := tradeLineItem.SelectNodes('.//ram:SpecifiedLineTradeAgreement/ram:AdditionalReferencedDocument');

@@ -26,7 +26,13 @@ type
   /// Structure containing detailed information about the corresponding delivery note
   /// </summary>
   TZUGFeRDDeliveryNoteReferencedDocument = class(TZUGFeRDBaseReferencedDocument)
+  private
+      FLineID: string;
   public
+    /// <summary>
+    /// Reference to the delivery note item BT-X-93
+    /// </summary>
+    property LineID: string read FLineID write FLineID;
   end;
 
 implementation

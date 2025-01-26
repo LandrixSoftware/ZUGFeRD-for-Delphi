@@ -144,7 +144,7 @@ begin
   Writer.WriteElementString('ram:Name', ifthen(Descriptor.Name<>'',Descriptor.Name,_translateInvoiceType(Descriptor.Type_)));
   Writer.WriteElementString('ram:TypeCode', Format('%d',[_encodeInvoiceType(Descriptor.Type_)]));
 
-  if (Trunc(Descriptor.InvoiceDate) > 0) then
+  if (Trunc(Descriptor.InvoiceDate.Value) > 0) then
   begin
     Writer.WriteStartElement('ram:IssueDateTime');
     Writer.WriteStartElement('udt:DateTimeString');
@@ -511,6 +511,10 @@ begin
       if (tradeLineItem.ContractReferencedDocument<> nil) then
       begin
         Writer.WriteStartElement('ram:ContractReferencedDocument');
+
+        // reference to the contract position
+        Writer.WriteOptionalElementString('ram:LineID', tradeLineItem.ContractReferencedDocument.LineID);
+
         if (tradeLineItem.ContractReferencedDocument.IssueDateTime.HasValue) then
         begin
           Writer.WriteStartElement('ram:IssueDateTime');
@@ -596,6 +600,10 @@ begin
       if (tradeLineItem.DeliveryNoteReferencedDocument<> nil) then
       begin
           Writer.WriteStartElement('ram:DeliveryNoteReferencedDocument');
+
+          // reference to the delivery note item
+          Writer.WriteOptionalElementString('ram:LineID', tradeLineItem.DeliveryNoteReferencedDocument.LineID);
+
           if (tradeLineItem.DeliveryNoteReferencedDocument.IssueDateTime.HasValue) then
           begin
             Writer.WriteStartElement('ram:IssueDateTime');

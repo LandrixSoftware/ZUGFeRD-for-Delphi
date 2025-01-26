@@ -24,6 +24,7 @@ uses
   ,Xml.XMLDoc, Xml.xmldom, Xml.XMLIntf
   ,Xml.Win.msxmldom, Winapi.MSXMLIntf, Winapi.msxml
   ,intf.ZUGFeRDExceptions
+  ,intf.ZUGFeRDHelper
   ;
 
 
@@ -41,7 +42,7 @@ type
     ///  reads the value from given xpath and interprets the value as date time
     /// </summary>
     class function NodeAsDouble(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: Double = 0): Double;
-    class function NodeAsDateTime(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: TDateTime = 0): TDateTime;
+    class function NodeAsDateTime(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: IZUGFeRDNullableParam<TDateTime> = Nil): ZUGFeRDNullable<TDateTime>;
     class function SafeParseDateTime(const year: string = '0'; const month: string = '0'; const day: string = '0'; const hour: string = '0'; const minute: string = '0'; const second: string = '0'): TDateTime;
   end;
 
@@ -137,7 +138,7 @@ begin
 end;
 
 class function TZUGFeRDXmlUtils.NodeAsDateTime(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager;}
-  defaultValue: TDateTime): TDateTime;
+  defaultValue: IZUGFeRDNullableParam<TDateTime>): ZUGFeRDNullable<TDateTime>;
 var
   format, rawValue, year, month, day, hour, minute, second, week: string;
   dateNode: IXmlDomNode;
@@ -152,11 +153,7 @@ begin
   format := '';
   dateNode := node.SelectSingleNode(xpath{, nsmgr});
   if dateNode = nil then
-  begin
-    if not (defaultValue <> 0) then
-      Result := 0;
     exit;
-  end;
 
   if dateNode.Attributes.getNamedItem('format') <> nil then
   if dateNode.Attributes.getNamedItem('format').text <> '' then

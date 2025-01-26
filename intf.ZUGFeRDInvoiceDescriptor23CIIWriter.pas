@@ -176,7 +176,7 @@ begin
   Writer.WriteElementString('ram:Name', ifthen(Descriptor.Name<>'',Descriptor.Name,_translateInvoiceType(Descriptor.Type_)), [TZUGFeRDProfile.Extended]); //Dokumentenart (Freitext)
   Writer.WriteElementString('ram:TypeCode', Format('%d',[_encodeInvoiceType(Descriptor.Type_)])); //Code für den Rechnungstyp
                                                                                                              //ToDo: LanguageID      //Sprachkennzeichen
-  if (Descriptor.InvoiceDate > 100) then
+  if Descriptor.InvoiceDate.HasValue then
   begin
       Writer.WriteStartElement('ram:IssueDateTime');
       Writer.WriteStartElement('udt:DateTimeString');
@@ -344,6 +344,10 @@ begin
       if (tradeLineItem.ContractReferencedDocument <> nil) then
       begin
         Writer.WriteStartElement('ram:ContractReferencedDocument', [TZUGFeRDProfile.Extended]);
+
+        // reference to the contract position
+        Writer.WriteOptionalElementString('ram:LineID', tradeLineItem.ContractReferencedDocument.LineID);
+
         if (tradeLineItem.ContractReferencedDocument.IssueDateTime.HasValue) then
         begin
           Writer.WriteStartElement('ram:FormattedIssueDateTime');
@@ -470,10 +474,10 @@ begin
     //#region SpecifiedLineTradeDelivery (Basic, Comfort, Extended)
     Writer.WriteStartElement('ram:SpecifiedLineTradeDelivery', [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
     _writeElementWithAttribute(Writer, 'ram:BilledQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.BilledQuantity, 4));
-    if tradeLineItem.PackageQuantity.HasValue then
-      _writeElementWithAttribute(Writer, 'ram:PackageQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.PackageUnitCode), _formatDecimal(tradeLineItem.PackageQuantity, 4));
     if tradeLineItem.ChargeFreeQuantity.HasValue then
       _writeElementWithAttribute(Writer, 'ram:ChargeFreeQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.ChargeFreeUnitCode), _formatDecimal(tradeLineItem.ChargeFreeQuantity, 4));
+    if tradeLineItem.PackageQuantity.HasValue then
+      _writeElementWithAttribute(Writer, 'ram:PackageQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.PackageUnitCode), _formatDecimal(tradeLineItem.PackageQuantity, 4));
     if Assigned(tradeLineItem.ShipTo) and (Descriptor.Profile=TZUGFeRDProfile.Extended) then
       _writeOptionalParty(Writer, TZUGFeRDPartyTypes.ShipToTradeParty, tradeLineItem.ShipTo);
     if Assigned(tradeLineItem.UltimateShipTo) and (Descriptor.Profile=TZUGFeRDProfile.Extended) then
@@ -495,6 +499,9 @@ begin
     begin
         Writer.WriteStartElement('ram:DeliveryNoteReferencedDocument', ALL_PROFILES - [TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung]); // this violates CII-SR-175 for XRechnung 3
         Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.DeliveryNoteReferencedDocument.ID);
+
+        // reference to the delivery note item
+        Writer.WriteOptionalElementString('ram:LineID', tradeLineItem.DeliveryNoteReferencedDocument.LineID);
 
         if (tradeLineItem.DeliveryNoteReferencedDocument.IssueDateTime.HasValue) then
         begin
@@ -785,9 +792,9 @@ begin
   //#region ApplicableHeaderTradeDelivery
   Writer.WriteStartElement('ram:ApplicableHeaderTradeDelivery'); // Pflichteintrag
   if Descriptor.Profile<>TZUGFeRDProfile.Minimum then
-    _writeOptionalParty(Writer, TZUGFeRDPartyTypes.ShipToTradeParty, Descriptor.ShipTo);
+    _writeOptionalParty(Writer, TZUGFeRDPartyTypes.ShipToTradeParty, Descriptor.ShipTo, Descriptor.ShipToContact);
   if Descriptor.Profile in [TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung1, TZUGFeRDProfile.XRechnung] then
-    _writeOptionalParty(Writer, TZUGFeRDPartyTypes.UltimateShipToTradeParty, Descriptor.UltimateShipTo);
+    _writeOptionalParty(Writer, TZUGFeRDPartyTypes.UltimateShipToTradeParty, Descriptor.UltimateShipTo, Descriptor.UltimateShipToContact);
   if Descriptor.Profile=TZUGFeRDProfile.Extended then
     _writeOptionalParty(Writer, TZUGFeRDPartyTypes.ShipFromTradeParty, Descriptor.ShipFrom);
 
@@ -999,17 +1006,17 @@ begin
 
   //#region BillingSpecifiedPeriod
   //  12. BillingSpecifiedPeriod (optional)
-  if (Descriptor.BillingPeriodStart>100) or (Descriptor.BillingPeriodEnd>100) then
+  if (Descriptor.BillingPeriodStart.HasValue) or (Descriptor.BillingPeriodEnd.HasValue) then
   begin
     Writer.WriteStartElement('ram:BillingSpecifiedPeriod', ALL_PROFILES  - [TZUGFeRDProfile.Minimum]);
-    if (Descriptor.BillingPeriodStart>100) then
+    if (Descriptor.BillingPeriodStart.HasValue) then
     begin
         Writer.WriteStartElement('ram:StartDateTime');
         _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(Descriptor.BillingPeriodStart));
         Writer.WriteEndElement(); // !StartDateTime
     end;
 
-    if (Descriptor.BillingPeriodEnd>100) then
+    if (Descriptor.BillingPeriodEnd.HasValue) then
     begin
         Writer.WriteStartElement('ram:EndDateTime');
         _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(Descriptor.BillingPeriodEnd));
