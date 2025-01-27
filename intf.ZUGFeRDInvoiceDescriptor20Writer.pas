@@ -144,7 +144,7 @@ begin
   Writer.WriteElementString('ram:Name', ifthen(Descriptor.Name<>'',Descriptor.Name,_translateInvoiceType(Descriptor.Type_)), [TZUGFeRDProfile.Extended]);
   Writer.WriteElementString('ram:TypeCode', Format('%d',[_encodeInvoiceType(Descriptor.Type_)]));
 
-  if (Descriptor.InvoiceDate > 100) then
+  if Descriptor.InvoiceDate.HasValue then
   begin
       Writer.WriteStartElement('ram:IssueDateTime');
       Writer.WriteStartElement('udt:DateTimeString');
@@ -248,6 +248,10 @@ begin
     if (tradeLineItem.ContractReferencedDocument <> nil) then
     begin
       Writer.WriteStartElement('ram:ContractReferencedDocument', [TZUGFeRDProfile.Extended]);
+
+      // reference to the contract position
+      Writer.WriteOptionalElementString('ram:LineID', tradeLineItem.ContractReferencedDocument.LineID);
+
       if (tradeLineItem.ContractReferencedDocument.IssueDateTime.HasValue) then
       begin
         Writer.WriteStartElement('ram:FormattedIssueDateTime');
@@ -351,25 +355,27 @@ begin
 
       if (tradeLineItem.DeliveryNoteReferencedDocument <> nil) then
       begin
-          Writer.WriteStartElement('ram:DeliveryNoteReferencedDocument');
+        Writer.WriteStartElement('ram:DeliveryNoteReferencedDocument');
 
-          if (tradeLineItem.DeliveryNoteReferencedDocument.IssueDateTime.HasValue) then
-          begin
-            //Old path of Version 1.0
-            //Writer.WriteStartElement('ram:IssueDateTime');
-            //Writer.WriteValue(_formatDate(tradeLineItem.DeliveryNoteReferencedDocument.IssueDateTime.Value));
-            //Writer.WriteEndElement(); // !ram:IssueDateTime
+        // reference to the delivery note item
+        Writer.WriteOptionalElementString('ram:LineID', tradeLineItem.DeliveryNoteReferencedDocument.LineID);
 
-            Writer.WriteStartElement('ram:FormattedIssueDateTime');
-            Writer.WriteStartElement('qdt:DateTimeString');
-            Writer.WriteAttributeString('format', '102');
-            Writer.WriteValue(_formatDate(Descriptor.OrderDate.Value));
-            Writer.WriteEndElement(); // 'qdt:DateTimeString
-            Writer.WriteEndElement(); // !ram:FormattedIssueDateTime
-          end;
+        if (tradeLineItem.DeliveryNoteReferencedDocument.IssueDateTime.HasValue) then
+        begin
+          //Old path of Version 1.0
+          //Writer.WriteStartElement('ram:IssueDateTime');
+          //Writer.WriteValue(_formatDate(tradeLineItem.DeliveryNoteReferencedDocument.IssueDateTime.Value));
+          //Writer.WriteEndElement(); // !ram:IssueDateTime
 
-          Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.DeliveryNoteReferencedDocument.ID);
-          Writer.WriteEndElement(); // !ram:DeliveryNoteReferencedDocument
+          Writer.WriteStartElement('ram:FormattedIssueDateTime');
+          Writer.WriteStartElement('qdt:DateTimeString');
+          Writer.WriteAttributeString('format', '102');
+          Writer.WriteValue(_formatDate(Descriptor.OrderDate.Value));
+          Writer.WriteEndElement(); // 'qdt:DateTimeString
+          Writer.WriteEndElement(); // !ram:FormattedIssueDateTime
+        end;
+        Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.DeliveryNoteReferencedDocument.ID);
+        Writer.WriteEndElement(); // !ram:DeliveryNoteReferencedDocument
       end;
 
       if (tradeLineItem.ActualDeliveryDate.HasValue) then
@@ -538,7 +544,7 @@ begin
   begin
     Writer.WriteStartElement('ram:DeliveryNoteReferencedDocument');
 
-    if (Descriptor.DeliveryNoteReferencedDocument.IssueDateTime.HasValue) then
+   if (Descriptor.DeliveryNoteReferencedDocument.IssueDateTime.HasValue) then
     begin
       Writer.WriteStartElement('ram:FormattedIssueDateTime');
       Writer.WriteValue(_formatDate(Descriptor.DeliveryNoteReferencedDocument.IssueDateTime.Value,false));
@@ -710,24 +716,24 @@ begin
   //          * 		<Name>Hausbank München</Name>
   //          * 	</PayeeSpecifiedCreditorFinancialInstitution>
   //          * </SpecifiedTradeSettlementPaymentMeans>
-  //             */
+  //             */  r
 
   //  11. ApplicableTradeTax (optional)
   _writeOptionalTaxes(Writer);
 
   //#region BillingSpecifiedPeriod
   //  12. BillingSpecifiedPeriod (optional)
-  if (Descriptor.BillingPeriodStart>100) or (Descriptor.BillingPeriodEnd>100) then
+  if (Descriptor.BillingPeriodStart.HasValue) or (Descriptor.BillingPeriodEnd.HasValue) then
   begin
     Writer.WriteStartElement('ram:BillingSpecifiedPeriod', [TZUGFeRDProfile.BasicWL,TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
-    if (Descriptor.BillingPeriodStart>100) then
+    if (Descriptor.BillingPeriodStart.HasValue) then
     begin
         Writer.WriteStartElement('ram:StartDateTime');
         _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(Descriptor.BillingPeriodStart));
         Writer.WriteEndElement(); // !StartDateTime
     end;
 
-    if (Descriptor.BillingPeriodEnd>100) then
+    if (Descriptor.BillingPeriodEnd.HasValue) then
     begin
         Writer.WriteStartElement('ram:EndDateTime');
         _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(Descriptor.BillingPeriodEnd));

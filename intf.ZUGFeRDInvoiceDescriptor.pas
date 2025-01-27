@@ -76,7 +76,7 @@ type
   TZUGFeRDInvoiceDescriptor = class
   private
     FInvoiceNo: string;
-    FInvoiceDate: TDateTime;
+    FInvoiceDate: ZUGFeRDNullable<TDateTime>;
     FPaymentReference: string;
     FOrderNo: string;
     FOrderDate: ZUGFeRDNullable<TDateTime>;
@@ -97,7 +97,9 @@ type
     FSellerElectronicAddress: TZUGFeRDElectronicAddress;
     FInvoicee: TZUGFeRDParty;
     FShipTo: TZUGFeRDParty;
+    FShipToContact: TZUGFeRDContact;
     FUltimateShipTo: TZUGFeRDParty;
+    FUltimateShipToContact: TZUGFeRDContact;
     FPayee: TZUGFeRDParty;
     FShipFrom: TZUGFeRDParty;
     FNotes: TObjectList<TZUGFeRDNote>;
@@ -127,8 +129,8 @@ type
     FCreditorBankAccounts: TObjectList<TZUGFeRDBankAccount>;
     FDebitorBankAccounts: TObjectList<TZUGFeRDBankAccount>;
     FPaymentMeans: TZUGFeRDPaymentMeans;
-    FBillingPeriodStart: TDateTime;
-    FBillingPeriodEnd: TDateTime;
+    FBillingPeriodStart: ZUGFeRDNullable<TDateTime>;
+    FBillingPeriodEnd: ZUGFeRDNullable<TDateTime>;
     FSellerOrderReferencedDocument: TZUGFeRDSellerOrderReferencedDocument;
     FDespatchAdviceReferencedDocument: TZUGFeRDDespatchAdviceReferencedDocument;
     FInvoicer: TZUGFeRDParty;
@@ -142,7 +144,7 @@ type
     /// <summary>
     /// Invoice date
     /// </summary>
-    property InvoiceDate: TDateTime read FInvoiceDate write FInvoiceDate;
+    property InvoiceDate: ZUGFeRDNullable<TDateTime> read FInvoiceDate write FInvoiceDate;
 
     /// <summary>
     /// A textual value used to establish a link between the payment and the invoice, issued by the seller.
@@ -259,11 +261,13 @@ type
     /// This party is optional and only relevant for Extended profile
     /// </summary>
     property ShipTo: TZUGFeRDParty read FShipTo write FShipTo;
+    property ShipToContact: TZUGFeRDContact read FShipToContact write FShipToContact;
 
     /// <summary>
     /// This party is optional and only relevant for Extended profile
     /// </summary>
     property UltimateShipTo: TZUGFeRDParty read FUltimateShipTo write FUltimateShipTo;
+    property UltimateShipToContact: TZUGFeRDContact read FUltimateShipToContact write FUltimateShipToContact;
 
     /// <summary>
     /// This party is optional and only relevant for Extended profile
@@ -455,12 +459,12 @@ type
     /// <summary>
     /// Detailed information about the invoicing period, start date
     /// </summary>
-    property BillingPeriodStart: TDateTime read FBillingPeriodStart write FBillingPeriodStart;
+    property BillingPeriodStart: ZUGFeRDNullable<TDateTime> read FBillingPeriodStart write FBillingPeriodStart;
 
     /// <summary>
     /// Detailed information about the invoicing period, end date
     /// </summary>
-    property BillingPeriodEnd: TDateTime read FBillingPeriodEnd write FBillingPeriodEnd;
+    property BillingPeriodEnd: ZUGFeRDNullable<TDateTime> read FBillingPeriodEnd write FBillingPeriodEnd;
 
     /// <summary>
     /// Details about the associated order confirmation (BT-14).
@@ -585,7 +589,7 @@ type
     /// <param name="attachmentBinaryObject"></param>
     /// <param name="filename"></param>
     procedure AddAdditionalReferencedDocument(const id: string; const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
-  const issueDateTime: TDateTime = 0; const name: string = ''; const referenceTypeCode: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
+  const issueDateTime: IZUGFeRDNullableParam<TDateTime> = Nil; const name: string = ''; const referenceTypeCode: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
   const attachmentBinaryObject: TMemoryStream = nil; const filename: string = '');
 
     /// <summary>
@@ -593,21 +597,21 @@ type
     /// </summary>
     /// <param name="orderNo"></param>
     /// <param name="orderDate"></param>
-    procedure SetBuyerOrderReferenceDocument(const orderNo: string; const orderDate: TDateTime = 0);
+    procedure SetBuyerOrderReferenceDocument(const orderNo: string; const orderDate: IZUGFeRDNullableParam<TDateTime> = Nil);
 
     /// <summary>
     /// Sets detailed information about the corresponding despatch advice
     /// </summary>
     /// <param name="deliveryNoteNo"></param>
     /// <param name="deliveryNoteDate"></param>
-    procedure SetDespatchAdviceReferencedDocument(despatchAdviceNo : String; despatchAdviceDate: TDateTime = 0);
+    procedure SetDespatchAdviceReferencedDocument(despatchAdviceNo : String; despatchAdviceDate: IZUGFeRDNullableParam<TDateTime> = Nil);
 
     /// <summary>
     /// Sets detailed information about the corresponding delivery note
     /// </summary>
     /// <param name="deliveryNoteNo"></param>
     /// <param name="deliveryNoteDate"></param>
-    procedure SetDeliveryNoteReferenceDocument(const deliveryNoteNo: string; const deliveryNoteDate: TDateTime = 0);
+    procedure SetDeliveryNoteReferenceDocument(const deliveryNoteNo: string; const deliveryNoteDate: IZUGFeRDNullableParam<TDateTime> = Nil);
 
     /// <summary>
     /// Sets detailed information about the corresponding contract
@@ -1340,7 +1344,7 @@ begin
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.AddAdditionalReferencedDocument(const id: string; const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
-  const issueDateTime: TDateTime = 0; const name: string = ''; const referenceTypeCode: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
+  const issueDateTime: IZUGFeRDNullableParam<TDateTime> = Nil; const name: string = ''; const referenceTypeCode: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
   const attachmentBinaryObject: TMemoryStream = nil; const filename: string = '');
 begin
   FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(false));
@@ -1353,23 +1357,20 @@ begin
   FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].TypeCode := typeCode;
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.SetBuyerOrderReferenceDocument(const orderNo: string; const orderDate: TDateTime = 0);
+procedure TZUGFeRDInvoiceDescriptor.SetBuyerOrderReferenceDocument(const orderNo: string; const orderDate: IZUGFeRDNullableParam<TDateTime> = Nil);
 begin
   FOrderNo := orderNo;
-  if orderDate < 100 then
-    FOrderDate:= Nil
-  else
-    FOrderDate:= orderDate;
+  FOrderDate:= orderDate
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.SetDeliveryNoteReferenceDocument(const deliveryNoteNo: string; const deliveryNoteDate: TDateTime = 0);
+procedure TZUGFeRDInvoiceDescriptor.SetDeliveryNoteReferenceDocument(const deliveryNoteNo: string; const deliveryNoteDate: IZUGFeRDNullableParam<TDateTime> = Nil);
 begin
   FDeliveryNoteReferencedDocument.ID := deliveryNoteNo;
   FDeliveryNoteReferencedDocument.IssueDateTime:= deliveryNoteDate;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetDespatchAdviceReferencedDocument(
-  despatchAdviceNo: String; despatchAdviceDate: TDateTime);
+  despatchAdviceNo: String; despatchAdviceDate: IZUGFeRDNullableParam<TDateTime> = Nil);
 begin
   FDespatchAdviceReferencedDocument.ID := despatchAdviceNo;
   FDespatchAdviceReferencedDocument.IssueDateTime:= despatchAdviceDate;

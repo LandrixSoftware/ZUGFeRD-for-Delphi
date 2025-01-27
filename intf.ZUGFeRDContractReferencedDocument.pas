@@ -26,7 +26,13 @@ type
   /// Detailed information on the associated contract
   /// </summary>
   TZUGFeRDContractReferencedDocument = class(TZUGFeRDBaseReferencedDocument)
-
+  private
+      FLineID: string;
+  public
+    /// <summary>
+    /// Reference to the contract position BT-X-25
+    /// </summary>
+    property LineID: string read FLineID write FLineID;
   end;
 
 implementation

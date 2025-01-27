@@ -269,7 +269,7 @@ type
     property BilledQuantity: Double read FBilledQuantity write FBilledQuantity;
 
     /// <summary>
-    /// No charge quantity
+    /// No charge quantity  BT-X-46
     /// </summary>
     property ChargeFreeQuantity: ZUGFeRDNullable<Double> read FChargeFreeQuantity write FChargeFreeQuantity;
 
@@ -408,6 +408,7 @@ begin
   FNetUnitPrice:= 0.0;
   FGrossUnitPrice:= 0.0;
   FAssociatedDocument:= nil;
+  FBillingPeriodStart.ClearValue;
   FShipTo:= nil;//TZUGFeRDParty.Create;
   FUltimateShipTo:= nil;//TZUGFeRDParty.Create;
   FBuyerOrderReferencedDocument:= nil;//TZUGFeRDBuyerOrderReferencedDocument.Create;
