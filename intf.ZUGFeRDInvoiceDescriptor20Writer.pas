@@ -598,7 +598,7 @@ begin
   Writer.WriteElementString('ram:InvoiceCurrencyCode', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
 
   //   5. InvoiceIssuerReference (optional)
-	Writer.WriteElementString('ram:InvoiceIssuerReference', Descriptor.SellerReferenceNo, [TZUGFeRDProfile.Extended]);
+	Writer.WriteOptionalElementString('ram:InvoiceIssuerReference', Descriptor.SellerReferenceNo, [TZUGFeRDProfile.Extended]);
 
 	//   6. InvoicerTradeParty (optional)
 	_writeOptionalParty(Writer, 'ram:InvoicerTradeParty', Descriptor.Invoicer);
