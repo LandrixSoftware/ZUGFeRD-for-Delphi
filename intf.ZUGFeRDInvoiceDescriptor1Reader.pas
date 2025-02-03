@@ -127,8 +127,7 @@ var
   nodes : IXMLDOMNodeList;
   i : Integer;
 begin
-  doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(xmldocument);
-
+  doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(xmldocument, true);  // defaults for ZUGFeRD1
   //XmlNamespaceManager nsmgr = _GenerateNamespaceManagerFromNode(doc.DocumentElement);
 
   Result := TZUGFeRDInvoiceDescriptor.Create;
