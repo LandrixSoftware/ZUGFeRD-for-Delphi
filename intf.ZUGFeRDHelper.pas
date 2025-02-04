@@ -566,9 +566,12 @@ end;
 
 function ZUGFeRDNullable<T>.GetValue: T;
 begin
-  if not HasValue then
-    raise Exception.Create('Invalid operation, ZUGFeRDNullable type has no value');
-  Result := FValue;
+{  if not HasValue then
+    raise Exception.Create('Invalid operation, ZUGFeRDNullable type has no value');}
+  if HasValue then
+    Result := FValue
+  else
+    Result := Default(T);
 end;
 
 function ZUGFeRDNullable<T>.GetValueOrDefault: T;

@@ -106,6 +106,7 @@ type
     FBusinessProcess: string;
     FIsTest: Boolean;
     FProfile: TZUGFeRDProfile;
+    FGuideline: string;
     FName: string;
     FType: TZUGFeRDInvoiceType;
     FReferenceOrderNo: string;
@@ -308,6 +309,13 @@ type
     /// the document is saved.
     /// </summary>
     property Profile: TZUGFeRDProfile read FProfile write FProfile default TZUGFeRDProfile.Basic;
+
+    /// <summary>
+    ///
+    /// GuidelineSpecifiedDocumentContextParameter that was used to create the document (readonly)
+    ///
+    /// </summary>
+    property Guideline: string read FGuideline write FGuideline;
 
     /// <summary>
     /// Document name (free text)

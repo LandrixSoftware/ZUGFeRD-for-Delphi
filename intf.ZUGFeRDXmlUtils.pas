@@ -37,11 +37,14 @@ type
     /// <summary>
     ///  reads the value from given xpath and interprets the value as decimal
     /// </summary>
-    class function NodeAsDecimal(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: Currency = 0): Currency;
+    class function NodeAsDecimal(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: IZUGFeRDNullableParam<Currency> = Nil): ZUGFeRDNullable<Currency>; overload;
+    class function NodeAsDecimal(node: IXmlDomNode; const xpath: string; defaultValue: Currency): ZUGFeRDNullable<Currency>; overload;
     /// <summary>
     ///  reads the value from given xpath and interprets the value as date time
     /// </summary>
-    class function NodeAsDouble(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: Double = 0): Double;
+    class function NodeAsDouble(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: IZUGFeRDNullableParam<Double> = Nil): ZUGFeRDNullable<Double>; overload;
+    class function NodeAsDouble(node: IXmlDomNode; const xpath: string; defaultValue: Double): ZUGFeRDNullable<Double>; overload;
+
     class function NodeAsDateTime(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: IZUGFeRDNullableParam<TDateTime> = Nil): ZUGFeRDNullable<TDateTime>;
     class function SafeParseDateTime(const year: string = '0'; const month: string = '0'; const day: string = '0'; const hour: string = '0'; const minute: string = '0'; const second: string = '0'): TDateTime;
   end;
@@ -109,24 +112,31 @@ begin
   TryStrToInt(temp, Result);
 end;
 
-class function TZUGFeRDXmlUtils.NodeAsDecimal(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager;}
-  defaultValue: Currency): Currency;
+
+
+class function TZUGFeRDXmlUtils.NodeAsDecimal(node: IXmlDomNode; const xpath: string; defaultValue: IZUGFeRDNullableParam<Currency> = Nil): ZUGFeRDNullable<Currency>;
 var
   temp: string;
+  ResCurrency: Currency;
 begin
-  Result := defaultValue;
-
+  Result:= defaultValue;
   if node = nil then
     exit;
 
   temp := TZUGFeRDXmlUtils.NodeAsString(node, xpath{, nsmgr});
-  TryStrToCurr(temp, Result, FormatSettings.Invariant);
+  if TryStrToCurr(temp, ResCurrency, FormatSettings.Invariant) then
+    Result:= ResCurrency;
 end;
 
-class function TZUGFeRDXmlUtils.NodeAsDouble(node: IXmlDomNode;
-  const xpath: string; defaultValue: Double): Double;
+class function TZUGFeRDXmlUtils.NodeAsDecimal(node: IXmlDomNode; const xpath: string; defaultValue: Currency): ZUGFeRDNullable<Currency>;
+begin
+  Result:= NodeAsDecimal(node, xpath, TZUGFeRDNullableParam<Currency>(defaultValue))
+end;
+
+class function TZUGFeRDXmlUtils.NodeAsDouble(node: IXmlDomNode; const xpath: string; defaultValue: IZUGFeRDNullableParam<Double> = Nil): ZUGFeRDNullable<Double>;
 var
   temp: string;
+  ResDouble: Double;
 begin
   Result := defaultValue;
 
@@ -134,7 +144,13 @@ begin
     exit;
 
   temp := TZUGFeRDXmlUtils.NodeAsString(node, xpath{, nsmgr});
-  TryStrToFloat(temp, Result, FormatSettings.Invariant);
+  if TryStrToFloat(temp, ResDouble, FormatSettings.Invariant) then
+    Result:= ResDouble
+end;
+
+class function TZUGFeRDXmlUtils.NodeAsDouble(node: IXmlDomNode; const xpath: string; defaultValue: Double): ZUGFeRDNullable<Double>;
+begin
+  Result:= NodeAsDouble(node, xpath, TZUGFeRDNullableParam<Double>(defaultValue))
 end;
 
 class function TZUGFeRDXmlUtils.NodeAsDateTime(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager;}
