@@ -37,7 +37,7 @@ type
     class function SelectNodes(_XnRoot: IXMLDOMNode; const _NodePath: String; out _Result : IXMLDOMNodeList): Boolean;
     class function SelectNodeText(_XnRoot: IXMLDOMNode; const _NodePath: String): String;
     class function FindNode(_XnRoot: IXMLDOMNode; const _NodePath: String): Boolean;
-    class function PrepareDocumentForXPathQuerys(_Xml : IXMLDocument) : IXMLDOMDocument2;
+    class function PrepareDocumentForXPathQuerys(_Xml: IXMLDocument; IsZUGFeRD1: boolean = false): IXMLDOMDocument2;
   end;
 
 implementation
@@ -96,64 +96,42 @@ begin
   _Callback(Node);
 end;
 
-class function TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(_Xml: IXMLDocument): IXMLDOMDocument2;
+class function TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(_Xml: IXMLDocument; IsZUGFeRD1: boolean = false): IXMLDOMDocument2;
 var
-//  hList: IDOMNodeList;
-//  i: Integer;
-//  s, sNSN, sNSUri: string;
   sNsLine: string;
+  ram, rsm, udt, qdt, cac, cbc: string;
+
+  function ReturnNS (Value: string; Default: String; Default1: string = ''): string;
+  begin
+    Result:= Trim(Value);
+    if Result='' then
+      if IsZUGFeRD1 and (Default1<>'') then
+        Result:= Default1
+      else
+        Result:= Default
+  end;
+
 begin
   Result := nil;
   if not _Xml.Active then
     exit;
+  ram:= ReturnNS(_XML.DocumentElement.FindNamespaceURI('ram'), 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100',
+                                                               'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:12');
+  rsm:= ReturnNS(_XML.DocumentElement.FindNamespaceURI('rsm'), 'urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100',
+                                                               'urn:ferd:CrossIndustryDocument:invoice:1p0');
+  udt:= ReturnNS(_XML.DocumentElement.FindNamespaceURI('udt'), 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100',
+                                                               'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:15');
+  qdt:= ReturnNS(_XML.DocumentElement.FindNamespaceURI('qdt'), 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
+  cac:= ReturnNS(_XML.DocumentElement.FindNamespaceURI('cac'), 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+  cbc:= ReturnNS(_XML.DocumentElement.FindNamespaceURI('cbc'), 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
 
-  sNsLine := 'xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100" ' +
-             'xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100" ' +
-             'xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100" ' +
-             'xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100" ' +
-             'xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" ' +
-             'xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"';
-
-//  if SameText(_XML.DocumentElement.FindNamespaceURI('udt'), '') then
-//    _XML.DocumentElement.DeclareNamespace('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100');
-//  if SameText(_XML.DocumentElement.FindNamespaceURI('qdt'), '') then
-//    _XML.documentElement.DeclareNamespace('qdt', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
-//
-//  for i := 0 to _XML.DocumentElement.AttributeNodes.Count - 1 do
-//  begin
-//    sNSN := StringReplace(_XML.DocumentElement.AttributeNodes[I].NodeName, 'xmlns:', '', []);
-//    if sNSN = 'xml' then
-//    begin  // wenn es als xmlns:xml hinzugefuegt wird bekommt man die meldung das der Namespacename xml nicht verwendet werden darf...
-//      sNSN := 'xmlns:MyXml';
-//      sNSUri := _XML.DocumentElement.AttributeNodes[I].nodeValue;
-//    end
-//    else
-//    if sNSN = 'xmlns' then
-//    begin  // den Default Namespace mit einem Namen versehen, damit XPath drauf zugreifen kann.
-//      sNSN := 'xmlns:dn';
-//      sNSUri := _XML.DocumentElement.AttributeNodes[I].nodeValue;
-//    end
-//    else
-//    begin  // alle anderen Namespace auch fuer XPath bekannt machen
-//      sNSN := _XML.DocumentElement.AttributeNodes[I].nodeName;
-//      sNSUri := _XML.DocumentElement.AttributeNodes[I].nodeValue;
-//    end;
-//    s := sNSN + '="'+sNSUri+'"';
-//    if Pos(AnsiUpperCase(sNsLine), AnsiUpperCase(s)) > 0 then
-//      continue;
-//    if Pos(AnsiUpperCase(sNsLine), AnsiUpperCase(sNSN+'="')) > 0 then
-//      continue;
-//    if SameText(sNSN,'xsi:schemaLocation') then
-//     continue;
-//    sNsLine := ' '+s + sNsLine;
-//  end;
-//  sNsLine := trim(sNsLine);
-
+  sNsLine := Format('xmlns:qdt="%s" xmlns:ram="%s" xmlns:rsm="%s" xmlns:udt="%s" xmlns:cac="%s" xmlns:cbc="%s"', [qdt, ram, rsm, udt, cac, cbc]);
   Result := CoDOMDocument60.Create;
   Result.loadXML(_Xml.XML.Text);
   Result.setProperty('SelectionLanguage', 'XPath');  // ab 4.0 ist SelectionLanguage eh immer XPath
   Result.setProperty('SelectionNamespaces', sNsLine) ;
 end;
+
 
 class function TZUGFeRDXmlHelper.FindNode(_XnRoot: IXMLDOMNode; const _NodePath: String): Boolean;
 var
