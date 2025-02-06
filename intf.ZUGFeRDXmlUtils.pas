@@ -129,8 +129,15 @@ begin
 end;
 
 class function TZUGFeRDXmlUtils.NodeAsDecimal(node: IXmlDomNode; const xpath: string; defaultValue: Currency): ZUGFeRDNullable<Currency>;
+var
+  param: TZUGFeRDNullableParam<Currency>;
 begin
-  Result:= NodeAsDecimal(node, xpath, TZUGFeRDNullableParam<Currency>(defaultValue))
+  param:= TZUGFeRDNullableParam<Currency>.Create(defaultValue);
+  try
+    Result:= NodeAsDecimal(node, xpath, param)
+  finally
+    param.Free
+  end;
 end;
 
 class function TZUGFeRDXmlUtils.NodeAsDouble(node: IXmlDomNode; const xpath: string; defaultValue: IZUGFeRDNullableParam<Double> = Nil): ZUGFeRDNullable<Double>;
@@ -149,8 +156,15 @@ begin
 end;
 
 class function TZUGFeRDXmlUtils.NodeAsDouble(node: IXmlDomNode; const xpath: string; defaultValue: Double): ZUGFeRDNullable<Double>;
+var
+  param: TZUGFeRDNullableParam<Double>;
 begin
-  Result:= NodeAsDouble(node, xpath, TZUGFeRDNullableParam<Double>(defaultValue))
+  param:= TZUGFeRDNullableParam<Double>.Create(defaultValue);
+  try
+    Result:= NodeAsDouble(node, xpath, param)
+  finally
+    param.Free
+  end;
 end;
 
 class function TZUGFeRDXmlUtils.NodeAsDateTime(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager;}
