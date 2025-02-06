@@ -130,15 +130,18 @@ end;
 
 class function TZUGFeRDXmlUtils.NodeAsDecimal(node: IXmlDomNode; const xpath: string; defaultValue: Currency): ZUGFeRDNullable<Currency>;
 var
-  param: TZUGFeRDNullableParam<Currency>;
+  temp: string;
+  ResCurrency: Currency;
 begin
-  param:= TZUGFeRDNullableParam<Currency>.Create(defaultValue);
-  try
-    Result:= NodeAsDecimal(node, xpath, param)
-  finally
-    param.Free
-  end;
+  Result:= defaultValue;
+  if node = nil then
+    exit;
+
+  temp := TZUGFeRDXmlUtils.NodeAsString(node, xpath{, nsmgr});
+  if TryStrToCurr(temp, ResCurrency, FormatSettings.Invariant) then
+    Result:= ResCurrency;
 end;
+
 
 class function TZUGFeRDXmlUtils.NodeAsDouble(node: IXmlDomNode; const xpath: string; defaultValue: IZUGFeRDNullableParam<Double> = Nil): ZUGFeRDNullable<Double>;
 var
@@ -157,14 +160,17 @@ end;
 
 class function TZUGFeRDXmlUtils.NodeAsDouble(node: IXmlDomNode; const xpath: string; defaultValue: Double): ZUGFeRDNullable<Double>;
 var
-  param: TZUGFeRDNullableParam<Double>;
+  temp: string;
+  ResDouble: Double;
 begin
-  param:= TZUGFeRDNullableParam<Double>.Create(defaultValue);
-  try
-    Result:= NodeAsDouble(node, xpath, param)
-  finally
-    param.Free
-  end;
+  Result := defaultValue;
+
+  if node = nil then
+    exit;
+
+  temp := TZUGFeRDXmlUtils.NodeAsString(node, xpath{, nsmgr});
+  if TryStrToFloat(temp, ResDouble, FormatSettings.Invariant) then
+    Result:= ResDouble
 end;
 
 class function TZUGFeRDXmlUtils.NodeAsDateTime(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager;}
