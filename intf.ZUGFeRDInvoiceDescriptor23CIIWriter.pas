@@ -990,13 +990,6 @@ begin
       Writer.WriteOptionalElementString('ram:ProprietaryID', debitorAccount.ID);
       Writer.WriteEndElement(); // !PayerPartyDebtorFinancialAccount
 
-      if (debitorAccount.BIC<>'') then
-      begin
-        Writer.WriteStartElement('ram:PayerSpecifiedDebtorFinancialInstitution');
-        Writer.WriteElementString('ram:BICID', debitorAccount.BIC);
-        Writer.WriteEndElement(); // !PayerSpecifiedDebtorFinancialInstitution
-      end;
-
       Writer.WriteEndElement(); // !SpecifiedTradeSettlementPaymentMeans
     end;
   end;

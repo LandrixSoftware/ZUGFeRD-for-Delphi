@@ -685,17 +685,6 @@ begin
       Writer.WriteOptionalElementString('ram:ProprietaryID', debitorAccount.ID);
       Writer.WriteEndElement(); // !PayerPartyDebtorFinancialAccount
 
-      if (debitorAccount.BIC<>'') or
-         (debitorAccount.Bankleitzahl<>'') or
-         (debitorAccount.BankName<>'') then
-      begin
-        Writer.WriteStartElement('ram:PayerSpecifiedDebtorFinancialInstitution');
-        Writer.WriteElementString('ram:BICID', debitorAccount.BIC);
-        Writer.WriteOptionalElementString('ram:GermanBankleitzahlID', debitorAccount.Bankleitzahl);
-        Writer.WriteOptionalElementString('ram:Name', debitorAccount.BankName);
-        Writer.WriteEndElement(); // !PayerSpecifiedDebtorFinancialInstitution
-      end;
-
       Writer.WriteEndElement(); // !SpecifiedTradeSettlementPaymentMeans
     end;
   end;
