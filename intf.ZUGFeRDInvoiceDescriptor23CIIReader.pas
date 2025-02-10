@@ -291,9 +291,9 @@ begin
 
 
   Result.ShipTo := _nodeAsParty(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:ShipToTradeParty');
-  Result.ShipToContact := _nodeAsContact(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:ShipToTradeParty');
+  Result.ShipToContact := _nodeAsContact(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:ShipToTradeParty/ram:DefinedTradeContact');
   Result.UltimateShipTo := _nodeAsParty(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:UltimateShipToTradeParty');
-  Result.UltimateShipToContact := _nodeAsContact(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:UltimateShipToTradeParty');
+  Result.UltimateShipToContact := _nodeAsContact(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:UltimateShipToTradeParty/ram:DefinedTradeContact');
   Result.ShipFrom := _nodeAsParty(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:ShipFromTradeParty');
   Result.ActualDeliveryDate:= TZUGFeRDXmlUtils.NodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:ActualDeliverySupplyChainEvent/ram:OccurrenceDateTime/udt:DateTimeString');
 
@@ -412,9 +412,10 @@ begin
                                  TZUGFeRDXmlUtils.NodeAsDouble(nodes[i], './/ram:RateApplicablePercent', 0),
                                  TZUGFeRDTaxTypesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:TypeCode')),
                                  TZUGFeRDTaxCategoryCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:CategoryCode')),
-                                 0,
+                                 TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:AllowanceChargeBasisAmount', 0),
                                  TZUGFeRDTaxExemptionReasonCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ExemptionReasonCode')),
-                                 TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ExemptionReason'));
+                                 TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ExemptionReason'),
+                                 TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:LineTotalBasisAmount'));
   end;
 
   nodes := doc.SelectNodes('//ram:ApplicableHeaderTradeSettlement/ram:SpecifiedTradeAllowanceCharge');
@@ -633,16 +634,20 @@ begin
   Result.BuyerAssignedID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:BuyerAssignedID');
   Result.Name := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:Name');
   Result.Description := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:Description');
-  Result.UnitQuantity:= TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:BasisQuantity', 0);
+  Result.UnitQuantity:= TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:BasisQuantity');   // C# reads with default 1
   Result.BilledQuantity := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:BilledQuantity', 0);
   Result.ShipTo := _nodeAsParty(tradeLineItem, './/ram:SpecifiedLineTradeDelivery/ram:ShipToTradeParty');
+  Result.ShipToContact := _nodeAsContact(tradeLineItem, '//ram:SpecifiedLineTradeDelivery/ram:ShipToTradeParty/ram:DefinedTradeContact');
   Result.UltimateShipTo := _nodeAsParty(tradeLineItem, './/ram:SpecifiedLineTradeDelivery/ram:UltimateShipToTradeParty');
-  Result.ChargeFreeQuantity := TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:ChargeFreeQuantity', 0);
-  Result.PackageQuantity := TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:PackageQuantity', 0);
+  Result.UltimateShipToContact := _nodeAsContact(tradeLineItem, '//ram:SpecifiedLineTradeDelivery/ram:UltimateShipToTradeParty/ram:DefinedTradeContact');
+  Result.ChargeFreeQuantity := TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:ChargeFreeQuantity');
+  Result.PackageQuantity := TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:PackageQuantity');
   Result.LineTotalAmount:= TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:LineTotalAmount', 0);
   Result.TaxCategoryCode := TZUGFeRDTaxCategoryCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:CategoryCode'));
   Result.TaxType := TZUGFeRDTaxTypesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:TypeCode'));
   Result.TaxPercent := TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:ApplicableTradeTax/ram:RateApplicablePercent', 0);
+  Result.TaxExemptionReasonCode := TZUGFeRDTaxExemptionReasonCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:ExemptionReasonCode'));
+  Result.TaxExemptionReason := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:ExemptionReason');
   Result.NetUnitPrice:= TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:NetPriceProductTradePrice/ram:ChargeAmount', 0);
   Result.GrossUnitPrice:= TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:GrossPriceProductTradePrice/ram:ChargeAmount', 0);
   Result.UnitCode := TZUGFeRDQuantityCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:BasisQuantity/@unitCode'));

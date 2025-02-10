@@ -274,7 +274,11 @@ begin
                                  TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:BasisAmount', 0),
                                  TZUGFeRDXmlUtils.NodeAsDouble(nodes[i], './/ram:ApplicablePercent', 0),
                                  TZUGFeRDTaxTypesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:TypeCode')),
-                                 TZUGFeRDTaxCategoryCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:CategoryCode')));
+                                 TZUGFeRDTaxCategoryCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:CategoryCode')),
+                                 TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:AllowanceChargeBasisAmount', 0),
+                                 Nil,
+                                 '',
+                                 TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:LineTotalBasisAmount'));
   end;
 
   nodes := doc.SelectNodes('//ram:SpecifiedTradeAllowanceCharge');
@@ -395,10 +399,10 @@ begin
   Result.BuyerAssignedID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:BuyerAssignedID');
   Result.Name := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:Name');
   Result.Description := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:Description');
-  Result.UnitQuantity:=TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:BasisQuantity', 0);
+  Result.UnitQuantity:=TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:BasisQuantity');   // C# reads with default 1
   Result.BilledQuantity := TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:BilledQuantity', 0);
-  Result.PackageQuantity := TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:PackageQuantity', 0);
-  Result.ChargeFreeQuantity := TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:ChargeFreeQuantity', 0);
+  Result.PackageQuantity := TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:PackageQuantity');
+  Result.ChargeFreeQuantity := TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:ChargeFreeQuantity');
 //  Result.LineTotalAmount.SetValue(TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:LineTotalAmount', 0));
   Result.LineTotalAmount:= TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:LineTotalAmount', 0);
   Result.TaxCategoryCode := TZUGFeRDTaxCategoryCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:CategoryCode'));

@@ -23,7 +23,8 @@ uses
   System.SysUtils,System.Math,
   intf.ZUGFeRDTaxTypes,
   intf.ZUGFeRDTaxCategoryCodes,
-  intf.ZUGFeRDTaxExemptionReasonCodes;
+  intf.ZUGFeRDTaxExemptionReasonCodes,
+  intf.ZUGFeRDHelper;
 
 type
   /// <summary>
@@ -37,7 +38,7 @@ type
     FCategoryCode: TZUGFeRDTaxCategoryCodes;
     FAllowanceChargeBasisAmount: Currency;
     FLineTotalBasisAmount: Currency;
-    FExemptionReasonCode: TZUGFeRDTaxExemptionReasonCodes;
+    FExemptionReasonCode: ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes>;
     FExemptionReason: string;
     FTaxAmount: Currency;
   public
@@ -74,7 +75,7 @@ type
     /// <summary>
     /// ExemptionReasonCode for no Tax
     /// </summary>
-    property ExemptionReasonCode: TZUGFeRDTaxExemptionReasonCodes read FExemptionReasonCode write FExemptionReasonCode;
+    property ExemptionReasonCode: ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes> read FExemptionReasonCode write FExemptionReasonCode;
     /// <summary>
     /// Exemption Reason Text for no Tax
     /// </summary>
