@@ -20,7 +20,8 @@ unit intf.ZUGFeRDTaxExemptionReasonCodes;
 interface
 
 uses
-  System.SysUtils,System.TypInfo,System.StrUtils
+  System.SysUtils,System.TypInfo,System.StrUtils,
+  intf.ZUGFeRDHelper
   ;
 
 type
@@ -441,7 +442,7 @@ type
 
   TZUGFeRDTaxExemptionReasonCodesExtensions = class
   public
-    class function FromString(const s: string): TZUGFeRDTaxExemptionReasonCodes;
+    class function FromString(const s: string): ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes>;
     class function EnumToString(codes: TZUGFeRDTaxExemptionReasonCodes): string;
   end;
 
@@ -456,10 +457,12 @@ begin
 end;
 
 class function TZUGFeRDTaxExemptionReasonCodesExtensions.FromString(
-  const s: string): TZUGFeRDTaxExemptionReasonCodes;
+  const s: string): ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes>;
 var
   enumValue : Integer;
 begin
+  if Trim(s)='' then
+    exit(nil);
   enumValue := GetEnumValue(TypeInfo(TZUGFeRDTaxExemptionReasonCodes), ReplaceText(s,'-','_'));
   if enumValue >= 0 then
     Result := TZUGFeRDTaxExemptionReasonCodes(enumValue)

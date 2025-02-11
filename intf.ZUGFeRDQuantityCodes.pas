@@ -48,107 +48,266 @@ type
     ///
     /// Previously, PCE was also used. This has been removed.
     /// </summary>
+
+
+    /// <summary>
+    /// Eins (Stück)
+    /// Abkürzung: Stk.
+    ///
+    /// Previously, PCE was also used. This has been removed.
+    /// </summary>
     C62,
+
+    /// <summary>
+    /// centigram; Zentigramm
+    /// </summary>
+    CGM,
+
+    /// <summary>
+    /// hundred leave; 100 Blätter
+    /// A unit of count defining the number of leaves, expressed in units of one hundred leaves.
+    /// </summary>
+    CLF,
+
+    /// <summary>
+    /// centilitre
+    /// </summary>
+    CLT,
+
+    /// <summary>
+    /// square centimetre
+    /// </summary>
+    CMK,
+
+    /// <summary>
+    /// cubic centimetre
+    /// </summary>
+    CMQ,
+
+    /// <summary>
+    /// hundred pack
+    /// A unit of count defining the number of hundred-packs (hundred-pack: set of one hundred items packaged together).
+    /// </summary>
+    CNP,
+
     /// <summary>
     /// Tag
     /// Abkürzung: Tag(e)
     /// </summary>
     DAY,
+
+    /// <summary>
+    /// decilitre
+    /// </summary>
+    DLT,
+
+    /// <summary>
+    /// square decimetre
+    /// </summary>
+    DMK,
+
+    /// <summary>
+    /// cubic decimetre
+    /// </summary>
+    DMQ,
+
+    /// <summary>
+    /// decimetre
+    /// </summary>
+    DMT,
+
+    /// <summary>
+    /// each: A unit of count defining the number of items regarded as separate units.
+    /// </summary>
+    EA,
+
     /// <summary>
     /// Piece: A unit of count defining the number of pieces (piece: a single item, article or exemplar).
     /// </summary>
     /// <seealso cref="QuantityCodes.C62"/>
     H87,
+
     /// <summary>
-    /// Hektar
-    /// Abkürzung: ha
+    /// square hectometre
+    /// Abbreviation: ha
     /// </summary>
-    HAR,
+    H18,
+
+    /// <summary>
+    /// hectolitre
+    /// </summary>
+    HLT,
+
     /// <summary>
     /// Stunde
     /// Abkürzung: Std.
     /// </summary>
     HUR,
+
+    /// <summary>
+    /// person
+    /// A unit of count defining the number of persons.
+    /// </summary>
+    IE,
+
     /// <summary>
     /// Kilogramm
     /// Abkürzung: kg
     /// </summary>
     KGM,
+
+    /// <summary>
+    /// Hundred
+    /// </summary>
+    CEN,
+
     /// <summary>
     /// Zentimeter
     /// Abkürzung: cm
     /// </summary>
     CMT,
+
     /// <summary>
     /// Kilometer
     /// Abkürzung: km (Rec20r13) für XRechnung
     /// </summary>
     KMT,
+
     /// <summary>
     /// Kilometer
     /// Abkürzung: km (Rec20r16)
     /// </summary>
     KTM,
+
     /// <summary>
-    /// Kilowattstune
+    /// Kilowattstunde
     /// Abkürzung: kWh
     /// </summary>
     KWH,
+
     /// <summary>
     /// Kilowatt
     /// Abkürzung: kW
     /// </summary>
     KWT,
+
     /// <summary>
     /// Pauschale
     /// Abkürzung: pausch.
     /// </summary>
     LS,
+
     /// <summary>
     /// Liter
     /// Abkürzung: l
     /// </summary>
     LTR,
+
     /// <summary>
     /// Minute
     /// Abkürzung: min
     /// </summary>
     MIN,
+
     /// <summary>
     /// Quadratmillimeter
     /// Abkürzung: mm^2
     /// </summary>
     MMK,
+
     /// <summary>
     /// Millimeter
     /// Abkürzung: mm
     /// </summary>
     MMT,
+
     /// <summary>
     /// Quadratmeter
     /// Abkürzung: m^2
     /// </summary>
     MTK,
+
     /// <summary>
     /// Kubikmeter
     /// Abkürzung: m^3
     /// </summary>
     MTQ,
+
     /// <summary>
     /// Meter
     /// Abkürzung: m
     /// </summary>
     MTR,
+
+    /// <summary>
+    /// Megawatt Stunde (1000 kW.h)
+    /// Abkürzung: MWh
+    /// </summary>
+    MWH,
+
+    /// <summary>
+    /// Square Metre Day
+    /// </summary>
+    MKD,
+
+    /// <summary>
+    /// Square Metre Month
+    /// </summary>
+    MKM,
+
+    /// <summary>
+    /// Square Metre Week
+    /// </summary>
+    MKW,
+
+    /// <summary>
+    /// cubic millimetre
+    /// </summary>
+    MMQ,
+
+    /// <summary>
+    /// Cubic Metre Day
+    /// </summary>
+    MQD,
+
+    /// <summary>
+    /// cubic metre per hour
+    /// </summary>
+    MQH,
+
+    /// <summary>
+    /// Cubic Metre Month
+    /// </summary>
+    MQM,
+
+    /// <summary>
+    /// cubic metre per second
+    /// </summary>
+    MQS,
+
+    /// <summary>
+    /// Cubic Metre Week
+    /// </summary>
+    MQW,
+
     /// <summary>
     /// Anzahl Artikel
     /// Abkürzung: Anz.
     /// </summary>
     NAR,
+
+    /// <summary>
+    /// number of packs
+    /// A unit of count defining the number of packs (pack: a collection of objects packaged together).
+    /// </summary>
+    NMP,
+
     /// <summary>
     /// Prozent
     /// Abkürzung: %
     /// </summary>
     P1,
+
     /// <summary>
     /// Paar
     /// Pair
@@ -159,41 +318,54 @@ type
     /// Previously, NPR was used to indicate pairs. This has been removed.
     /// </remarks>
     PR,
+
     /// <summary>
     /// Set
     /// Abkürzung: Set(s)
     /// </summary>
     SET_,
+
     /// <summary>
     /// Tonne (metrisch)
     /// Abkürzung:  t
     /// </summary>
     TNE,
+
     /// <summary>
     /// Woche
     /// Abkürzung: Woche(n)
     /// </summary>
     WEE,
+
     /// <summary>
     /// Monat
     /// Abkürzung: Monat(e)
     /// </summary>
     MON,
+
     /// <summary>
     /// Jahr
     /// Abkürzung: Jahr(e)
     /// </summary>
     ANN,
+
     /// <summary>
     /// Sekunde
     /// Abkürzung: Sekunde(n)
     /// </summary>
     SEC,
+
+    /// <summary>
+    /// Ten pack
+    /// </summary>
+    TP,
+
     /// <summary>
     /// Bündel
     /// Abkürzung: Bund
     /// </summary>
     XBE,
+
     /// <summary>
     /// Flasche
     /// Abkürzung: Fl
@@ -203,11 +375,13 @@ type
     /// A narrow-necked cylindrical shaped vessel without external protective packing material
     /// </remarks>
     XBO,
+
     /// <summary>
     /// Karton
     /// Abkürzung: Kt
     /// </summary>
     XCT,
+
     /// <summary>
     /// Palette
     /// Abkürzung: Pal
@@ -216,16 +390,25 @@ type
     /// Platform or open-ended box, usually made of wood, on which goods are retained for ease of mechanical handling during transport and storage.
     /// </remarks>
     XPX,
+
     /// <summary>
     /// Stange
     /// Abkürzung: Stg
     /// </summary>
     XRD,
+
+    /// <summary>
+    /// Kiste oder ein Gestell, das mehrere Flaschen sicher hält
+    /// Bottlecrate / bottlerack
+    /// </summary>
+    XBC,
+
     /// <summary>
     /// Tafel/Board
     /// Abkürzung: Tf
     /// </summary>
     XBD,
+
     /// <summary>
     /// tausend Stück
     /// Abkürzung: Tsd
@@ -234,6 +417,7 @@ type
     /// A unit of count defining the number of pieces in multiples of 1000 (piece: a single item, article or exemplar).
     /// </remarks>
     T3,
+
     /// <summary>
     /// Verpackung
     /// </summary>
@@ -241,6 +425,7 @@ type
     /// Standard packaging unit
     /// </remarks>
     XPK,
+
     /// <summary>
     /// Ar
     /// Abkürzung: a
@@ -249,46 +434,57 @@ type
     /// 100 m^2
     /// </remarks>
     FF,
+
     /// <summary>
     /// Rolle
     /// </summary>
     XRO,
+
     /// <summary>
     /// Dose
     /// </summary>
     XTN,
+
     /// <summary>
     /// Kanister
     /// </summary>
     XCI,
+
     /// <summary>
     /// Tube
     /// </summary>
     XTU,
+
     /// <summary>
     /// Beutel
     /// </summary>
     XBG,
+
     /// <summary>
     /// (Papier) Bogen
     /// </summary>
     XST,
+
     /// <summary>
     /// Sack
     /// </summary>
     XSA,
+
     /// <summary>
     /// Fass
     /// </summary>
     XBA,
+
     /// <summary>
     /// Eimer
     /// </summary>
     XBJ,
+
     /// <summary>
     /// Gramm
     /// </summary>
     GRM,
+
     /// <summary>
     /// Kit
     /// </summary>
@@ -326,7 +522,7 @@ type
     /// <summary>
     /// Block
     /// </summary>
-    D64,
+    XOK,
 
     /// <summary>
     ///  Tray
@@ -346,6 +542,12 @@ type
     XBK,
 
     /// <summary>
+    /// Matte
+    /// Mat
+    /// </summary>
+    XMT,
+
+    /// <summary>
     /// Zentner
     /// decitonne
     /// </summary>
@@ -357,7 +559,91 @@ type
     /// <remarks>
     /// A quantity of allowance of food allotted to, or enough for, one person.
     /// </remarks>
-    PTN
+    PTN,
+
+    /// <summary>
+    /// microcurie
+    /// Abkürzung: µCi
+    /// </summary>
+    M5,
+
+    /// <summary>
+    /// microlitre
+    /// Abkürzung: µl
+    /// </summary>
+    _4G,
+
+    /// <summary>
+    /// megabecquerel
+    /// Abkürzung: MBq
+    /// </summary>
+    _4N,
+
+    /// <summary>
+    /// microgram
+    /// Abkürzung: µg
+    /// </summary>
+    MC,
+
+    /// <summary>
+    /// micromole
+    /// Abkürzung: µmol
+    /// </summary>
+    FH,
+
+    /// <summary>
+    /// becquerel
+    /// Abkürzung: Bq
+    /// </summary>
+    BQL,
+
+    /// <summary>
+    /// curie
+    /// Abkürzung: Ci
+    /// </summary>
+    CUR,
+
+    /// <summary>
+    /// millicurie
+    /// Abkürzung: mCi
+    /// </summary>
+    MCU,
+
+    /// <summary>
+    /// milligram
+    /// Abkürzung: mg
+    /// </summary>
+    MGM,
+
+    /// <summary>
+    /// millilitre
+    /// Abkürzung: ml
+    /// </summary>
+    MLT,
+
+    /// <summary>
+    /// nanomole
+    /// Abkürzung: nmol
+    /// </summary>
+    Z9,
+
+    /// <summary>
+    /// Packet
+    /// </summary>
+    XPA,
+
+    /// <summary>
+    /// Service
+    /// </summary>
+    /// <remarks>
+    /// Services offered with no time frame specified
+    /// </remarks>
+    E48,
+
+    /// <summary>
+    /// Mutually Defined
+    /// </summary>
+    ZZ
   );
 
   TZUGFeRDQuantityCodesExtensions = class

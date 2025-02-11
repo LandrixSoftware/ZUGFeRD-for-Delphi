@@ -127,9 +127,10 @@ begin
 
   sNsLine := Format('xmlns:qdt="%s" xmlns:ram="%s" xmlns:rsm="%s" xmlns:udt="%s" xmlns:cac="%s" xmlns:cbc="%s"', [qdt, ram, rsm, udt, cac, cbc]);
   Result := CoDOMDocument60.Create;
+  Result.preserveWhiteSpace := True; // preserve CRLF on multiline strings also
   Result.loadXML(_Xml.XML.Text);
   Result.setProperty('SelectionLanguage', 'XPath');  // ab 4.0 ist SelectionLanguage eh immer XPath
-  Result.setProperty('SelectionNamespaces', sNsLine) ;
+  Result.setProperty('SelectionNamespaces', sNsLine);
 end;
 
 

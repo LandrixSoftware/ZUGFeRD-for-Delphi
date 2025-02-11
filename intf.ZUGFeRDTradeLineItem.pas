@@ -31,7 +31,11 @@ uses
   intf.ZUGFeRDAdditionalReferencedDocument,
   intf.ZUGFeRDApplicableProductCharacteristic,
   intf.ZUGFeRDTradeAllowanceCharge,
+  intf.ZUGFeRDTaxRegistration,
   intf.ZUGFeRDTaxTypes,
+  intf.ZUGFeRDTaxExemptionReasonCodes,
+  intf.ZUGFeRDContact,
+  intf.ZUGFeRDElectronicAddress,
   intf.ZUGFeRDQuantityCodes,
   intf.ZUGFeRDAssociatedDocument,
   intf.ZUGFeRDTaxCategoryCodes,
@@ -71,12 +75,20 @@ type
     FApplicableProductCharacteristics: TObjectList<TZUGFeRDApplicableProductCharacteristic>;
     FDesignedProductClassifications: TObjectList<TZUGFeRDDesignatedProductClassification>;
     FShipTo: TZUGFeRDParty;
+    FShipToContact: TZUGFeRDContact;
+    FShipToTaxRegistration: TObjectList<TZUGFeRDTaxRegistration>;
+    FShipToElectronicAddress: TZUGFeRDElectronicAddress;
     FUltimateShipTo: TZUGFeRDParty;
+    FUltimateShipToContact: TZUGFeRDContact;
+    FUltimateShipToTaxRegistration: TObjectList<TZUGFeRDTaxRegistration>;
+    FUltimateShipToElectronicAddress: TZUGFeRDElectronicAddress;
     FSellerAssignedID: string;
     FTradeAllowanceCharges: TObjectList<TZUGFeRDTradeAllowanceCharge>;
     FSpecifiedTradeAllowanceCharges : TObjectList<TZUGFeRDTradeAllowanceCharge>;
     FTaxPercent: Double;
     FTaxType: TZUGFeRDTaxTypes;
+    FTaxExemptionReason: string;
+    FTaxExemptionReasonCode: ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes>;
     FBuyerAssignedID: string;
     FActualDeliveryDate: ZUGFeRDNullable<TDateTime>;
     FBillingPeriodEnd: ZUGFeRDNullable<TDateTime>;
@@ -205,6 +217,10 @@ type
     /// BG-X-7
     /// </summary>
     property ShipTo: TZUGFeRDParty read FShipTo write FShipTo;
+    property ShipToContact: TZUGFeRDContact read FShipToContact write FShipToContact;
+    property ShipToTaxRegistration: TObjectList<TZUGFeRDTaxRegistration> read FShipToTaxRegistration;
+    property ShipToElectronicAddress : TZUGFeRDElectronicAddress read FShipToElectronicAddress;
+
 
     /// <summary>
     /// Detailed information on the deviating final recipient. This party is optional and only relevant for Extended profile
@@ -212,6 +228,9 @@ type
     /// BG-X-10
     /// </summary>
     property UltimateShipTo: TZUGFeRDParty read FUltimateShipTo write FUltimateShipTo;
+    property UltimateShipToContact: TZUGFeRDContact read FUltimateShipToContact write FUltimateShipToContact;
+    property UltimateShipToTaxRegistration: TObjectList<TZUGFeRDTaxRegistration> read FUltimateShipToTaxRegistration;
+    property UltimateShipToElectronicAddress : TZUGFeRDElectronicAddress read FUltimateShipToElectronicAddress;
 
     procedure SetContractReferencedDocument(contractReferencedId: string;
       contractReferencedDate: IZUGFeRDNullableParam<TDateTime>);
@@ -314,6 +333,20 @@ type
     property TaxType: TZUGFeRDTaxTypes read FTaxType write FTaxType default TZUGFeRDTaxTypes.VAT;
 
     /// <summary>
+    /// Exemption Reason Text for no Tax
+    ///
+    /// BT-X-96
+    /// </summary>
+    property TaxExemptionReason: string read FTaxExemptionReason write FTaxExemptionReason;
+
+    /// <summary>
+    /// ExemptionReasonCode for no Tax
+    ///
+    /// BT-X-97
+    /// </summary>
+    property TaxExemptionReasonCode: ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes> read FTaxExemptionReasonCode write FTaxExemptionReasonCode;
+
+    /// <summary>
     /// net unit price of the item
     /// </summary>
     property NetUnitPrice: ZUGFeRDNullable<Currency> read FNetUnitPrice write FNetUnitPrice;
@@ -410,7 +443,13 @@ begin
   FAssociatedDocument:= nil;
   FBillingPeriodStart.ClearValue;
   FShipTo:= nil;//TZUGFeRDParty.Create;
+  FShipToContact:= nil;//TZUGFeRDContact.Create;
+  FShipToTaxRegistration:= TObjectList<TZUGFeRDTaxRegistration>.Create;
+  FShipToElectronicAddress:= TZUGFeRDElectronicAddress.Create;
   FUltimateShipTo:= nil;//TZUGFeRDParty.Create;
+  FUltimateShipToContact:= nil;//TZUGFeRDContact.Create;
+  FUltimateShipToTaxRegistration:= TObjectList<TZUGFeRDTaxRegistration>.Create;
+  FUltimateShipToElectronicAddress:= TZUGFeRDElectronicAddress.Create;
   FBuyerOrderReferencedDocument:= nil;//TZUGFeRDBuyerOrderReferencedDocument.Create;
   FDeliveryNoteReferencedDocument:= nil;//TZUGFeRDDeliveryNoteReferencedDocument.Create;
   FContractReferencedDocument:= nil;//TZUGFeRDContractReferencedDocument.Create;
@@ -428,7 +467,13 @@ begin
   if Assigned(FGlobalID) then begin FGlobalID.Free; FGlobalID := nil; end;
   if Assigned(FAssociatedDocument) then begin FAssociatedDocument.Free; FAssociatedDocument := nil; end;
   if Assigned(FShipTo) then begin FShipTo.Free; FShipTo := nil; end;
+  if Assigned(FShipToContact                  ) then begin FShipToContact.Free; FShipToContact := nil; end;
+  if Assigned(FShipToTaxRegistration          ) then begin FShipToTaxRegistration.Free; FShipToTaxRegistration := nil; end;
+  if Assigned(FShipToElectronicAddress        ) then begin FShipToElectronicAddress.Free; FShipToElectronicAddress := nil; end;
   if Assigned(FUltimateShipTo) then begin FUltimateShipTo.Free; FUltimateShipTo := nil; end;
+  if Assigned(FUltimateShipToContact                  ) then begin FUltimateShipToContact.Free; FUltimateShipToContact := nil; end;
+  if Assigned(FUltimateShipToTaxRegistration          ) then begin FUltimateShipToTaxRegistration.Free; FUltimateShipToTaxRegistration := nil; end;
+  if Assigned(FUltimateShipToElectronicAddress        ) then begin FUltimateShipToElectronicAddress.Free; FUltimateShipToElectronicAddress := nil; end;
   if Assigned(FBuyerOrderReferencedDocument) then begin FBuyerOrderReferencedDocument.Free; FBuyerOrderReferencedDocument := nil; end;
   if Assigned(FDeliveryNoteReferencedDocument) then begin FDeliveryNoteReferencedDocument.Free; FDeliveryNoteReferencedDocument := nil; end;
   if Assigned(FContractReferencedDocument) then begin FContractReferencedDocument.Free; FContractReferencedDocument := nil; end;

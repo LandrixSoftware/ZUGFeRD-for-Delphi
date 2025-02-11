@@ -33,7 +33,8 @@ uses
   intf.ZUGFeRDPaymentMeansTypeCodes,
   intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes,
   intf.ZUGFeRDReferenceTypeCodes,
-  intf.ZUGFeRDGlobalID,intf.ZUGFeRDGlobalIDSchemeIdentifiers,
+  intf.ZUGFeRDGlobalID,
+  intf.ZUGFeRDGlobalIDSchemeIdentifiers,
   intf.ZUGFeRDTaxRegistration,
   intf.ZUGFeRDTaxRegistrationSchemeID,
   intf.ZUGFeRDTaxTypes,
@@ -725,7 +726,7 @@ type
     /// <param name="allowanceChargeBasisAmount"></param>
     /// <param name="exemptionReasonCode"></param>
     /// <param name="exemptionReason"></param>
-    procedure AddApplicableTradeTax(const calculatedAmount, basisAmount: Currency; const percent: Double; const typeCode: TZUGFeRDTaxTypes; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const allowanceChargeBasisAmount: Currency = 0; const exemptionReasonCode: TZUGFeRDTaxExemptionReasonCodes = TZUGFeRDTaxExemptionReasonCodes.Unknown; const exemptionReason: string = '');
+    procedure AddApplicableTradeTax(const calculatedAmount, basisAmount: Currency; const percent: Double; const typeCode: TZUGFeRDTaxTypes; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const allowanceChargeBasisAmount: Currency = 0; const exemptionReasonCode: IZUGFeRDNullableParam<TZUGFeRDTaxExemptionReasonCodes> = Nil; const exemptionReason: string = ''; const lineTotalBasisAmount: Currency = 0);
 
     /// <summary>
     /// Saves the descriptor object into a stream.
@@ -1487,8 +1488,9 @@ procedure TZUGFeRDInvoiceDescriptor.AddApplicableTradeTax(const calculatedAmount
   const percent: Double; const typeCode: TZUGFeRDTaxTypes;
   const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown;
   const allowanceChargeBasisAmount: Currency = 0;
-  const exemptionReasonCode: TZUGFeRDTaxExemptionReasonCodes = TZUGFeRDTaxExemptionReasonCodes.Unknown;
-  const exemptionReason: string = '');
+  const exemptionReasonCode: IZUGFeRDNullableParam<TZUGFeRDTaxExemptionReasonCodes> = Nil;
+  const exemptionReason: string = '';
+  const lineTotalBasisAmount: Currency = 0);
 var
   tax: TZUGFeRDTax;
 begin
@@ -1498,6 +1500,7 @@ begin
   tax.Percent := percent;
   tax.TypeCode := typeCode;
   tax.AllowanceChargeBasisAmount := allowanceChargeBasisAmount;
+  tax.LineTotalBasisAmount := lineTotalBasisAmount;
   tax.ExemptionReasonCode := exemptionReasonCode;
   tax.ExemptionReason := exemptionReason;
 

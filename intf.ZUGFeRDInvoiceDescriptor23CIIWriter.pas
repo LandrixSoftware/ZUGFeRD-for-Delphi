@@ -289,7 +289,7 @@ begin
         // TODO: GlobalID, SellerAssignedID, BuyerAssignedID, IndustryAssignedID, Description
         Writer.WriteOptionalElementString('ram:Name', includedItem.Name);
         if includedItem.UnitQuantity.HasValue then
-          _writeElementWithAttribute(Writer, 'ram:BasisQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(includedItem.UnitQuantity.Value, 4));
+          _writeElementWithAttribute(Writer, 'ram:UnitQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(includedItem.UnitQuantity.Value, 4));
         Writer.WriteEndElement(); // !ram:IncludedReferencedProduct
       end;
 
@@ -479,9 +479,10 @@ begin
     if tradeLineItem.PackageQuantity.HasValue then
       _writeElementWithAttribute(Writer, 'ram:PackageQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.PackageUnitCode), _formatDecimal(tradeLineItem.PackageQuantity, 4));
     if Assigned(tradeLineItem.ShipTo) and (Descriptor.Profile=TZUGFeRDProfile.Extended) then
-      _writeOptionalParty(Writer, TZUGFeRDPartyTypes.ShipToTradeParty, tradeLineItem.ShipTo);
+      _writeOptionalParty(Writer, TZUGFeRDPartyTypes.ShipToTradeParty, tradeLineItem.ShipTo, tradeLineItem.ShipToContact, tradeLineItem.ShipToElectronicAddress, tradeLineItem.ShipToTaxRegistration);
+
     if Assigned(tradeLineItem.UltimateShipTo) and (Descriptor.Profile=TZUGFeRDProfile.Extended) then
-      _writeOptionalParty(Writer, TZUGFeRDPartyTypes.UltimateShipToTradeParty, tradeLineItem.UltimateShipTo);
+      _writeOptionalParty(Writer, TZUGFeRDPartyTypes.UltimateShipToTradeParty, tradeLineItem.UltimateShipTo, tradeLineItem.UltimateShipToContact, tradeLineItem.UltimateShipToElectronicAddress, tradeLineItem.UltimateShipToTaxRegistration);
 
     if tradeLineItem.ActualDeliveryDate.HasValue then
     begin
@@ -524,8 +525,10 @@ begin
     //#region ApplicableTradeTax
     Writer.WriteStartElement('ram:ApplicableTradeTax', [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
     Writer.WriteElementString('ram:TypeCode', TZUGFeRDTaxTypesExtensions.EnumToString(tradeLineItem.TaxType));
-    Writer.WriteOptionalElementString('ram:ExemptionReason', _translateTaxCategoryCode(tradeLineItem.TaxCategoryCode), [TZUGFeRDProfile.Extended]);
+    Writer.WriteOptionalElementString('ram:ExemptionReason', IfThen(tradeLineItem.TaxExemptionReason='', _translateTaxCategoryCode(tradeLineItem.TaxCategoryCode), tradeLineItem.TaxExemptionReason), [TZUGFeRDProfile.Extended]);  // BT-X-96
     Writer.WriteElementString('ram:CategoryCode', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(tradeLineItem.TaxCategoryCode)); // BT-151
+    if tradeLineItem.TaxExemptionReasonCode.HasValue then
+      Writer.WriteOptionalElementString('ram:ExemptionReasonCode', TZUGFeRDTaxExemptionReasonCodesExtensions.EnumToString(tradeLineItem.TaxExemptionReasonCode), [TZUGFeRDProfile.Extended]); // BT-X-97
 
     if (tradeLineItem.TaxCategoryCode <> TZUGFeRDTaxCategoryCodes.O) then // notwendig, damit die Validierung klappt
     begin
@@ -987,13 +990,6 @@ begin
       Writer.WriteOptionalElementString('ram:ProprietaryID', debitorAccount.ID);
       Writer.WriteEndElement(); // !PayerPartyDebtorFinancialAccount
 
-      if (debitorAccount.BIC<>'') then
-      begin
-        Writer.WriteStartElement('ram:PayerSpecifiedDebtorFinancialInstitution');
-        Writer.WriteElementString('ram:BICID', debitorAccount.BIC);
-        Writer.WriteEndElement(); // !PayerSpecifiedDebtorFinancialInstitution
-      end;
-
       Writer.WriteEndElement(); // !SpecifiedTradeSettlementPaymentMeans
     end;
   end;
@@ -1321,13 +1317,6 @@ begin
     _writer.WriteValue(_formatDecimal(tax.BasisAmount));
     _writer.WriteEndElement(); // !BasisAmount
 
-    if tax.AllowanceChargeBasisAmount <> 0.0  then
-    begin
-      _writer.WriteStartElement('ram:AllowanceChargeBasisAmount', [TZUGFeRDProfile.Extended]);
-      _writer.WriteValue(_formatDecimal(tax.AllowanceChargeBasisAmount));
-      _writer.WriteEndElement(); // !AllowanceChargeBasisAmount
-    end;
-
     if tax.LineTotalBasisAmount <> 0.0  then
     begin
       _writer.WriteStartElement('ram:LineTotalBasisAmount', [TZUGFeRDProfile.Extended]);
@@ -1335,11 +1324,18 @@ begin
       _writer.WriteEndElement(); // !LineTotalBasisAmount
     end;
 
+    if tax.AllowanceChargeBasisAmount <> 0.0  then
+    begin
+      _writer.WriteStartElement('ram:AllowanceChargeBasisAmount', [TZUGFeRDProfile.Extended]);
+      _writer.WriteValue(_formatDecimal(tax.AllowanceChargeBasisAmount));
+      _writer.WriteEndElement(); // !AllowanceChargeBasisAmount
+    end;
+
     if (tax.CategoryCode <> TZUGFeRDTaxCategoryCodes.Unknown) then
     begin
       _writer.WriteElementString('ram:CategoryCode', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(tax.CategoryCode));
     end;
-    if (tax.ExemptionReasonCode <> TZUGFeRDTaxExemptionReasonCodes.Unknown) then
+    if tax.ExemptionReasonCode.HasValue then
     begin
       _writer.WriteElementString('ram:ExemptionReasonCode', TZUGFeRDTaxExemptionReasonCodesExtensions.EnumToString(tax.ExemptionReasonCode));
     end;
@@ -1589,7 +1585,7 @@ begin
     TZUGFeRDTaxCategoryCodes.G: Result := 'freier Ausfuhrartikel, Steuer nicht erhoben';
     TZUGFeRDTaxCategoryCodes.H: ;
     TZUGFeRDTaxCategoryCodes.O: Result := 'Dienstleistungen außerhalb des Steueranwendungsbereichs';
-    TZUGFeRDTaxCategoryCodes.S: Result := 'Normalsatz';
+    TZUGFeRDTaxCategoryCodes.S: Result := ''; // 'Normalsatz' (don't be verbose)
     TZUGFeRDTaxCategoryCodes.Z: Result := 'nach dem Nullsatz zu versteuernde Waren';
     TZUGFeRDTaxCategoryCodes.Unknown: ;
     TZUGFeRDTaxCategoryCodes.D: ;

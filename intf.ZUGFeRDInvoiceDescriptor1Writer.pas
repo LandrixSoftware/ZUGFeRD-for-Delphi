@@ -739,6 +739,13 @@ begin
     _writer.WriteValue(_formatDecimal(tax.BasisAmount));
     _writer.WriteEndElement(); // !BasisAmount
 
+    if tax.LineTotalBasisAmount <> 0.0  then
+    begin
+      _writer.WriteStartElement('ram:LineTotalBasisAmount', [TZUGFeRDProfile.Extended]);
+      _writer.WriteValue(_formatDecimal(tax.LineTotalBasisAmount));
+      _writer.WriteEndElement(); // !LineTotalBasisAmount
+    end;
+
     if (tax.AllowanceChargeBasisAmount <> 0.0) then
     begin
       _writer.WriteStartElement('ram:AllowanceChargeBasisAmount');

@@ -685,17 +685,6 @@ begin
       Writer.WriteOptionalElementString('ram:ProprietaryID', debitorAccount.ID);
       Writer.WriteEndElement(); // !PayerPartyDebtorFinancialAccount
 
-      if (debitorAccount.BIC<>'') or
-         (debitorAccount.Bankleitzahl<>'') or
-         (debitorAccount.BankName<>'') then
-      begin
-        Writer.WriteStartElement('ram:PayerSpecifiedDebtorFinancialInstitution');
-        Writer.WriteElementString('ram:BICID', debitorAccount.BIC);
-        Writer.WriteOptionalElementString('ram:GermanBankleitzahlID', debitorAccount.Bankleitzahl);
-        Writer.WriteOptionalElementString('ram:Name', debitorAccount.BankName);
-        Writer.WriteEndElement(); // !PayerSpecifiedDebtorFinancialInstitution
-      end;
-
       Writer.WriteEndElement(); // !SpecifiedTradeSettlementPaymentMeans
     end;
   end;
@@ -913,6 +902,13 @@ begin
     _writer.WriteValue(_formatDecimal(tax.BasisAmount));
     _writer.WriteEndElement(); // !BasisAmount
 
+    if tax.LineTotalBasisAmount <> 0.0  then
+    begin
+      _writer.WriteStartElement('ram:LineTotalBasisAmount', [TZUGFeRDProfile.Extended]);
+      _writer.WriteValue(_formatDecimal(tax.LineTotalBasisAmount));
+      _writer.WriteEndElement(); // !LineTotalBasisAmount
+    end;
+
     if (tax.AllowanceChargeBasisAmount <> 0.0) then
     begin
       _writer.WriteStartElement('ram:AllowanceChargeBasisAmount');
@@ -924,7 +920,7 @@ begin
     begin
       _writer.WriteElementString('ram:CategoryCode', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(tax.CategoryCode));
     end;
-    if (tax.ExemptionReasonCode <> TZUGFeRDTaxExemptionReasonCodes.Unknown) then
+    if tax.ExemptionReasonCode.hasValue then
     begin
       _writer.WriteElementString('ram:ExemptionReasonCode', TZUGFeRDTaxExemptionReasonCodesExtensions.EnumToString(tax.ExemptionReasonCode));
     end;
