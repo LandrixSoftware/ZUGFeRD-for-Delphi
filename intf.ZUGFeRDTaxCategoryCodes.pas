@@ -20,7 +20,9 @@ unit intf.ZUGFeRDTaxCategoryCodes;
 interface
 
 uses
-  System.TypInfo
+  System.TypInfo,
+  System.SysUtils,
+  intf.ZUGFeRDHelper
   ;
 
 type
@@ -179,16 +181,18 @@ type
 
   TZUGFeRDTaxCategoryCodesExtensions = class
   public
-    class function FromString(const s: string): TZUGFeRDTaxCategoryCodes;
+    class function FromString(const s: string): ZUGFeRDNullable<TZUGFeRDTaxCategoryCodes>;
     class function EnumToString(codes: TZUGFeRDTaxCategoryCodes): string;
   end;
 
 implementation
 
-class function TZUGFeRDTaxCategoryCodesExtensions.FromString(const s: string): TZUGFeRDTaxCategoryCodes;
+class function TZUGFeRDTaxCategoryCodesExtensions.FromString(const s: string): ZUGFeRDNullable<TZUGFeRDTaxCategoryCodes>;
 var
   enumValue : Integer;
 begin
+  if Trim(s)='' then
+    exit(nil);
   enumValue := GetEnumValue(TypeInfo(TZUGFeRDTaxCategoryCodes), s);
   if enumValue >= 0 then
     Result := TZUGFeRDTaxCategoryCodes(enumValue)
