@@ -559,14 +559,14 @@ begin
     end;
     //#endregion
 
-    //#region SpecifiedTradeAllowanceCharge (Basic, Comfort, Extended)
-    //Abschläge auf Ebene der Rechnungsposition (Basic, Comfort, Extended)
+    //#region SpecifiedTradeAllowanceCharge (Basic, Comfort, Extended, XRechnung)
+    //Abschläge auf Ebene der Rechnungsposition (Basic, Comfort, Extended, XRechnung)
     if (descriptor.Profile in [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]) then
     if (tradeLineItem.SpecifiedTradeAllowanceCharges.Count > 0) then
     begin
       for var specifiedTradeAllowanceCharge : TZUGFeRDTradeAllowanceCharge in tradeLineItem.SpecifiedTradeAllowanceCharges do // BG-27 BG-28
       begin
-        Writer.WriteStartElement('ram:SpecifiedTradeAllowanceCharge', [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
+        Writer.WriteStartElement('ram:SpecifiedTradeAllowanceCharge');
         //#region ChargeIndicator
         Writer.WriteStartElement('ram:ChargeIndicator');
         Writer.WriteElementString('udt:Indicator', ifthen(specifiedTradeAllowanceCharge.ChargeIndicator,'true','false'));
@@ -576,7 +576,7 @@ begin
         //#region ChargePercentage
         if (specifiedTradeAllowanceCharge.ChargePercentage <> 0.0) then
         begin
-          Writer.WriteStartElement('ram:CalculationPercent', [TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
+          Writer.WriteStartElement('ram:CalculationPercent');
           Writer.WriteValue(_formatDecimal(specifiedTradeAllowanceCharge.ChargePercentage, 2));
           Writer.WriteEndElement();
         end;
@@ -1032,7 +1032,7 @@ begin
 
     if (tradeAllowanceCharge.ChargePercentage <> 0.0) then
     begin
-      Writer.WriteStartElement('ram:CalculationPercent', [TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
+      Writer.WriteStartElement('ram:CalculationPercent');
       Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ChargePercentage, 2));
       Writer.WriteEndElement();
     end;
