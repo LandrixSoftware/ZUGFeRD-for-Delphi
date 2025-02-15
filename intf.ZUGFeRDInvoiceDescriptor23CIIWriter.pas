@@ -280,7 +280,14 @@ begin
     end;
 
     // TODO: IndividualTradeProductInstance, BG-X-84, Artikel (Handelsprodukt) Instanzen
-    // TODO: OriginTradeCountry + ID, BT-159, Detailinformationen zur Produktherkunft, Comfort+Extended+XRechnung
+
+    // BT-159, Detailinformationen zur Produktherkunft
+    if tradeLineItem.OriginTradeCountry <> nil then
+    begin
+      Writer.WriteStartElement('ram:OriginTradeCountry', PROFILE_COMFORT_EXTENDED_XRECHNUNG);
+      Writer.WriteElementString('ram:ID', TZUGFeRDCountryCodesExtensions.EnumToString(tradeLineItem.OriginTradeCountry));
+      Writer.WriteEndElement(); // !ram:OriginTradeCountry
+    end;
 
     if (Descriptor.Profile=TZUGFeRDProfile.Extended) then
       for var includedItem : TZUGFeRDIncludedReferencedProduct in tradeLineItem.IncludedReferencedProducts do
@@ -650,6 +657,7 @@ begin
     //#region AdditionalReferencedDocument
     //Objektkennung auf Ebene der Rechnungsposition, BT-128-00
     for var document: TZUGFeRDAdditionalReferencedDocument in tradeLineItem.AdditionalReferencedDocuments do
+    if document.TypeCode=TZUGFeRDAdditionalReferencedDocumentTypeCode.InvoiceDataSheet then // PEPPOL-EN16931-R101: Element Document reference can only be used for Invoice line object
     begin
       if document.ID<>'' then
       begin
@@ -1262,7 +1270,8 @@ begin
   if document.TypeCode <> TZUGFeRDAdditionalReferencedDocumentTypeCode.Unknown then
     _writer.WriteElementString('ram:TypeCode', TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumToString(document.TypeCode));
   if document.ReferenceTypeCode <> TZUGFeRDReferenceTypeCodes.Unknown then
-    if (parentElement = 'BT-18-00') or (parentElement = 'BT-128-00') or (parentElement = 'BG-X-3') then
+    if (((parentElement = 'BT-18-00') or (parentElement = 'BT-128-00')) and (document.TypeCode = TZUGFeRDAdditionalReferencedDocumentTypeCode.InvoiceDataSheet)) // CII-DT-024: ReferenceTypeCode is only allowed in BT-18-00 and BT-128-00 for InvoiceDataSheet
+    or (parentElement = 'BG-X-3') then
       _writer.WriteElementString('ram:ReferenceTypeCode', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(document.ReferenceTypeCode));
   if (parentElement = 'BT-24') or (parentElement = 'BT-X-3') then
     _writer.WriteOptionalElementString('ram:Name', document.Name, subProfile);
