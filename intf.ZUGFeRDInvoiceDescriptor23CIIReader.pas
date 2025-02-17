@@ -830,6 +830,10 @@ begin
     var listVersionID : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ClassCode/@listVersionID');
     Result.AddDesignatedProductClassification(className, classCode, listID, listVersionID);
   end;
+
+  if tradeLineItem.SelectSingleNode('.//ram:OriginTradeCountry//ram:ID') <> nil then
+    Result.OriginTradeCountry := TZUGFeRDCountryCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:OriginTradeCountry//ram:ID'));
+
 end;
 
 end.

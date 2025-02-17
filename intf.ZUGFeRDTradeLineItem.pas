@@ -46,6 +46,7 @@ uses
   intf.ZUGFeRDAllowanceOrChargeIdentificationCodes,
   intf.ZUGFeRDDesignatedProductClassification,
   intf.ZUGFeRDDesignatedProductClassificationClassCodes,
+  intf.ZUGFeRDCountryCodes,
   intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes,
   intf.ZUGFeRDIncludedReferencedProduct,
   intf.ZUGFeRDParty
@@ -74,6 +75,7 @@ type
     FBillingPeriodStart: ZUGFeRDNullable<TDateTime>;
     FApplicableProductCharacteristics: TObjectList<TZUGFeRDApplicableProductCharacteristic>;
     FDesignedProductClassifications: TObjectList<TZUGFeRDDesignatedProductClassification>;
+    FOriginTradeCountry: ZUGFeRDNullable<TZUGFeRDCountryCodes>;
     FShipTo: TZUGFeRDParty;
     FShipToContact: TZUGFeRDContact;
     FShipToTaxRegistration: TObjectList<TZUGFeRDTaxRegistration>;
@@ -429,7 +431,19 @@ type
     /// </summary>
     property ApplicableProductCharacteristics: TObjectList<TZUGFeRDApplicableProductCharacteristic> read FApplicableProductCharacteristics write FApplicableProductCharacteristics;
 
+    /// <summary>
+    /// Detailed information on the item classification
+    ///
+    /// BG-158
+    /// </summary>
     property DesignedProductClassifications: TObjectList<TZUGFeRDDesignatedProductClassification> read FDesignedProductClassifications write FDesignedProductClassifications;
+
+    /// <summary>
+    /// Detailed information on the item origin country
+    /// BT-159
+    /// </summary>
+    property OriginTradeCountry: ZUGFeRDNullable<TZUGFeRDCountryCodes> read FOriginTradeCountry write FOriginTradeCountry;
+
   end;
 
 implementation
