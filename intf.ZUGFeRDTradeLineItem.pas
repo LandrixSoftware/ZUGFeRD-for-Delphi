@@ -112,7 +112,7 @@ type
     destructor Destroy; override;
 
     procedure AddAdditionalReferencedDocument(id: string;
-      code : TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown; issueDateTime: TDateTime = 0); overload;
+      code : IZUGFeRDNullableParam<TZUGFeRDReferenceTypeCodes> = Nil; issueDateTime: TDateTime = 0); overload;
 
     /// <summary>
 		/// Add an additional reference document
@@ -127,20 +127,17 @@ type
     procedure AddAdditionalReferencedDocument(id: string;
       typeCode : TZUGFeRDAdditionalReferencedDocumentTypeCode;
       issueDateTime: TDateTime = 0; name : String = '';
-      referenceTypeCode : TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
+      referenceTypeCode : IZUGFeRDNullableParam<TZUGFeRDReferenceTypeCodes> = Nil;
       attachmentBinaryObject : TStream = nil; filename : String = ''); overload;
 
     procedure AddIncludedReferencedProduct(Name: String; UnitQuantity: ZUGFeRDNullable<Double>; UnitCode: TZUGFeRDQuantityCodes);
-
-    procedure AddReceivableSpecifiedTradeAccountingAccount(
-      AccountID: string); overload;
 
     /// <summary>
 		/// Adds an invoice line Buyer accounting reference. BT-133
     /// Please note that XRechnung/ FacturX allows a maximum of one such reference
 		/// </summary>
     procedure AddReceivableSpecifiedTradeAccountingAccount(
-      AccountID: string; AccountTypeCode: TZUGFeRDAccountingAccountTypeCodes); overload;
+      AccountID: string; AccountTypeCode: IZUGFeRDNullableParam<TZUGFeRDAccountingAccountTypeCodes> = Nil);
 
     /// <summary>
     /// As an allowance or charge on item level, attaching it to the corresponding item.
@@ -549,7 +546,7 @@ begin
 end;
 
 procedure TZUGFeRDTradeLineItem.AddAdditionalReferencedDocument(
-  id: string; code: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
+  id: string; code: IZUGFeRDNullableParam<TZUGFeRDReferenceTypeCodes> = Nil;
   issueDateTime: TDateTime = 0);
 begin
   FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(true));
@@ -564,9 +561,10 @@ end;
 
 procedure TZUGFeRDTradeLineItem.AddAdditionalReferencedDocument(id: string;
   typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
-  issueDateTime: TDateTime; name: String;
-  referenceTypeCode: TZUGFeRDReferenceTypeCodes;
-  attachmentBinaryObject: TStream; filename: String);
+  issueDateTime: TDateTime = 0; name : String = '';
+  referenceTypeCode : IZUGFeRDNullableParam<TZUGFeRDReferenceTypeCodes> = Nil;
+  attachmentBinaryObject : TStream = nil; filename : String = '');
+
 begin
   FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(true));
 
@@ -615,11 +613,6 @@ begin
   end;
 end;
 
-procedure TZUGFeRDTradeLineItem.AddReceivableSpecifiedTradeAccountingAccount(AccountID: string);
-begin
-  AddReceivableSpecifiedTradeAccountingAccount(AccountID, TZUGFeRDAccountingAccountTypeCodes.Unknown);
-end;
-
 procedure TZUGFeRDTradeLineItem.AddDesignatedProductClassification(
   className : String;
   classCode: TZUGFeRDDesignatedProductClassificationClassCodes;
@@ -633,13 +626,13 @@ begin
 end;
 
 procedure TZUGFeRDTradeLineItem.AddReceivableSpecifiedTradeAccountingAccount(
-  AccountID: string; AccountTypeCode: TZUGFeRDAccountingAccountTypeCodes);
+  AccountID: string; AccountTypeCode: IZUGFeRDNullableParam<TZUGFeRDAccountingAccountTypeCodes> = Nil);
 begin
   FReceivableSpecifiedTradeAccountingAccounts.Add(TZUGFeRDReceivableSpecifiedTradeAccountingAccount.Create);
   with FReceivableSpecifiedTradeAccountingAccounts[FReceivableSpecifiedTradeAccountingAccounts.Count - 1] do
   begin
     TradeAccountID := AccountID;
-    TradeAccountTypeCode := AccountTypeCode;
+    TradeAccountTypeCode := AccountTypeCode.Value;
   end;
 end;
 

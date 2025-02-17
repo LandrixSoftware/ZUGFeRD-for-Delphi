@@ -22,6 +22,7 @@ interface
 uses
   System.SysUtils,System.Classes,System.Generics.Collections,
   System.Generics.Defaults, System.Contnrs, Xml.XMLIntf,
+  intf.ZUGFeRDHelper,
   intf.ZUGFeRDAdditionalReferencedDocument,
   intf.ZUGFeRDDeliveryNoteReferencedDocument,
   intf.ZUGFeRDAccountingAccountTypeCodes,
@@ -55,7 +56,6 @@ uses
   intf.ZUGFeRDReceivableSpecifiedTradeAccountingAccount,
   intf.ZUGFeRDPaymentMeans,
   intf.ZUGFeRDSellerOrderReferencedDocument,
-  intf.ZUGFeRDHelper,
   intf.ZUGFeRDVersion,
   intf.ZUGFeRDExceptions,
   intf.ZUGFeRDSubjectCodes,
@@ -598,7 +598,7 @@ type
     /// <param name="attachmentBinaryObject"></param>
     /// <param name="filename"></param>
     procedure AddAdditionalReferencedDocument(const id: string; const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
-  const issueDateTime: IZUGFeRDNullableParam<TDateTime> = Nil; const name: string = ''; const referenceTypeCode: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
+  const issueDateTime: IZUGFeRDNullableParam<TDateTime> = Nil; const name: string = ''; const referenceTypeCode: IZUGFeRDNullableParam<TZUGFeRDReferenceTypeCodes> = Nil;
   const attachmentBinaryObject: TMemoryStream = nil; const filename: string = '');
 
     /// <summary>
@@ -847,10 +847,8 @@ type
     procedure AddDebitorFinancialAccount(const iban: string; const bic: string; const id: string = '';
       const bankleitzahl: string = ''; const bankName: string = '');
 
-    procedure AddReceivableSpecifiedTradeAccountingAccount(const AccountID: string); overload;
-
     procedure AddReceivableSpecifiedTradeAccountingAccount(const AccountID: string;
-      const AccountTypeCode: TZUGFeRDAccountingAccountTypeCodes); overload;
+      AccountTypeCode: IZUGFeRDNullableParam<TZUGFeRDAccountingAccountTypeCodes> = Nil);
   private
     function _getNextLineId: string;
   end;
@@ -1353,7 +1351,7 @@ begin
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.AddAdditionalReferencedDocument(const id: string; const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
-  const issueDateTime: IZUGFeRDNullableParam<TDateTime> = Nil; const name: string = ''; const referenceTypeCode: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
+  const issueDateTime: IZUGFeRDNullableParam<TDateTime> = Nil; const name: string = ''; const referenceTypeCode: IZUGFeRDNullableParam<TZUGFeRDReferenceTypeCodes> = Nil;
   const attachmentBinaryObject: TMemoryStream = nil; const filename: string = '');
 begin
   FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(false));
@@ -1760,13 +1758,8 @@ begin
   DebitorBankAccounts.Add(newItem);
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.AddReceivableSpecifiedTradeAccountingAccount(const AccountID: string);
-begin
-  AddReceivableSpecifiedTradeAccountingAccount(AccountID, TZUGFeRDAccountingAccountTypeCodes.Unknown);
-end;
-
 procedure TZUGFeRDInvoiceDescriptor.AddReceivableSpecifiedTradeAccountingAccount(const AccountID: string;
-  const AccountTypeCode: TZUGFeRDAccountingAccountTypeCodes);
+  AccountTypeCode: IZUGFeRDNullableParam<TZUGFeRDAccountingAccountTypeCodes> = Nil );
 var
   newItem : TZUGFeRDReceivableSpecifiedTradeAccountingAccount;
 begin

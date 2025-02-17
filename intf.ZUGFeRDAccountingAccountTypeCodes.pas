@@ -20,7 +20,8 @@ unit intf.ZUGFeRDAccountingAccountTypeCodes;
 interface
 
 uses
-  System.SysUtils,System.TypInfo
+  System.SysUtils,System.TypInfo,
+  intf.ZUGFeRDHelper
   ;
 
 type
@@ -28,10 +29,6 @@ type
 
   /// <summary>Account Types (EDIFICAS-EU Code List)</summary>
   TZUGFeRDAccountingAccountTypeCodes = (
-    /// <summary>
-    /// TypeCode not set
-    /// </summary>
-    Unknown = 0,
     /// <summary>
     /// The code indicates a financial account
     /// </summary>
@@ -64,8 +61,8 @@ type
 
   TZUGFeRDAccountingAccountTypeCodesExtensions = class
   public
-    class function FromString(const s: string): TZUGFeRDAccountingAccountTypeCodes;
-    class function EnumToString(codes: TZUGFeRDAccountingAccountTypeCodes): string;
+    class function FromString(const s: string): ZUGFeRDNullable<TZUGFeRDAccountingAccountTypeCodes>;
+    class function EnumToString(codes: ZUGFeRDNullable<TZUGFeRDAccountingAccountTypeCodes>): string;
   end;
 
 implementation
@@ -73,16 +70,16 @@ implementation
 { TZUGFeRDAccountingAccountTypeCodesExtensions }
 
 class function TZUGFeRDAccountingAccountTypeCodesExtensions.EnumToString(
-  codes: TZUGFeRDAccountingAccountTypeCodes): string;
+  codes: ZUGFeRDNullable<TZUGFeRDAccountingAccountTypeCodes>): string;
 begin
-  if codes = TZUGFeRDAccountingAccountTypeCodes.Unknown then
-    Result := ''
+  if codes.HasValue then
+    Result := IntToStr(Integer(codes.Value))
   else
-    Result := IntToStr(Integer(codes));
+    Result := ''
 end;
 
 class function TZUGFeRDAccountingAccountTypeCodesExtensions.FromString(
-  const s: string): TZUGFeRDAccountingAccountTypeCodes;
+  const s: string): ZUGFeRDNullable<TZUGFeRDAccountingAccountTypeCodes>;
 begin
   case StrToIntDef(s,0) of
     1 : Result := TZUGFeRDAccountingAccountTypeCodes.Financial;
@@ -92,7 +89,8 @@ begin
     5 : Result := TZUGFeRDAccountingAccountTypeCodes.Receivable;
     6 : Result := TZUGFeRDAccountingAccountTypeCodes.Payable;
     7 : Result := TZUGFeRDAccountingAccountTypeCodes.Job_Cost_Accounting;
-    else Result := TZUGFeRDAccountingAccountTypeCodes.Unknown;
+    else
+      Result:= Nil
   end;
 end;
 

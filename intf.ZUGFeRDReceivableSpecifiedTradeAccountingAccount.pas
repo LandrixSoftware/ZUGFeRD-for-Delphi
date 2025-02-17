@@ -20,6 +20,7 @@ unit intf.ZUGFeRDReceivableSpecifiedTradeAccountingAccount;
 interface
 
 uses
+  intf.ZUGFeRDHelper,
   intf.ZUGFeRDAccountingAccountTypeCodes;
 
 type
@@ -27,7 +28,7 @@ type
   TZUGFeRDReceivableSpecifiedTradeAccountingAccount = class
   private
     FTradeAccountID: string;
-    FTradeAccountTypeCode: TZUGFeRDAccountingAccountTypeCodes;
+    FTradeAccountTypeCode: ZUGFeRDNullable<TZUGFeRDAccountingAccountTypeCodes>;
   public
     /// <summary>
     /// Ein Textwert, der angibt, an welcher Stelle die betreffenden Daten in den Finanzkonten des Käufers zu verbuchen sind
@@ -36,7 +37,7 @@ type
     /// <summary>
     /// EDIFICAS-EU Type Codes: https://www.unece.org/fileadmin/DAM/uncefact/codelist/standard/EDIFICASEU_AccountingAccountType_D11A.xsd
     /// </summary>
-    property TradeAccountTypeCode: TZUGFeRDAccountingAccountTypeCodes read FTradeAccountTypeCode write FTradeAccountTypeCode;
+    property TradeAccountTypeCode: ZUGFeRDNullable<TZUGFeRDAccountingAccountTypeCodes> read FTradeAccountTypeCode write FTradeAccountTypeCode;
   end;
 
 implementation

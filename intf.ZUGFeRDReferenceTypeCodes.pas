@@ -20,7 +20,8 @@ unit intf.ZUGFeRDReferenceTypeCodes;
 interface
 
 uses
-  System.SysUtils,System.TypInfo
+  System.SysUtils,System.TypInfo,
+  intf.ZUGFeRDHelper
   ;
 
 type
@@ -31,11 +32,6 @@ type
   /// https://www.xrepository.de/details/urn:xoev-de:kosit:codeliste:untdid.1153_3#version
   /// </summary>
   TZUGFeRDReferenceTypeCodes = (
-    /// <summary>
-    /// Unknown/ invalid value
-    /// </summary>
-    Unknown,
-
     /// <summary>
     /// Auftragsbestätigungsnummer
     /// </summary>
@@ -220,8 +216,8 @@ type
 
   TZUGFeRDReferenceTypeCodesExtensions = class
   public
-    class function FromString(const s: string): TZUGFeRDReferenceTypeCodes;
-    class function EnumToString(codes: TZUGFeRDReferenceTypeCodes): string;
+    class function FromString(const s: string): ZUGFeRDNullable<TZUGFeRDReferenceTypeCodes>;
+    class function EnumToString(codes: ZUGFeRDNullable<TZUGFeRDReferenceTypeCodes>): string;
   end;
 
 implementation
@@ -229,21 +225,24 @@ implementation
 { TZUGFeRDReferenceTypeCodesExtensions }
 
 class function TZUGFeRDReferenceTypeCodesExtensions.EnumToString(
-  codes: TZUGFeRDReferenceTypeCodes): string;
+  codes: ZUGFeRDNullable<TZUGFeRDReferenceTypeCodes>): string;
 begin
-  Result := GetEnumName(TypeInfo(TZUGFeRDReferenceTypeCodes), Integer(codes));
+  if codes.HasValue then
+    Result := GetEnumName(TypeInfo(TZUGFeRDReferenceTypeCodes), Integer(codes.Value))
+  else
+    Result := '';
 end;
 
 class function TZUGFeRDReferenceTypeCodesExtensions.FromString(
-  const s: string): TZUGFeRDReferenceTypeCodes;
+  const s: string): ZUGFeRDNullable<TZUGFeRDReferenceTypeCodes>;
 var
   enumValue : Integer;
 begin
+  if Trim(s)='' then
+    exit(Nil);
   enumValue := GetEnumValue(TypeInfo(TZUGFeRDReferenceTypeCodes), s);
   if enumValue >= 0 then
     Result := TZUGFeRDReferenceTypeCodes(enumValue)
-  else
-    Result := TZUGFeRDReferenceTypeCodes.Unknown;
 end;
 
 end.
