@@ -77,6 +77,7 @@ type
     Writer: TZUGFeRDProfileAwareXmlTextWriter;
     Descriptor: TZUGFeRDInvoiceDescriptor;
     procedure _writeOptionalAmount(_writer : TZUGFeRDProfileAwareXmlTextWriter; tagName : string; value : ZUGFeRDNullable<Currency>; numDecimals : Integer = 2; forceCurrency : Boolean = false; profile : TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
+    procedure _writeAmount(  _writer: TZUGFeRDProfileAwareXmlTextWriter; tagName: string; value: ZUGFeRDNullable<Currency>; defaultValue: Currency = 0; numDecimals: Integer = 2; forceCurrency: Boolean = false; profile : TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
     procedure _writeOptionalAdaptiveAmount(_writer: TZUGFeRDProfileAwareXmlTextWriter; _tagName: string; _value: ZUGFeRDNullable<Currency>; _numDecimals: Integer = 2;_maxnumDecimals: Integer = 4; _forceCurrency: boolean = false);
     procedure _writeNotes(_writer : TZUGFeRDProfileAwareXmlTextWriter;notes : TObjectList<TZUGFeRDNote>);
     procedure _writeOptionalLegalOrganization(_writer : TZUGFeRDProfileAwareXmlTextWriter; legalOrganizationTag : String;legalOrganization : TZUGFeRDLegalOrganization; partyType : TZUGFeRDPartyTypes = TZUGFeRDPartyTypes.Unknown);
@@ -464,7 +465,7 @@ begin
       //#region NetPriceProductTradePrice
       //Im Nettopreis sind alle Zu- und Abschläge enthalten, jedoch nicht die Umsatzsteuer.
       Writer.WriteStartElement('ram:NetPriceProductTradePrice', [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
-      _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.NetUnitPrice, 2, 4, true); //BT-146
+      _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.NetUnitPrice, 2, 4); //BT-146
 
       if (tradeLineItem.UnitQuantity.HasValue) then
       begin
@@ -805,7 +806,7 @@ begin
   //#region ApplicableHeaderTradeDelivery
   Writer.WriteStartElement('ram:ApplicableHeaderTradeDelivery'); // Pflichteintrag
   if Descriptor.Profile<>TZUGFeRDProfile.Minimum then
-    _writeOptionalParty(Writer, TZUGFeRDPartyTypes.ShipToTradeParty, Descriptor.ShipTo, Descriptor.ShipToContact);
+    _writeOptionalParty(Writer, TZUGFeRDPartyTypes.ShipToTradeParty, Descriptor.ShipTo, Descriptor.ShipToContact, Nil, Descriptor.ShipToTaxRegistration);
   if Descriptor.Profile in [TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung1, TZUGFeRDProfile.XRechnung] then
     _writeOptionalParty(Writer, TZUGFeRDPartyTypes.UltimateShipToTradeParty, Descriptor.UltimateShipTo, Descriptor.UltimateShipToContact);
   if Descriptor.Profile=TZUGFeRDProfile.Extended then
@@ -918,7 +919,7 @@ begin
 
   //   7. InvoiceeTradeParty (optional)
   if Descriptor.Profile=TZUGFeRDProfile.Extended then
-    _writeOptionalParty(Writer, TZUGFeRDPartyTypes.InvoiceeTradeParty, Descriptor.Invoicee);
+    _writeOptionalParty(Writer, TZUGFeRDPartyTypes.InvoiceeTradeParty, Descriptor.Invoicee, Nil, Nil, Descriptor.InvoiceeTaxRegistration);
 
   //   8. PayeeTradeParty (optional)
   if Descriptor.Profile<>TZUGFeRDProfile.Minimum then
@@ -1173,12 +1174,10 @@ begin
   //  16. SpecifiedTradeSettlementHeaderMonetarySummation
   //Gesamtsummen auf Dokumentenebene
   Writer.WriteStartElement('ram:SpecifiedTradeSettlementHeaderMonetarySummation');
-  _writeOptionalAmount(Writer, 'ram:LineTotalAmount', Descriptor.LineTotalAmount, 2, false, ALL_PROFILES-[TZUGFeRDProfile.Minimum]);            // Summe der Nettobeträge aller Rechnungspositionen
+  _writeAmount(Writer, 'ram:LineTotalAmount', Descriptor.LineTotalAmount, 0.0, 2, false, ALL_PROFILES-[TZUGFeRDProfile.Minimum]);                    // Summe der Nettobeträge aller Rechnungspositionen
   _writeOptionalAmount(Writer, 'ram:ChargeTotalAmount', Descriptor.ChargeTotalAmount, 2, false, ALL_PROFILES-[TZUGFeRDProfile.Minimum]);        // Summe der Zuschläge auf Dokumentenebene
   _writeOptionalAmount(Writer, 'ram:AllowanceTotalAmount', Descriptor.AllowanceTotalAmount, 2, false, ALL_PROFILES-[TZUGFeRDProfile.Minimum]);  // Summe der Abschläge auf Dokumentenebene
-                                                                                                                                                // both fields are mandatory according to BR-FXEXT-CO-11
-                                                                                                                                                // and BR-FXEXT-CO-12
-
+ 
   if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
   begin
     // there shall be no currency for tax basis total amount, see
@@ -1657,6 +1656,22 @@ begin
     _writer.WriteValue(_formatDecimal(value.Value, numDecimals));
     _writer.WriteEndElement; // !tagName
   end;
+end;
+
+procedure TZUGFeRDInvoiceDescriptor23CIIWriter._writeAmount(
+  _writer: TZUGFeRDProfileAwareXmlTextWriter; tagName: string;
+  value: ZUGFeRDNullable<Currency>;
+  defaultValue: Currency;
+  numDecimals: Integer; forceCurrency: Boolean; profile : TZUGFeRDProfiles);
+begin
+  _writer.WriteStartElement(tagName,profile);
+  if forceCurrency then
+    _writer.WriteAttributeString('currencyID', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
+  if value.HasValue then
+    _writer.WriteValue(_formatDecimal(value.Value, numDecimals))
+  else
+    _writer.WriteValue(_formatDecimal(defaultValue, numDecimals));
+  _writer.WriteEndElement; // !tagName
 end;
 
 procedure TZUGFeRDInvoiceDescriptor23CIIWriter._writeOptionalAdaptiveAmount(
