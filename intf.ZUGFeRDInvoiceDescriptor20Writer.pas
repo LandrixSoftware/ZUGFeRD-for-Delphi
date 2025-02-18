@@ -336,7 +336,7 @@ begin
     Writer.WriteEndElement(); // ram:GrossPriceProductTradePrice
 
     Writer.WriteStartElement('ram:NetPriceProductTradePrice');
-    _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.NetUnitPrice,  2, 4, true);
+    _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.NetUnitPrice,  2, 4);
 
     if (tradeLineItem.UnitQuantity.HasValue) then
     begin
