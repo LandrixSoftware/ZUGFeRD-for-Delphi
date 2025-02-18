@@ -288,7 +288,7 @@ begin
     end; // !foreach(document)
 
     Writer.WriteStartElement('ram:GrossPriceProductTradePrice');
-    _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.GrossUnitPrice, 2, 4, true);
+    _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.GrossUnitPrice, 2, 4);
     if (tradeLineItem.UnitQuantity.HasValue) then
     begin
       _writeElementWithAttribute(Writer, 'ram:BasisQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.UnitQuantity.Value, 4));

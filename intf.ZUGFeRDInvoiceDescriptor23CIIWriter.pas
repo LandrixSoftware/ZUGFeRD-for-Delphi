@@ -400,7 +400,7 @@ begin
       if (needToWriteGrossUnitPrice) then
       begin
         Writer.WriteStartElement('ram:GrossPriceProductTradePrice', PROFILE_COMFORT_EXTENDED_XRECHNUNG);
-        _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.GrossUnitPrice, 2, 4, true); //BT-148
+        _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.GrossUnitPrice, 2, 4); //BT-148
         if (tradeLineItem.UnitQuantity.HasValue) then
         begin
           _writeElementWithAttribute(Writer, 'ram:BasisQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.UnitQuantity.Value, 4));
