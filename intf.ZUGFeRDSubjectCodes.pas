@@ -29,6 +29,11 @@ type
   /// </summary>
   TZUGFeRDSubjectCodes = (
     /// <summary>
+    /// Dangerous goods additional information
+    /// </summary>
+    /// Additional information concerning dangerous goods.
+    AAC,
+    /// <summary>
     /// Generelle Informationen
     /// </summary>
     /// Generelle Informationen zu diesem Kauf
@@ -56,7 +61,7 @@ type
     /// <summary>
     /// Zusätzliche Angaben
     /// </summary>
-    /// Zusaätzliche Angaben zu diesem Kauf
+    /// Zusätzliche Angaben zu diesem Kauf
     ACB,
 
     /// <summary>
@@ -97,7 +102,12 @@ type
     SUR,
 
     /// <summary>
-    /// Unknon/ invalid subject code
+    /// Grund der Steuerbefreiung
+    /// </summary>
+    TXD,
+
+    /// <summary>
+    /// Unknown/ invalid subject code
     /// </summary>
     Unknown
   );

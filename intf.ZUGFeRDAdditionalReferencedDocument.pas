@@ -21,6 +21,7 @@ interface
 
 uses
   System.SysUtils,System.Classes,
+  intf.ZUGFeRDHelper,
   intf.ZUGFeRDBaseReferencedDocument,
   intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes,
   intf.ZUGFeRDReferenceTypeCodes,
@@ -35,13 +36,13 @@ type
   /// </summary>
   TZUGFeRDAdditionalReferencedDocument = class(TZUGFeRDBaseReferencedDocument)
   private
-    FReferenceTypeCode: TZUGFeRDReferenceTypeCodes;
+    FReferenceTypeCode: ZUGFeRDNullable<TZUGFeRDReferenceTypeCodes>;
     FName: string;
     FLineID: string;
     FURIID: string;
     FAttachmentBinaryObject: TMemoryStream;
     FFilename: string;
-    FTypeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
+    FTypeCode: ZUGFeRDNullable<TZUGFeRDAdditionalReferencedDocumentTypeCode>;
     function GetMimeType: string;
   public
     constructor Create(CreateAttachmentBinaryObject : Boolean);
@@ -62,7 +63,7 @@ type
     /// <summary>
     /// Reference documents are strongly typed, specify ReferenceTypeCode to allow easy processing by invoicee
     /// </summary>
-    property ReferenceTypeCode: TZUGFeRDReferenceTypeCodes read FReferenceTypeCode write FReferenceTypeCode;
+    property ReferenceTypeCode: ZUGFeRDNullable<TZUGFeRDReferenceTypeCodes> read FReferenceTypeCode write FReferenceTypeCode;
     /// <summary>
     /// Description of document
     /// </summary>
@@ -78,7 +79,7 @@ type
     /// <summary>
     /// Type of the reference document
     /// </summary>
-    property TypeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode read FTypeCode write FTypeCode;
+    property TypeCode: ZUGFeRDNullable<TZUGFeRDAdditionalReferencedDocumentTypeCode> read FTypeCode write FTypeCode;
     /// <summary>
     /// MimeType of the attached document embedded as binary object.
     /// </summary>

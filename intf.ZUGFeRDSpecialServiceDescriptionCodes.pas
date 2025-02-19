@@ -38,6 +38,7 @@ type
     FI_Financing, //The service of providing financing.
     LA_Labelling, //Labelling service.
     PC_Packing, //The service of packing.
+    TAC_Testing, //The service of testing
     Unknown
   );
 
@@ -65,6 +66,7 @@ begin
     FI_Financing:            Result := 'FI';
     LA_Labelling:            Result := 'LA';
     PC_Packing:              Result := 'PC';
+    TAC_Testing:             Result := 'TAC';
     else Result := '';
   end;
 end;
@@ -92,6 +94,8 @@ begin
     Result := LA_Labelling else
   if SameText(s,'PC') then
     Result := PC_Packing else
+  if SameText(s,'TAC') then
+    Result := TAC_Testing else
   Result := Unknown;
 end;
 

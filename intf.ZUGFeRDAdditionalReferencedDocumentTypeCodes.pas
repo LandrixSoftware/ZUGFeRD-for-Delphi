@@ -20,7 +20,8 @@ unit intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes;
 interface
 
 uses
-  System.SysUtils,System.TypInfo
+  System.SysUtils, System.TypInfo,
+  intf.ZUGFeRDHelper
   ;
 
 type
@@ -39,50 +40,37 @@ type
         /// <summary>
         /// price and sales catalog
         /// </summary>
-    PriceSalesCatalogueResponse = 50,
-        /// <summary>
-        /// Unknown reference document type
-        /// </summary>
-    Unknown = 65536
+    PriceSalesCatalogueResponse = 50
   );
 
   TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions = class
   public
-    class function FromString(const s: string): TZUGFeRDAdditionalReferencedDocumentTypeCode;
-    //class function EnumValueToString(t: TZUGFeRDAdditionalReferencedDocumentTypeCode): string;
-    class function EnumToString(t: TZUGFeRDAdditionalReferencedDocumentTypeCode): string;
+    class function FromString(const s: string): ZUGFeRDNullable<TZUGFeRDAdditionalReferencedDocumentTypeCode>;
+    class function EnumToString(t: ZUGFeRDNullable<TZUGFeRDAdditionalReferencedDocumentTypeCode>): string;
   end;
 
 implementation
 
-class function TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.FromString(const s: string): TZUGFeRDAdditionalReferencedDocumentTypeCode;
+class function TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.FromString(const s: string): ZUGFeRDNullable<TZUGFeRDAdditionalReferencedDocumentTypeCode>;
 begin
+  if Trim(s)='' then
+    Exit(Nil);
+
   if SameText(s,'130') then
     Result := TZUGFeRDAdditionalReferencedDocumentTypeCode.InvoiceDataSheet
   else
   if SameText(s,'50') then
     Result := TZUGFeRDAdditionalReferencedDocumentTypeCode.PriceSalesCatalogueResponse
   else
-  if SameText(s,'65536') then
-    Result := TZUGFeRDAdditionalReferencedDocumentTypeCode.Unknown
-  else
     Result := TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument
 end;
 
-//class function TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumValueToString(t: TZUGFeRDAdditionalReferencedDocumentTypeCode): string;
-//begin
-//  Result := IntToStr(Integer(t));
-//end;
-
-class function TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumToString(t: TZUGFeRDAdditionalReferencedDocumentTypeCode): string;
+class function TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumToString(t: ZUGFeRDNullable<TZUGFeRDAdditionalReferencedDocumentTypeCode>): string;
 begin
-  Result := IntToStr(Integer(t));
-//  case t of
-//    TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument: Result := '916';
-//    TZUGFeRDAdditionalReferencedDocumentTypeCode.InvoiceDataSheet: Result := '130';
-//    TZUGFeRDAdditionalReferencedDocumentTypeCode.PriceSalesCatalogueResponse: Result := '50';
-//    else Result := '65536';
-//  end;
+  if t.HasValue then
+    Result := IntToStr(Integer(t.Value))
+  else
+    Result:= ''
 end;
 
 end.

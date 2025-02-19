@@ -22,6 +22,7 @@ interface
 uses
   System.SysUtils,System.Classes,System.Generics.Collections,
   System.Generics.Defaults, System.Contnrs, Xml.XMLIntf,
+  intf.ZUGFeRDHelper,
   intf.ZUGFeRDAdditionalReferencedDocument,
   intf.ZUGFeRDDeliveryNoteReferencedDocument,
   intf.ZUGFeRDAccountingAccountTypeCodes,
@@ -55,7 +56,6 @@ uses
   intf.ZUGFeRDReceivableSpecifiedTradeAccountingAccount,
   intf.ZUGFeRDPaymentMeans,
   intf.ZUGFeRDSellerOrderReferencedDocument,
-  intf.ZUGFeRDHelper,
   intf.ZUGFeRDVersion,
   intf.ZUGFeRDExceptions,
   intf.ZUGFeRDSubjectCodes,
@@ -97,8 +97,10 @@ type
     FSellerTaxRegistration: TObjectList<TZUGFeRDTaxRegistration>;
     FSellerElectronicAddress: TZUGFeRDElectronicAddress;
     FInvoicee: TZUGFeRDParty;
+    FInvoiceeTaxRegistration: TObjectList<TZUGFeRDTaxRegistration>;
     FShipTo: TZUGFeRDParty;
     FShipToContact: TZUGFeRDContact;
+    FShipToTaxRegistration: TObjectList<TZUGFeRDTaxRegistration>;
     FUltimateShipTo: TZUGFeRDParty;
     FUltimateShipToContact: TZUGFeRDContact;
     FPayee: TZUGFeRDParty;
@@ -124,7 +126,6 @@ type
     FTaxes: TObjectList<TZUGFeRDTax>;
     FServiceCharges: TObjectList<TZUGFeRDServiceCharge>;
     FTradeAllowanceCharges: TObjectList<TZUGFeRDTradeAllowanceCharge>;
-//    FPaymentTerms: TZUGFeRDPaymentTerms;
     FPaymentTermsList: TObjectList<TZUGFeRDPaymentTerms>;
     FInvoiceReferencedDocuments: TZUGFeRDInvoiceReferencedDocumentObjectList;
     FReceivableSpecifiedTradeAccountingAccounts: TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>;
@@ -253,6 +254,13 @@ type
     property Invoicee: TZUGFeRDParty read FInvoicee write FInvoicee;
 
     /// <summary>
+    ///     Detailed information on tax information
+    ///
+    ///     BT-X-242-00
+    /// </summary>
+    property InvoiceeTaxRegistration: TObjectList<TZUGFeRDTaxRegistration> read FInvoiceeTaxRegistration;
+
+    /// <summary>
 		/// This party is optional and only relevant for Extended profile.
     ///
     /// It seems to be used under rate condition only.
@@ -264,6 +272,13 @@ type
     /// </summary>
     property ShipTo: TZUGFeRDParty read FShipTo write FShipTo;
     property ShipToContact: TZUGFeRDContact read FShipToContact write FShipToContact;
+
+    /// <summary>
+    ///     Detailed information on tax information of the goods recipient
+    ///
+    ///     BT-X-66-00
+    /// </summary>
+    property ShipToTaxRegistration: TObjectList<TZUGFeRDTaxRegistration> read FShipToTaxRegistration;
 
     /// <summary>
     /// This party is optional and only relevant for Extended profile
@@ -573,6 +588,10 @@ type
 
     procedure AddSellerTaxRegistration(const no: string; const schemeID: TZUGFeRDTaxRegistrationSchemeID);
 
+    procedure AddInvoiceeTaxRegistration(const no: string; const schemeID: TZUGFeRDTaxRegistrationSchemeID);
+
+    procedure AddShipToTaxRegistration(const no: string; const schemeID: TZUGFeRDTaxRegistrationSchemeID);
+
     /// <summary>
     /// Sets the Buyer Electronic Address for Peppol
     /// </summary>
@@ -598,7 +617,7 @@ type
     /// <param name="attachmentBinaryObject"></param>
     /// <param name="filename"></param>
     procedure AddAdditionalReferencedDocument(const id: string; const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
-  const issueDateTime: IZUGFeRDNullableParam<TDateTime> = Nil; const name: string = ''; const referenceTypeCode: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
+  const issueDateTime: IZUGFeRDNullableParam<TDateTime> = Nil; const name: string = ''; const referenceTypeCode: IZUGFeRDNullableParam<TZUGFeRDReferenceTypeCodes> = Nil;
   const attachmentBinaryObject: TMemoryStream = nil; const filename: string = '');
 
     /// <summary>
@@ -847,10 +866,8 @@ type
     procedure AddDebitorFinancialAccount(const iban: string; const bic: string; const id: string = '';
       const bankleitzahl: string = ''; const bankName: string = '');
 
-    procedure AddReceivableSpecifiedTradeAccountingAccount(const AccountID: string); overload;
-
     procedure AddReceivableSpecifiedTradeAccountingAccount(const AccountID: string;
-      const AccountTypeCode: TZUGFeRDAccountingAccountTypeCodes); overload;
+      AccountTypeCode: IZUGFeRDNullableParam<TZUGFeRDAccountingAccountTypeCodes> = Nil);
   private
     function _getNextLineId: string;
   end;
@@ -884,8 +901,10 @@ begin
   FSellerTaxRegistration         := TObjectList<TZUGFeRDTaxRegistration>.Create;
   FSellerElectronicAddress       := TZUGFeRDElectronicAddress.Create;
   FInvoicee                      := nil;//TZUGFeRDParty.Create;
+  FInvoiceeTaxRegistration       := TObjectList<TZUGFeRDTaxRegistration>.Create;
   FInvoicer                      := nil;//TZUGFeRDParty.Create;
   FShipTo                        := nil;//TZUGFeRDParty.Create;
+  FShipToTaxRegistration         := TObjectList<TZUGFeRDTaxRegistration>.Create;
   FUltimateShipTo                := nil;//TZUGFeRDParty.Create;
   FPayee                         := nil;//TZUGFeRDParty.Create;
   FShipFrom                      := nil;//TZUGFeRDParty.Create;
@@ -921,8 +940,10 @@ begin
   if Assigned(FSellerTaxRegistration         ) then begin FSellerTaxRegistration.Free; FSellerTaxRegistration := nil; end;
   if Assigned(FSellerElectronicAddress       ) then begin FSellerElectronicAddress.Free; FSellerElectronicAddress := nil; end;
   if Assigned(FInvoicee                      ) then begin FInvoicee.Free; FInvoicee := nil; end;
+  if Assigned(FInvoiceeTaxRegistration       ) then begin FInvoiceeTaxRegistration.Free; FInvoiceeTaxRegistration := nil; end;
   if Assigned(FInvoicer                      ) then begin FInvoicer.Free; FInvoicer := nil; end;
   if Assigned(FShipTo                        ) then begin FShipTo.Free; FShipTo := nil; end;
+  if Assigned(FShipToTaxRegistration         ) then begin FShipToTaxRegistration.Free; FShipToTaxRegistration := nil; end;
   if Assigned(FUltimateShipTo                ) then begin FUltimateShipTo.Free; FUltimateShipTo := nil; end;
   if Assigned(FPayee                         ) then begin FPayee.Free; FPayee := nil; end;
   if Assigned(FShipFrom                      ) then begin FShipFrom.Free; FShipFrom := nil; end;
@@ -1322,6 +1343,7 @@ end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetSpecifiedProcuringProject(const id, name: string);
 begin
+  if FSpecifiedProcuringProject=Nil then FSpecifiedProcuringProject:= TZUGFeRDSpecifiedProcuringProject.Create;
   FSpecifiedProcuringProject.ID := id;
   FSpecifiedProcuringProject.Name := name;
 end;
@@ -1340,6 +1362,20 @@ begin
   FSellerTaxRegistration[SellerTaxRegistration.Count - 1].SchemeID := schemeID;
 end;
 
+procedure TZUGFeRDInvoiceDescriptor.AddInvoiceeTaxRegistration(const no: string; const schemeID: TZUGFeRDTaxRegistrationSchemeID);
+begin
+  FInvoiceeTaxRegistration.Add(TZUGFeRDTaxRegistration.Create);
+  FInvoiceeTaxRegistration[InvoiceeTaxRegistration.Count - 1].No := no;
+  FInvoiceeTaxRegistration[InvoiceeTaxRegistration.Count - 1].SchemeID := schemeID;
+end;
+
+procedure TZUGFeRDInvoiceDescriptor.AddShipToTaxRegistration(const no: string; const schemeID: TZUGFeRDTaxRegistrationSchemeID);
+begin
+  FShipToTaxRegistration.Add(TZUGFeRDTaxRegistration.Create);
+  FShipToTaxRegistration[ShipToTaxRegistration.Count - 1].No := no;
+  FShipToTaxRegistration[ShipToTaxRegistration.Count - 1].SchemeID := schemeID;
+end;
+
 procedure TZUGFeRDInvoiceDescriptor.SetBuyerElectronicAddress(address : string; electronicAddressSchemeID : TZUGFeRDElectronicAddressSchemeIdentifiers);
 begin
   FBuyerElectronicAddress.Address := address;
@@ -1353,7 +1389,7 @@ begin
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.AddAdditionalReferencedDocument(const id: string; const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
-  const issueDateTime: IZUGFeRDNullableParam<TDateTime> = Nil; const name: string = ''; const referenceTypeCode: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
+  const issueDateTime: IZUGFeRDNullableParam<TDateTime> = Nil; const name: string = ''; const referenceTypeCode: IZUGFeRDNullableParam<TZUGFeRDReferenceTypeCodes> = Nil;
   const attachmentBinaryObject: TMemoryStream = nil; const filename: string = '');
 begin
   FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(false));
@@ -1760,13 +1796,8 @@ begin
   DebitorBankAccounts.Add(newItem);
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.AddReceivableSpecifiedTradeAccountingAccount(const AccountID: string);
-begin
-  AddReceivableSpecifiedTradeAccountingAccount(AccountID, TZUGFeRDAccountingAccountTypeCodes.Unknown);
-end;
-
 procedure TZUGFeRDInvoiceDescriptor.AddReceivableSpecifiedTradeAccountingAccount(const AccountID: string;
-  const AccountTypeCode: TZUGFeRDAccountingAccountTypeCodes);
+  AccountTypeCode: IZUGFeRDNullableParam<TZUGFeRDAccountingAccountTypeCodes> = Nil );
 var
   newItem : TZUGFeRDReceivableSpecifiedTradeAccountingAccount;
 begin

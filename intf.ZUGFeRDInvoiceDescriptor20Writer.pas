@@ -20,7 +20,8 @@ unit intf.ZUGFeRDInvoiceDescriptor20Writer;
 interface
 
 uses
-  System.SysUtils,System.Classes,System.StrUtils,Generics.Collections
+  System.SysUtils,System.Classes,System.StrUtils,Generics.Collections,
+  System.Math
   ,intf.ZUGFeRDInvoiceDescriptor
   ,intf.ZUGFeRDProfileAwareXmlTextWriter
   ,intf.ZUGFeRDInvoiceDescriptorWriter
@@ -65,6 +66,7 @@ type
     Writer: TZUGFeRDProfileAwareXmlTextWriter;
     Descriptor: TZUGFeRDInvoiceDescriptor;
     procedure _writeOptionalAmount(_writer : TZUGFeRDProfileAwareXmlTextWriter; tagName : string; value : ZUGFeRDNullable<Currency>; numDecimals : Integer = 2; forceCurrency : Boolean = false; profile : TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
+    procedure _writeOptionalAdaptiveAmount(_writer: TZUGFeRDProfileAwareXmlTextWriter; _tagName: string; _value: ZUGFeRDNullable<Currency>; _numDecimals: Integer = 2;_maxnumDecimals: Integer = 4; _forceCurrency: boolean = false);
     procedure _writeOptionalContact(_writer: TZUGFeRDProfileAwareXmlTextWriter; contactTag: String; contact: TZUGFeRDContact);
     procedure _writeOptionalParty(_writer: TZUGFeRDProfileAwareXmlTextWriter; PartyTag: String; Party: TZUGFeRDParty; Contact: TZUGFeRDContact = nil; TaxRegistrations: TObjectList<TZUGFeRDTaxRegistration> = nil);
     procedure _writeOptionalTaxes(_writer : TZUGFeRDProfileAwareXmlTextWriter);
@@ -286,7 +288,7 @@ begin
     end; // !foreach(document)
 
     Writer.WriteStartElement('ram:GrossPriceProductTradePrice');
-    _writeOptionalAmount(Writer, 'ram:ChargeAmount', tradeLineItem.GrossUnitPrice, 4, false);
+    _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.GrossUnitPrice, 2, 4);
     if (tradeLineItem.UnitQuantity.HasValue) then
     begin
       _writeElementWithAttribute(Writer, 'ram:BasisQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.UnitQuantity.Value, 4));
@@ -334,7 +336,7 @@ begin
     Writer.WriteEndElement(); // ram:GrossPriceProductTradePrice
 
     Writer.WriteStartElement('ram:NetPriceProductTradePrice');
-    _writeOptionalAmount(Writer, 'ram:ChargeAmount', tradeLineItem.NetUnitPrice, 4, false);
+    _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.NetUnitPrice,  2, 4);
 
     if (tradeLineItem.UnitQuantity.HasValue) then
     begin
@@ -508,7 +510,7 @@ begin
         Writer.WriteEndElement(); // !FormattedIssueDateTime
       end;
 
-      if (document.ReferenceTypeCode <> TZUGFeRDReferenceTypeCodes.Unknown) then
+      if document.ReferenceTypeCode.HasValue then
       begin
         Writer.WriteElementString('ram:TypeCode', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(document.ReferenceTypeCode));
       end;
@@ -1120,6 +1122,28 @@ begin
     _writer.WriteValue(_formatDecimal(value.Value, numDecimals));
     _writer.WriteEndElement; // !tagName
   end;
+end;
+
+procedure TZUGFeRDInvoiceDescriptor20Writer._writeOptionalAdaptiveAmount(
+  _writer: TZUGFeRDProfileAwareXmlTextWriter; _tagName: string;
+  _value: ZUGFeRDNullable<Currency>;
+  _numDecimals: Integer;
+  _maxnumDecimals: Integer;
+  _forceCurrency: boolean);
+begin
+  if _value.HasValue then
+  begin
+    _writer.WriteStartElement(_tagName);
+    if _forceCurrency then
+      _writer.WriteAttributeString('currencyID', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
+    var
+      rounded: Currency := RoundTo(_value.Value, -_numDecimals);
+    if _value = rounded then
+      _writer.WriteValue(_formatDecimal(_value.Value, _numDecimals))
+    else
+      _writer.WriteValue(_formatDecimal(_value.Value, _maxNumDecimals));
+    writer.WriteEndElement; // !tagName
+  end
 end;
 
 end.
