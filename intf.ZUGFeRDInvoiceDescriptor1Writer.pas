@@ -428,29 +428,69 @@ begin
     Writer.WriteEndElement();
   end;
 
-  for var PaymentTerms: TZUGFeRDPaymentTerms in Descriptor.PaymentTermsList do
-  begin
-    Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
-    Writer.WriteOptionalElementString('ram:Description', PaymentTerms.Description);
-    if (PaymentTerms.DueDate.HasValue) then
+  case Descriptor.Profile of
+    TZUGFeRDProfile.Unknown,
+    TZUGFeRDProfile.Minimum: {do nothing};
+
+    TZUGFeRDProfile.Extended:
     begin
-      Writer.WriteStartElement('ram:DueDateDateTime');
-      _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(PaymentTerms.DueDate.Value));
-      Writer.WriteEndElement(); // !ram:DueDateDateTime
+      for var PaymentTerms: TZUGFeRDPaymentTerms in Descriptor.PaymentTermsList do
+      begin
+        Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
+        Writer.WriteOptionalElementString('ram:Description', PaymentTerms.Description);
+        if (PaymentTerms.DueDate.HasValue) then
+        begin
+          Writer.WriteStartElement('ram:DueDateDateTime');
+          _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(PaymentTerms.DueDate.Value));
+          Writer.WriteEndElement(); // !ram:DueDateDateTime
+        end;
+        Writer.WriteOptionalElementString('ram:DirectDebitMandateID', _descriptor.PaymentMeans.SEPAMandateReference);
+        _writeOptionalAmount(Writer, 'ram:PartialPaymentAmount', paymentTerms.PartialPaymentAmount);
+        if PaymentTerms.PaymentTermsType.HasValue then
+        begin
+          if PaymentTerms.PaymentTermsType = TZUGFeRDPaymentTermsType.Skonto then
+            Writer.WriteStartElement('ram:ApplicableTradePaymentDiscountTerms')
+          else
+            Writer.WriteStartElement('ram:ApplicableTradePaymentPenaltyTerms');
+          if PaymentTerms.MaturityDate.HasValue then
+          begin
+            Writer.WriteStartElement('ram:BasisDateTime');
+            _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(PaymentTerms.MaturityDate.Value));
+            Writer.WriteEndElement(); // !ram:BasisDateTime
+          end;
+          if paymentTerms.DueDays.HasValue then
+            _writeElementWithAttribute(Writer, 'ram:BasisPeriodMeasure', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.DAY), IntToStr(paymentTerms.DueDays.Value));
+          _writeOptionalAmount(Writer, 'ram:BasisAmount', paymentTerms.BaseAmount); // forceCurrency false by default
+          Writer.WriteOptionalElementString('ram:CalculationPercent', _formatDecimal(paymentTerms.Percentage));
+          if PaymentTerms.PaymentTermsType = TZUGFeRDPaymentTermsType.Skonto then
+            _writeOptionalAmount(Writer, 'ram:ActualDiscountAmount', paymentTerms.ActualAmount)
+          else
+            _writeOptionalAmount(Writer, 'ram:ActualPenaltyAmount', paymentTerms.ActualAmount);
+          Writer.WriteEndElement(); // !ram:ApplicableTradePaymentDiscountTerms or  !ram:ApplicableTradePaymentPenaltyTerms
+        end;
+        Writer.WriteEndElement();
+      end;
+      if (_descriptor.PaymentTermsList.Count=0) and (_descriptor.PaymentMeans.SEPAMandateReference<>'') then
+      begin
+        Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
+        Writer.WriteOptionalElementString('ram:DirectDebitMandateID', _descriptor.PaymentMeans.SEPAMandateReference);
+        Writer.WriteEndElement();
+      end;
     end;
-    Writer.WriteOptionalElementString('ram:DirectDebitMandateID', PaymentTerms.DirectDebitMandateID);
-    //TODO PaymentTerms.PartialPaymentAmount
-    //TODO PaymentTerms.ApplicableTradePaymentPenaltyTerms
-    if (PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount <> 0.0) and
-       (PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent <> 0.0) then
+  else
+    for var PaymentTerms: TZUGFeRDPaymentTerms in Descriptor.PaymentTermsList do
     begin
-      Writer.WriteStartElement('ram:ApplicableTradePaymentDiscountTerms');
-      _writeOptionalAmount(Writer, 'ram:BasisAmount', PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount);
-      _writeOptionalAmount(Writer, 'ram:CalculationPercent', PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent,4);
-      Writer.WriteEndElement();
-      //TODO PaymentTerms.ApplicableTradePaymentDiscountTerms.ActualPenaltyAmount
+      Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
+      Writer.WriteOptionalElementString('ram:Description', PaymentTerms.Description);
+      if (PaymentTerms.DueDate.HasValue) then
+      begin
+        Writer.WriteStartElement('ram:DueDateDateTime');
+        _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(PaymentTerms.DueDate.Value));
+        Writer.WriteEndElement(); // !ram:DueDateDateTime
+      end;
+      Writer.WriteOptionalElementString('ram:DirectDebitMandateID', _descriptor.PaymentMeans.SEPAMandateReference);
+      Writer.WriteEndElement(); // !ram:SpecifiedTradePaymentTerms
     end;
-    Writer.WriteEndElement();
   end;
 
   Writer.WriteStartElement('ram:SpecifiedTradeSettlementMonetarySummation');
