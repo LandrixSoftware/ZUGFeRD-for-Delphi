@@ -29,6 +29,8 @@ type
   /// https://www.xrepository.de/details/urn:xoev-de:kosit:codeliste:VATEX_1
   /// </summary>
   TZUGFeRDTaxExemptionReasonCodes = (
+    Unknown,
+
     /// <summary>
     /// Exempt based on article 132 of Council Directive 2006/112/EC
     ///
@@ -435,15 +437,13 @@ type
     ///
     /// Only use with VAT category code O
     /// </summary>
-    VATEX_EU_O,
-
-    Unknown
+    VATEX_EU_O
   );
 
   TZUGFeRDTaxExemptionReasonCodesExtensions = class
   public
+    class function EnumToString(codes: ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes>): string;
     class function FromString(const s: string): ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes>;
-    class function EnumToString(codes: TZUGFeRDTaxExemptionReasonCodes): string;
   end;
 
 implementation
@@ -451,9 +451,12 @@ implementation
 { TZUGFeRDTaxExemptionReasonCodesExtensions }
 
 class function TZUGFeRDTaxExemptionReasonCodesExtensions.EnumToString(
-  codes: TZUGFeRDTaxExemptionReasonCodes): string;
+  codes: ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes>): string;
 begin
-  Result := ReplaceText(GetEnumName(TypeInfo(TZUGFeRDTaxExemptionReasonCodes), Integer(codes)),'_','-');
+  if codes.HasValue and (codes.Value<>TZUGFeRDTaxExemptionReasonCodes.Unknown) then
+    Result := ReplaceText(GetEnumName(TypeInfo(TZUGFeRDTaxExemptionReasonCodes), Integer(codes.Value)),'_','-')
+  else
+    Result:= ''
 end;
 
 class function TZUGFeRDTaxExemptionReasonCodesExtensions.FromString(

@@ -25,23 +25,16 @@ uses
 
 type
 
-  TZUGFeRDApplicableTradePaymentTerms = class
-  private
-    FCalculationPercent: double;
-    FBasisPeriodMeasure: ZUGFeRDNullable<double>;
-    FBasisAmount: Currency;
-    FActualPenaltyAmount: Currency;
-    FUnitCode: TZUGFeRDQuantityCodes;
-
-    //TODO FBasisDateTime: ZUGFeRDNullable<TDateTime>;
-  public
-    //TODO property BasisDateTime: ZUGFeRDNullable<TDateTime> read FBasisDateTime write FBasisDateTime;
-    property BasisPeriodMeasure : ZUGFeRDNullable<double> read FBasisPeriodMeasure write FBasisPeriodMeasure;
-    property BasisAmount : Currency read FBasisAmount write FBasisAmount;
-    property CalculationPercent : double read FCalculationPercent write FCalculationPercent;
-    property ActualPenaltyAmount : Currency read FActualPenaltyAmount write FActualPenaltyAmount;
-    property UnitCode: TZUGFeRDQuantityCodes read FUnitCode write FUnitCode;
-  end;
+  TZUGFeRDPaymentTermsType =  (
+    /// <summary>
+    /// Skonto indicator
+    /// </summary>
+    Skonto,
+    /// <summary>
+    /// Verzug indicator
+    /// </summary>
+    Verzug
+  );
 
   /// <summary>
   /// Condition that surrounds the payment part of an invoice, describing the specific details and the due date of the invoice.
@@ -50,10 +43,14 @@ type
   private
     FDescription: string;
     FDueDate: ZUGFeRDNullable<TDateTime>;
+    FPaymentTermsType: ZUGFeRDNullable<TZUGFeRDPaymentTermsType>;
+    FDueDays: ZUGFeRDNullable<Integer>;
+    FMaturityDate: ZUGFeRDNullable<TDateTime>;
+    FPercentage: ZUGFeRDNullable<double>;
+    FBaseAmount: ZUGFeRDNullable<Currency>;
+    FActualAmount: ZUGFeRDNullable<Currency>;
     FDirectDebitMandateID: string;
-    FApplicableTradePaymentDiscountTerms: TZUGFeRDApplicableTradePaymentTerms;
-    FApplicableTradePaymentPenaltyTerms: TZUGFeRDApplicableTradePaymentTerms;
-    FPartialPaymentAmount: Currency;
+    FPartialPaymentAmount: ZUGFeRDNullable<Currency>;
   public
     /// <summary>
     /// A textual description of the payment terms that apply to the amount due for payment (including description of possible penalties).
@@ -64,37 +61,42 @@ type
     /// </summary>
     property DueDate: ZUGFeRDNullable<TDateTime> read FDueDate write FDueDate;
 
-    /// SEPA Mandatsreferenz
-    ///
-    /// https://de.wikipedia.org/wiki/Mandatsreferenz
+    /// <summary>
+    /// Type whether it's a discount or a surcharge / interest
     /// </summary>
-    property DirectDebitMandateID: string read FDirectDebitMandateID write FDirectDebitMandateID;
+    property PaymentTermsType: ZUGFeRDNullable<TZUGFeRDPaymentTermsType> read FPaymentTermsType write FPaymentTermsType;
 
-    property PartialPaymentAmount: Currency read FPartialPaymentAmount write FPartialPaymentAmount;
+    /// <summary>
+    /// Number of days within terms are valid
+    /// </summary>
+    property DueDays: ZUGFeRDNullable<Integer> read FDueDays write FDueDays;
 
-    property ApplicableTradePaymentPenaltyTerms : TZUGFeRDApplicableTradePaymentTerms read FApplicableTradePaymentPenaltyTerms write FApplicableTradePaymentPenaltyTerms;
+    /// <summary>
+    /// Fälligkeitsdatum im Kontext der spezifischen Zahlungsbedingung
+    /// </summary>
+    /// BT-X-276-0/BT-X-282-0
+    property MaturityDate: ZUGFeRDNullable<TDateTime> read FMaturityDate write FMaturityDate;
 
-    property ApplicableTradePaymentDiscountTerms : TZUGFeRDApplicableTradePaymentTerms read FApplicableTradePaymentDiscountTerms write FApplicableTradePaymentDiscountTerms;
+    /// <summary>
+    /// Percentage of discount or surcharge
+    /// </summary>
+    property Percentage: ZUGFeRDNullable<double> read FPercentage write FPercentage;
+
+    /// <summary>
+    /// Base amount applied to percentage of discount or surcharge
+    /// </summary>
+    property BaseAmount: ZUGFeRDNullable<Currency> read FBaseAmount write FBaseAmount;
+
+    /// <summary>
+    /// The actual amount of discount or surcharge
+    /// </summary>
+    property ActualAmount: ZUGFeRDNullable<Currency> read FActualAmount write FActualAmount;
+
+    property PartialPaymentAmount: ZUGFeRDNullable<Currency> read FPartialPaymentAmount write FPartialPaymentAmount;
+
   public
-    constructor Create;
-    destructor Destroy; override;
   end;
 
 implementation
-
-{ TZUGFeRDPaymentTerms }
-
-constructor TZUGFeRDPaymentTerms.Create;
-begin
-  FApplicableTradePaymentDiscountTerms:= TZUGFeRDApplicableTradePaymentTerms.Create;
-  FApplicableTradePaymentPenaltyTerms:= TZUGFeRDApplicableTradePaymentTerms.Create;
-end;
-
-destructor TZUGFeRDPaymentTerms.Destroy;
-begin
-  if Assigned(FApplicableTradePaymentDiscountTerms) then begin FApplicableTradePaymentDiscountTerms.Free; FApplicableTradePaymentDiscountTerms := nil; end;
-  if Assigned(FApplicableTradePaymentPenaltyTerms) then begin FApplicableTradePaymentPenaltyTerms.Free; FApplicableTradePaymentPenaltyTerms := nil; end;
-  inherited;
-end;
 
 end.
