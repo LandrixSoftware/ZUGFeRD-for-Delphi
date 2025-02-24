@@ -49,7 +49,6 @@ type
     FPercentage: ZUGFeRDNullable<double>;
     FBaseAmount: ZUGFeRDNullable<Currency>;
     FActualAmount: ZUGFeRDNullable<Currency>;
-    FDirectDebitMandateID: string;
     FPartialPaymentAmount: ZUGFeRDNullable<Currency>;
   public
     /// <summary>
