@@ -344,6 +344,12 @@ type
     ANN,
 
     /// <summary>
+    /// Quartal
+    /// Abkürzung: Quartal(e)
+    /// </summary>
+    QAN,
+
+    /// <summary>
     /// Sekunde
     /// Abkürzung: Sekunde(n)
     /// </summary>

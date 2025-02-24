@@ -42,6 +42,7 @@ uses
   ,intf.ZUGFeRDTax
   ,intf.ZUGFeRDTaxTypes
   ,intf.ZUGFeRDTaxCategoryCodes
+  ,intf.ZUGFeRDDateTypeCodes
   ,intf.ZUGFeRDTradeLineItem
   ,intf.ZUGFeRDAdditionalReferencedDocument
   ,intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes
@@ -1011,6 +1012,17 @@ begin
     begin
       _writer.WriteElementString('ram:ExemptionReasonCode', TZUGFeRDTaxExemptionReasonCodesExtensions.EnumToString(tax.ExemptionReasonCode));
     end;
+    if tax.TaxPointDate.HasValue then
+    begin
+      _writer.WriteStartElement('ram:TaxPointDate');
+      _writer.WriteStartElement('udt:DateString');
+      _writer.WriteAttributeString('format', '102');
+      _writer.WriteValue(_formatDate(tax.TaxPointDate.Value));
+      _writer.WriteEndElement(); // !udt:DateString
+      _writer.WriteEndElement(); // !TaxPointDate
+    end;
+    if tax.DueDateTypeCode.HasValue then
+      _writer.WriteElementString('ram:DueDateTypeCode', TZUGFeRDDateTypeCodesExtensions.EnumToString(tax.DueDateTypeCode));
     _writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(tax.Percent));
     _writer.WriteEndElement(); // !ApplicableTradeTax
   end;

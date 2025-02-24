@@ -47,6 +47,7 @@ uses
   ,intf.ZUGFeRDBankAccount
   ,intf.ZUGFeRDTaxTypes,intf.ZUGFeRDTaxCategoryCodes
   ,intf.ZUGFeRDTaxExemptionReasonCodes
+  ,intf.ZUGFeRDDateTypeCodes
   ,intf.ZUGFeRDPaymentTerms
   ,intf.ZUGFeRDSellerOrderReferencedDocument
   ,intf.ZUGFeRDInvoiceReferencedDocument
@@ -327,7 +328,9 @@ begin
                                  TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:AllowanceChargeBasisAmount', 0),
                                  TZUGFeRDTaxExemptionReasonCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ExemptionReasonCode')),
                                  TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ExemptionReason'),
-                                 TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:LineTotalBasisAmount'));
+                                 TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:LineTotalBasisAmount'),
+                                 TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './/ram:TaxPointDate/udt:DateString'),
+                                 TZUGFeRDDateTypeCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:DueDateTypeCode')));
   end;
 
   nodes := doc.SelectNodes('//ram:ApplicableHeaderTradeSettlement/ram:SpecifiedTradeAllowanceCharge');

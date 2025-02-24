@@ -48,6 +48,7 @@ uses
   ,intf.ZUGFeRDFinancialCard
   ,intf.ZUGFeRDBankAccount
   ,intf.ZUGFeRDTaxTypes,intf.ZUGFeRDTaxCategoryCodes
+  ,intf.ZUGFeRDDateTypeCodes
   ,intf.ZUGFeRDTaxExemptionReasonCodes
   ,intf.ZUGFeRDInvoiceReferencedDocument
   ,intf.ZUGFeRDPaymentTerms
@@ -146,6 +147,81 @@ begin
   finally
     xml := nil;
   end;
+end;
+
+function TryReadXRechnungPaymentTerms(invoice: TZUGFeRDInvoiceDescriptor; nodes : IXMLDOMNodeList): boolean;
+begin
+  // try to find if Payment Terms are given in #SKONTO# or #VERZUG# format in the description field
+  Result:= false;
+  for var i: Integer := 0 to nodes.length-1 do
+  begin
+    var Description: string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Description');
+    if (Pos('#SKONTO#', Description)>0)
+    or (Pos('#VERZUG#', Description)>0) then
+      Result:= true;
+  end;
+  // if not, reading is done as usual
+  if Not(Result) then
+    exit;
+
+  // we handle lines of the following format
+  // #SKONTO#TAGE=2#PROZENT=2.00#BASISBETRAG=252.94#
+  // #SKONTO#TAGE=4#PROZENT=4.01#
+  // #VERZUG#TAGE=14#PROZENT=1.0#
+
+  for var i: Integer := 0 to nodes.length-1 do
+  begin
+    var Terms: TStringList := TStringList.Create;
+    try
+      var Description: string := '';
+      var Lines: TStringList := TStringList.Create;
+      try
+        Lines.Text := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Description');
+        for var Line in Lines do
+        begin
+          if (Length(Line)>0) and (Line[1]='#') then
+            Terms.Add(Line)
+          else // preserve text descriptions
+            if Description='' then
+              Description:= Line
+            else
+              Description:= Description+#13#10+Line
+        end;
+      finally
+        Lines.Free
+      end;
+      var first: boolean := true;
+      for var Term in Terms do
+      begin
+         var paymentTerm : TZUGFeRDPaymentTerms := TZUGFeRDPaymentTerms.Create;
+         if first then
+         begin
+           paymentTerm.Description:= Description;
+           paymentTerm.DueDate:= TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './/ram:DueDateDateTime/udt:DateTimeString');
+           first:= false;
+         end;
+         var Parts: TArray<string> := Term.Split(['#']); // 0 Leer, 1 SKONTO/VERZUG, 2 TAGE, 3 PROZENT, 4 Leer or BASISWERT
+         if Length(Parts)>=4 then
+         begin
+           if Parts[1]='SKONTO' then
+             paymentTerm.PaymentTermsType:= TZUGFeRDPaymentTermsType.Skonto
+           else
+           if Parts[1]='VERZUG' then
+             paymentTerm.PaymentTermsType:= TZUGFeRDPaymentTermsType.Verzug;
+           if copy(Parts[2], 1, 5)='TAGE=' then
+             paymentTerm.DueDays:= StrToIntDef(Copy(Parts[2], 6, Length(Parts[2])), 0);
+           if copy(Parts[3], 1, 8)='PROZENT=' then
+             paymentTerm.Percentage:= StrToFloatDef(Copy(Parts[3], 9, Length(Parts[3])), 0, TFormatSettings.Invariant);
+           if copy(Parts[4], 1, 12)='BASISBETRAG=' then
+             paymentTerm.BaseAmount:= StrToCurrDef(copy(Parts[4], 13, Length(Parts[4])), 0, TFormatSettings.Invariant);
+         end;
+        invoice.PaymentTermsList.Add(paymentTerm);
+      end;
+    finally
+      Terms.Free;
+    end
+  end;
+
 end;
 
 function TZUGFeRDInvoiceDescriptor23CIIReader.Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor;
@@ -431,7 +507,9 @@ begin
                                  TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:AllowanceChargeBasisAmount', 0),
                                  TZUGFeRDTaxExemptionReasonCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ExemptionReasonCode')),
                                  TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ExemptionReason'),
-                                 TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:LineTotalBasisAmount'));
+                                 TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:LineTotalBasisAmount'),
+                                 TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './/ram:TaxPointDate/udt:DateString'),
+                                 TZUGFeRDDateTypeCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:DueDateTypeCode')));
   end;
 
   nodes := doc.SelectNodes('//ram:ApplicableHeaderTradeSettlement/ram:SpecifiedTradeAllowanceCharge');
@@ -470,39 +548,39 @@ begin
   end;
 
   nodes := doc.SelectNodes('//ram:SpecifiedTradePaymentTerms');
-  for i := 0 to nodes.length-1 do
-  begin
-    var paymentTerm : TZUGFeRDPaymentTerms := TZUGFeRDPaymentTerms.Create;
-    paymentTerm.Description := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Description');
-    paymentTerm.DueDate:= TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './/ram:DueDateDateTime/udt:DateTimeString');
-    paymentTerm.PartialPaymentAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:PartialPaymentAmount');
-    var discountPercent: ZUGFeRDNullable<Double> := TZUGFeRDXmlUtils.NodeAsDouble(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:CalculationPercent');
-    var penaltyPercent: ZUGFeRDNullable<Double> := TZUGFeRDXmlUtils.NodeAsDouble(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:CalculationPercent');
-    var Days: ZUGFeRDNullable<Integer>;
-    if discountPercent.HasValue then
+  if Not (TryReadXRechnungPaymentTerms(Result, nodes)) then
+    for i := 0 to nodes.length-1 do
     begin
-      paymentTerm.PaymentTermsType:= TZUGFeRDPaymentTermsType.Skonto;
-      paymentTerm.Percentage:= discountPercent;
-      if TZUGFeRDQuantityCodes.DAY = TZUGFeRDQuantityCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisPeriodMeasure/@unitCode')) then
-        paymentTerm.DueDays:= TZUGFeRDXmlUtils.NodeAsInt(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisPeriodMeasure');
-      paymentTerm.MaturityDate:= TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisDateTime/udt:DateTimeString'); //BT-X-282-0
-      paymentTerm.BaseAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisAmount');
-      paymentTerm.ActualAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:ActualDiscountAmount');
-    end
-    else
-    if penaltyPercent.HasValue then
-    begin
-      paymentTerm.PaymentTermsType:= TZUGFeRDPaymentTermsType.Verzug;
-      paymentTerm.Percentage:= penaltyPercent;
-      if TZUGFeRDQuantityCodes.DAY = TZUGFeRDQuantityCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:BasisPeriodMeasure/@unitCode')) then
-        paymentTerm.DueDays:= TZUGFeRDXmlUtils.NodeAsInt(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:BasisPeriodMeasure');
-      paymentTerm.MaturityDate:= TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:BasisDateTime/udt:DateTimeString'); // BT-X-276-0
-      paymentTerm.BaseAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:BasisAmount');
-      paymentTerm.ActualAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:ActualPenaltyAmount');
-    end;
+      var paymentTerm : TZUGFeRDPaymentTerms := TZUGFeRDPaymentTerms.Create;
+      paymentTerm.Description := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Description');
+      paymentTerm.DueDate:= TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './/ram:DueDateDateTime/udt:DateTimeString');
+      paymentTerm.PartialPaymentAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:PartialPaymentAmount');
+      var discountPercent: ZUGFeRDNullable<Double> := TZUGFeRDXmlUtils.NodeAsDouble(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:CalculationPercent');
+      var penaltyPercent: ZUGFeRDNullable<Double> := TZUGFeRDXmlUtils.NodeAsDouble(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:CalculationPercent');
+      if discountPercent.HasValue then
+      begin
+        paymentTerm.PaymentTermsType:= TZUGFeRDPaymentTermsType.Skonto;
+        paymentTerm.Percentage:= discountPercent;
+        if TZUGFeRDQuantityCodes.DAY = TZUGFeRDQuantityCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisPeriodMeasure/@unitCode')) then
+          paymentTerm.DueDays:= TZUGFeRDXmlUtils.NodeAsInt(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisPeriodMeasure');
+        paymentTerm.MaturityDate:= TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisDateTime/udt:DateTimeString'); //BT-X-282-0
+        paymentTerm.BaseAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisAmount');
+        paymentTerm.ActualAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:ActualDiscountAmount');
+      end
+      else
+      if penaltyPercent.HasValue then
+      begin
+        paymentTerm.PaymentTermsType:= TZUGFeRDPaymentTermsType.Verzug;
+        paymentTerm.Percentage:= penaltyPercent;
+        if TZUGFeRDQuantityCodes.DAY = TZUGFeRDQuantityCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:BasisPeriodMeasure/@unitCode')) then
+          paymentTerm.DueDays:= TZUGFeRDXmlUtils.NodeAsInt(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:BasisPeriodMeasure');
+        paymentTerm.MaturityDate:= TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:BasisDateTime/udt:DateTimeString'); // BT-X-276-0
+        paymentTerm.BaseAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:BasisAmount');
+        paymentTerm.ActualAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:ActualPenaltyAmount');
+      end;
 
-    Result.PaymentTermsList.Add(paymentTerm);
-  end;
+      Result.PaymentTermsList.Add(paymentTerm);
+    end;
 
   Result.LineTotalAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:LineTotalAmount', 0);
   Result.ChargeTotalAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:ChargeTotalAmount');
@@ -857,14 +935,14 @@ begin
     Result.AdditionalReferencedDocuments.Add(_getAdditionalReferencedDocument(nodes[i]));
   end;
 
-  nodes := tradeLineItem.SelectNodes('ram:DesignatedProductClassification');
+  nodes := tradeLineItem.SelectNodes('.//ram:DesignatedProductClassification');
   for i := 0 to nodes.length-1 do
   begin
     var className : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ClassName');
-    var classCode : TZUGFeRDDesignatedProductClassificationClassCodes := TZUGFeRDDesignatedProductClassificationClassCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ClassCode'));
-    var listID : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ClassCode/@listID');
+    var classCode : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ClassCode');
+    var listID : TZUGFeRDDesignatedProductClassificationClassCodes := TZUGFeRDDesignatedProductClassificationClassCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ClassCode/@listID'));
     var listVersionID : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ClassCode/@listVersionID');
-    Result.AddDesignatedProductClassification(className, classCode, listID, listVersionID);
+    Result.AddDesignatedProductClassification(listID, listVersionID, className, classCode);
   end;
 
   if tradeLineItem.SelectSingleNode('.//ram:OriginTradeCountry//ram:ID') <> nil then

@@ -208,7 +208,7 @@ type
 		/// <param name="classCode">Identifier of the item classification (optional)</param>
 		/// <param name="listID">Product classification name (optional)</param>
 		/// <param name="listVersionID">Version of product classification (optional)</param>
-    procedure AddDesignatedProductClassification(className : String; classCode: TZUGFeRDDesignatedProductClassificationClassCodes; listID  : String = ''; listVersionID : String = '');
+    procedure AddDesignatedProductClassification(listID  : TZUGFeRDDesignatedProductClassificationClassCodes; listVersionID : String = ''; className : String = ''; classCode: string = '');
 
     /// <summary>
     /// Recipient of the delivered goods. This party is optional and is written in Extended profile only
@@ -614,9 +614,11 @@ begin
 end;
 
 procedure TZUGFeRDTradeLineItem.AddDesignatedProductClassification(
+  listID:  TZUGFeRDDesignatedProductClassificationClassCodes;
+  listVersionID: String;
   className : String;
-  classCode: TZUGFeRDDesignatedProductClassificationClassCodes;
-  listID, listVersionID: String);
+  classCode: string
+);
 begin
   DesignedProductClassifications.Add(TZUGFeRDDesignatedProductClassification.Create);
   DesignedProductClassifications.Last.ClassCode := classCode;
