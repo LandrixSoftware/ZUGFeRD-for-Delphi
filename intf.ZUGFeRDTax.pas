@@ -24,6 +24,7 @@ uses
   intf.ZUGFeRDTaxTypes,
   intf.ZUGFeRDTaxCategoryCodes,
   intf.ZUGFeRDTaxExemptionReasonCodes,
+  intf.ZUGFeRDDateTypeCodes,
   intf.ZUGFeRDHelper;
 
 type
@@ -41,6 +42,8 @@ type
     FExemptionReasonCode: ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes>;
     FExemptionReason: string;
     FTaxAmount: Currency;
+    FTaxPointDate: ZUGFeRDNullable<TDateTime>;
+    FDueDateTypeCode: ZUGFeRDNullable<TZUGFeRDDateTypeCodes>;
   public
     /// <summary>
     /// Returns the amount of the tax (Percent * BasisAmount)
@@ -80,6 +83,18 @@ type
     /// Exemption Reason Text for no Tax
     /// </summary>
     property ExemptionReason: string read FExemptionReason write FExemptionReason;
+
+    /// <summary>
+    /// Value added tax point date
+    /// The date when the VAT becomes accountable for the Seller and for the Buyer in so far as that date can be determined and differs from the date of issue of the invoice, according to the VAT directive.
+    /// </summary>
+    property TaxPointDate: ZUGFeRDNullable<TDateTime> read  FTaxPointDate write FTaxPointDate;
+
+    /// <summary>
+    /// Value added tax point date code
+    /// The code of the date when the VAT becomes accountable for the Seller and for the Buyer.
+    /// </summary>
+    property DueDateTypeCode: ZUGFeRDNullable<TZUGFeRDDateTypeCodes> read FDueDateTypeCode write FDueDateTypeCode;
   end;
 
 implementation

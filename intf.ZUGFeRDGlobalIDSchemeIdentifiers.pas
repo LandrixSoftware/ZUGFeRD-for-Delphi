@@ -6,6 +6,9 @@ uses
   System.SysUtils
   ;
 
+// see http://iso6523.info/icd_list.pdf
+//
+
 type
   TZUGFeRDGlobalIDSchemeIdentifiers = (
     /// <summary>
@@ -43,7 +46,11 @@ type
     /// <summary>
     /// Numero d'entreprise / ondernemingsnummer / Unternehmensnummer
     /// </summary>
-    CompanyNumber = 208
+    CompanyNumber = 208,
+    /// <summary>
+    /// Leitweg-ID
+    /// </summary>
+    LeitwegID = 204
   );
 
   TZUGFeRDGlobalIDSchemeIdentifiersExtensions = class
@@ -72,6 +79,8 @@ begin
     Result := TZUGFeRDGlobalIDSchemeIdentifiers.ODETTE else
   if SameText(s,'0208') then
     Result := TZUGFeRDGlobalIDSchemeIdentifiers.CompanyNumber else
+  if SameText(s,'0204') then
+    Result := TZUGFeRDGlobalIDSchemeIdentifiers.LeitwegID else
 
   Result := TZUGFeRDGlobalIDSchemeIdentifiers.Unknown;
 end;
@@ -87,6 +96,7 @@ begin
     TZUGFeRDGlobalIDSchemeIdentifiers.EAN: Result := '0160';
     TZUGFeRDGlobalIDSchemeIdentifiers.ODETTE: Result := '0177';
     TZUGFeRDGlobalIDSchemeIdentifiers.CompanyNumber: Result := '0208';
+    TZUGFeRDGlobalIDSchemeIdentifiers.LeitwegID: Result := '0204';
   else
     Result := '0000';
   end;

@@ -29,9 +29,9 @@ type
   TZUGFeRDDesignatedProductClassification = class
   private
     FClassName: String;
-    FListID: String;
+    FListID: TZUGFeRDDesignatedProductClassificationClassCodes;
     FListVersionID: String;
-    FClassCode: TZUGFeRDDesignatedProductClassificationClassCodes;
+    FClassCode: string;
   public
     /// <summary>
     /// A code for the classification of an item according to type or kind or nature.
@@ -40,12 +40,12 @@ type
     /// purposes, for instance like public procurement, in accordance with the Common Vocabulary for Public Procurement
     /// [CPV]), e-Commerce(UNSPSC) etc.
     /// </summary>
-    property ClassCode : TZUGFeRDDesignatedProductClassificationClassCodes read FClassCode write FClassCode;
+    property ClassCode : string read FClassCode write FClassCode;
 
     /// <summary>
     /// Product classification name
     /// </summary>
-    property ListID : String read FListID write FListID;
+    property ListID : TZUGFeRDDesignatedProductClassificationClassCodes read FListID write FListID;
 
     /// <summary>
     /// Version of product classification

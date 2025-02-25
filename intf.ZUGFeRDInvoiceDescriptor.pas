@@ -41,6 +41,7 @@ uses
   intf.ZUGFeRDTaxTypes,
   intf.ZUGFeRDTaxCategoryCodes,
   intf.ZUGFeRDTaxExemptionReasonCodes,
+  intf.ZUGFeRDDateTypeCodes,
   intf.ZUGFeRDContact,
   intf.ZUGFeRDNote,
   intf.ZUGFeRDCurrencyCodes,
@@ -745,7 +746,7 @@ type
     /// <param name="allowanceChargeBasisAmount"></param>
     /// <param name="exemptionReasonCode"></param>
     /// <param name="exemptionReason"></param>
-    procedure AddApplicableTradeTax(const calculatedAmount, basisAmount: Currency; const percent: Double; const typeCode: TZUGFeRDTaxTypes; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const allowanceChargeBasisAmount: Currency = 0; const exemptionReasonCode: IZUGFeRDNullableParam<TZUGFeRDTaxExemptionReasonCodes> = Nil; const exemptionReason: string = ''; const lineTotalBasisAmount: Currency = 0);
+    procedure AddApplicableTradeTax(const calculatedAmount, basisAmount: Currency; const percent: Double; const typeCode: TZUGFeRDTaxTypes; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const allowanceChargeBasisAmount: Currency = 0; const exemptionReasonCode: IZUGFeRDNullableParam<TZUGFeRDTaxExemptionReasonCodes> = Nil; const exemptionReason: string = ''; const lineTotalBasisAmount: Currency = 0;   const taxPointDate: IZUGFeRDNullableParam<TDateTime> = nil;  const dueDateTypeCode: IZUGFeRDNullableParam<TZUGFeRDDateTypeCodes> = Nil);
 
     /// <summary>
     /// Saves the descriptor object into a stream.
@@ -1526,7 +1527,9 @@ procedure TZUGFeRDInvoiceDescriptor.AddApplicableTradeTax(const calculatedAmount
   const allowanceChargeBasisAmount: Currency = 0;
   const exemptionReasonCode: IZUGFeRDNullableParam<TZUGFeRDTaxExemptionReasonCodes> = Nil;
   const exemptionReason: string = '';
-  const lineTotalBasisAmount: Currency = 0);
+  const lineTotalBasisAmount: Currency = 0;
+  const taxPointDate: IZUGFeRDNullableParam<TDateTime> = nil;
+  const dueDateTypeCode: IZUGFeRDNullableParam<TZUGFeRDDateTypeCodes> = Nil);
 var
   tax: TZUGFeRDTax;
 begin
@@ -1539,6 +1542,7 @@ begin
   tax.LineTotalBasisAmount := lineTotalBasisAmount;
   tax.ExemptionReasonCode := exemptionReasonCode;
   tax.ExemptionReason := exemptionReason;
+  tax.DueDateTypeCode := dueDateTypeCode;
 
   if (categoryCode <> TZUGFeRDTaxCategoryCodes.Unknown) then
     tax.CategoryCode := categoryCode;

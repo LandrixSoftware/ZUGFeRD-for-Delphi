@@ -43,6 +43,7 @@ uses
   ,intf.ZUGFeRDTax
   ,intf.ZUGFeRDTaxTypes
   ,intf.ZUGFeRDTaxCategoryCodes
+  ,intf.ZUGFeRDDateTypeCodes
   ,intf.ZUGFeRDTradeLineItem
   ,intf.ZUGFeRDAdditionalReferencedDocument
   ,intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes
@@ -266,18 +267,15 @@ begin
 
     for var designatedProductClassification : TZUGFeRDDesignatedProductClassification in tradeLineItem.DesignedProductClassifications do
     begin
-      if (designatedProductClassification.ClassCode <> TZUGFeRDDesignatedProductClassificationClassCodes.Unknown) then
+      if (designatedProductClassification.ListId <> TZUGFeRDDesignatedProductClassificationClassCodes.Unknown) then
       begin
         Writer.WriteStartElement('ram:DesignatedProductClassification', PROFILE_COMFORT_EXTENDED_XRECHNUNG);
         Writer.WriteStartElement('ram:ClassCode');
-        if (designatedProductClassification.ListID <> '') then
-        begin
-          Writer.WriteAttributeString('listID', designatedProductClassification.ListID);
-          Writer.WriteAttributeString('listVersionID', designatedProductClassification.ListVersionID);
-        end;
-        Writer.WriteValue(TZUGFeRDDesignatedProductClassificationClassCodesExtensions.EnumToString(designatedProductClassification.ClassCode));
+        Writer.WriteAttributeString('listID', TZUGFeRDDesignatedProductClassificationClassCodesExtensions.EnumToString(designatedProductClassification.ListId));
+        Writer.WriteAttributeString('listVersionID', designatedProductClassification.ListVersionID);
+        Writer.WriteValue(designatedProductClassification.ClassCode);
         Writer.WriteEndElement(); // !ram::ClassCode
-        Writer.WriteOptionalElementString('ram:ClassName', designatedProductClassification.ClassName);
+        Writer.WriteOptionalElementString('ram:ClassName', designatedProductClassification.ClassName_);
         Writer.WriteEndElement(); // !ram:DesignatedProductClassification
       end;
     end;
@@ -1139,7 +1137,7 @@ begin
         if PaymentNotes='' then
           PaymentNotes:= PaymentNote
         else
-          PaymentNotes:= PaymentNotes + #13#10 + PaymentNote;
+          PaymentNotes:= PaymentNotes + PaymentNote;
         // there can only be one DueDate and we use the first we find
         if PaymentTerms.DueDate.HasValue and Not(FirstDueDate.HasValue) then
           FirstDueDate:= PaymentTerms.DueDate;
@@ -1326,7 +1324,7 @@ begin
     if (((parentElement = 'BT-18-00') or (parentElement = 'BT-128-00')) and (document.TypeCode = TZUGFeRDAdditionalReferencedDocumentTypeCode.InvoiceDataSheet)) // CII-DT-024: ReferenceTypeCode is only allowed in BT-18-00 and BT-128-00 for InvoiceDataSheet
     or (parentElement = 'BG-X-3') then
       _writer.WriteElementString('ram:ReferenceTypeCode', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(document.ReferenceTypeCode));
-  if (parentElement = 'BT-24') or (parentElement = 'BT-X-3') then
+  if (parentElement = 'BG-24') or (parentElement = 'BT-X-3') then
     _writer.WriteOptionalElementString('ram:Name', document.Name, subProfile);
   if (document.AttachmentBinaryObject <> nil) then
   if document.AttachmentBinaryObject.Size > 0 then
@@ -1398,9 +1396,18 @@ begin
       _writer.WriteElementString('ram:CategoryCode', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(tax.CategoryCode));
     end;
     if tax.ExemptionReasonCode.HasValue then
-    begin
       _writer.WriteElementString('ram:ExemptionReasonCode', TZUGFeRDTaxExemptionReasonCodesExtensions.EnumToString(tax.ExemptionReasonCode));
+    if tax.TaxPointDate.HasValue then
+    begin
+      _writer.WriteStartElement('ram:TaxPointDate');
+      _writer.WriteStartElement('udt:DateString');
+      _writer.WriteAttributeString('format', '102');
+      _writer.WriteValue(_formatDate(tax.TaxPointDate.Value));
+      _writer.WriteEndElement(); // !udt:DateString
+      _writer.WriteEndElement(); // !TaxPointDate
     end;
+    if tax.DueDateTypeCode.HasValue then
+      _writer.WriteElementString('ram:DueDateTypeCode', TZUGFeRDDateTypeCodesExtensions.EnumToString(tax.DueDateTypeCode));
     _writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(tax.Percent));
     _writer.WriteEndElement(); // !ApplicableTradeTax
   end;

@@ -37,6 +37,8 @@ type
 	/// </summary>
   TZUGFeRDDesignatedProductClassificationClassCodes = (
 
+    Unknown,
+
 		/// <summary>
 		/// Product version number
 		/// Number assigned by manufacturer or seller to identify the release of a product.
@@ -49,7 +51,17 @@ type
 		/// </summary>
     HS,
 
-    Unknown
+		/// <summary>
+		/// ISBN (International Standard Book Number)
+    ///  A unique number identifying a book.
+		/// </summary>
+    IB,
+
+    /// <summary>
+    /// Mutually defined
+    /// Item type identification mutually agreed between interchanging parties.
+    /// </summary>
+    ZZZ
   );
 
   TZUGFeRDDesignatedProductClassificationClassCodesExtensions = class
@@ -68,6 +80,8 @@ begin
   case c of
     TZUGFeRDDesignatedProductClassificationClassCodes.AA: Result := 'AA';
     TZUGFeRDDesignatedProductClassificationClassCodes.HS: Result := 'HS';
+    TZUGFeRDDesignatedProductClassificationClassCodes.IB: Result := 'IB';
+    TZUGFeRDDesignatedProductClassificationClassCodes.ZZZ: Result := 'ZZZ';
     else Result := '';
   end;
 end;
@@ -80,6 +94,12 @@ begin
   else
   if SameText(s,'HS') then
     Result := TZUGFeRDDesignatedProductClassificationClassCodes.HS
+  else
+  if SameText(s,'IB') then
+    Result := TZUGFeRDDesignatedProductClassificationClassCodes.IB
+  else
+  if SameText(s,'ZZZ') then
+    Result := TZUGFeRDDesignatedProductClassificationClassCodes.ZZZ
   else
     Result := TZUGFeRDDesignatedProductClassificationClassCodes.Unknown;
 end;
