@@ -400,9 +400,13 @@ begin
       begin
         Writer.WriteStartElement('ram:GrossPriceProductTradePrice', PROFILE_COMFORT_EXTENDED_XRECHNUNG);
         _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.GrossUnitPrice, 2, 4); //BT-148
-        if (tradeLineItem.UnitQuantity.HasValue) then
+        if tradeLineItem.GrossQuantity.HasValue then
         begin
-          _writeElementWithAttribute(Writer, 'ram:BasisQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.UnitQuantity.Value, 4));
+          Writer.WriteStartElement('ram:BasisQuantity');
+          if tradeLineItem.GrossUnitCode.HasValue then
+            Writer.WriteAttributeString('unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.GrossUnitCode));
+         Writer.WriteValue(_formatDecimal(tradeLineItem.GrossQuantity.Value, 4));
+         Writer.WriteEndElement(); // !ram:BasisQuantity
         end;
 
         for var tradeAllowanceCharge : TZUGFeRDTradeAllowanceCharge in tradeLineItem.TradeAllowanceCharges do //BT-147
@@ -465,10 +469,15 @@ begin
       Writer.WriteStartElement('ram:NetPriceProductTradePrice', [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
       _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.NetUnitPrice, 2, 4); //BT-146
 
-      if (tradeLineItem.UnitQuantity.HasValue) then
+      if tradeLineItem.NetQuantity.HasValue then
       begin
-        _writeElementWithAttribute(Writer, 'ram:BasisQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.UnitQuantity.Value, 4));
+        Writer.WriteStartElement('ram:BasisQuantity');
+        if tradeLineItem.NetUnitCode.HasValue then
+          Writer.WriteAttributeString('unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.NetUnitCode));
+       Writer.WriteValue(_formatDecimal(tradeLineItem.NetQuantity.Value, 4));
+       Writer.WriteEndElement(); // !ram:BasisQuantity
       end;
+
       Writer.WriteEndElement(); // ram:NetPriceProductTradePrice(Basic|Comfort|Extended|XRechnung)
       //#endregion // !NetPriceProductTradePrice(Basic|Comfort|Extended|XRechnung)
 
@@ -639,10 +648,10 @@ begin
     else if (tradeLineItem.NetUnitPrice.HasValue) then
     begin
       _total := tradeLineItem.NetUnitPrice.Value * tradeLineItem.BilledQuantity;
-      if tradeLineItem.UnitQuantity.HasValue then
-      if (tradeLineItem.UnitQuantity.Value <> 0) then
+      if tradeLineItem.NetQuantity.HasValue then
+      if (tradeLineItem.NetQuantity.Value <> 0) then
       begin
-        _total := _total / tradeLineItem.UnitQuantity.Value;
+        _total := _total / tradeLineItem.NetQuantity.Value;
       end;
     end;
 
