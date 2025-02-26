@@ -748,14 +748,16 @@ begin
   Result.BuyerAssignedID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:BuyerAssignedID');
   Result.Name := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:Name');
   Result.Description := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:Description');
-  Result.UnitQuantity:= TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:BasisQuantity');   // C# reads with default 1
   Result.BilledQuantity := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:BilledQuantity', 0);
+  Result.UnitCode := TZUGFeRDQuantityCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:BilledQuantity/@unitCode'));
   Result.ShipTo := _nodeAsParty(tradeLineItem, './/ram:SpecifiedLineTradeDelivery/ram:ShipToTradeParty');
   Result.ShipToContact := _nodeAsContact(tradeLineItem, '//ram:SpecifiedLineTradeDelivery/ram:ShipToTradeParty/ram:DefinedTradeContact');
   Result.UltimateShipTo := _nodeAsParty(tradeLineItem, './/ram:SpecifiedLineTradeDelivery/ram:UltimateShipToTradeParty');
   Result.UltimateShipToContact := _nodeAsContact(tradeLineItem, '//ram:SpecifiedLineTradeDelivery/ram:UltimateShipToTradeParty/ram:DefinedTradeContact');
   Result.ChargeFreeQuantity := TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:ChargeFreeQuantity');
+  Result.ChargeFreeUnitCode := TZUGFeRDQuantityCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:ChargeFreeQuantity/@unitCode'));
   Result.PackageQuantity := TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:PackageQuantity');
+  Result.PackageUnitCode := TZUGFeRDQuantityCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:PackageQuantity/@unitCode'));
   Result.LineTotalAmount:= TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:LineTotalAmount', 0);
   Result.TaxCategoryCode := TZUGFeRDTaxCategoryCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:CategoryCode'));
   Result.TaxType := TZUGFeRDTaxTypesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:TypeCode'));
@@ -763,10 +765,11 @@ begin
   Result.TaxExemptionReasonCode := TZUGFeRDTaxExemptionReasonCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:ExemptionReasonCode'));
   Result.TaxExemptionReason := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:ExemptionReason');
   Result.NetUnitPrice:= TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:NetPriceProductTradePrice/ram:ChargeAmount', 0);
+  Result.NetQuantity := TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:NetPriceProductTradePrice/ram:BasisQuantity');
+  Result.NetUnitCode := TZUGFeRDQuantityCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:NetPriceProductTradePrice/ram:BasisQuantity/@unitCode'));
   Result.GrossUnitPrice:= TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:GrossPriceProductTradePrice/ram:ChargeAmount', 0);
-  Result.UnitCode := TZUGFeRDQuantityCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:BasisQuantity/@unitCode'));
-  Result.PackageUnitCode := TZUGFeRDQuantityCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:PackageQuantity/@unitCode'));
-  Result.ChargeFreeUnitCode := TZUGFeRDQuantityCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:ChargeFreeQuantity/@unitCode'));
+  Result.GrossQuantity := TZUGFeRDXmlUtils.NodeAsDouble(tradeLineItem, './/ram:GrossPriceProductTradePrice/ram:BasisQuantity');
+  Result.GrossUnitCode := TZUGFeRDQuantityCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:GrossPriceProductTradePrice/ram:BasisQuantity/@unitCode'));
   Result.BillingPeriodStart := TZUGFeRDXmlUtils.NodeAsDateTime(tradeLineItem, './/ram:BillingSpecifiedPeriod/ram:StartDateTime/udt:DateTimeString');
   Result.BillingPeriodEnd := TZUGFeRDXmlUtils.NodeAsDateTime(tradeLineItem, './/ram:BillingSpecifiedPeriod/ram:EndDateTime/udt:DateTimeString');
 
