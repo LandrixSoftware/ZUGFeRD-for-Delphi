@@ -34,7 +34,8 @@ type
     ProductEndUserTradeParty,
     BuyerAgentTradeParty,
     InvoicerTradeParty,
-    PayerTradeParty
+    PayerTradeParty,
+    SellerTaxRepresentativeTradeParty
   );
 
 implementation

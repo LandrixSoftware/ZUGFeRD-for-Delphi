@@ -752,7 +752,7 @@ begin
     Writer.WriteElementString('udt:Indicator', ifthen(tradeAllowanceCharge.ChargeIndicator,'true','false'));
     Writer.WriteEndElement(); // !ram:ChargeIndicator
 
-    if tradeAllowanceCharge.BasisAmount <> 0.0 then
+    if tradeAllowanceCharge.BasisAmount.HasValue then
     begin
       Writer.WriteStartElement('ram:BasisAmount');
       Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.BasisAmount));
@@ -1097,12 +1097,11 @@ begin
   _writer.WriteOptionalElementString('ram:PostcodeCode', Party.Postcode);
   _writer.WriteOptionalElementString('ram:LineOne', ifthen(Party.ContactName = '', Party.Street,Party.ContactName));
   if (Party.ContactName <> '') then
-  begin
     _writer.WriteOptionalElementString('ram:LineTwo', Party.Street);
-  end;
   _writer.WriteOptionalElementString('ram:LineThree', Party.AddressLine3); // BT-163
   _writer.WriteOptionalElementString('ram:CityName', Party.City);
-  _writer.WriteElementString('ram:CountryID', TZUGFeRDCountryCodesExtensions.EnumToString(Party.Country));
+  if party.Country<>TZUGFeRDCountryCodes.Unknown then
+    writer.WriteElementString('ram:CountryID', TZUGFeRDCountryCodesExtensions.EnumToString(party.Country)); //buyer: BT-55
   _writer.WriteOptionalElementString('ram:CountrySubDivisionName', Party.CountrySubdivisionName); // BT-79
   _writer.WriteEndElement(); // !PostalTradeAddress
 

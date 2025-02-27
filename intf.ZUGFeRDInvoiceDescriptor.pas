@@ -97,6 +97,8 @@ type
     FSellerContact: TZUGFeRDContact;
     FSellerTaxRegistration: TObjectList<TZUGFeRDTaxRegistration>;
     FSellerElectronicAddress: TZUGFeRDElectronicAddress;
+    FSellerTaxRepresentative: TZUGFeRDParty;
+    FSellerTaxRepresentativeTaxRegistration: TObjectList<TZUGFeRDTaxRegistration>;
     FInvoicee: TZUGFeRDParty;
     FInvoiceeTaxRegistration: TObjectList<TZUGFeRDTaxRegistration>;
     FShipTo: TZUGFeRDParty;
@@ -241,6 +243,9 @@ type
     property SellerContact: TZUGFeRDContact read FSellerContact write FSellerContact;
     property SellerTaxRegistration: TObjectList<TZUGFeRDTaxRegistration> read FSellerTaxRegistration;
     property SellerElectronicAddress : TZUGFeRDElectronicAddress read FSellerElectronicAddress;
+
+    property SellerTaxRepresentative: TZUGFeRDParty read FSellerTaxRepresentative write FSellerTaxRepresentative;
+    property SellerTaxRepresentativeTaxRegistration: TObjectList<TZUGFeRDTaxRegistration> read FSellerTaxRepresentativeTaxRegistration;
 
   	/// <summary>
 		/// Given seller reference number for routing purposes after biliteral agreement
@@ -589,6 +594,8 @@ type
 
     procedure AddSellerTaxRegistration(const no: string; const schemeID: TZUGFeRDTaxRegistrationSchemeID);
 
+    procedure AddSellerTaxRepresentativeTaxRegistration(const no: string; const schemeID: TZUGFeRDTaxRegistrationSchemeID);
+
     procedure AddInvoiceeTaxRegistration(const no: string; const schemeID: TZUGFeRDTaxRegistrationSchemeID);
 
     procedure AddShipToTaxRegistration(const no: string; const schemeID: TZUGFeRDTaxRegistrationSchemeID);
@@ -902,6 +909,8 @@ begin
   FSellerContact                 := nil;//TZUGFeRDContact.Create;
   FSellerTaxRegistration         := TObjectList<TZUGFeRDTaxRegistration>.Create;
   FSellerElectronicAddress       := TZUGFeRDElectronicAddress.Create;
+  FSellerTaxRepresentative       := nil;//TZUGFeRDParty.Create;
+  FSellerTaxRepresentativeTaxRegistration := TObjectList<TZUGFeRDTaxRegistration>.Create;
   FInvoicee                      := nil;//TZUGFeRDParty.Create;
   FInvoiceeTaxRegistration       := TObjectList<TZUGFeRDTaxRegistration>.Create;
   FInvoicer                      := nil;//TZUGFeRDParty.Create;
@@ -941,6 +950,8 @@ begin
   if Assigned(FSellerContact                 ) then begin FSellerContact.Free; FSellerContact := nil; end;
   if Assigned(FSellerTaxRegistration         ) then begin FSellerTaxRegistration.Free; FSellerTaxRegistration := nil; end;
   if Assigned(FSellerElectronicAddress       ) then begin FSellerElectronicAddress.Free; FSellerElectronicAddress := nil; end;
+  if Assigned(FSellerTaxRepresentative       ) then begin FSellerTaxRepresentative.Free; FSellerTaxRepresentative := nil; end;
+  if Assigned(FSellerTaxRepresentativeTaxRegistration ) then begin FSellerTaxRepresentativeTaxRegistration.Free; FSellerTaxRepresentativeTaxRegistration := nil; end;
   if Assigned(FInvoicee                      ) then begin FInvoicee.Free; FInvoicee := nil; end;
   if Assigned(FInvoiceeTaxRegistration       ) then begin FInvoiceeTaxRegistration.Free; FInvoiceeTaxRegistration := nil; end;
   if Assigned(FInvoicer                      ) then begin FInvoicer.Free; FInvoicer := nil; end;
@@ -1364,6 +1375,13 @@ begin
   FSellerTaxRegistration[SellerTaxRegistration.Count - 1].SchemeID := schemeID;
 end;
 
+procedure TZUGFeRDInvoiceDescriptor.AddSellerTaxRepresentativeTaxRegistration(const no: string; const schemeID: TZUGFeRDTaxRegistrationSchemeID);
+begin
+  FSellerTaxRepresentativeTaxRegistration.Add(TZUGFeRDTaxRegistration.Create);
+  FSellerTaxRepresentativeTaxRegistration[SellerTaxRepresentativeTaxRegistration.Count - 1].No := no;
+  FSellerTaxRepresentativeTaxRegistration[SellerTaxRepresentativeTaxRegistration.Count - 1].SchemeID := schemeID;
+end;
+
 procedure TZUGFeRDInvoiceDescriptor.AddInvoiceeTaxRegistration(const no: string; const schemeID: TZUGFeRDTaxRegistrationSchemeID);
 begin
   FInvoiceeTaxRegistration.Add(TZUGFeRDTaxRegistration.Create);
@@ -1548,6 +1566,7 @@ begin
   tax.LineTotalBasisAmount := lineTotalBasisAmount;
   tax.ExemptionReasonCode := exemptionReasonCode;
   tax.ExemptionReason := exemptionReason;
+  tax.TaxPointDate := taxPointDate;
   tax.DueDateTypeCode := dueDateTypeCode;
 
   if (categoryCode <> TZUGFeRDTaxCategoryCodes.Unknown) then

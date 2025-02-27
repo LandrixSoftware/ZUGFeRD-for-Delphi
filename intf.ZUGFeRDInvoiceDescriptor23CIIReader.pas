@@ -323,6 +323,16 @@ begin
     );
   end;
 
+  Result.SellerTaxRepresentative := _nodeAsParty(doc.DocumentElement, '//ram:ApplicableHeaderTradeAgreement/ram:SellerTaxRepresentativeTradeParty');
+  nodes := doc.selectNodes('//ram:ApplicableHeaderTradeAgreement/ram:SellerTaxRepresentativeTradeParty/ram:SpecifiedTaxRegistration');
+  for i := 0 to nodes.length-1 do
+  begin
+    var id : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ID');
+    var schemeID : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ID/@schemeID');
+    Result.AddSellerTaxRepresentativeTaxRegistration(id, TZUGFeRDTaxRegistrationSchemeIDExtensions.FromString(schemeID));
+  end;
+
+
   //Get all referenced and embedded documents (BG-24)
   nodes := doc.SelectNodes('.//ram:ApplicableHeaderTradeAgreement/ram:AdditionalReferencedDocument');
   for i := 0 to nodes.length-1 do

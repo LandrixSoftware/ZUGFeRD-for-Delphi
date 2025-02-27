@@ -591,7 +591,7 @@ begin
         //#endregion
 
         //#region ChargePercentage
-        if (specifiedTradeAllowanceCharge.ChargePercentage <> 0.0) then
+        if (specifiedTradeAllowanceCharge.ChargePercentage.HasValue) then
         begin
           Writer.WriteStartElement('ram:CalculationPercent');
           Writer.WriteValue(_formatDecimal(specifiedTradeAllowanceCharge.ChargePercentage, 2));
@@ -600,7 +600,7 @@ begin
         //#endregion
 
         //#region BasisAmount
-        if (specifiedTradeAllowanceCharge.BasisAmount <> 0.0) then
+        if (specifiedTradeAllowanceCharge.BasisAmount.HasValue) then
         begin
           // according to CII-SR-123 not in XRechnung for *Applied*TradeAllowanceCharge  but valid for *Specified*TradeAllowanceCharge!
           Writer.WriteStartElement('ram:BasisAmount', ALL_PROFILES-[TZUGFeRDProfile.Basic]); // BT-137, BT-142
@@ -725,8 +725,10 @@ begin
   _writeOptionalParty(Writer, TZUGFeRDPartyTypes.BuyerTradeParty, Descriptor.Buyer, Descriptor.BuyerContact, Descriptor.BuyerElectronicAddress, Descriptor.BuyerTaxRegistration);
   //#endregion
 
-  // TODO: implement SellerTaxRepresentativeTradeParty
+  //region SellerTaxRepresentativeTradeParty
   // BT-63: the tax registration of the SellerTaxRepresentativeTradeParty
+  _writeOptionalParty(Writer, TZUGFeRDPartyTypes.SellerTaxRepresentativeTradeParty, Descriptor.SellerTaxRepresentative, Nil, Nil, Descriptor.SellerTaxRepresentativeTaxRegistration);
+  //#endregion
 
   //#region SellerOrderReferencedDocument (BT-14: Comfort, Extended)
   if (Descriptor.SellerOrderReferencedDocument <> nil) then
@@ -1048,14 +1050,14 @@ begin
     Writer.WriteElementString('udt:Indicator', ifthen(tradeAllowanceCharge.ChargeIndicator,'true','false'));
     Writer.WriteEndElement(); // !ram:ChargeIndicator
 
-    if (tradeAllowanceCharge.ChargePercentage <> 0.0) then
+    if (tradeAllowanceCharge.ChargePercentage.HasValue) then
     begin
       Writer.WriteStartElement('ram:CalculationPercent');
       Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ChargePercentage, 2));
       Writer.WriteEndElement();
     end;
 
-    if (tradeAllowanceCharge.BasisAmount <> 0.0) then
+    if (tradeAllowanceCharge.BasisAmount.HasValue) then
     begin
       Writer.WriteStartElement('ram:BasisAmount'); // BT-100
       Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.BasisAmount));
@@ -1131,7 +1133,7 @@ begin
         PaymentNote:= System.StrUtils.ReplaceText(Trim(PaymentTerms.Description),'#',' '); // make sure no # is present
         if PaymentNote<>'' then
           PaymentNote:= PaymentNote+#13#10;
-        if PaymentTerms.PaymentTermsType.HasValue then
+        if PaymentTerms.PaymentTermsType.HasValue and PaymentTerms.DueDays.HasValue and PaymentTerms.Percentage.HasValue then
         begin
           var formatSettings: TFormatSettings;
           formatSettings.DecimalSeparator := '.';
@@ -1516,6 +1518,8 @@ begin
       writer.WriteStartElement('ram:InvoiceeTradeParty', [Descriptor.Profile]);
     TZUGFeRDPartyTypes.PayeeTradeParty:
       writer.WriteStartElement('ram:PayeeTradeParty', [Descriptor.Profile]);
+    TZUGFeRDPartyTypes.PayerTradeParty:
+      writer.WriteStartElement('ram:PayerTradeParty', [Descriptor.Profile]);
     TZUGFeRDPartyTypes.SalesAgentTradeParty:
       writer.WriteStartElement('ram:SalesAgentTradeParty', [Descriptor.Profile]);
     TZUGFeRDPartyTypes.BuyerTaxRepresentativeTradeParty:
@@ -1526,8 +1530,8 @@ begin
       writer.WriteStartElement('ram:BuyerAgentTradeParty', [Descriptor.Profile]);
     TZUGFeRDPartyTypes.InvoicerTradeParty:
       writer.WriteStartElement('ram:InvoicerTradeParty', [Descriptor.Profile]);
-    TZUGFeRDPartyTypes.PayerTradeParty:
-      writer.WriteStartElement('ram:PayerTradeParty', [Descriptor.Profile]);
+    TZUGFeRDPartyTypes.SellerTaxRepresentativeTradeParty:
+      writer.WriteStartElement('ram:SellerTaxRepresentativeTradeParty', [Descriptor.Profile]);
   else
     exit;
   end;
@@ -1563,19 +1567,22 @@ begin
   _writeOptionalLegalOrganization(writer, 'ram:SpecifiedLegalOrganization', party.SpecifiedLegalOrganization, partyType);
   _writeOptionalContact(writer, 'ram:DefinedTradeContact', contact, [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung]);
 
-  writer.WriteStartElement('ram:PostalTradeAddress');
-  writer.WriteOptionalElementString('ram:PostcodeCode', party.Postcode); //buyer: BT-53
-  writer.WriteOptionalElementString('ram:LineOne', ifthen(party.ContactName='',party.Street,party.ContactName)); //buyer: BT-50
-  if (party.ContactName<>'')then
+  // spec 2.3 says: Minimum/BuyerTradeParty does not include PostalTradeAddress
+  if (Descriptor.Profile = TZUGFeRDProfile.Extended) or (partyType In [TZUGFeRDPartyTypes.BuyerTradeParty, TZUGFeRDPartyTypes.SellerTradeParty, TZUGFeRDPartyTypes.SellerTaxRepresentativeTradeParty, TZUGFeRDPartyTypes.BuyerTaxRepresentativeTradeParty, TZUGFeRDPartyTypes.ShipToTradeParty, TZUGFeRDPartyTypes.ShipToTradeParty, TZUGFeRDPartyTypes.UltimateShipToTradeParty, TZUGFeRDPartyTypes.SalesAgentTradeParty]) then
   begin
+    writer.WriteStartElement('ram:PostalTradeAddress');
+    writer.WriteOptionalElementString('ram:PostcodeCode', party.Postcode); //buyer: BT-53
+    writer.WriteOptionalElementString('ram:LineOne', ifthen(party.ContactName='',party.Street,party.ContactName)); //buyer: BT-50
+    if (party.ContactName<>'') then
       writer.WriteOptionalElementString('ram:LineTwo', party.Street); //buyer: BT-51
-  end;
 
-  writer.WriteOptionalElementString('ram:LineThree', party.AddressLine3); //buyer: BT-163
-  writer.WriteOptionalElementString('ram:CityName', party.City); //buyer: BT-52
-  writer.WriteElementString('ram:CountryID', TZUGFeRDCountryCodesExtensions.EnumToString(party.Country)); //buyer: BT-55
-  writer.WriteOptionalElementString('ram:CountrySubDivisionName', party.CountrySubdivisionName); // BT-79
-  writer.WriteEndElement(); // !PostalTradeAddress
+    writer.WriteOptionalElementString('ram:LineThree', party.AddressLine3); //buyer: BT-163
+    writer.WriteOptionalElementString('ram:CityName', party.City); //buyer: BT-52
+    if party.Country<>TZUGFeRDCountryCodes.Unknown then
+      writer.WriteElementString('ram:CountryID', TZUGFeRDCountryCodesExtensions.EnumToString(party.Country)); //buyer: BT-55
+    writer.WriteOptionalElementString('ram:CountrySubDivisionName', party.CountrySubdivisionName); // BT-79
+    writer.WriteEndElement(); // !PostalTradeAddress
+  end;
 
   if (electronicAddress <> nil) then
   begin
