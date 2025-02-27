@@ -64,6 +64,8 @@ type
     FBilledQuantity: Double;
     FChargeFreeQuantity: ZUGFeRDNullable<Double>;
     FPackageQuantity: ZUGFeRDNullable<Double>;
+    FNetQuantity: ZUGFeRDNullable<Double>;
+    FGrossQuantity: ZUGFeRDNullable<Double>;
     FName: string;
     FContractReferencedDocument: TZUGFeRDContractReferencedDocument;
     FReceivableSpecifiedTradeAccountingAccounts: TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>;
@@ -72,6 +74,8 @@ type
     FUnitCode: TZUGFeRDQuantityCodes;
     FChargeFreeUnitCode: TZUGFeRDQuantityCodes;
     FPackageUnitCode: TZUGFeRDQuantityCodes;
+    FNetUnitCode: ZUGFeRDNullable<TZUGFeRDQuantityCodes>;
+    FGrossUnitCode: ZUGFeRDNullable<TZUGFeRDQuantityCodes>;
     FBillingPeriodStart: ZUGFeRDNullable<TDateTime>;
     FApplicableProductCharacteristics: TObjectList<TZUGFeRDApplicableProductCharacteristic>;
     FDesignedProductClassifications: TObjectList<TZUGFeRDDesignatedProductClassification>;
@@ -94,7 +98,6 @@ type
     FBuyerAssignedID: string;
     FActualDeliveryDate: ZUGFeRDNullable<TDateTime>;
     FBillingPeriodEnd: ZUGFeRDNullable<TDateTime>;
-    FUnitQuantity: ZUGFeRDNullable<Double>;
     FDescription: string;
     FAssociatedDocument: TZUGFeRDAssociatedDocument;
     FTaxCategoryCode: TZUGFeRDTaxCategoryCodes;
@@ -277,11 +280,6 @@ type
     property Description: string read FDescription write FDescription;
 
     /// <summary>
-    /// Included amount
-    /// </summary>
-    property UnitQuantity: ZUGFeRDNullable<Double> read FUnitQuantity write FUnitQuantity;
-
-    /// <summary>
     /// Invoiced quantity
     /// </summary>
     property BilledQuantity: Double read FBilledQuantity write FBilledQuantity;
@@ -347,8 +345,23 @@ type
 
     /// <summary>
     /// net unit price of the item
+    /// BT-146
     /// </summary>
     property NetUnitPrice: ZUGFeRDNullable<Currency> read FNetUnitPrice write FNetUnitPrice;
+
+    /// <summary>
+    /// Net unit price quantity
+    /// optional, if filled and if *Gross*UnitPrice is present then it should be equal to GrossQuantity
+    ///  BT-149
+    /// </summary>
+    property NetQuantity: ZUGFeRDNullable<Double> read FNetQuantity write FNetQuantity;
+
+    /// <summary>
+    /// Net quantity unit of measure code
+    /// optional and if filled should be equal to Unitcode
+    /// BT-150
+    /// </summary>
+    property NetUnitCode: ZUGFeRDNullable<TZUGFeRDQuantityCodes> read FNetUnitCode write FNetUnitCode;
 
     /// <summary>
     /// gross unit price of the item
@@ -356,7 +369,22 @@ type
     property GrossUnitPrice: ZUGFeRDNullable<Currency> read FGrossUnitPrice write FGrossUnitPrice;
 
     /// <summary>
+    /// The number of item units to which the gross unit price applies.
+    /// if *Gross*UnitPrice is present and NetQuantity is filled, should be equal to NetQuantity
+    /// BT-149-1
+    /// </summary>
+    property GrossQuantity: ZUGFeRDNullable<Double> read FGrossQuantity write FGrossQuantity;
+
+    /// <summary>
+    /// Gross quantity unit of measure code
+    /// optional and if filled should be equal to Unitcode
+    /// BT-150-1
+    /// </summary>
+    property GrossUnitCode: ZUGFeRDNullable<TZUGFeRDQuantityCodes> read FGrossUnitCode write FGrossUnitCode;
+
+    /// <summary>
     /// Item Base Quantity Unit Code
+    /// BT-130
     /// </summary>
     property UnitCode: TZUGFeRDQuantityCodes read FUnitCode write FUnitCode;
 

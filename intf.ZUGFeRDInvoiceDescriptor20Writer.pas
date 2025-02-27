@@ -290,9 +290,13 @@ begin
 
     Writer.WriteStartElement('ram:GrossPriceProductTradePrice');
     _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.GrossUnitPrice, 2, 4);
-    if (tradeLineItem.UnitQuantity.HasValue) then
+    if tradeLineItem.GrossQuantity.HasValue then
     begin
-      _writeElementWithAttribute(Writer, 'ram:BasisQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.UnitQuantity.Value, 4));
+      Writer.WriteStartElement('ram:BasisQuantity');
+      if tradeLineItem.GrossUnitCode.HasValue then
+        Writer.WriteAttributeString('unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.GrossUnitCode));
+      Writer.WriteValue(_formatDecimal(tradeLineItem.GrossQuantity.Value, 4));
+      Writer.WriteEndElement(); // !ram:BasisQuantity
     end;
 
     for var tradeAllowanceCharge : TZUGFeRDTradeAllowanceCharge in tradeLineItem.TradeAllowanceCharges do
@@ -339,10 +343,15 @@ begin
     Writer.WriteStartElement('ram:NetPriceProductTradePrice');
     _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.NetUnitPrice,  2, 4);
 
-    if (tradeLineItem.UnitQuantity.HasValue) then
+    if tradeLineItem.NetQuantity.HasValue then
     begin
-      _writeElementWithAttribute(Writer, 'ram:BasisQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.UnitQuantity.Value, 4));
+      Writer.WriteStartElement('ram:BasisQuantity');
+      if tradeLineItem.NetUnitCode.HasValue then
+        Writer.WriteAttributeString('unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.NetUnitCode));
+      Writer.WriteValue(_formatDecimal(tradeLineItem.NetQuantity.Value, 4));
+      Writer.WriteEndElement(); // !ram:BasisQuantity
     end;
+
     Writer.WriteEndElement(); // ram:NetPriceProductTradePrice
 
     Writer.WriteEndElement(); // !ram:SpecifiedLineTradeAgreement
@@ -440,10 +449,10 @@ begin
     else if (tradeLineItem.NetUnitPrice.HasValue) then
     begin
       _total := tradeLineItem.NetUnitPrice.Value * tradeLineItem.BilledQuantity;
-      if tradeLineItem.UnitQuantity.HasValue then
-      if (tradeLineItem.UnitQuantity.Value <> 0) then
+      if tradeLineItem.NetQuantity.HasValue then
+      if (tradeLineItem.NetQuantity.Value <> 0) then
       begin
-        _total := _total / tradeLineItem.UnitQuantity.Value;
+        _total := _total / tradeLineItem.NetQuantity.Value;
       end;
     end;
 
