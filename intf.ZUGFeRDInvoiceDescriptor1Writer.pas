@@ -372,7 +372,7 @@ begin
     Writer.WriteElementString('udt:Indicator', ifthen(tradeAllowanceCharge.ChargeIndicator,'true','false'));
     Writer.WriteEndElement(); // !ram:ChargeIndicator
 
-    if tradeAllowanceCharge.BasisAmount <> 0.0 then
+    if tradeAllowanceCharge.BasisAmount.HasValue then
     begin
       Writer.WriteStartElement('ram:BasisAmount', [TZUGFeRDProfile.Extended]);
       Writer.WriteAttributeString('currencyID', TZUGFeRDCurrencyCodesExtensions.EnumToString(tradeAllowanceCharge.Currency));
@@ -876,7 +876,8 @@ begin
     _writer.WriteOptionalElementString('ram:LineTwo', Party.Street);
   end;
   _writer.WriteOptionalElementString('ram:CityName', Party.City);
-  _writer.WriteElementString('ram:CountryID', TZUGFeRDCountryCodesExtensions.EnumToString(Party.Country));
+  if party.Country<>TZUGFeRDCountryCodes.Unknown then
+    writer.WriteElementString('ram:CountryID', TZUGFeRDCountryCodesExtensions.EnumToString(party.Country)); //buyer: BT-55
   _writer.WriteEndElement(); // !PostalTradeAddress
 
   if (TaxRegistrations <> nil) then
