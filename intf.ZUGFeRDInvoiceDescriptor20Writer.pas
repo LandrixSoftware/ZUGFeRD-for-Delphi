@@ -75,6 +75,20 @@ type
     procedure _writeElementWithAttribute(_writer: TZUGFeRDProfileAwareXmlTextWriter; tagName, attributeName,attributeValue, nodeValue: String);
     function _translateInvoiceType(type_ : TZUGFeRDInvoiceType) : String;
     function _encodeInvoiceType(type_ : TZUGFeRDInvoiceType) : Integer;
+  private const
+    ALL_PROFILES = [TZUGFeRDProfile.Minimum,
+                    TZUGFeRDProfile.BasicWL,
+                    TZUGFeRDProfile.Basic,
+                    TZUGFeRDProfile.Comfort,
+                    TZUGFeRDProfile.Extended,
+                    TZUGFeRDProfile.XRechnung1,
+                    TZUGFeRDProfile.XRechnung,
+                    TZUGFeRDProfile.EReporting];
+    PROFILE_COMFORT_EXTENDED_XRECHNUNG =
+                   [TZUGFeRDProfile.Comfort,
+                    TZUGFeRDProfile.Extended,
+                    TZUGFeRDProfile.XRechnung1,
+                    TZUGFeRDProfile.XRechnung];
   public
     function Validate(_descriptor: TZUGFeRDInvoiceDescriptor; _throwExceptions: Boolean = True): Boolean; override;
     /// <summary>
@@ -468,6 +482,11 @@ begin
   Writer.WriteOptionalElementString('ram:BuyerReference', Descriptor.ReferenceOrderNo);
   _writeOptionalParty(Writer, 'ram:SellerTradeParty', Descriptor.Seller, Descriptor.SellerContact, Descriptor.SellerTaxRegistration);
   _writeOptionalParty(Writer, 'ram:BuyerTradeParty', Descriptor.Buyer, Descriptor.BuyerContact, Descriptor.BuyerTaxRegistration);
+
+  //#region SellerTaxRepresentativeTradeParty
+  // BT-63: the tax registration of the SellerTaxRepresentativeTradeParty
+  _writeOptionalParty(Writer, 'ram:SellerTaxRepresentativeTradeParty', Descriptor.SellerTaxRepresentative, Nil, Descriptor.SellerTaxRepresentativeTaxRegistration);
+  //#endregion
 
   //#region SellerOrderReferencedDocument (BT-14: Comfort, Extended)
   if (Descriptor.SellerOrderReferencedDocument <> nil) then
@@ -1058,7 +1077,9 @@ end;
 
 procedure TZUGFeRDInvoiceDescriptor20Writer._writeOptionalParty(
   _writer: TZUGFeRDProfileAwareXmlTextWriter;
-  PartyTag : String; Party : TZUGFeRDParty; Contact : TZUGFeRDContact = nil;
+  PartyTag : String;
+  Party : TZUGFeRDParty;
+  Contact : TZUGFeRDContact = nil;
   TaxRegistrations : TObjectList<TZUGFeRDTaxRegistration> = nil);
 begin
   if Party = nil then
@@ -1091,7 +1112,7 @@ begin
   end;
 
   _Writer.WriteOptionalElementString('ram:Name', Party.Name);
-  _Writer.WriteOptionalElementString('ram:Description', Party.Description, [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung1, TZUGFeRDProfile.XRechnung]);
+  _Writer.WriteOptionalElementString('ram:Description', Party.Description, PROFILE_COMFORT_EXTENDED_XRECHNUNG);
   _writeOptionalContact(_writer, 'ram:DefinedTradeContact', Contact);
   _writer.WriteStartElement('ram:PostalTradeAddress');
   _writer.WriteOptionalElementString('ram:PostcodeCode', Party.Postcode);

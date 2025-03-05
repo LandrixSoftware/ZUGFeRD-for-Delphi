@@ -72,6 +72,20 @@ type
     procedure _writeElementWithAttribute(_writer: TZUGFeRDProfileAwareXmlTextWriter; tagName, attributeName,attributeValue, nodeValue: String);
     function _translateInvoiceType(type_ : TZUGFeRDInvoiceType) : String;
     function _encodeInvoiceType(type_ : TZUGFeRDInvoiceType) : Integer;
+  private const
+    ALL_PROFILES = [TZUGFeRDProfile.Minimum,
+                    TZUGFeRDProfile.BasicWL,
+                    TZUGFeRDProfile.Basic,
+                    TZUGFeRDProfile.Comfort,
+                    TZUGFeRDProfile.Extended,
+                    TZUGFeRDProfile.XRechnung1,
+                    TZUGFeRDProfile.XRechnung,
+                    TZUGFeRDProfile.EReporting];
+    PROFILE_COMFORT_EXTENDED_XRECHNUNG =
+                   [TZUGFeRDProfile.Comfort,
+                    TZUGFeRDProfile.Extended,
+                    TZUGFeRDProfile.XRechnung1,
+                    TZUGFeRDProfile.XRechnung];
   public
     function Validate(_descriptor: TZUGFeRDInvoiceDescriptor; _throwExceptions: Boolean = True): Boolean; override;
     /// <summary>
@@ -866,7 +880,7 @@ begin
   end;
 
   _Writer.WriteOptionalElementString('ram:Name', Party.Name);
-  _Writer.WriteOptionalElementString('ram:Description', Party.Description, [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung1, TZUGFeRDProfile.XRechnung]);
+  _Writer.WriteOptionalElementString('ram:Description', Party.Description, PROFILE_COMFORT_EXTENDED_XRECHNUNG);
   _writeOptionalContact(_writer, 'ram:DefinedTradeContact', Contact);
   _writer.WriteStartElement('ram:PostalTradeAddress');
   _writer.WriteOptionalElementString('ram:PostcodeCode', Party.Postcode);

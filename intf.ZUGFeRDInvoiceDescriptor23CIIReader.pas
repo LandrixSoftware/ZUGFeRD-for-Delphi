@@ -323,6 +323,7 @@ begin
     );
   end;
 
+  // SellerTaxRepresentativeTradeParty STEUERBEVOLLMÄCHTIGTER DES VERKÄUFERS, BG-11
   Result.SellerTaxRepresentative := _nodeAsParty(doc.DocumentElement, '//ram:ApplicableHeaderTradeAgreement/ram:SellerTaxRepresentativeTradeParty');
   nodes := doc.selectNodes('//ram:ApplicableHeaderTradeAgreement/ram:SellerTaxRepresentativeTradeParty/ram:SpecifiedTaxRegistration');
   for i := 0 to nodes.length-1 do

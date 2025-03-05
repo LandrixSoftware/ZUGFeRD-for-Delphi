@@ -720,12 +720,12 @@ begin
   _writeOptionalParty(Writer, TZUGFeRDPartyTypes.SellerTradeParty, Descriptor.Seller, Descriptor.SellerContact, Descriptor.SellerElectronicAddress, Descriptor.SellerTaxRegistration);
   //#endregion
 
-  //region BuyerTradeParty
+  //#region BuyerTradeParty
   // BT-48: Descriptor.BuyerTaxRegistration
   _writeOptionalParty(Writer, TZUGFeRDPartyTypes.BuyerTradeParty, Descriptor.Buyer, Descriptor.BuyerContact, Descriptor.BuyerElectronicAddress, Descriptor.BuyerTaxRegistration);
   //#endregion
 
-  //region SellerTaxRepresentativeTradeParty
+  //#region SellerTaxRepresentativeTradeParty
   // BT-63: the tax registration of the SellerTaxRepresentativeTradeParty
   _writeOptionalParty(Writer, TZUGFeRDPartyTypes.SellerTaxRepresentativeTradeParty, Descriptor.SellerTaxRepresentative, Nil, Nil, Descriptor.SellerTaxRepresentativeTaxRegistration);
   //#endregion
