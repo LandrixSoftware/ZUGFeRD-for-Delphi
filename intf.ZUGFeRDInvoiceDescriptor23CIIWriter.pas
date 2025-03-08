@@ -843,7 +843,7 @@ begin
 
     if (Descriptor.DespatchAdviceReferencedDocument.IssueDateTime.HasValue) then
     begin
-      Writer.WriteStartElement('ram:FormattedIssueDateTime');
+      Writer.WriteStartElement('ram:FormattedIssueDateTime', [TZUGFeRDProfile.Extended]);
       Writer.WriteStartElement('qdt:DateTimeString');
       Writer.WriteAttributeString('format', '102');
       Writer.WriteValue(_formatDate(Descriptor.DespatchAdviceReferencedDocument.IssueDateTime.Value));
