@@ -244,11 +244,13 @@ begin
 
   cmd := TStringList.Create;
   try
+    cmd.WriteBOM := False;
+    cmd.Add('chcp 65001 >nil');
     cmd.Add('pushd '+QuoteIfContainsSpace(ExtractFilePath(tmpFilename)));
     cmd.Add(QuoteIfContainsSpace(PdfTkServerPath+'bin\pdftk.exe')+' '+
              QuoteIfContainsSpace(_PdfFilename)+' unpack_files output '+
              tmpPath);
-    cmd.SaveToFile(tmpFilename+'.bat',TEncoding.ANSI);
+    cmd.SaveToFile(tmpFilename+'.bat',TEncoding.UTF8);
 
     Result := ExecAndWait(tmpFilename+'.bat','');
 
@@ -317,6 +319,8 @@ begin
 
   cmd := TStringList.Create;
   try
+    cmd.WriteBOM := False;
+    cmd.Add('chcp 65001 >nil');
     cmd.Add('pushd '+QuoteIfContainsSpace(ExtractFilePath(tmpFilename)));
 
     cmd.Add(QuoteIfContainsSpace(JavaRuntimeEnvironmentPath+'bin\java.exe')+' -Xmx1G '+
@@ -325,7 +329,7 @@ begin
             ' --source '+ QuoteIfContainsSpace(_InvoiceXMLFilename)+
             ' --out '+tmpFilename+'.xml');
 
-    cmd.SaveToFile(tmpFilename+'.bat',TEncoding.ANSI);
+    cmd.SaveToFile(tmpFilename+'.bat',TEncoding.UTF8);
 
     Result := ExecAndWait(tmpFilename+'.bat','');
 
@@ -363,6 +367,8 @@ begin
   hstrl := TStringList.Create;
   cmd := TStringList.Create;
   try
+    cmd.WriteBOM := False;
+    cmd.Add('chcp 65001 >nil');
     hstrl.Text := _InvoiceXMLData;
     hstrl.SaveToFile(tmpFilename,TEncoding.UTF8);
 
@@ -373,7 +379,7 @@ begin
             ' --action visualize ' +
             '-source-xml '+ QuoteIfContainsSpace(tmpFilename));
 
-    cmd.SaveToFile(tmpFilename+'.bat',TEncoding.ANSI);
+    cmd.SaveToFile(tmpFilename+'.bat',TEncoding.UTF8);
 
     Result := ExecAndWait(tmpFilename+'.bat','');
 
@@ -406,6 +412,8 @@ begin
 
   cmd := TStringList.Create;
   try
+    cmd.WriteBOM := False;
+    cmd.Add('chcp 65001 >nil');
     cmd.Add('pushd '+QuoteIfContainsSpace(ExtractFilePath(tmpFilename)));
 
     cmd.Add(QuoteIfContainsSpace(JavaRuntimeEnvironmentPath+'bin\java.exe')+' -Xmx1G '+
@@ -415,7 +423,7 @@ begin
             ' --out '+tmpFilename+'.html'+
             ' --language de');
 
-    cmd.SaveToFile(tmpFilename+'.bat',TEncoding.ANSI);
+    cmd.SaveToFile(tmpFilename+'.bat',TEncoding.UTF8);
 
     Result := ExecAndWait(tmpFilename+'.bat','');
 
@@ -456,6 +464,8 @@ begin
 
   cmd := TStringList.Create;
   try
+    cmd.WriteBOM := False;
+    cmd.Add('chcp 65001 >nil');
     cmd.Add('pushd '+QuoteIfContainsSpace(ExtractFilePath(tmpFilename)));
 
     cmd.Add(QuoteIfContainsSpace(JavaRuntimeEnvironmentPath+'bin\java.exe')+' -Xmx1G '+
@@ -465,7 +475,7 @@ begin
             ' --out '+tmpFilename+'.pdf'+
             ' --language de');
 
-    cmd.SaveToFile(tmpFilename+'.bat',TEncoding.ANSI);
+    cmd.SaveToFile(tmpFilename+'.bat',TEncoding.UTF8);
 
     Result := ExecAndWait(tmpFilename+'.bat','');
 
