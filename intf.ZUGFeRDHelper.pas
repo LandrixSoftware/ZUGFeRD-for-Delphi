@@ -1,4 +1,4 @@
-﻿{* Licensed to the Apache Software Foundation (ASF) under one
+{* Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -264,7 +264,8 @@ begin
       lList := TDirectory.GetFiles(tmpPath,'*.xml', TSearchOption.soTopDirectoryOnly);
       for i := 0 to Length(LList) - 1 do
       if (Pos('zugferd',LowerCase(ExtractFilename(LList[i]))) = 1) or
-         (Pos('factur-x',LowerCase(ExtractFilename(LList[i]))) = 1) then
+         (Pos('factur-x',LowerCase(ExtractFilename(LList[i]))) = 1) or
+         (Pos('xrechnung',LowerCase(ExtractFilename(LList[i]))) = 1)then
       begin
         _Attachment := TMemoryStream.Create;
         TMemoryStream(_Attachment).LoadFromFile(LList[i]);
