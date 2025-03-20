@@ -245,7 +245,7 @@ begin
   cmd := TStringList.Create;
   try
     cmd.WriteBOM := False;
-    cmd.Add('chcp 65001 >nil');
+    cmd.Add('chcp 65001 >nul');
     cmd.Add('pushd '+QuoteIfContainsSpace(ExtractFilePath(tmpFilename)));
     cmd.Add(QuoteIfContainsSpace(PdfTkServerPath+'bin\pdftk.exe')+' '+
              QuoteIfContainsSpace(_PdfFilename)+' unpack_files output '+
@@ -320,7 +320,7 @@ begin
   cmd := TStringList.Create;
   try
     cmd.WriteBOM := False;
-    cmd.Add('chcp 65001 >nil');
+    cmd.Add('chcp 65001 >nul');
     cmd.Add('pushd '+QuoteIfContainsSpace(ExtractFilePath(tmpFilename)));
 
     cmd.Add(QuoteIfContainsSpace(JavaRuntimeEnvironmentPath+'bin\java.exe')+' -Xmx1G '+
@@ -368,7 +368,7 @@ begin
   cmd := TStringList.Create;
   try
     cmd.WriteBOM := False;
-    cmd.Add('chcp 65001 >nil');
+    cmd.Add('chcp 65001 >nul');
     hstrl.Text := _InvoiceXMLData;
     hstrl.SaveToFile(tmpFilename,TEncoding.UTF8);
 
@@ -413,7 +413,7 @@ begin
   cmd := TStringList.Create;
   try
     cmd.WriteBOM := False;
-    cmd.Add('chcp 65001 >nil');
+    cmd.Add('chcp 65001 >nul');
     cmd.Add('pushd '+QuoteIfContainsSpace(ExtractFilePath(tmpFilename)));
 
     cmd.Add(QuoteIfContainsSpace(JavaRuntimeEnvironmentPath+'bin\java.exe')+' -Xmx1G '+
@@ -465,7 +465,7 @@ begin
   cmd := TStringList.Create;
   try
     cmd.WriteBOM := False;
-    cmd.Add('chcp 65001 >nil');
+    cmd.Add('chcp 65001 >nul');
     cmd.Add('pushd '+QuoteIfContainsSpace(ExtractFilePath(tmpFilename)));
 
     cmd.Add(QuoteIfContainsSpace(JavaRuntimeEnvironmentPath+'bin\java.exe')+' -Xmx1G '+
