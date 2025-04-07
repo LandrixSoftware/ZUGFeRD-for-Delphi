@@ -56,6 +56,7 @@ uses
   ,intf.ZUGFeRDSpecialServiceDescriptionCodes
   ,intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
   ,intf.ZUGFeRDFormats
+  ,intf.ZUGFeRDTransportmodeCodes
   ;
 
 type
@@ -225,6 +226,16 @@ begin
   Writer.WriteEndElement(); // !ApplicableSupplyChainTradeAgreement
 
   Writer.WriteStartElement('ram:ApplicableSupplyChainTradeDelivery'); // Pflichteintrag
+
+    //RelatedSupplyChainConsignment --> SpecifiedLogisticsTransportMovement --> ModeCode // Only in extended profile
+  if(Descriptor.TransportMode <> nil) then
+  begin
+    Writer.WriteStartElement('ram:RelatedSupplyChainConsignment', [TZUGFeRDProfile.Extended]); // BG-X-24
+    Writer.WriteStartElement('ram:SpecifiedLogisticsTransportMovement', [TZUGFeRDProfile.Extended]); // BT-X-152-00
+    Writer.WriteElementString('ram:ModeCode', TZUGFeRDTransportmodeCodesExtensions.EnumToString(Descriptor.TransportMode)); // BT-X-152
+    Writer.WriteEndElement(); // !ram:SpecifiedLogisticsTransportMovement
+    Writer.WriteEndElement(); // !ram:RelatedSupplyChainConsignment
+  end;
 
   if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
   begin

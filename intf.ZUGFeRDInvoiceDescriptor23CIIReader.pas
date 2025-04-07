@@ -69,6 +69,7 @@ uses
   ,intf.ZUGFeRDDesignatedProductClassificationClassCodes
   ,intf.ZUGFeRDXmlUtils
   ,intf.ZUGFeRDIncludedReferencedProduct
+  ,intf.ZUGFeRDTransportmodeCodes
   ;
 
 type
@@ -340,6 +341,10 @@ begin
   begin
     Result.AdditionalReferencedDocuments.Add(_getAdditionalReferencedDocument(nodes[i]));
   end;
+
+  //Read TransportModeCodes --> BT-X-152
+  if (doc.SelectSingleNode('//ram:ApplicableHeaderTradeDelivery/ram:RelatedSupplyChainConsignment/ram:SpecifiedLogisticsTransportMovement/ram:ModeCode') <> nil) then
+    Result.TransportMode := TZUGFeRDTransportmodeCodesExtensions.FromString(TZUGFeRDXmlUtils.NodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:RelatedSupplyChainConsignment/ram:SpecifiedLogisticsTransportMovement/ram:ModeCode'));
 
   //-------------------------------------------------
   // hzi: With old implementation only the first document has been read instead of all documents

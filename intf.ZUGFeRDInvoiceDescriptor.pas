@@ -68,7 +68,8 @@ uses
   intf.ZUGFeRDDespatchAdviceReferencedDocument,
   intf.ZUGFeRDSpecialServiceDescriptionCodes,
   intf.ZUGFeRDAllowanceOrChargeIdentificationCodes,
-  intf.ZUGFeRDFormats
+  intf.ZUGFeRDFormats,
+  intf.ZUGFeRDTransportmodeCodes
   ;
 
 type
@@ -138,6 +139,7 @@ type
     FBillingPeriodStart: ZUGFeRDNullable<TDateTime>;
     FBillingPeriodEnd: ZUGFeRDNullable<TDateTime>;
     FSellerOrderReferencedDocument: TZUGFeRDSellerOrderReferencedDocument;
+    FTransportMode: ZUGFeRDNullable<TZUGFeRDTransportModeCodes>;
     FDespatchAdviceReferencedDocument: TZUGFeRDDespatchAdviceReferencedDocument;
     FInvoicer: TZUGFeRDParty;
     FSellerReferenceNo: String;
@@ -363,7 +365,9 @@ type
     property TradeLineItems: TObjectList<TZUGFeRDTradeLineItem> read FTradeLineItems;
 
     /// <summary>
-    /// Sum of all invoice line net amounts in the invoice
+    /// Sum of all invoice line net amounts (BT-131) in the invoice
+    ///
+    /// BT-106
     /// </summary>
     property LineTotalAmount: ZUGFeRDNullable<Currency> read FLineTotalAmount write FLineTotalAmount;
 
@@ -503,6 +507,14 @@ type
     /// The property "IssueDateTime" is optional an only used in profile "Extended"
     /// </summary>
     property SellerOrderReferencedDocument: TZUGFeRDSellerOrderReferencedDocument read FSellerOrderReferencedDocument write FSellerOrderReferencedDocument;
+
+    /// <summary>
+    /// The code specifying the mode, such as air, sea, rail, road or inland waterway, for this logistics transport movement.
+    /// BG-X-24 --> BT-X-152
+    /// </summary>
+    property TransportMode: ZUGFeRDNullable<TZUGFeRDTransportModeCodes> read FTransportMode write FTransportMode;
+
+
   public
     constructor Create;
     destructor Destroy; override;
@@ -851,8 +863,9 @@ type
     /// <summary>
     ///     Sets up the payment means for SEPA direct debit.
     /// </summary>
-    procedure SetPaymentMeansSepaDirectDebit(const sepaCreditorIdentifier: string;
-  const information: string = '');
+    procedure SetPaymentMeansSepaDirectDebit(const sepaCreditorIdentifier: string; const information: string = '');
+
+    procedure SetBillingPeriod (billingPeriodStart, billingPeriodEnd: ZUGFeRDNullable<TDateTime>);
 
     /// <summary>
     ///     Sets up the payment means for payment via financial card.
@@ -932,6 +945,7 @@ begin
   FDebitorBankAccounts           := TObjectList<TZUGFeRDBankAccount>.Create;
   FPaymentMeans                  := nil;//TZUGFeRDPaymentMeans.Create;
   FSellerOrderReferencedDocument := nil;//TZUGFeRDSellerOrderReferencedDocument.Create;
+  FTransportMode                 := nil;
   FTaxCurrency                   := TZUGFeRDCurrencyCodes.Unknown;
 end;
 
@@ -1783,6 +1797,12 @@ begin
   Self.PaymentMeans.TypeCode := TZUGFeRDPaymentMeansTypeCodes.SEPADirectDebit;
   Self.PaymentMeans.Information := information;
   Self.PaymentMeans.SEPACreditorIdentifier := sepaCreditorIdentifier;
+end;
+
+procedure TZUGFeRDInvoiceDescriptor.SetBillingPeriod (billingPeriodStart, billingPeriodEnd: ZUGFeRDNullable<TDateTime>);
+begin
+  Self.BillingPeriodStart := billingPeriodStart;
+  Self.BillingPeriodEnd := billingPeriodEnd;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetPaymentMeansFinancialCard(const financialCardId: string;
