@@ -26,9 +26,21 @@ uses
   ,intf.ZUGFeRDTradeLineItem
   ,intf.ZUGFeRDTradeAllowanceCharge
   ,intf.ZUGFeRDTax
+  ,intf.ZUGFeRDVersion
   ;
 
 type
+  TZUGFeRDValidationResult = class
+  private
+    FIsValid: Boolean;
+    FMessages: TStringList;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    property IsValid: Boolean read FIsValid write FIsValid;
+    property Messages: TStringList read FMessages;
+  end;
+
   /// <summary>
   /// Validator for ZUGFeRD invoice descriptor.
   ///
@@ -38,35 +50,46 @@ type
   /// </summary>
   TZUGFeRDInvoiceValidator = class
   public
-    class procedure ValidateAndPrint(descriptor: TZUGFeRDInvoiceDescriptor; filename: string = '');
-    class function Validate(descriptor: TZUGFeRDInvoiceDescriptor): TStringList;
+    class procedure ValidateAndPrint(descriptor: TZUGFeRDInvoiceDescriptor; version: TZUGFeRDVersion; filename: string = '');
+    class function Validate(descriptor: TZUGFeRDInvoiceDescriptor; version: TZUGFeRDVersion): TZUGFeRDValidationResult;
   end;
 
 implementation
 
-class procedure TZUGFeRDInvoiceValidator.ValidateAndPrint(
-  descriptor: TZUGFeRDInvoiceDescriptor; filename: string = '');
+constructor TZUGFeRDValidationResult.Create;
+begin
+  FIsValid := False;
+  FMessages := TStringList.Create;
+end;
+
+destructor TZUGFeRDValidationResult.Destroy;
+begin
+  FMessages.Free;
+  inherited;
+end;
+
+
+class procedure TZUGFeRDInvoiceValidator.ValidateAndPrint(descriptor: TZUGFeRDInvoiceDescriptor; version: TZUGFeRDVersion; filename: string = '');
 var
-  output: TStringList;
+  validationResult : TZUGFeRDValidationResult;
   line: string;
 begin
-  output := TZUGFeRDInvoiceValidator.Validate(descriptor);
+  validationResult  := TZUGFeRDInvoiceValidator.Validate(descriptor, version);
   try
     if not filename.IsEmpty then
-      output.SaveToFile(filename);
+      validationResult.Messages.SaveToFile(filename);
 
-    for line in output do
+    for line in validationResult.Messages do
       Writeln(line);
   finally
-    output.Free;
+    validationResult.Free;
   end;
 end;
 
-class function TZUGFeRDInvoiceValidator.Validate(
-  descriptor: TZUGFeRDInvoiceDescriptor): TStringList;
+class function TZUGFeRDInvoiceValidator.Validate(descriptor: TZUGFeRDInvoiceDescriptor; version: TZUGFeRDVersion): TZUGFeRDValidationResult;
 var
   lineCounter: Integer;
-  lineTotal, allowanceTotal, taxTotal, grandTotal: Currency;
+  lineTotal, allowanceTotal, chargeTotal, taxTotal, grandTotal: Currency;
   lineTotalPerTax: TDictionary<Currency, Currency>;
   item: TZUGFeRDTradeLineItem;
   charge: TZUGFeRDTradeAllowanceCharge;
@@ -74,11 +97,13 @@ var
   tax: TZUGFeRDTax;
   allowance: TZUGFeRDTradeAllowanceCharge;
 begin
-  Result := TStringList.Create;
+  Result := TZUGFeRDValidationResult.Create;
+  Result.IsValid := true;
 
   if descriptor = nil then
   begin
-    Result.Add('Invalid invoice descriptor');
+    Result.Messages.Add('Invalid invoice descriptor');
+    Result.IsValid := false;
     exit;
   end;
 
@@ -86,20 +111,14 @@ begin
   lineCounter := 0;
   lineTotal := 0;
   allowanceTotal := 0;
+  chargeTotal := 0;
   taxTotal := 0;
   //grandTotal := 0;
   lineTotalPerTax := TDictionary<Currency, Currency>.Create;
   try
     // line item summation
-    Result.Add('Validating invoice monetary summation');
-    Result.Add(Format('Starting recalculating line total from %d items...', [descriptor.TradeLineItems.Count]));
-
-//            foreach(TradeLineItem item in descriptor.TradeLineItems)
-//            {
-//
-//
-//                retval.Add(String.Format("{0};{1};{2}", ++lineCounter, item.Name, _total));
-//            }
+    Result.Messages.Add('Validating invoice monetary summation');
+    Result.Messages.Add(Format('Starting recalculating line total from %d items...', [descriptor.TradeLineItems.Count]));
 
     for item in descriptor.TradeLineItems do
     begin
@@ -124,43 +143,48 @@ begin
       //retval.Add(String.Format("Current monetarySummation.lineTotal = {0:0.0000} EUR(the sum of all line totals)", lineTotal));
 
       Inc(lineCounter);
-      Result.Add(Format('%d;%s;%f', [lineCounter, item.Name, _total]));
+      Result.Messages.Add(Format('%d;%s;%f', [lineCounter, item.Name, _total]));
     end;
 
-    Result.Add('==> DONE!');
-    Result.Add('Finished recalculating monetarySummation.lineTotal...');
-    Result.Add('Adding tax amounts from invoice allowance charge...');
+    Result.Messages.Add('==> DONE!');
+    Result.Messages.Add('Finished recalculating monetarySummation.lineTotal...');
+    Result.Messages.Add('Adding tax amounts from invoice allowance charge...');
 
     for charge in descriptor.TradeAllowanceCharges do
     begin
-      Result.Add(Format('==> added %f to %f%%', [-charge.Amount, charge.Tax.Percent]));
+      Result.Messages.Add(Format('==> added %f to %f%%', [-charge.Amount, charge.Tax.Percent]));
 
       if not lineTotalPerTax.ContainsKey(charge.Tax.Percent) then
         lineTotalPerTax.Add(charge.Tax.Percent, 0);
 
       lineTotalPerTax[charge.Tax.Percent] := lineTotalPerTax[charge.Tax.Percent] - charge.Amount;
-      allowanceTotal := allowanceTotal + charge.Amount;
+      if charge.ChargeIndicator then
+        chargeTotal:= chargeTotal + charge.Amount
+      else
+        allowanceTotal := allowanceTotal + charge.Amount;
     end;
 
-    Result.Add('Adding tax amounts from invoice service charge...');
+    Result.Messages.Add('Adding tax amounts from invoice service charge...');
     // TODO
 
-    Result.Add(Format('Recalculated tax basis = %f', [lineTotal - allowanceTotal]));
-    Result.Add('Calculating tax total...');
+    // TODO ausgeben: Recalculating tax basis for tax percentages: [Key{percentage=7.00, code=[VAT] Value added tax, category=[S] Standard rate}, Key{percentage=19.00, code=[VAT] Value added tax, category=[S] Standard rate}]
+
+    Result.Messages.Add(Format('Recalculated tax basis = %f', [lineTotal - allowanceTotal]));
+    Result.Messages.Add('Calculating tax total...');
 
     for kv in lineTotalPerTax do
     begin
       var _taxTotal : Currency := (kv.Value * kv.Key / 100);
       taxTotal := taxTotal + _taxTotal;
-      Result.Add(Format('===> %f x %f%% = %f', [kv.Value, kv.Key, _taxTotal]));
+      Result.Messages.Add(Format('===> %f x %f%% = %f', [kv.Value, kv.Key, _taxTotal]));
     end;
 
     grandTotal := lineTotal - allowanceTotal + taxTotal;
 
-    Result.Add(Format('Recalculated tax total = %f', [taxTotal]));
-    Result.Add(Format('Recalculated grand total = %f EUR(tax basis total + tax total)', [grandTotal]));
-    Result.Add('Recalculating invoice monetary summation DONE!');
-    Result.Add(Format('==> result: MonetarySummation[lineTotal = %f, chargeTotal = %f, allowanceTotal = %f, taxBasisTotal = %f, taxTotal = %f, grandTotal = %f, totalPrepaid = %f, duePayable = %f]',
+    Result.Messages.Add(Format('Recalculated tax total = %f', [taxTotal]));
+    Result.Messages.Add(Format('Recalculated grand total = %f EUR(tax basis total + tax total)', [grandTotal]));
+    Result.Messages.Add('Recalculating invoice monetary summation DONE!');
+    Result.Messages.Add(Format('==> result: MonetarySummation[lineTotal = %f, chargeTotal = %f, allowanceTotal = %f, taxBasisTotal = %f, taxTotal = %f, grandTotal = %f, totalPrepaid = %f, duePayable = %f]',
       [lineTotal,
        0.0, // chargeTotal
        allowanceTotal,
@@ -178,44 +202,53 @@ begin
     end;
 
     var _allowanceTotal : Currency := 0;
+    var _chargeTotal : Currency := 0;
     for allowance in descriptor.TradeAllowanceCharges do
     begin
-      _allowanceTotal := _allowanceTotal + allowance.ActualAmount;
+      if allowance.ChargeIndicator then
+        _chargeTotal := _chargeTotal + allowance.ActualAmount
+      else
+        _allowanceTotal := _allowanceTotal + allowance.ActualAmount;
     end;
 
     if not descriptor.TaxTotalAmount.HasValue then
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.taxTotal Message: Kein TaxTotalAmount vorhanden', []));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.taxTotal Message: Kein TaxTotalAmount vorhanden', []));
+      Result.IsValid := false;
     end
     else if Abs(taxTotal - descriptor.TaxTotalAmount.Value) < 0.01 then
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.taxTotal Message: Berechneter Wert ist wie vorhanden:[%4f]', [taxTotal]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.taxTotal Message: Berechneter Wert ist wie vorhanden:[%4f]', [taxTotal]));
     end
     else
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.taxTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [taxTotal, descriptor.TaxTotalAmount.GetValueOrDefault]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.taxTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [taxTotal, descriptor.TaxTotalAmount.GetValueOrDefault]));
+      Result.IsValid := false;
     end;
 
     if Abs(lineTotal - descriptor.LineTotalAmount.Value) < 0.01 then
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.lineTotal Message: Berechneter Wert ist wie vorhanden:[%4f]', [lineTotal]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.lineTotal Message: Berechneter Wert ist wie vorhanden:[%4f]', [lineTotal]));
     end
     else
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.lineTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [lineTotal, descriptor.LineTotalAmount.GetValueOrDefault]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.lineTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [lineTotal, descriptor.LineTotalAmount.GetValueOrDefault]));
+      Result.IsValid := false;
     end;
 
     if not descriptor.GrandTotalAmount.HasValue then
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.grandTotal Message: Kein GrandTotalAmount vorhanden', []));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.grandTotal Message: Kein GrandTotalAmount vorhanden', []));
+      Result.IsValid := false;
     end
     else if Abs(grandTotal - descriptor.GrandTotalAmount.Value) < 0.01 then
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.grandTotal Message: Berechneter Wert ist wie vorhanden:[%4f]', [grandTotal]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.grandTotal Message: Berechneter Wert ist wie vorhanden:[%4f]', [grandTotal]));
     end
     else
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.grandTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [grandTotal, descriptor.GrandTotalAmount.GetValueOrDefault]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.grandTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [grandTotal, descriptor.GrandTotalAmount.GetValueOrDefault]));
+      Result.IsValid := false;
     end;
 
     {
@@ -223,21 +256,36 @@ begin
     }
     if Abs(_taxBasisTotal - _taxBasisTotal) < 0.01 then
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.taxBasisTotal Message: Berechneter Wert ist wie vorhanden:[%4f]', [_taxBasisTotal]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.taxBasisTotal Message: Berechneter Wert ist wie vorhanden:[%4f]', [_taxBasisTotal]));
     end
     else
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.taxBasisTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [_taxBasisTotal, _taxBasisTotal]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.taxBasisTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [_taxBasisTotal, _taxBasisTotal]));
+      Result.IsValid := false;
     end;
 
     if Abs(allowanceTotal - _allowanceTotal) < 0.01 then
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist wie vorhanden:[%4f]', [_allowanceTotal]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist wie vorhanden:[%4f]', [_allowanceTotal]));
     end
     else
     begin
-      Result.Add(Format('trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [allowanceTotal, _allowanceTotal]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [allowanceTotal, _allowanceTotal]));
+      Result.IsValid := false;
     end;
+
+    if Abs(chargeTotal - _chargeTotal) < 0.01 then
+    begin
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.chargeTotal  Message: Berechneter Wert ist wie vorhanden:[%4f]', [_chargeTotal]));
+    end
+    else
+    begin
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.chargeTotal  Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [chargeTotal, _chargeTotal]));
+      Result.IsValid := false;
+    end;
+
+    // version-specific validation
+    // ZUGFeRD 1.0 version specific validation skipped
 
   finally
     lineTotalPerTax.Free;

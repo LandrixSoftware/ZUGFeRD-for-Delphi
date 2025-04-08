@@ -856,7 +856,7 @@ if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
         PaymentNote:= System.StrUtils.ReplaceText(Trim(PaymentTerms.Description),'#',' '); // make sure no # is present
         if PaymentNote<>'' then
           PaymentNote:= PaymentNote+#13#10;
-        if PaymentTerms.PaymentTermsType.HasValue then
+        if PaymentTerms.PaymentTermsType.HasValue and PaymentTerms.DueDays.HasValue and PaymentTerms.Percentage.HasValue then
         begin
           var formatSettings: TFormatSettings;
           formatSettings.DecimalSeparator := '.';
