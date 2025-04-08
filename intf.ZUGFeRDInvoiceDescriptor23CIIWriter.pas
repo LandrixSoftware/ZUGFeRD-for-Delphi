@@ -70,6 +70,7 @@ uses
   ,intf.ZUGFeRDDesignatedProductClassificationClassCodes
   ,intf.ZUGFeRDIncludedReferencedProduct
   ,intf.ZUGFeRDInvoiceReferencedDocument
+  ,intf.ZUGFeRDTransportmodeCodes
   ;
 
 type
@@ -814,6 +815,17 @@ begin
 
   //#region ApplicableHeaderTradeDelivery
   Writer.WriteStartElement('ram:ApplicableHeaderTradeDelivery'); // Pflichteintrag
+
+  //RelatedSupplyChainConsignment --> SpecifiedLogisticsTransportMovement --> ModeCode // Only in extended profile
+  if(Descriptor.TransportMode <> nil) then
+  begin
+    Writer.WriteStartElement('ram:RelatedSupplyChainConsignment', [TZUGFeRDProfile.Extended]); // BG-X-24
+    Writer.WriteStartElement('ram:SpecifiedLogisticsTransportMovement', [TZUGFeRDProfile.Extended]); // BT-X-152-00
+    Writer.WriteElementString('ram:ModeCode', TZUGFeRDTransportmodeCodesExtensions.EnumToString(Descriptor.TransportMode)); // BT-X-152
+    Writer.WriteEndElement(); // !ram:SpecifiedLogisticsTransportMovement
+    Writer.WriteEndElement(); // !ram:RelatedSupplyChainConsignment
+  end;
+
   if Descriptor.Profile<>TZUGFeRDProfile.Minimum then
     _writeOptionalParty(Writer, TZUGFeRDPartyTypes.ShipToTradeParty, Descriptor.ShipTo, Descriptor.ShipToContact, Nil, Descriptor.ShipToTaxRegistration);
   if Descriptor.Profile in [TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung1, TZUGFeRDProfile.XRechnung] then
@@ -838,7 +850,7 @@ begin
   //#region DespatchAdviceReferencedDocument
   if (Descriptor.DespatchAdviceReferencedDocument <> nil) then
   begin
-    Writer.WriteStartElement('ram:DespatchAdviceReferencedDocument');
+    Writer.WriteStartElement('ram:DespatchAdviceReferencedDocument', [TZUGFeRDProfile.Extended]);
     Writer.WriteElementString('ram:IssuerAssignedID', Descriptor.DespatchAdviceReferencedDocument.ID);
 
     if (Descriptor.DespatchAdviceReferencedDocument.IssueDateTime.HasValue) then

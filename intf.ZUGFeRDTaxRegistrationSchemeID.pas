@@ -26,7 +26,7 @@ uses
 type
   /// <summary>
   /// For a reference see:
-  /// http://www.unece.org/trade/untdid/d00a/tred/tred1153.htm
+  /// https://service.unece.org/trade/untdid/d21a/tred/tred1153.htm
   /// </summary>
   TZUGFeRDTaxRegistrationSchemeID = (
     /// <summary>
