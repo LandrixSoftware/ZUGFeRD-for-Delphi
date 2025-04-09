@@ -303,57 +303,69 @@ begin
       Writer.WriteEndElement(); // !ram:AdditionalReferencedDocument
     end; // !foreach(document)
 
-    Writer.WriteStartElement('ram:GrossPriceProductTradePrice');
-    _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.GrossUnitPrice, 2, 4);
-    if tradeLineItem.GrossQuantity.HasValue then
+    var needToWriteGrossUnitPrice: boolean := false;
+
+    // the PEPPOL business rule for XRechnung is very specific
+    // PEPPOL-EN16931-R046
+    if (descriptor.Profile = TZUGFeRDProfile.XRechnung) and tradeLineItem.GrossUnitPrice.HasValue and  (tradeLineItem.TradeAllowanceCharges.Count > 0) then
+      needToWriteGrossUnitPrice := true
+    else
+    if (descriptor.Profile <> TZUGFeRDProfile.XRechnung) and (tradeLineItem.GrossUnitPrice.HasValue or (tradeLineItem.TradeAllowanceCharges.Count > 0)) then
+      needToWriteGrossUnitPrice := true;
+    if needToWriteGrossUnitPrice then
     begin
-      Writer.WriteStartElement('ram:BasisQuantity');
-      if tradeLineItem.GrossUnitCode.HasValue then
-        Writer.WriteAttributeString('unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.GrossUnitCode));
-      Writer.WriteValue(_formatDecimal(tradeLineItem.GrossQuantity.Value, 4));
-      Writer.WriteEndElement(); // !ram:BasisQuantity
-    end;
-
-    for var tradeAllowanceCharge : TZUGFeRDTradeAllowanceCharge in tradeLineItem.TradeAllowanceCharges do
-    begin
-      Writer.WriteStartElement('ram:AppliedTradeAllowanceCharge');
-
-      //#region ChargeIndicator
-      Writer.WriteStartElement('ram:ChargeIndicator');
-      Writer.WriteElementString('udt:Indicator', ifthen(tradeAllowanceCharge.ChargeIndicator,'true','false'));
-      Writer.WriteEndElement(); // !ram:ChargeIndicator
-      //#endregion
-
-      //#region BasisAmount
-      Writer.WriteStartElement('ram:BasisAmount');
-      Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.BasisAmount, 2));
-      Writer.WriteEndElement();
-      //#endregion
-
-      //#region ActualAmount
-      Writer.WriteStartElement('ram:ActualAmount');
-      Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ActualAmount, 2));
-      Writer.WriteEndElement();
-      //#endregion
-
-      if tradeAllowanceCharge.ChargeIndicator then
+      Writer.WriteStartElement('ram:GrossPriceProductTradePrice');
+      _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.GrossUnitPrice, 2, 4);
+      if tradeLineItem.GrossQuantity.HasValue then
       begin
-        Writer.WriteOptionalElementString('ram:ReasonCode',
-           TZUGFeRDSpecialServiceDescriptionCodesExtensions.EnumToString(
-                                     tradeAllowanceCharge.ReasonCodeCharge));
-      end else
-      begin
-        Writer.WriteOptionalElementString('ram:ReasonCode',
-           TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.EnumToString(
-                                     tradeAllowanceCharge.ReasonCodeAllowance));
+        Writer.WriteStartElement('ram:BasisQuantity');
+        if tradeLineItem.GrossUnitCode.HasValue then
+          Writer.WriteAttributeString('unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.GrossUnitCode));
+        Writer.WriteValue(_formatDecimal(tradeLineItem.GrossQuantity.Value, 4));
+        Writer.WriteEndElement(); // !ram:BasisQuantity
       end;
 
-      Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason);
+      for var tradeAllowanceCharge : TZUGFeRDTradeAllowanceCharge in tradeLineItem.TradeAllowanceCharges do
+      begin
+        Writer.WriteStartElement('ram:AppliedTradeAllowanceCharge');
 
-      Writer.WriteEndElement(); // !AppliedTradeAllowanceCharge
+        //#region ChargeIndicator
+        Writer.WriteStartElement('ram:ChargeIndicator');
+        Writer.WriteElementString('udt:Indicator', ifthen(tradeAllowanceCharge.ChargeIndicator,'true','false'));
+        Writer.WriteEndElement(); // !ram:ChargeIndicator
+        //#endregion
+
+        //#region BasisAmount
+        Writer.WriteStartElement('ram:BasisAmount');
+        Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.BasisAmount, 2));
+        Writer.WriteEndElement();
+        //#endregion
+
+        //#region ActualAmount
+        Writer.WriteStartElement('ram:ActualAmount');
+        Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ActualAmount, 2));
+        Writer.WriteEndElement();
+        //#endregion
+
+        if tradeAllowanceCharge.ChargeIndicator then
+        begin
+          Writer.WriteOptionalElementString('ram:ReasonCode',
+             TZUGFeRDSpecialServiceDescriptionCodesExtensions.EnumToString(
+                                       tradeAllowanceCharge.ReasonCodeCharge));
+        end else
+        begin
+          Writer.WriteOptionalElementString('ram:ReasonCode',
+             TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.EnumToString(
+                                       tradeAllowanceCharge.ReasonCodeAllowance));
+        end;
+
+        Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason);
+
+        Writer.WriteEndElement(); // !AppliedTradeAllowanceCharge
+      end;
+
+      Writer.WriteEndElement(); // ram:GrossPriceProductTradePrice
     end;
-
-    Writer.WriteEndElement(); // ram:GrossPriceProductTradePrice
 
     Writer.WriteStartElement('ram:NetPriceProductTradePrice');
     _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.NetUnitPrice,  2, 4);
@@ -856,7 +868,7 @@ if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
         PaymentNote:= System.StrUtils.ReplaceText(Trim(PaymentTerms.Description),'#',' '); // make sure no # is present
         if PaymentNote<>'' then
           PaymentNote:= PaymentNote+#13#10;
-        if PaymentTerms.PaymentTermsType.HasValue then
+        if PaymentTerms.PaymentTermsType.HasValue and PaymentTerms.DueDays.HasValue and PaymentTerms.Percentage.HasValue then
         begin
           var formatSettings: TFormatSettings;
           formatSettings.DecimalSeparator := '.';
