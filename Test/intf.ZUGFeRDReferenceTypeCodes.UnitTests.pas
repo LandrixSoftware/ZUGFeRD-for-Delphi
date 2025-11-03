@@ -36,39 +36,37 @@ implementation
 
 procedure TZUGFeRDReferenceTypeCodesTest.TestFromString;
 begin
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AAA, TZUGFeRDReferenceTypeCodesExtensions.FromString('AAA'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AAB, TZUGFeRDReferenceTypeCodesExtensions.FromString('AAB'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AAG, TZUGFeRDReferenceTypeCodesExtensions.FromString('AAG'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AAJ, TZUGFeRDReferenceTypeCodesExtensions.FromString('AAJ'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AAL, TZUGFeRDReferenceTypeCodesExtensions.FromString('AAL'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AAM, TZUGFeRDReferenceTypeCodesExtensions.FromString('AAM'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AAS, TZUGFeRDReferenceTypeCodesExtensions.FromString('AAS'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.ABT, TZUGFeRDReferenceTypeCodesExtensions.FromString('ABT'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AER, TZUGFeRDReferenceTypeCodesExtensions.FromString('AER'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AGG, TZUGFeRDReferenceTypeCodesExtensions.FromString('AGG'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AJS, TZUGFeRDReferenceTypeCodesExtensions.FromString('AJS'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.ALQ, TZUGFeRDReferenceTypeCodesExtensions.FromString('ALQ'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.ALO, TZUGFeRDReferenceTypeCodesExtensions.FromString('ALO'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.API, TZUGFeRDReferenceTypeCodesExtensions.FromString('API'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.ASI, TZUGFeRDReferenceTypeCodesExtensions.FromString('ASI'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AUD, TZUGFeRDReferenceTypeCodesExtensions.FromString('AUD'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AUT, TZUGFeRDReferenceTypeCodesExtensions.FromString('AUT'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AWR, TZUGFeRDReferenceTypeCodesExtensions.FromString('AWR'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.BO , TZUGFeRDReferenceTypeCodesExtensions.FromString('BO'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.BC , TZUGFeRDReferenceTypeCodesExtensions.FromString('BC'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.CD , TZUGFeRDReferenceTypeCodesExtensions.FromString('CD'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.DL , TZUGFeRDReferenceTypeCodesExtensions.FromString('DL'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.IV , TZUGFeRDReferenceTypeCodesExtensions.FromString('IV'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.MG , TZUGFeRDReferenceTypeCodesExtensions.FromString('MG'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.OI , TZUGFeRDReferenceTypeCodesExtensions.FromString('OI'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.PL , TZUGFeRDReferenceTypeCodesExtensions.FromString('PL'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.PK , TZUGFeRDReferenceTypeCodesExtensions.FromString('PK'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.POR, TZUGFeRDReferenceTypeCodesExtensions.FromString('POR'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.PP , TZUGFeRDReferenceTypeCodesExtensions.FromString('PP'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.TIN, TZUGFeRDReferenceTypeCodesExtensions.FromString('TIN'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.VN , TZUGFeRDReferenceTypeCodesExtensions.FromString('VN'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.Unknown, TZUGFeRDReferenceTypeCodesExtensions.FromString('Unknown'));
-  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.Unknown, TZUGFeRDReferenceTypeCodesExtensions.FromString('Invalid'));
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AAA, TZUGFeRDReferenceTypeCodesExtensions.FromString('AAA').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AAB, TZUGFeRDReferenceTypeCodesExtensions.FromString('AAB').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AAG, TZUGFeRDReferenceTypeCodesExtensions.FromString('AAG').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AAJ, TZUGFeRDReferenceTypeCodesExtensions.FromString('AAJ').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AAL, TZUGFeRDReferenceTypeCodesExtensions.FromString('AAL').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AAM, TZUGFeRDReferenceTypeCodesExtensions.FromString('AAM').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AAS, TZUGFeRDReferenceTypeCodesExtensions.FromString('AAS').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.ABT, TZUGFeRDReferenceTypeCodesExtensions.FromString('ABT').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AER, TZUGFeRDReferenceTypeCodesExtensions.FromString('AER').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AGG, TZUGFeRDReferenceTypeCodesExtensions.FromString('AGG').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AJS, TZUGFeRDReferenceTypeCodesExtensions.FromString('AJS').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.ALQ, TZUGFeRDReferenceTypeCodesExtensions.FromString('ALQ').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.ALO, TZUGFeRDReferenceTypeCodesExtensions.FromString('ALO').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.API, TZUGFeRDReferenceTypeCodesExtensions.FromString('API').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.ASI, TZUGFeRDReferenceTypeCodesExtensions.FromString('ASI').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AUD, TZUGFeRDReferenceTypeCodesExtensions.FromString('AUD').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AUT, TZUGFeRDReferenceTypeCodesExtensions.FromString('AUT').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AWR, TZUGFeRDReferenceTypeCodesExtensions.FromString('AWR').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.BO , TZUGFeRDReferenceTypeCodesExtensions.FromString('BO').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.BC , TZUGFeRDReferenceTypeCodesExtensions.FromString('BC').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.CD , TZUGFeRDReferenceTypeCodesExtensions.FromString('CD').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.DL , TZUGFeRDReferenceTypeCodesExtensions.FromString('DL').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.IV , TZUGFeRDReferenceTypeCodesExtensions.FromString('IV').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.MG , TZUGFeRDReferenceTypeCodesExtensions.FromString('MG').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.OI , TZUGFeRDReferenceTypeCodesExtensions.FromString('OI').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.PL , TZUGFeRDReferenceTypeCodesExtensions.FromString('PL').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.PK , TZUGFeRDReferenceTypeCodesExtensions.FromString('PK').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.POR, TZUGFeRDReferenceTypeCodesExtensions.FromString('POR').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.PP , TZUGFeRDReferenceTypeCodesExtensions.FromString('PP').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.TIN, TZUGFeRDReferenceTypeCodesExtensions.FromString('TIN').Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.VN , TZUGFeRDReferenceTypeCodesExtensions.FromString('VN').Value);
 end;
 
 procedure TZUGFeRDReferenceTypeCodesTest.TestEnumToString;
@@ -104,7 +102,6 @@ begin
   Assert.AreEqual('PP', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(TZUGFeRDReferenceTypeCodes.PP ));
   Assert.AreEqual('TIN', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(TZUGFeRDReferenceTypeCodes.TIN));
   Assert.AreEqual('VN', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(TZUGFeRDReferenceTypeCodes.VN ));
-  Assert.AreEqual('Unknown', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(TZUGFeRDReferenceTypeCodes.Unknown));
 end;
 
 initialization

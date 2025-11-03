@@ -36,20 +36,17 @@ implementation
 
 procedure TZUGFeRDAccountingAccountTypeCodesTest.TestFromString;
 begin
-  Assert.AreEqual(TZUGFeRDAccountingAccountTypeCodes.Unknown, TZUGFeRDAccountingAccountTypeCodesExtensions.FromString('Unknown'));
-  Assert.AreEqual(TZUGFeRDAccountingAccountTypeCodes.Unknown, TZUGFeRDAccountingAccountTypeCodesExtensions.FromString('Invalid'));
-  Assert.AreEqual(TZUGFeRDAccountingAccountTypeCodes.Financial, TZUGFeRDAccountingAccountTypeCodesExtensions.FromString('1'));
-  Assert.AreEqual(TZUGFeRDAccountingAccountTypeCodes.Subsidiary, TZUGFeRDAccountingAccountTypeCodesExtensions.FromString('2'));
-  Assert.AreEqual(TZUGFeRDAccountingAccountTypeCodes.Budget, TZUGFeRDAccountingAccountTypeCodesExtensions.FromString('3'));
-  Assert.AreEqual(TZUGFeRDAccountingAccountTypeCodes.Cost_Accounting, TZUGFeRDAccountingAccountTypeCodesExtensions.FromString('4'));
-  Assert.AreEqual(TZUGFeRDAccountingAccountTypeCodes.Receivable, TZUGFeRDAccountingAccountTypeCodesExtensions.FromString('5'));
-  Assert.AreEqual(TZUGFeRDAccountingAccountTypeCodes.Payable, TZUGFeRDAccountingAccountTypeCodesExtensions.FromString('6'));
-  Assert.AreEqual(TZUGFeRDAccountingAccountTypeCodes.Job_Cost_Accounting, TZUGFeRDAccountingAccountTypeCodesExtensions.FromString('7'));
+  Assert.AreEqual(TZUGFeRDAccountingAccountTypeCodes.Financial, TZUGFeRDAccountingAccountTypeCodesExtensions.FromString('1').GetValueOrDefault);
+  Assert.AreEqual(TZUGFeRDAccountingAccountTypeCodes.Subsidiary, TZUGFeRDAccountingAccountTypeCodesExtensions.FromString('2').GetValueOrDefault);
+  Assert.AreEqual(TZUGFeRDAccountingAccountTypeCodes.Budget, TZUGFeRDAccountingAccountTypeCodesExtensions.FromString('3').GetValueOrDefault);
+  Assert.AreEqual(TZUGFeRDAccountingAccountTypeCodes.Cost_Accounting, TZUGFeRDAccountingAccountTypeCodesExtensions.FromString('4').GetValueOrDefault);
+  Assert.AreEqual(TZUGFeRDAccountingAccountTypeCodes.Receivable, TZUGFeRDAccountingAccountTypeCodesExtensions.FromString('5').GetValueOrDefault);
+  Assert.AreEqual(TZUGFeRDAccountingAccountTypeCodes.Payable, TZUGFeRDAccountingAccountTypeCodesExtensions.FromString('6').GetValueOrDefault);
+  Assert.AreEqual(TZUGFeRDAccountingAccountTypeCodes.Job_Cost_Accounting, TZUGFeRDAccountingAccountTypeCodesExtensions.FromString('7').GetValueOrDefault);
 end;
 
 procedure TZUGFeRDAccountingAccountTypeCodesTest.TestEnumToString;
 begin
-  Assert.AreEqual('', TZUGFeRDAccountingAccountTypeCodesExtensions.EnumToString(TZUGFeRDAccountingAccountTypeCodes.Unknown));
   Assert.AreEqual('1', TZUGFeRDAccountingAccountTypeCodesExtensions.EnumToString(TZUGFeRDAccountingAccountTypeCodes.Financial));
   Assert.AreEqual('2', TZUGFeRDAccountingAccountTypeCodesExtensions.EnumToString(TZUGFeRDAccountingAccountTypeCodes.Subsidiary));
   Assert.AreEqual('3', TZUGFeRDAccountingAccountTypeCodesExtensions.EnumToString(TZUGFeRDAccountingAccountTypeCodes.Budget));

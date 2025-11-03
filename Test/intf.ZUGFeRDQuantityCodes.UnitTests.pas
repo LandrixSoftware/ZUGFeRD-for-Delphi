@@ -40,12 +40,11 @@ begin
   Assert.AreEqual(TZUGFeRDQuantityCodes.C62, TZUGFeRDQuantityCodesExtensions.FromString('C62'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.DAY, TZUGFeRDQuantityCodesExtensions.FromString('DAY'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.H87, TZUGFeRDQuantityCodesExtensions.FromString('H87'));
-  Assert.AreEqual(TZUGFeRDQuantityCodes.HAR, TZUGFeRDQuantityCodesExtensions.FromString('HAR'));
+  Assert.AreEqual(TZUGFeRDQuantityCodes.HLT, TZUGFeRDQuantityCodesExtensions.FromString('HLT'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.HUR, TZUGFeRDQuantityCodesExtensions.FromString('HUR'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.KGM, TZUGFeRDQuantityCodesExtensions.FromString('KGM'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.CMT, TZUGFeRDQuantityCodesExtensions.FromString('CMT'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.KMT, TZUGFeRDQuantityCodesExtensions.FromString('KMT'));
-  Assert.AreEqual(TZUGFeRDQuantityCodes.KTM, TZUGFeRDQuantityCodesExtensions.FromString('KTM'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.KWH, TZUGFeRDQuantityCodesExtensions.FromString('KWH'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.KWT, TZUGFeRDQuantityCodesExtensions.FromString('KWT'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.LS, TZUGFeRDQuantityCodesExtensions.FromString('LS'));
@@ -92,7 +91,7 @@ begin
   Assert.AreEqual(TZUGFeRDQuantityCodes.XDR, TZUGFeRDQuantityCodesExtensions.FromString('XDR'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.XCR, TZUGFeRDQuantityCodesExtensions.FromString('XCR'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.XCU, TZUGFeRDQuantityCodesExtensions.FromString('XCU'));
-  Assert.AreEqual(TZUGFeRDQuantityCodes.D64, TZUGFeRDQuantityCodesExtensions.FromString('D64'));
+  Assert.AreEqual(TZUGFeRDQuantityCodes.XOK, TZUGFeRDQuantityCodesExtensions.FromString('XOK'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.XPU, TZUGFeRDQuantityCodesExtensions.FromString('XPU'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.XCH, TZUGFeRDQuantityCodesExtensions.FromString('XCH'));
   Assert.AreEqual(TZUGFeRDQuantityCodes.XBK, TZUGFeRDQuantityCodesExtensions.FromString('XBK'));
@@ -106,12 +105,11 @@ begin
   Assert.AreEqual('C62', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.C62));
   Assert.AreEqual('DAY', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.DAY));
   Assert.AreEqual('H87', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.H87));
-  Assert.AreEqual('HAR', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.HAR));
+  Assert.AreEqual('HLT', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.HLT));
   Assert.AreEqual('HUR', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.HUR));
   Assert.AreEqual('KGM', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.KGM));
   Assert.AreEqual('CMT', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.CMT));
   Assert.AreEqual('KMT', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.KMT));
-  Assert.AreEqual('KTM', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.KTM));
   Assert.AreEqual('KWH', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.KWH));
   Assert.AreEqual('KWT', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.KWT));
   Assert.AreEqual('LS', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.LS));
@@ -156,7 +154,7 @@ begin
   Assert.AreEqual('XDR', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.XDR));
   Assert.AreEqual('XCR', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.XCR));
   Assert.AreEqual('XCU', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.XCU));
-  Assert.AreEqual('D64', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.D64));
+  Assert.AreEqual('XOK', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.XOK));
   Assert.AreEqual('XPU', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.XPU));
   Assert.AreEqual('XCH', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.XCH));
   Assert.AreEqual('XBK', TZUGFeRDQuantityCodesExtensions.EnumToString(TZUGFeRDQuantityCodes.XBK));

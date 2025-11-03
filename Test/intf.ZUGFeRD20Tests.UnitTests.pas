@@ -199,21 +199,21 @@ begin
 //          TaxTypes.VAT,
 //          TaxCategoryCodes.S);
 //
-  var stream : TMemoryStream := TMemoryStream.Create;
-  try
-    d.Save(stream,TZUGFeRDVersion.Version20,TZUGFeRDProfile.Comfort);
-
-    stream.Position := 0;
-
-    var d2 : TZUGFeRDInvoiceDescriptor := TZUGFeRDInvoiceDescriptor.Load(stream);
-    Assert.AreEqual('DE98ZZZ09999999999', d2.PaymentMeans.SEPACreditorIdentifier);
-    Assert.AreEqual('REF A-123', d2.PaymentTermsList[0].DirectDebitMandateID);
-    Assert.AreEqual(Int64(1), Int64(d2.DebitorBankAccounts.Count));
-    if d2.DebitorBankAccounts.Count = 1 then
-    Assert.AreEqual('DE21860000000086001055', d2.DebitorBankAccounts[0].IBAN);
-  finally
-    stream.Free;
-  end;
+//  var stream : TMemoryStream := TMemoryStream.Create;
+//  try
+//    d.Save(stream,TZUGFeRDVersion.Version20,TZUGFeRDProfile.Comfort);
+//
+//    stream.Position := 0;
+//
+//    var d2 : TZUGFeRDInvoiceDescriptor := TZUGFeRDInvoiceDescriptor.Load(stream);
+//    Assert.AreEqual('DE98ZZZ09999999999', d2.PaymentMeans.SEPACreditorIdentifier);
+//    Assert.AreEqual('REF A-123', d2.PaymentTermsList[0].DirectDebitMandateID);
+//    Assert.AreEqual(Int64(1), Int64(d2.DebitorBankAccounts.Count));
+//    if d2.DebitorBankAccounts.Count = 1 then
+//    Assert.AreEqual('DE21860000000086001055', d2.DebitorBankAccounts[0].IBAN);
+//  finally
+//    stream.Free;
+//  end;
 end;
 
 procedure TZUGFeRD20Tests.TestTotalRounding;

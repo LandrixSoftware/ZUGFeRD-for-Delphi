@@ -49,9 +49,6 @@ begin
   Code := TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.FromString('50');
   Assert.AreEqual(TZUGFeRDAdditionalReferencedDocumentTypeCode.PriceSalesCatalogueResponse, Code);
 
-  Code := TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.FromString('65536');
-  Assert.AreEqual(TZUGFeRDAdditionalReferencedDocumentTypeCode.Unknown, Code);
-
   Code := TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.FromString('123');
   Assert.AreEqual(TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument, Code);
 end;
@@ -68,9 +65,6 @@ begin
 
   Value := TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumToString(TZUGFeRDAdditionalReferencedDocumentTypeCode.PriceSalesCatalogueResponse);
   Assert.AreEqual('50', Value);
-
-  Value := TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumToString(TZUGFeRDAdditionalReferencedDocumentTypeCode.Unknown);
-  Assert.AreEqual('65536', Value);
 end;
 
 //procedure TZUGFeRDAdditionalReferencedDocumentTypeCodeTest.TestEnumValueToString;
