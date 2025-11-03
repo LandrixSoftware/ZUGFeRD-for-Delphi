@@ -613,7 +613,7 @@ begin
       end;
 
       Writer.WriteStartElement('ram:GrossPriceProductTradePrice');
-      _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.GrossUnitPrice, 2, 4, true);
+      _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.GrossUnitPrice, 4, 4, true);
       if tradeLineItem.GrossQuantity.HasValue then
       begin
         Writer.WriteStartElement('ram:BasisQuantity');
@@ -648,7 +648,7 @@ begin
       Writer.WriteEndElement(); // ram:GrossPriceProductTradePrice
 
       Writer.WriteStartElement('ram:NetPriceProductTradePrice');
-      _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.NetUnitPrice, 2, 4, true);
+      _writeOptionalAdaptiveAmount(Writer, 'ram:ChargeAmount', tradeLineItem.NetUnitPrice, 4, 4, true);
 
       if tradeLineItem.NetQuantity.HasValue then
       begin
@@ -672,23 +672,6 @@ begin
       if tradeLineItem.ChargeFreeQuantity.HasValue then
         _writeElementWithAttribute(Writer, 'ram:ChargeFreeQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.ChargeFreeUnitCode), _formatDecimal(tradeLineItem.ChargeFreeQuantity, 4));
 
-      if (tradeLineItem.DeliveryNoteReferencedDocument<> nil) then
-      begin
-          Writer.WriteStartElement('ram:DeliveryNoteReferencedDocument');
-
-          // reference to the delivery note item
-          Writer.WriteOptionalElementString('ram:LineID', tradeLineItem.DeliveryNoteReferencedDocument.LineID);
-
-          if (tradeLineItem.DeliveryNoteReferencedDocument.IssueDateTime.HasValue) then
-          begin
-            Writer.WriteStartElement('ram:IssueDateTime');
-            Writer.WriteValue(_formatDate(tradeLineItem.DeliveryNoteReferencedDocument.IssueDateTime.Value, false));
-            Writer.WriteEndElement(); // !ram:IssueDateTime
-          end;
-          Writer.WriteOptionalElementString('ram:ID', tradeLineItem.DeliveryNoteReferencedDocument.ID);
-          Writer.WriteEndElement(); // !ram:DeliveryNoteReferencedDocument
-      end;
-
       if (tradeLineItem.ActualDeliveryDate.HasValue) then
       begin
         Writer.WriteStartElement('ram:ActualDeliverySupplyChainEvent');
@@ -699,6 +682,22 @@ begin
         Writer.WriteEndElement(); // 'udt:DateTimeString
         Writer.WriteEndElement(); // !OccurrenceDateTime()
         Writer.WriteEndElement(); // !ActualDeliverySupplyChainEvent
+      end;
+
+      if (tradeLineItem.DeliveryNoteReferencedDocument<> nil) then
+      begin
+          Writer.WriteStartElement('ram:DeliveryNoteReferencedDocument');
+
+          // reference to the delivery note item
+          Writer.WriteOptionalElementString('ram:LineID', tradeLineItem.DeliveryNoteReferencedDocument.LineID);
+          if (tradeLineItem.DeliveryNoteReferencedDocument.IssueDateTime.HasValue) then
+          begin
+            Writer.WriteStartElement('ram:IssueDateTime');
+            Writer.WriteValue(_formatDate(tradeLineItem.DeliveryNoteReferencedDocument.IssueDateTime.Value, false));
+            Writer.WriteEndElement(); // !ram:IssueDateTime
+          end;
+          Writer.WriteOptionalElementString('ram:ID', tradeLineItem.DeliveryNoteReferencedDocument.ID);
+          Writer.WriteEndElement(); // !ram:DeliveryNoteReferencedDocument
       end;
 
       Writer.WriteEndElement(); // !ram:SpecifiedSupplyChainTradeDelivery
