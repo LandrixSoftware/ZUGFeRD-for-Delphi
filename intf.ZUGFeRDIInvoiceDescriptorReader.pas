@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.}
 
-unit intf.ZUGFeRDInvoiceDescriptorReader;
+unit intf.ZUGFeRDIInvoiceDescriptorReader;
 
 interface
 
@@ -28,7 +28,7 @@ uses
   ,intf.ZUGFeRDXmlHelper;
 
 type
-  TZUGFeRDInvoiceDescriptorReader = class abstract
+  TZUGFeRDIInvoiceDescriptorReader = class abstract
   public
     function Load(stream: TStream): TZUGFeRDInvoiceDescriptor; overload; virtual; abstract;
     function IsReadableByThisReaderVersion(stream: TStream): Boolean; overload; virtual; abstract;
@@ -38,14 +38,15 @@ type
     function Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor; overload; virtual; abstract;
     function IsReadableByThisReaderVersion(const filename: string): Boolean; overload;
   protected
-    //function _GenerateNamespaceManagerFromNode(node: IXmlDomNode) : XmlNamespaceManager;
     function IsReadableByThisReaderVersion(stream: TStream; const validURIs: TArray<string>): Boolean; overload;
     function IsReadableByThisReaderVersion(xmldocument: IXMLDocument; const validURIs: TArray<string>): Boolean; overload;
-  end;
+    /// Generate namespace manager from XML node
+    function GenerateNamespaceManagerFromNode(Node: IXMLNode): IXMLDocument;
+end;
 
 implementation
 
-function TZUGFeRDInvoiceDescriptorReader.Load(const filename: string): TZUGFeRDInvoiceDescriptor;
+function TZUGFeRDIInvoiceDescriptorReader.Load(const filename: string): TZUGFeRDInvoiceDescriptor;
 var
   fs: TFileStream;
 begin
@@ -60,7 +61,7 @@ begin
   end;
 end;
 
-function TZUGFeRDInvoiceDescriptorReader.IsReadableByThisReaderVersion(const filename: string): Boolean;
+function TZUGFeRDIInvoiceDescriptorReader.IsReadableByThisReaderVersion(const filename: string): Boolean;
 var
   fs: TFileStream;
 begin
@@ -75,7 +76,7 @@ begin
   end;
 end;
 
-function TZUGFeRDInvoiceDescriptorReader.IsReadableByThisReaderVersion(stream: TStream;
+function TZUGFeRDIInvoiceDescriptorReader.IsReadableByThisReaderVersion(stream: TStream;
   const validURIs: TArray<string>): Boolean;
 var
   oldStreamPosition: Int64;
@@ -106,7 +107,7 @@ begin
   stream.Position := oldStreamPosition;
 end;
 
-function TZUGFeRDInvoiceDescriptorReader.IsReadableByThisReaderVersion(
+function TZUGFeRDIInvoiceDescriptorReader.IsReadableByThisReaderVersion(
   xmldocument: IXMLDocument; const validURIs: TArray<string>): Boolean;
 var
   toValidate,validURI: string;
@@ -154,24 +155,13 @@ begin
   end;
 end;
 
-//function TZUGFeRDInvoiceDescriptorReader._GenerateNamespaceManagerFromNode(
-//  node: IXmlDomNode) : XmlNamespaceManager;
-//begin
-//  XmlNamespaceManager nsmgr = new XmlNamespaceManager(node.OwnerDocument.NameTable);
-//  foreach (XmlAttribute attr in node.Attributes)
-//  {
-//      if (attr.Prefix == "xmlns")
-//      {
-//          nsmgr.AddNamespace(attr.LocalName, attr.Value);
-//      }
-//      else if (attr.Name == "xmlns")
-//      {
-//          nsmgr.AddNamespace(string.Empty, attr.Value);
-//      }
-//  }
-//
-//  return nsmgr;
-//end;
+function TZUGFeRDIInvoiceDescriptorReader.GenerateNamespaceManagerFromNode(Node: IXMLNode): IXMLDocument;
+begin
+  // In Delphi, namespace handling is typically done through IXMLDocument
+  // This is a simplified implementation - actual namespace management
+  // would depend on the specific XML framework being used
+  Result := Node.OwnerDocument;
+end;
 
 end.
 

@@ -1,4 +1,4 @@
-{* Licensed to the Apache Software Foundation (ASF) under one
+﻿{* Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -22,9 +22,11 @@ interface
 uses
   Winapi.Windows, Winapi.Messages
   ,System.SysUtils,System.Classes,System.Types,System.DateUtils,System.Rtti
+  ,System.TypInfo
   ,System.Variants,System.IOUtils,System.Win.COMObj
   ,System.NetEncoding
-  ,Generics.Defaults
+  ,System.Generics.Defaults
+  ,System.Generics.Collections
   ;
 
 type
@@ -53,24 +55,19 @@ type
   function GetZUGFeRDPdfHelper : IZUGFeRDPdfHelper;
 
 type
-  // ZUGFeRDNullableParam wird für die Parameterübergabe verwendet, da dies die Möglichkeit schafft, Default Parameter zu realisieren
-  // entweder Nil, dann ohne Wert oder mit Wert, das <> Nil
+  // Implementation of Nullable Types as managed records for ZUGFeRD
+  // derived from the original MGNullable by Peter Sawatzki
+
+  // IZUGFeRDNullableParam wird für die Parameterübergabe dann verwendet, wenn es gilt auch einen Default Parameter zu realisieren
+  // er ist entweder Nil, dann ohne Wert oder mit Wert, dann <> Nil
   IZUGFeRDNullableParam<T> = interface
     function GetValue: T;
-    procedure SetValue(const AValue: T);
-    Property Value: T read GetValue Write SetValue;
-  end;
-
-  TZUGFeRDNullableParam<T> = class (TInterfacedObject, IZUGFeRDNullableParam<T>)
-    FValue: T;
-    function GetValue: T;
-    procedure SetValue(const AValue: T);
-  public
-    Property Value: T read GetValue Write SetValue;
-    constructor Create (AValue: T);
+    function HasValue: Boolean;
+    property Value: T read GetValue;
   end;
 
   // ZUGFeRDNullable as managed record
+  // Wichtig: managed record nicht als const Parameter einer Methode definieren/benutzen, Compiler bug in Delphi 11, 12 und 13 !
   ZUGFeRDNullable<T> = record
   private
     FValue: T;
@@ -92,6 +89,7 @@ type
     class operator Implicit(Value: T): ZUGFeRDNullable<T>;
     class operator Implicit(Param: IZUGFeRDNullableParam<T>): ZUGFeRDNullable<T>;
     class operator Implicit(Param: ZUGFeRDNullable<T>): IZUGFeRDNullableParam<T>;
+    class operator Implicit(Value: Pointer): ZUGFeRDNullable<T>;  // Erlaubt nil Zuweisung
     class operator Explicit(Value: ZUGFeRDNullable<T>): T;
     procedure ClearValue;
   end;
@@ -100,6 +98,39 @@ type
   ZUGFeRDNullableInt = ZUGFeRDNullable<Integer>;
   ZUGFeRDNullableDateTime = ZUGFeRDNullable<TDateTime>;
   ZUGFeRDNullableCurrency = ZUGFeRDNullable<Currency>;
+
+  TZUGFeRDNullableParam<T> = class (TInterfacedObject, IZUGFeRDNullableParam<T>)
+  private
+    FValue: ZUGFeRDNullable<T>;  // Speichert intern den kompletten Nullable!
+    function GetValue: T;
+    function HasValue: Boolean;
+  public
+    constructor Create(AValue: T); overload;
+    constructor Create(AValue: ZUGFeRDNullable<T>); overload;
+  end;
+
+  // minimal Dummy-Attribute to accept C# style decorations on enums
+  EnumStringValueAttribute = class(TCustomAttribute)
+  private
+    FValue: string;
+  public
+    constructor Create(const AValue: string);
+  end;
+
+  // efficient O(1) mapper for mapping between enums and strings
+  type
+  TEnumExtensions<TEnum> = class
+  private
+    class var FEnumToString: TDictionary<TEnum, string>;
+    class var FStringToEnum: TDictionary<string, TEnum>;
+    class constructor Create;
+    class destructor Destroy;
+  public
+    class procedure RegisterMapping(EnumValue: TEnum; const StringValue: string);
+    class function EnumToString (Code: ZUGFeRDNullable<TEnum>): string;
+    class function StringToEnum(const Value: string): TEnum;
+    class function StringToNullableEnum(const Value: string): ZUGFeRDNullable<TEnum>;
+  end;
 
 implementation
 
@@ -138,6 +169,7 @@ end;
 
 constructor TZUGFeRDPdfHelper.Create;
 begin
+  inherited Create;
   CmdOutput := TStringList.Create;
 end;
 
@@ -603,7 +635,11 @@ end;
 
 class operator ZUGFeRDNullable<T>.Implicit(Value: ZUGFeRDNullable<T>): T;
 begin
-  Result := Value.Value;
+  if Value.HasValue then
+    Result := Value.Value
+  else
+    Result := Default(T);
+  // Value.Value;
 end;
 
 class operator ZUGFeRDNullable<T>.Implicit(Value: T): ZUGFeRDNullable<T>;
@@ -613,10 +649,10 @@ end;
 
 class operator ZUGFeRDNullable<T>.Implicit(Param: IZUGFeRDNullableParam<T>): ZUGFeRDNullable<T>;
 begin
-  if Param=Nil then
-    Result:= ZUGFeRDNullable<T>.Create(false)
+  if (Param = nil) or not Param.HasValue then
+    Result := ZUGFeRDNullable<T>.Create(false)
   else
-    Result:= ZUGFeRDNullable<T>.Create(Param.Value);
+    Result := ZUGFeRDNullable<T>.Create(Param.GetValue)
 end;
 
 class operator ZUGFeRDNullable<T>.Implicit(Param: ZUGFeRDNullable<T>): IZUGFeRDNullableParam<T>;
@@ -625,6 +661,16 @@ begin
     Result := nil
   else
     Result := TZUGFeRDNullableParam<T>.Create(Param.Value);
+end;
+
+class operator ZUGFeRDNullable<T>.Implicit(Value: Pointer): ZUGFeRDNullable<T>;
+begin
+  // Erlaubt die Zuweisung von nil an einen ZUGFeRDNullable Record
+  // nil wird automatisch in einen leeren Nullable konvertiert
+  if Value = nil then
+    Result := ZUGFeRDNullable<T>.Create(False)  // Erstellt einen leeren Nullable
+  else
+    raise Exception.Create('Only nil can be assigned to ZUGFeRDNullable<T> via Pointer');
 end;
 
 class operator ZUGFeRDNullable<T>.NotEqual(ALeft, ARight: ZUGFeRDNullable<T>): Boolean;
@@ -643,19 +689,83 @@ end;
 
 constructor TZUGFeRDNullableParam<T>.Create(AValue: T);
 begin
-  Value:= AValue;
+  inherited Create;
+  FValue := ZUGFeRDNullable<T>.Create(AValue);
+end;
+
+constructor TZUGFeRDNullableParam<T>.Create(AValue: ZUGFeRDNullable<T>);
+begin
+  inherited Create;
+  FValue := AValue;
 end;
 
 function TZUGFeRDNullableParam<T>.GetValue: T;
 begin
-  Result:= FValue
+  Result := FValue.Value;
 end;
 
-procedure TZUGFeRDNullableParam<T>.SetValue(const AValue: T);
+function TZUGFeRDNullableParam<T>.HasValue: Boolean;
 begin
-  FValue:= AValue
+  Result := FValue.HasValue;
+end;
+
+{ EnumStringValueAttribute }
+
+// this is a dummy attribute so the C# decorations are accepted without warning
+// unfortunatly decorations on enum types may not be evaluated at runtime
+constructor EnumStringValueAttribute.Create(const AValue: string);
+begin
+  inherited Create;
+  FValue := AValue;
+end;
+
+{ TEnumExtensions }
+
+class constructor TEnumExtensions<TEnum>.Create;
+begin
+  FEnumToString := TDictionary<TEnum, string>.Create;
+  FStringToEnum := TDictionary<string, TEnum>.Create(TIStringComparer.Ordinal);
+end;
+
+class destructor TEnumExtensions<TEnum>.Destroy;
+begin
+  FEnumToString.Free;
+  FStringToEnum.Free;
+end;
+
+class procedure TEnumExtensions<TEnum>.RegisterMapping(EnumValue: TEnum; const StringValue: string);
+begin
+  FEnumToString.AddOrSetValue(EnumValue, StringValue);
+  FStringToEnum.AddOrSetValue(StringValue, EnumValue);
+end;
+
+class function TEnumExtensions<TEnum>.EnumToString(Code: ZUGFeRDNullable<TEnum>): string;
+begin
+  if not Code.HasValue then
+    Exit('');
+
+  if not FEnumToString.TryGetValue(Code.Value, Result) then
+    Result := '';
+end;
+
+class function TEnumExtensions<TEnum>.StringToNullableEnum(const Value: string): ZUGFeRDNullable<TEnum>;
+var
+  EnumValue: TEnum;
+begin
+  Result.ClearValue;
+  if Trim(Value) = '' then
+    Exit;
+
+  if FStringToEnum.TryGetValue(Value, EnumValue) then
+    Result := EnumValue;
+end;
+
+class function TEnumExtensions<TEnum>.StringToEnum(const Value: string): TEnum;
+begin
+  Result := Default(TEnum);
+  if Trim(Value) <> '' then
+    FStringToEnum.TryGetValue(Value, Result); // also returns Default(TEnum) if not found
 end;
 
 end.
-
 

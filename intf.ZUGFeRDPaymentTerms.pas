@@ -46,7 +46,7 @@ type
     FPaymentTermsType: ZUGFeRDNullable<TZUGFeRDPaymentTermsType>;
     FDueDays: ZUGFeRDNullable<Integer>;
     FMaturityDate: ZUGFeRDNullable<TDateTime>;
-    FPercentage: ZUGFeRDNullable<double>;
+    FPercentage: ZUGFeRDNullable<Currency>;
     FBaseAmount: ZUGFeRDNullable<Currency>;
     FActualAmount: ZUGFeRDNullable<Currency>;
     FPartialPaymentAmount: ZUGFeRDNullable<Currency>;
@@ -79,7 +79,7 @@ type
     /// <summary>
     /// Percentage of discount or surcharge
     /// </summary>
-    property Percentage: ZUGFeRDNullable<double> read FPercentage write FPercentage;
+    property Percentage: ZUGFeRDNullable<Currency> read FPercentage write FPercentage;
 
     /// <summary>
     /// Base amount applied to percentage of discount or surcharge

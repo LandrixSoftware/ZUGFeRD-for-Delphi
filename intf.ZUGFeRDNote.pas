@@ -21,7 +21,8 @@ interface
 
 uses
   intf.ZUGFeRDContentCodes,
-  intf.ZUGFeRDSubjectCodes;
+  intf.ZUGFeRDSubjectCodes,
+  intf.ZUGFeRDHelper;
 
 type
   /// <summary>
@@ -30,8 +31,8 @@ type
   TZUGFeRDNote = class
   private
     FContent: string;
-    FSubjectCode: TZUGFeRDSubjectCodes;
-    FContentCode: TZUGFeRDContentCodes;
+    FSubjectCode: ZUGFeRDNullable<TZUGFeRDSubjectCodes>;
+    FContentCode: ZUGFeRDNullable<TZUGFeRDContentCodes>;
   public
     /// <summary>
     /// Initialize a new node
@@ -39,7 +40,7 @@ type
     /// <param name="content"></param>
     /// <param name="subjectCode"></param>
     /// <param name="contentCode"></param>
-    constructor Create(const content: string; subjectCode: TZUGFeRDSubjectCodes; contentCode: TZUGFeRDContentCodes);
+    constructor Create(const content: string; subjectCode: IZUGFeRDNullableParam<TZUGFeRDSubjectCodes> = Nil; contentCode: IZUGFeRDNullableParam<TZUGFeRDContentCodes> = Nil);
   public
     /// <summary>
     /// A free text containing unstructured information which is relevant for the invoice as a whole.
@@ -48,17 +49,18 @@ type
     /// <summary>
     /// The qualification of the free text of an invoice of BT-22
     /// </summary>
-    property SubjectCode: TZUGFeRDSubjectCodes read FSubjectCode write FSubjectCode default TZUGFeRDSubjectCodes.Unknown;
+    property SubjectCode: ZUGFeRDNullable<TZUGFeRDSubjectCodes> read FSubjectCode write FSubjectCode;
     /// <summary>
     /// Bilaterally agreed text blocks which, here, are transferred as code.
     /// </summary>
-    property ContentCode: TZUGFeRDContentCodes read FContentCode write FContentCode default TZUGFeRDContentCodes.Unknown;
+    property ContentCode: ZUGFeRDNullable<TZUGFeRDContentCodes> read FContentCode write FContentCode;
   end;
 
 implementation
 
-constructor TZUGFeRDNote.Create(const content: string; subjectCode: TZUGFeRDSubjectCodes; contentCode: TZUGFeRDContentCodes);
+constructor TZUGFeRDNote.Create(const content: string; subjectCode: IZUGFeRDNullableParam<TZUGFeRDSubjectCodes> = Nil; contentCode: IZUGFeRDNullableParam<TZUGFeRDContentCodes> = Nil);
 begin
+  inherited Create;
   FContent := content;
   FSubjectCode := subjectCode;
   FContentCode := contentCode;

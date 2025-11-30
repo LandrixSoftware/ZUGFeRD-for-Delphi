@@ -58,6 +58,7 @@ implementation
 
 constructor TZUGFeRDValidationResult.Create;
 begin
+  inherited Create;
   FIsValid := False;
   FMessages := TStringList.Create;
 end;
@@ -92,10 +93,8 @@ var
   lineTotal, allowanceTotal, chargeTotal, taxTotal, grandTotal: Currency;
   lineTotalPerTax: TDictionary<Currency, Currency>;
   item: TZUGFeRDTradeLineItem;
-  charge: TZUGFeRDTradeAllowanceCharge;
   kv: TPair<Currency, Currency>;
   tax: TZUGFeRDTax;
-  allowance: TZUGFeRDTradeAllowanceCharge;
 begin
   Result := TZUGFeRDValidationResult.Create;
   Result.IsValid := true;
@@ -150,7 +149,7 @@ begin
     Result.Messages.Add('Finished recalculating monetarySummation.lineTotal...');
     Result.Messages.Add('Adding tax amounts from invoice allowance charge...');
 
-    for charge in descriptor.TradeAllowanceCharges do
+    for var charge in descriptor.GetTradeCharges do
     begin
       Result.Messages.Add(Format('==> added %f to %f%%', [-charge.Amount, charge.Tax.Percent]));
 
@@ -158,10 +157,18 @@ begin
         lineTotalPerTax.Add(charge.Tax.Percent, 0);
 
       lineTotalPerTax[charge.Tax.Percent] := lineTotalPerTax[charge.Tax.Percent] - charge.Amount;
-      if charge.ChargeIndicator then
-        chargeTotal:= chargeTotal + charge.Amount
-      else
-        allowanceTotal := allowanceTotal + charge.Amount;
+      chargeTotal:= chargeTotal + charge.Amount
+    end;
+
+    for var allowance in descriptor.GetTradeAllowances do
+    begin
+      Result.Messages.Add(Format('==> added %f to %f%%', [-allowance.Amount, allowance.Tax.Percent]));
+
+      if not lineTotalPerTax.ContainsKey(allowance.Tax.Percent) then
+        lineTotalPerTax.Add(allowance.Tax.Percent, 0);
+
+      lineTotalPerTax[allowance.Tax.Percent] := lineTotalPerTax[allowance.Tax.Percent] - allowance.Amount;
+      allowanceTotal := allowanceTotal + allowance.Amount;
     end;
 
     Result.Messages.Add('Adding tax amounts from invoice service charge...');
@@ -203,13 +210,10 @@ begin
 
     var _allowanceTotal : Currency := 0;
     var _chargeTotal : Currency := 0;
-    for allowance in descriptor.TradeAllowanceCharges do
-    begin
-      if allowance.ChargeIndicator then
-        _chargeTotal := _chargeTotal + allowance.ActualAmount
-      else
-        _allowanceTotal := _allowanceTotal + allowance.ActualAmount;
-    end;
+    for var allowance in descriptor.GetTradeAllowances do
+      _allowanceTotal := _allowanceTotal + allowance.ActualAmount;
+    for var charge in descriptor.GetTradeCharges do
+        _chargeTotal := _chargeTotal + charge.ActualAmount;
 
     if not descriptor.TaxTotalAmount.HasValue then
     begin

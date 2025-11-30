@@ -20,8 +20,8 @@ unit intf.ZUGFeRDGlobalID;
 interface
 
 uses
-  intf.ZUGFeRDGlobalIDSchemeIdentifiers
-  ;
+  intf.ZUGFeRDGlobalIDSchemeIdentifiers,
+  intf.ZUGFeRDHelper;
 
 type
   /// <summary>
@@ -38,7 +38,7 @@ type
   TZUGFeRDGlobalID = class
   private
     FID: string;
-    FSchemeID: TZUGFeRDGlobalIDSchemeIdentifiers;
+    FSchemeID: ZUGFeRDNullable<TZUGFeRDGlobalIDSchemeIdentifiers>;
   public
     /// <summary>
     /// The identification of articles based on a registered scheme
@@ -51,22 +51,24 @@ type
     ///
     /// The schema of identification must be composed of the entries of the list published by the ISO/IEC 6523 Maintenance Agency.
     /// </summary>
-    property SchemeID: TZUGFeRDGlobalIDSchemeIdentifiers read FSchemeID write FSchemeID;
+    property SchemeID: ZUGFeRDNullable<TZUGFeRDGlobalIDSchemeIdentifiers> read FSchemeID write FSchemeID;
 
     constructor Create;
-    constructor CreateWithParams(schemeID: TZUGFeRDGlobalIDSchemeIdentifiers; ID: string);
+    constructor CreateWithParams(schemeID: ZUGFeRDNullable<TZUGFeRDGlobalIDSchemeIdentifiers>; ID: string);
   end;
 
 implementation
 
 constructor TZUGFeRDGlobalID.Create;
 begin
+  inherited Create;
   FID := '';
-  FSchemeID := TZUGFeRDGlobalIDSchemeIdentifiers.Unknown;
+  FSchemeID := Nil;
 end;
 
-constructor TZUGFeRDGlobalID.CreateWithParams(schemeID: TZUGFeRDGlobalIDSchemeIdentifiers; ID: string);
+constructor TZUGFeRDGlobalID.CreateWithParams(schemeID: ZUGFeRDNullable<TZUGFeRDGlobalIDSchemeIdentifiers>; ID: string);
 begin
+  inherited Create;
   FID := ID;
   FSchemeID := schemeID;
 end;

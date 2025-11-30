@@ -50,6 +50,7 @@ implementation
 
 constructor TZUGFeRDBaseReferencedDocument.Create;
 begin
+  inherited Create;
 //  FIssueDateTime := ZUGFeRDNullable<TDateTime>.Create;
 end;
 

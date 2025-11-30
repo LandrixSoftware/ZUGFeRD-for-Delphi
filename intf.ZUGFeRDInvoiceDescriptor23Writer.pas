@@ -20,11 +20,11 @@ unit intf.ZUGFeRDInvoiceDescriptor23Writer;
 interface
 
 uses
-  System.SysUtils,System.Classes,System.StrUtils,Generics.Collections
+  System.SysUtils,System.Classes,System.StrUtils,System.Generics.Collections
   ,intf.ZUGFeRDInvoiceDescriptor
   ,intf.ZUGFeRDInvoiceTypes
   ,intf.ZUGFeRDProfileAwareXmlTextWriter
-  ,intf.ZUGFeRDInvoiceDescriptorwriter
+  ,intf.ZUGFeRDIInvoiceDescriptorwriter
   ,intf.ZUGFeRDProfile
   ,intf.ZUGFeRDExceptions
   ,intf.ZUGFeRDHelper
@@ -61,15 +61,13 @@ uses
   ,intf.ZUGFeRDReceivableSpecifiedTradeAccountingAccount
   ,intf.ZUGFeRDAccountingAccountTypeCodes
   ,intf.ZUGFeRDMimeTypeMapper
-  ,intf.ZUGFeRDSpecialServiceDescriptionCodes
-  ,intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
   ,intf.ZUGFeRDFormats
   ,intf.ZUGFeRDDesignatedProductClassification
   ,intf.ZUGFeRDDesignatedProductClassificationClassCodes
-  ;
+  ,intf.ZUGFeRDInvoiceFormatOptions;
 
 type
-  TZUGFeRDInvoiceDescriptor23Writer = class(TZUGFeRDInvoiceDescriptorWriter)
+  TZUGFeRDInvoiceDescriptor23Writer = class(TZUGFeRDIInvoiceDescriptorWriter)
   public
     /// <summary>
     /// This function is implemented in class InvoiceDescriptor22Writer.
@@ -82,7 +80,7 @@ type
     /// <param name="descriptor">The invoice object that should be saved</param>
     /// <param name="stream">The target stream for saving the invoice</param>
     /// <param name="format">Format of the target file</param>
-    procedure Save(_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream; _format : TZUGFeRDFormats = TZUGFeRDFormats.CII); override;
+    procedure Save (_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream; _format : TZUGFeRDFormats = TZUGFeRDFormats.CII; options: TZUGFeRDInvoiceFormatOptions = Nil); override;
   end;
 
 implementation
@@ -96,9 +94,10 @@ uses
 
 procedure TZUGFeRDInvoiceDescriptor23Writer.Save(
   _descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream;
-  _format : TZUGFeRDFormats = TZUGFeRDFormats.CII);
+  _format : TZUGFeRDFormats = TZUGFeRDFormats.CII;
+   options: TZUGFeRDInvoiceFormatOptions = Nil);
 var
-  _writer : TZUGFeRDInvoiceDescriptorWriter;
+  _writer : TZUGFeRDIInvoiceDescriptorWriter;
 begin
   if (_stream = nil) then
     raise TZUGFeRDIllegalStreamException.Create('Cannot write to stream');
@@ -108,7 +107,7 @@ begin
   else
     _writer := TZUGFeRDInvoiceDescriptor23CIIWriter.Create;
   try
-    _writer.Save(_descriptor, _stream, _format);
+    _writer.Save(_descriptor, _stream, _format, options);
   finally
     _writer.Free;
   end;

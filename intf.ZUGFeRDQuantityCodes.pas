@@ -20,8 +20,8 @@ unit intf.ZUGFeRDQuantityCodes;
 interface
 
 uses
-  System.SysUtils,System.TypInfo
-  ;
+  System.SysUtils,
+  intf.ZUGFeRDHelper;
 
 type
   /// <summary>
@@ -38,29 +38,55 @@ type
   /// (starting with X, length of 3)
   /// </summary>
   TZUGFeRDQuantityCodes = (
+    {.DefinitionStart}
+    // automatically converted by PSC#ToDelphiDefinition
+
     /// <summary>
-    /// Unknown/ invalid quantity code
+    /// megajoule
     /// </summary>
-    Unknown = 0,
+    [EnumStringValue('3B')]
+    _3B,
+
+    /// <summary>
+    /// part per million
+    /// </summary>
+    [EnumStringValue('59')]
+    _59,
+
+    /// <summary>
+    /// Bulk pack
+    /// </summary>
+    [EnumStringValue('AB')]
+    AB,
+
+    /// <summary>
+    /// activity
+    /// </summary>
+    ACT,
+
+    /// <summary>
+    /// millisecond
+    /// </summary>
+    C26,
+
     /// <summary>
     /// Eins (Stück)
     /// Abkürzung: Stk.
     ///
     /// Previously, PCE was also used. This has been removed.
     /// </summary>
-
-
-    /// <summary>
-    /// Eins (Stück)
-    /// Abkürzung: Stk.
-    ///
-    /// Previously, PCE was also used. This has been removed.
-    /// </summary>
+    [EnumStringValue('C62", "PCE')]
     C62,
+
+    /// <summary>
+    /// degree Celsius
+    /// </summary>
+    CEL,
 
     /// <summary>
     /// centigram; Zentigramm
     /// </summary>
+    [EnumStringValue('CGM')]
     CGM,
 
     /// <summary>
@@ -89,6 +115,11 @@ type
     /// A unit of count defining the number of hundred-packs (hundred-pack: set of one hundred items packaged together).
     /// </summary>
     CNP,
+
+    /// <summary>
+    /// volt - ampere
+    /// </summary>
+    D46,
 
     /// <summary>
     /// Tag
@@ -122,6 +153,11 @@ type
     EA,
 
     /// <summary>
+    /// gigajoule
+    /// </summary>
+    GV,
+
+    /// <summary>
     /// Piece: A unit of count defining the number of pieces (piece: a single item, article or exemplar).
     /// </summary>
     /// <seealso cref="QuantityCodes.C62"/>
@@ -131,6 +167,7 @@ type
     /// square hectometre
     /// Abbreviation: ha
     /// </summary>
+    [EnumStringValue('H18", "HAR')]
     H18,
 
     /// <summary>
@@ -151,10 +188,43 @@ type
     IE,
 
     /// <summary>
+    /// lux
+    /// </summary>
+    LUX,
+
+    /// <summary>
+    /// kilowatt demand
+    /// A unit of measure defining the power load measured at predetermined intervals.
+    /// </summary>
+    K1,
+
+    /// <summary>
+    /// kilovolt ampere reactive hour
+    /// A unit of measure defining the accumulated reactive energy equal to one kilovolt ampere of reactive power per hour.
+    /// </summary>
+    K3,
+
+    /// <summary>
+    /// standard acceleration of free fall
+    /// </summary>
+    K40,
+
+    /// <summary>
     /// Kilogramm
     /// Abkürzung: kg
     /// </summary>
     KGM,
+
+    /// <summary>
+    /// kilojoule
+    /// </summary>
+    KJO,
+
+    /// <summary>
+    /// kilovar
+    /// Abkürzung: kVAR
+    /// </summary>
+    KVR,
 
     /// <summary>
     /// Hundred
@@ -171,6 +241,7 @@ type
     /// Kilometer
     /// Abkürzung: km (Rec20r13) für XRechnung
     /// </summary>
+    [EnumStringValue('KMT", "KTM')]
     KMT,
 
     /// <summary>
@@ -196,6 +267,23 @@ type
     /// Abkürzung: l
     /// </summary>
     LTR,
+
+    /// <summary>
+    /// megavolt ampere reactive hour
+    /// A unit of electrical reactive power defining the total amount of reactive power across a power system.
+    /// </summary>
+    MAH,
+
+    /// <summary>
+    /// megawatt
+    /// A unit of power defining the rate of energy transferred or consumed when a current of 1000 amperes flows due to a potential of 1000 volts at unity power factor.
+    /// </summary>
+    MAW,
+
+    /// <summary>
+    /// millibar
+    /// </summary>
+    MBR,
 
     /// <summary>
     /// Minute
@@ -311,12 +399,14 @@ type
     ///
     /// Previously, NPR was used to indicate pairs. This has been removed.
     /// </remarks>
+    [EnumStringValue('PR')]
     PR,
 
     /// <summary>
     /// Set
     /// Abkürzung: Set(s)
     /// </summary>
+    [EnumStringValue('SET')]
     SET_,
 
     /// <summary>
@@ -346,6 +436,8 @@ type
     /// <summary>
     /// Quartal
     /// Abkürzung: Quartal(e)
+    ///
+    /// Quarter (of a year)
     /// </summary>
     QAN,
 
@@ -530,6 +622,7 @@ type
     /// <summary>
     /// Block
     /// </summary>
+    [EnumStringValue('XOK", "D64')]
     XOK,
 
     /// <summary>
@@ -579,12 +672,14 @@ type
     /// microlitre
     /// Abkürzung: µl
     /// </summary>
+    [EnumStringValue('4G')]
     _4G,
 
     /// <summary>
     /// megabecquerel
     /// Abkürzung: MBq
     /// </summary>
+    [EnumStringValue('4N')]
     _4N,
 
     /// <summary>
@@ -651,55 +746,277 @@ type
     /// <summary>
     /// Mutually Defined
     /// </summary>
-    ZZ
-  );
+    ZZ,
 
-  TZUGFeRDQuantityCodesExtensions = class
-  public
-    class function FromString(const s: string): TZUGFeRDQuantityCodes;
-    class function EnumToString(codes: TZUGFeRDQuantityCodes): string;
-  end;
+    /// <summary>
+    /// Metric Carat
+    /// </summary>
+    /// <remarks>
+    /// Einheit für die Masse von Edelsteinen. Abkürzung Kt oder ct (kein gesetzliches Einheitszeichen)
+    /// </remarks>
+    CTM,
+
+    /// <summary>
+    /// Ampoule, non-protected
+    /// </summary>
+    XAM,
+
+    /// <summary>
+    /// Ampoule, protected
+    /// </summary>
+    XAP,
+
+    /// <summary>
+    /// Balloon, non-protected
+    /// </summary>
+    XBF,
+
+    /// <summary>
+    /// Can, rectangular
+    /// </summary>
+    XCA,
+
+    /// <summary>
+    /// Cask
+    /// </summary>
+    XCK,
+
+    /// <summary>
+    /// Cartridge
+    /// Package containing a charge such as propelling explosive for firearms or ink toner for a printer.
+    /// </summary>
+    XCQ,
+
+    /// <summary>
+    /// Case
+    /// </summary>
+    XCS,
+
+    /// <summary>
+    /// Can, cylindrical
+    /// </summary>
+    XCX,
+
+    /// <summary>
+    /// Flask
+    /// </summary>
+    XFL,
+
+    /// <summary>
+    /// Receptacle, glass
+    /// Containment vessel made of glass for retaining substances or articles.
+    /// </summary>
+    XGR,
+
+    /// <summary>
+    /// Unpacked or unpackaged
+    /// </summary>
+    XNE,
+
+    /// <summary>
+    /// Container, outer
+    /// A type of containment box that serves as the outer shipping container, not otherwise specified as transport equipment.
+    /// </summary>
+    XOU,
+
+    /// <summary>
+    /// Pouch
+    /// </summary>
+    XPO,
+
+    /// <summary>
+    /// Pot
+    /// </summary>
+    XPT,
+
+    /// <summary>
+    /// Pallet, wooden
+    /// </summary>
+    X8A,
+
+    /// <summary>
+    /// Crate, multiple layer, cardboard
+    /// </summary>
+    XDC,
+
+    /// <summary>
+    /// Cage, roll
+    /// </summary>
+    XCW,
+
+    /// <summary>
+    /// Sack, multi-wall
+    /// </summary>
+    XMS,
+
+    /// <summary>
+    /// ton-force (US short)
+    /// </summary>
+    L94,
+
+
+    /// <summary>
+    /// Unknown value
+    /// </summary>
+    Unknown
+    {.DefinitionEnd}
+  );
 
 implementation
 
-{ TZUGFeRDQuantityCodesExtensions }
-
-class function TZUGFeRDQuantityCodesExtensions.EnumToString(
-  codes: TZUGFeRDQuantityCodes): string;
+procedure Map (EnumValue: TZUGFeRDQuantityCodes; StringValue: string); inline;
 begin
-  if codes = TZUGFeRDQuantityCodes.SET_ then
-    Result := 'SET'
-  else
-    Result := GetEnumName(TypeInfo(TZUGFeRDQuantityCodes), Integer(codes));
+  TEnumExtensions<TZUGFeRDQuantityCodes>.RegisterMapping(EnumValue, StringValue)
 end;
 
-class function TZUGFeRDQuantityCodesExtensions.FromString(
-  const s: string): TZUGFeRDQuantityCodes;
-var
-  enumValue : Integer;
+procedure InitMapping;
 begin
-  if SameText(s,'SET') then
-  begin
-    Result := TZUGFeRDQuantityCodes.SET_;
-    exit;
-  end;
-  // mapping of legacy unit codes
-  if SameText(s,'NPR') then
-  begin
-    Result := TZUGFeRDQuantityCodes.PR;
-    exit;
-  end;
-  if SameText(s,'PCE') then
-  begin
-    Result := TZUGFeRDQuantityCodes.C62;
-    exit;
-  end;
-
-  enumValue := GetEnumValue(TypeInfo(TZUGFeRDQuantityCodes), s);
-  if enumValue >= 0 then
-    Result := TZUGFeRDQuantityCodes(enumValue)
-  else
-    Result := TZUGFeRDQuantityCodes.Unknown;
+  {.MapStart}
+  // Mapping generated by PSDelphiDefinitionMapper
+  Map(_3B,     '3B');
+  Map(_59,     '59');
+  Map(AB,      'AB');
+  Map(ACT,     'ACT');
+  Map(C26,     'C26');
+  Map(C62,     'C62", "PCE');
+  Map(CEL,     'CEL');
+  Map(CGM,     'CGM');
+  Map(CLF,     'CLF');
+  Map(CLT,     'CLT');
+  Map(CMK,     'CMK');
+  Map(CMQ,     'CMQ');
+  Map(CNP,     'CNP');
+  Map(D46,     'D46');
+  Map(DAY,     'DAY');
+  Map(DLT,     'DLT');
+  Map(DMK,     'DMK');
+  Map(DMQ,     'DMQ');
+  Map(DMT,     'DMT');
+  Map(EA,      'EA');
+  Map(GV,      'GV');
+  Map(H87,     'H87');
+  Map(H18,     'H18", "HAR');
+  Map(HLT,     'HLT');
+  Map(HUR,     'HUR');
+  Map(IE,      'IE');
+  Map(LUX,     'LUX');
+  Map(K1,      'K1');
+  Map(K3,      'K3');
+  Map(K40,     'K40');
+  Map(KGM,     'KGM');
+  Map(KJO,     'KJO');
+  Map(KVR,     'KVR');
+  Map(CEN,     'CEN');
+  Map(CMT,     'CMT');
+  Map(KMT,     'KMT", "KTM');
+  Map(KWH,     'KWH');
+  Map(KWT,     'KWT');
+  Map(LS,      'LS');
+  Map(LTR,     'LTR');
+  Map(MAH,     'MAH');
+  Map(MAW,     'MAW');
+  Map(MBR,     'MBR');
+  Map(MIN,     'MIN');
+  Map(MMK,     'MMK');
+  Map(MMT,     'MMT');
+  Map(MTK,     'MTK');
+  Map(MTQ,     'MTQ');
+  Map(MTR,     'MTR');
+  Map(MWH,     'MWH');
+  Map(MKD,     'MKD');
+  Map(MKM,     'MKM');
+  Map(MKW,     'MKW');
+  Map(MMQ,     'MMQ');
+  Map(MQD,     'MQD');
+  Map(MQH,     'MQH');
+  Map(MQM,     'MQM');
+  Map(MQS,     'MQS');
+  Map(MQW,     'MQW');
+  Map(NAR,     'NAR');
+  Map(NMP,     'NMP');
+  Map(P1,      'P1');
+  Map(PR,      'PR');
+  Map(SET_,    'SET');
+  Map(TNE,     'TNE');
+  Map(WEE,     'WEE');
+  Map(MON,     'MON');
+  Map(ANN,     'ANN');
+  Map(QAN,     'QAN');
+  Map(SAN,     'SAN');
+  Map(SEC,     'SEC');
+  Map(TP,      'TP');
+  Map(XBE,     'XBE');
+  Map(XBO,     'XBO');
+  Map(XCT,     'XCT');
+  Map(XPX,     'XPX');
+  Map(XRD,     'XRD');
+  Map(XBC,     'XBC');
+  Map(XBD,     'XBD');
+  Map(T3,      'T3');
+  Map(XPK,     'XPK');
+  Map(FF,      'FF');
+  Map(XRO,     'XRO');
+  Map(XTN,     'XTN');
+  Map(XCI,     'XCI');
+  Map(XTU,     'XTU');
+  Map(XBG,     'XBG');
+  Map(XST,     'XST');
+  Map(XSA,     'XSA');
+  Map(XBA,     'XBA');
+  Map(XBJ,     'XBJ');
+  Map(GRM,     'GRM');
+  Map(KT,      'KT');
+  Map(XPP,     'XPP');
+  Map(XBX,     'XBX');
+  Map(XDR,     'XDR');
+  Map(XCR,     'XCR');
+  Map(XCU,     'XCU');
+  Map(XOK,     'XOK", "D64');
+  Map(XPU,     'XPU');
+  Map(XCH,     'XCH');
+  Map(XBK,     'XBK');
+  Map(XMT,     'XMT');
+  Map(DTN,     'DTN');
+  Map(PTN,     'PTN');
+  Map(M5,      'M5');
+  Map(_4G,     '4G');
+  Map(_4N,     '4N');
+  Map(MC,      'MC');
+  Map(FH,      'FH');
+  Map(BQL,     'BQL');
+  Map(CUR,     'CUR');
+  Map(MCU,     'MCU');
+  Map(MGM,     'MGM');
+  Map(MLT,     'MLT');
+  Map(Z9,      'Z9');
+  Map(XPA,     'XPA');
+  Map(E48,     'E48');
+  Map(ZZ,      'ZZ');
+  Map(CTM,     'CTM');
+  Map(XAM,     'XAM');
+  Map(XAP,     'XAP');
+  Map(XBF,     'XBF');
+  Map(XCA,     'XCA');
+  Map(XCK,     'XCK');
+  Map(XCQ,     'XCQ');
+  Map(XCS,     'XCS');
+  Map(XCX,     'XCX');
+  Map(XFL,     'XFL');
+  Map(XGR,     'XGR');
+  Map(XNE,     'XNE');
+  Map(XOU,     'XOU');
+  Map(XPO,     'XPO');
+  Map(XPT,     'XPT');
+  Map(X8A,     'X8A');
+  Map(XDC,     'XDC');
+  Map(XCW,     'XCW');
+  Map(XMS,     'XMS');
+  Map(L94,     'L94');
+  Map(Unknown, 'Unknown');
+{.MapEnd}
 end;
 
+Initialization
+  InitMapping;
 end.
+

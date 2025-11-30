@@ -33,7 +33,7 @@ type
     FSourceCurrency: TZUGFeRDCurrencyCodes;
     FConversionRateTimestamp: ZUGFeRDNullable<TDateTime>;
     FTargetCurrency: TZUGFeRDCurrencyCodes;
-    FConversionRate: double;
+    FConversionRate: Currency;
   public
 		/// <summary>
 		/// Invoice currency
@@ -48,38 +48,51 @@ type
 		/// <summary>
 		/// Exchange rate
 		/// </summary>
-		property ConversionRate : double read FConversionRate write FConversionRate;
+		property ConversionRate : Currency read FConversionRate write FConversionRate;
 
 		/// <summary>
 		/// Exchange rate date
 		/// </summary>
 		property ConversionRateTimestamp : ZUGFeRDNullable<TDateTime> read FConversionRateTimestamp write FConversionRateTimestamp;
 
-		constructor Create(_sourceCurrency : TZUGFeRDCurrencyCodes; _targetCurrency : TZUGFeRDCurrencyCodes; _conversionRate : double); overload;
-		constructor Create(_sourceCurrency : TZUGFeRDCurrencyCodes; _targetCurrency : TZUGFeRDCurrencyCodes; _conversionRate : double; _conversionRateTimestamp : TDateTime); overload;
+    /// <summary>
+    /// Constructor without exchange rate date
+    /// </summary>
+    /// <param name="sourceCurrency">Invoice currency</param>
+    /// <param name="targetCurrency">Local currency</param>
+    /// <param name="conversionRate">Exchange rate</param>
+		constructor Create(_sourceCurrency : TZUGFeRDCurrencyCodes; _targetCurrency : TZUGFeRDCurrencyCodes; _conversionRate : Currency); overload;
+
+    /// <summary>
+    /// Constructor with exchange rate date
+    /// </summary>
+    /// <param name="sourceCurrency">Invoice currency</param>
+    /// <param name="targetCurrency">Local currency</param>
+    /// <param name="conversionRate">Exchange rate</param>
+    /// <param name="conversionRateTimestamp">Exchange rate date</param>
+		constructor Create(_sourceCurrency : TZUGFeRDCurrencyCodes; _targetCurrency : TZUGFeRDCurrencyCodes; _conversionRate : Currency; _conversionRateTimestamp : TDateTime); overload;
 	end;
 
 implementation
 
 { TZUGFeRDTradeCurrencyExchange }
 
-constructor TZUGFeRDTradeCurrencyExchange.Create(_sourceCurrency,
-  _targetCurrency: TZUGFeRDCurrencyCodes; _conversionRate: double;
-  _conversionRateTimestamp: TDateTime);
+constructor TZUGFeRDTradeCurrencyExchange.Create(_sourceCurrency, _targetCurrency: TZUGFeRDCurrencyCodes; _conversionRate: Currency);
 begin
-  SourceCurrency := _sourceCurrency;
-  TargetCurrency := _targetCurrency;
-  ConversionRate := _conversionRate;
-  ConversionRateTimestamp := _conversionRateTimestamp;
-end;
-
-constructor TZUGFeRDTradeCurrencyExchange.Create(_sourceCurrency,
-  _targetCurrency: TZUGFeRDCurrencyCodes; _conversionRate: double);
-begin
+  inherited Create;
   SourceCurrency := _sourceCurrency;
   TargetCurrency := _targetCurrency;
   ConversionRate := _conversionRate;
   ConversionRateTimestamp.ClearValue;
+end;
+
+constructor TZUGFeRDTradeCurrencyExchange.Create(_sourceCurrency, _targetCurrency: TZUGFeRDCurrencyCodes; _conversionRate: Currency; _conversionRateTimestamp: TDateTime);
+begin
+  inherited Create;
+  SourceCurrency := _sourceCurrency;
+  TargetCurrency := _targetCurrency;
+  ConversionRate := _conversionRate;
+  ConversionRateTimestamp := _conversionRateTimestamp;
 end;
 
 end.

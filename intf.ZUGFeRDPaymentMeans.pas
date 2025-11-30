@@ -20,12 +20,12 @@ unit intf.ZUGFeRDPaymentMeans;
 interface
 
 uses
-  intf.ZUGFeRDFinancialCard,intf.ZUGFeRDPaymentMeansTypeCodes;
+  intf.ZUGFeRDFinancialCard, intf.ZUGFeRDPaymentMeansTypeCodes, intf.ZUGFeRDHelper;
 
 type
   TZUGFeRDPaymentMeans = class
   private
-    FTypeCode: TZUGFeRDPaymentMeansTypeCodes;
+    FTypeCode: ZUGFeRDNullable<TZUGFeRDPaymentMeansTypeCodes>;
     FInformation: string;
     FSEPACreditorIdentifier: string;
     FSEPAMandateReference: string;
@@ -37,7 +37,7 @@ type
     /// <summary>
     /// The means expressed as code, for how a payment is expected to be or has been settled.
     /// </summary>
-    property TypeCode: TZUGFeRDPaymentMeansTypeCodes read FTypeCode write FTypeCode;
+    property TypeCode: ZUGFeRDNullable<TZUGFeRDPaymentMeansTypeCodes> read FTypeCode write FTypeCode;
 
     /// <summary>
     /// The means expressed as code, for how a payment is expected to be or has been settled.
@@ -69,6 +69,7 @@ implementation
 
 constructor TZUGFeRDPaymentMeans.Create;
 begin
+  inherited Create;
   FFinancialCard := nil;//TZUGFeRDFinancialCard.Create;
 end;
 
