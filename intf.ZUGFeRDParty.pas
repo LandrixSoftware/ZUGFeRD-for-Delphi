@@ -22,7 +22,8 @@ interface
 uses
   intf.ZUGFeRDGlobalID,
   intf.ZUGFeRDCountryCodes,
-  intf.ZUGFeRDLegalOrganization
+  intf.ZUGFeRDLegalOrganization,
+  intf.ZUGFeRDHelper
   ;
 
 type
@@ -37,7 +38,7 @@ type
     FContactName: string;
     FCity: string;
     FPostcode: string;
-    FCountry: TZUGFeRDCountryCodes;
+    FCountry: ZUGFeRDNullable<TZUGFeRDCountryCodes>;
     FStreet: string;
     FGlobalID: TZUGFeRDGlobalID;
     FAddressLine3: string;
@@ -82,7 +83,7 @@ type
     /// <summary>
     /// Party country
     /// </summary>
-    property Country: TZUGFeRDCountryCodes read FCountry write FCountry;
+    property Country: ZUGFeRDNullable<TZUGFeRDCountryCodes> read FCountry write FCountry;
 
     /// <summary>
     /// Street name and number
@@ -119,6 +120,7 @@ implementation
 
 constructor TZUGFeRDParty.Create;
 begin
+  inherited Create;
   FID := TZUGFeRDGlobalID.Create;
   FGlobalID := TZUGFeRDGlobalID.Create;
   FSpecifiedLegalOrganization := nil;//TZUGFeRDLegalOrganization.Create;

@@ -20,7 +20,8 @@ unit intf.ZUGFeRDDesignatedProductClassification;
 interface
 
 uses
-  intf.ZUGFeRDDesignatedProductClassificationClassCodes;
+  intf.ZUGFeRDDesignatedProductClassificationClassCodes,
+  intf.ZUGFeRDHelper;
 
 type
   /// <summary>
@@ -29,7 +30,7 @@ type
   TZUGFeRDDesignatedProductClassification = class
   private
     FClassName: String;
-    FListID: TZUGFeRDDesignatedProductClassificationClassCodes;
+    FListID: ZUGFeRDNullable<TZUGFeRDDesignatedProductClassificationClassCodes>;
     FListVersionID: String;
     FClassCode: string;
   public
@@ -45,7 +46,7 @@ type
     /// <summary>
     /// Product classification name
     /// </summary>
-    property ListID : TZUGFeRDDesignatedProductClassificationClassCodes read FListID write FListID;
+    property ListID : ZUGFeRDNullable<TZUGFeRDDesignatedProductClassificationClassCodes> read FListID write FListID;
 
     /// <summary>
     /// Version of product classification

@@ -52,6 +52,7 @@ implementation
 
 constructor TZUGFeRDCharge.Create;
 begin
+  inherited Create;
   FTax := TZUGFeRDTax.Create;
 end;
 

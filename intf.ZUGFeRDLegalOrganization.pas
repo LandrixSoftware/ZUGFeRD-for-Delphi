@@ -20,9 +20,9 @@ unit intf.ZUGFeRDLegalOrganization;
 interface
 
 uses
-  System.SysUtils,System.TypInfo
-  ,intf.ZUGFeRDGlobalID,intf.ZUGFeRDGlobalIDSchemeIdentifiers
-  ;
+  intf.ZUGFeRDGlobalID,
+  intf.ZUGFeRDGlobalIDSchemeIdentifiers,
+  intf.ZUGFeRDHelper;
 
 type
   /// <summary>
@@ -43,7 +43,7 @@ type
     /// <param name="id"></param>
     /// <param name="schemeID"></param>
     /// <param name="tradingBusinessName"></param>
-    constructor CreateWithParams(schemeID: TZUGFeRDGlobalIDSchemeIdentifiers = Unknown; id: string = ''; tradingBusinessName: string = '');
+    constructor CreateWithParams(schemeID: IZUGFeRDNullableParam<TZUGFeRDGlobalIDSchemeIdentifiers> = Nil; id: string = ''; tradingBusinessName: string = '');
     destructor Destroy; override;
   public
     /// <summary>
@@ -60,12 +60,14 @@ implementation
 
 constructor TZUGFeRDLegalOrganization.Create;
 begin
+  inherited Create;
   FID := nil;
   FTradingBusinessName := '';
 end;
 
-constructor TZUGFeRDLegalOrganization.CreateWithParams(schemeID: TZUGFeRDGlobalIDSchemeIdentifiers = Unknown; id: string = ''; tradingBusinessName: string = '');
+constructor TZUGFeRDLegalOrganization.CreateWithParams(schemeID: IZUGFeRDNullableParam<TZUGFeRDGlobalIDSchemeIdentifiers> = Nil; id: string = ''; tradingBusinessName: string = '');
 begin
+  inherited Create;
   FID := TZUGFeRDGlobalID.CreateWithParams(schemeID, id);
   FTradingBusinessName := tradingBusinessName;
 end;

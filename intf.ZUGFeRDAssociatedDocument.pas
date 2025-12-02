@@ -20,7 +20,11 @@ unit intf.ZUGFeRDAssociatedDocument;
 interface
 
 uses
-  System.Generics.Collections, intf.ZUGFeRDNote;
+  System.Generics.Collections,
+  intf.ZUGFeRDHelper,
+  intf.ZUGFeRDNote,
+  intf.ZUGFeRDLineStatusCodes,
+  intf.ZUGFeRDLineStatusReasonCodes;
 
 type
   /// <summary>
@@ -30,8 +34,8 @@ type
   private
     FNotes: TObjectList<TZUGFeRDNote>;
     FLineID: string;
-    FLineStatusCode: string;
-    FLineStatusReasonCode: string;
+    FLineStatusCode: ZUGFeRDNullable<TZUGFeRDLineStatusCodes>;
+    FLineStatusReasonCode: ZUGFeRDNullable<TZUGFeRDLineStatusReasonCodes> ;
     FParentLineID: string;
   public
     constructor Create(lineID: string);
@@ -66,7 +70,7 @@ type
     //Berechnung des Rechnungsbetrags beruecksichtigt werden muessen, oder
     //aber ob nur Informationen enthalten sind.
     //Folgender Code sollte genutzt werden : TYPE_LINE
-    property LineStatusCode: string read FLineStatusCode write FLineStatusCode;
+    property LineStatusCode: ZUGFeRDNullable<TZUGFeRDLineStatusCodes> read FLineStatusCode write FLineStatusCode;
 
     //Untertyp der Rechnungsposition
     //udt:CodeType
@@ -81,13 +85,14 @@ type
     //- Detail
     //- Gruppierung
     //- Information
-    property LineStatusReasonCode: string read FLineStatusReasonCode write FLineStatusReasonCode;
+    property LineStatusReasonCode: ZUGFeRDNullable<TZUGFeRDLineStatusReasonCodes> read FLineStatusReasonCode write FLineStatusReasonCode;
   end;
 
 implementation
 
 constructor TZUGFeRDAssociatedDocument.Create(lineID: string);
 begin
+  inherited Create;
   FNotes := TObjectList<TZUGFeRDNote>.Create;
   FLineID := lineID;
 end;

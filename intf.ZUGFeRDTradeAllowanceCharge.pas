@@ -15,17 +15,19 @@
  * specific language governing permissions and limitations
  * under the License.}
 
-unit intf.ZUGFeRDTradeAllowanceCharge;
+// implements AbstractTradeAllowanceCharge from C#
+// implements TradeCharge from C#
+// implements TradeAllowance from C#
 
+unit intf.ZUGFeRDTradeAllowanceCharge;
 interface
 
 uses
   intf.ZUGFeRDHelper,
   intf.ZUGFeRDCharge,
   intf.ZUGFeRDCurrencyCodes,
-  intf.ZUGFeRDAllowanceOrChargeIdentificationCodes,
-  intf.ZUGFeRDSpecialServiceDescriptionCodes
-  ;
+  intf.ZUGFeRDAllowanceReasonCodes,
+  intf.ZUGFeRDChargeReasonCodes;
 
 type
   /// <summary>
@@ -44,7 +46,7 @@ type
   ///      </CategoryTradeTax>
   ///    </SpecifiedTradeAllowanceCharge>
   /// </summary>
-  TZUGFeRDTradeAllowanceCharge = class(TZUGFeRDCharge)
+  TZUGFeRDAbstractTradeAllowanceCharge = class(TZUGFeRDCharge)
   private
     FChargeIndicator: Boolean;
     FReason: string;
@@ -52,8 +54,6 @@ type
     FCurrency: TZUGFeRDCurrencyCodes;
     FActualAmount: Currency;
     FChargePercentage: ZUGFeRDNullable<Currency>;
-    FReasonCodeAllowance: TZUGFeRDAllowanceOrChargeIdentificationCodes;
-    FReasonCodeCharge: TZUGFeRDSpecialServiceDescriptionCodes;
   public
     constructor Create;
   public
@@ -66,12 +66,6 @@ type
     /// In case of a discount (BG-27) the value of the ChargeIndicators has to be "false". In case of a surcharge (BG-28) the value of the ChargeIndicators has to be "true".
     /// </summary>
     property ChargeIndicator: Boolean read FChargeIndicator write FChargeIndicator;
-
-    /// <summary>
-    /// The reason code - one tag -> 2 Types
-    /// </summary>
-    property ReasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes read FReasonCodeAllowance write FReasonCodeAllowance;
-    property ReasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes read FReasonCodeCharge write FReasonCodeCharge;
 
     /// <summary>
     /// The reason for the surcharge or discount in written form
@@ -97,11 +91,35 @@ type
     property ChargePercentage : ZUGFeRDNullable<Currency> read FChargePercentage write FChargePercentage;
   end;
 
+  TZUGFeRDTradeAllowance = class(TZUGFeRDAbstractTradeAllowanceCharge)
+  private
+    FReasonCode: ZUGFeRDNullable<TZUGFeRDAllowanceReasonCodes>;
+  public
+    constructor Create;
+
+    /// <summary>
+    /// The reason code for the surcharge or discount
+    /// </summary>
+    property ReasonCode: ZUGFeRDNullable<TZUGFeRDAllowanceReasonCodes> read FReasonCode write FReasonCode;
+  end;
+
+  TZUGFeRDTradeCharge = class(TZUGFeRDAbstractTradeAllowanceCharge)
+  private
+    FReasonCode: ZUGFeRDNullable<TZUGFeRDChargeReasonCodes>;
+  public
+    constructor Create;
+
+    /// <summary>
+    /// The reason code for the surcharge or discount
+    /// </summary>
+    property ReasonCode: ZUGFeRDNullable<TZUGFeRDChargeReasonCodes> read FReasonCode write FReasonCode;
+  end;
+
 implementation
 
-{ TZUGFeRDTradeAllowanceCharge }
+{ TZUGFeRDAbstractTradeAllowanceCharge }
 
-constructor TZUGFeRDTradeAllowanceCharge.Create;
+constructor TZUGFeRDAbstractTradeAllowanceCharge.Create;
 begin
   inherited Create;
   FChargeIndicator:= false;
@@ -110,8 +128,22 @@ begin
   FCurrency:= TZUGFeRDCurrencyCodes.Unknown;
   FActualAmount:= 0;
   FChargePercentage:= 0;
-  FReasonCodeAllowance:= TZUGFeRDAllowanceOrChargeIdentificationCodes.Unknown;
-  FReasonCodeCharge := TZUGFeRDSpecialServiceDescriptionCodes.Unknown;
+end;
+
+{ TZUGFeRDTradeAllowance }
+
+constructor TZUGFeRDTradeAllowance.Create;
+begin
+  inherited Create;
+  FChargeIndicator:= false;
+end;
+
+{ TZUGFeRDTradeCharge }
+
+constructor TZUGFeRDTradeCharge.Create;
+begin
+  inherited Create;
+  FChargeIndicator:= true;
 end;
 
 end.

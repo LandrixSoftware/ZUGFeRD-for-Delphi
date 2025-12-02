@@ -47,17 +47,23 @@ type
     CurrentFilename : String;
     CurrentStream : TStream;
     XmlNodeStack: TStack<IXMLNode>;
+    Namespaces: TDictionary<string, string>;
+    NeedToIndentEndElement: Boolean;
+    AutomaticallyCleanInvalidXmlCharacters: Boolean;
 
     function GetFormatting: TZUGFeRDXmlFomatting;
     procedure SetFormatting(value: TZUGFeRDXmlFomatting);
 
-    function _DoesProfileFitToCurrentProfile(profile: TZUGFeRDProfiles): Boolean;
+    function _DoesProfileFitToCurrentProfile(profiles: TZUGFeRDProfiles): Boolean;
     function _IsNodeVisible: Boolean;
+    function _CleanInvalidXmlChars(const input: string): string;
+    function _IsValidXmlString(const input: string): Boolean;
+    function _IsValidXmlChar(c: Char): Boolean;
   public
     property Formatting: TZUGFeRDXmlFomatting read GetFormatting write SetFormatting;
 
-    constructor Create(const filename: string; encoding: TEncoding; profile: TZUGFeRDProfile); overload;
-    constructor Create(w: TStream; encoding: TEncoding; profile: TZUGFeRDProfile); overload;
+    constructor Create(const filename: string; encoding: TEncoding; profile: TZUGFeRDProfile; _automaticallyCleanInvalidXmlCharacters: Boolean = False); overload;
+    constructor Create(w: TStream; encoding: TEncoding; profile: TZUGFeRDProfile; _automaticallyCleanInvalidXmlCharacters: Boolean = False); overload;
     destructor Destroy; override;
 
     procedure Close;
@@ -67,7 +73,8 @@ type
     procedure WriteStartDocument(standalone: Boolean); overload;
     procedure WriteEndDocument;
     procedure WriteValue(const value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
-    procedure WriteOptionalElementString(const tagName, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
+    procedure WriteOptionalElementString(const tagName, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
+    procedure WriteOptionalElementString(const prefix, tagName, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
     procedure WriteElementString(const prefix, localName, ns, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
     procedure WriteElementString(const localName, ns, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
     procedure WriteElementString(const localName, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
@@ -77,11 +84,15 @@ type
     procedure WriteStartElement(const prefix, localName, ns: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
     procedure WriteStartElement(const localName: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
     procedure WriteStartElement(const localName, ns: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
+    procedure WriteRawString(const value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
+    procedure WriteRawIndention(profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
+    procedure WriteComment(const comment: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
+    procedure SetNamespaces(_namespaces: TDictionary<string, string>);
   end;
 
 implementation
 
-constructor TZUGFeRDProfileAwareXmlTextWriter.Create(const filename: string; encoding: TEncoding; profile: TZUGFeRDProfile);
+constructor TZUGFeRDProfileAwareXmlTextWriter.Create(const filename: string; encoding: TEncoding; profile: TZUGFeRDProfile; _automaticallyCleanInvalidXmlCharacters: Boolean = False);
 begin
   inherited Create;
   TextWriter := NewXMLDocument;
@@ -97,10 +108,13 @@ begin
 
   XmlStack := TStack<TZUGFeRDStackInfo>.Create;
   XmlNodeStack := TStack<IXMLNode>.Create;
+  Namespaces := TDictionary<string, string>.Create;
+  NeedToIndentEndElement := False;
+  AutomaticallyCleanInvalidXmlCharacters := _automaticallyCleanInvalidXmlCharacters;
   CurrentProfile := profile;
 end;
 
-constructor TZUGFeRDProfileAwareXmlTextWriter.Create(w: TStream; encoding: TEncoding; profile: TZUGFeRDProfile);
+constructor TZUGFeRDProfileAwareXmlTextWriter.Create(w: TStream; encoding: TEncoding; profile: TZUGFeRDProfile; _automaticallyCleanInvalidXmlCharacters: Boolean = False);
 begin
   inherited Create;
   TextWriter := NewXMLDocument;
@@ -116,6 +130,9 @@ begin
 
   XmlStack := TStack<TZUGFeRDStackInfo>.Create;
   XmlNodeStack := TStack<IXMLNode>.Create;
+  Namespaces := TDictionary<string, string>.Create;
+  NeedToIndentEndElement := False;
+  AutomaticallyCleanInvalidXmlCharacters := _automaticallyCleanInvalidXmlCharacters;
   CurrentProfile := profile;
 end;
 
@@ -124,6 +141,7 @@ begin
   TextWriter := nil;
   if Assigned(XmlStack) then begin XmlStack.Free; XmlStack := nil; end;
   if Assigned(XmlNodeStack) then begin XmlNodeStack.Free; XmlNodeStack := nil; end;
+  if Assigned(Namespaces) then begin Namespaces.Free; Namespaces := nil; end;
   inherited;
 end;
 
@@ -167,6 +185,7 @@ var
   _profile: TZUGFeRDProfiles;
   info: TZUGFeRDStackInfo;
   xmlNode : IXMLNode;
+  namespaceURI: string;
 begin
   _profile := profile;
   if profile = TZUGFERDPROFILES_DEFAULT then
@@ -184,23 +203,27 @@ begin
   info.IsVisible := True;
   XmlStack.Push(info);
 
+  // Get namespace from Namespaces dictionary if prefix is provided
+  namespaceURI := ns;
+  if (prefix <> '') and Namespaces.ContainsKey(prefix) then
+    namespaceURI := Namespaces[prefix];
+
   // write value
-  //TODO  if (!String.IsNullOrWhiteSpace(prefix))
-  //  {
-  //      this.TextWriter?.WriteStartElement(prefix, localName, ns);
-  //  }
-  //  else if (!String.IsNullOrWhiteSpace(ns))
-  //  {
-  //      this.TextWriter?.WriteStartElement(localName, ns);
-  //  }
-  //  else
+  if XMLNodeStack.Count = 0 then
   begin
-    if XMLNodeStack.Count = 0 then
-      xmlNode := TextWriter.AddChild(localName)
+    if (prefix <> '') or (namespaceURI <> '') then
+      xmlNode := TextWriter.AddChild(localName, namespaceURI)
+    else
+      xmlNode := TextWriter.AddChild(localName);
+  end
+  else
+  begin
+    if (prefix <> '') or (namespaceURI <> '') then
+      xmlNode := XMLNodeStack.Peek.AddChild(localName, namespaceURI)
     else
       xmlNode := XMLNodeStack.Peek.AddChild(localName);
-    XmlNodeStack.Push(xmlNode);
   end;
+  XmlNodeStack.Push(xmlNode);
 end;
 
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteEndElement;
@@ -210,21 +233,49 @@ begin
   infoForCurrentXmlLevel := XmlStack.Pop;
   if (_DoesProfileFitToCurrentProfile(infoForCurrentXmlLevel.Profile) and _IsNodeVisible()) then
   begin
+    if NeedToIndentEndElement then
+    begin
+      WriteRawIndention;
+      NeedToIndentEndElement := False;
+    end;
     XmlNodeStack.Pop;
   end;
 end;
 
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteOptionalElementString(
   const tagName, value: string; profile: TZUGFeRDProfiles);
+var
+  cleanedValue: string;
 begin
-  if (value <> '') then
-    WriteElementString(tagName, value, profile);
+  if value = '' then
+    Exit;
+
+  cleanedValue := value;
+  if not _IsValidXmlString(cleanedValue) then
+  begin
+    if AutomaticallyCleanInvalidXmlCharacters then
+      cleanedValue := _CleanInvalidXmlChars(cleanedValue)
+    else
+      raise Exception.CreateFmt('''%s'' contains illegal characters for xml.', [cleanedValue]);
+  end;
+
+  WriteElementString(tagName, cleanedValue, profile);
 end;
 
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteElementString(const prefix, localName, ns, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
 var
   _profile: TZUGFeRDProfiles;
+  cleanedValue: string;
 begin
+  cleanedValue := value;
+  if not _IsValidXmlString(cleanedValue) then
+  begin
+    if AutomaticallyCleanInvalidXmlCharacters then
+      cleanedValue := _CleanInvalidXmlChars(cleanedValue)
+    else
+      raise Exception.CreateFmt('''%s'' contains illegal characters for xml.', [cleanedValue]);
+  end;
+
   _profile := profile;
   if profile = TZUGFERDPROFILES_DEFAULT then
     _profile := [CurrentProfile];
@@ -232,7 +283,7 @@ begin
   if (not _IsNodeVisible) or (not _DoesProfileFitToCurrentProfile(_profile)) then
     exit;
 
-  XMLNodeStack.Peek.AddChild(localName).Text := value;
+  XMLNodeStack.Peek.AddChild(localName).Text := cleanedValue;
 end;
 
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteStartDocument;
@@ -273,38 +324,34 @@ end;
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteValue(const value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
 var
   infoForCurrentNode: TZUGFeRDStackInfo;
+  cleanedValue: string;
 begin
+  cleanedValue := value;
+  if not _IsValidXmlString(cleanedValue) then
+  begin
+    if AutomaticallyCleanInvalidXmlCharacters then
+      cleanedValue := _CleanInvalidXmlChars(cleanedValue)
+    else
+      raise Exception.CreateFmt('''%s'' contains illegal characters for xml.', [cleanedValue]);
+  end;
+
+  if XmlStack.Count = 0 then
+    Exit;
+
   infoForCurrentNode := XmlStack.Peek;
   if not infoForCurrentNode.IsVisible then
     exit;
 
-  XmlNodeStack.Peek.Text := value;
+  XmlNodeStack.Peek.Text := cleanedValue;
 end;
 
-function TZUGFeRDProfileAwareXmlTextWriter._DoesProfileFitToCurrentProfile(
-  profile: TZUGFeRDProfiles): Boolean;
-var
-  maskedProfile: Integer;
-  i : TZUGFeRDProfile;
+function TZUGFeRDProfileAwareXmlTextWriter._DoesProfileFitToCurrentProfile(profiles: TZUGFeRDProfiles): Boolean;
 begin
-  if profile = TZUGFERDPROFILES_DEFAULT then
-    Exit(true);
-
-  for i := Low(TZUGFeRDProfile) to High(TZUGFeRDProfile) do
-  begin
-    if i = TZUGFeRDProfile.Unknown then
-      continue;
-    if not (i in profile) then
-      continue;
-    maskedProfile := Integer(i) and Integer(CurrentProfile);
-    if maskedProfile = Integer(CurrentProfile) then
-    begin
-      Result := True;
-      exit;
-    end;
-  end;
-
-  Result := false; // profile does not fit
+  if (profiles = TZUGFERDPROFILES_DEFAULT)
+  or (CurrentProfile in profiles) then
+    Result:= true
+  else
+    Result:= false;
 end;
 
 function TZUGFeRDProfileAwareXmlTextWriter._IsNodeVisible: Boolean;
@@ -348,6 +395,149 @@ end;
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteStartElement(const localName, ns: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
 begin
   WriteStartElement('', localName, ns, profile);
+end;
+
+procedure TZUGFeRDProfileAwareXmlTextWriter.WriteOptionalElementString(
+  const prefix, tagName, value: string; profile: TZUGFeRDProfiles);
+begin
+  if value <> '' then
+    WriteElementString(prefix, tagName, value, profile);
+end;
+
+procedure TZUGFeRDProfileAwareXmlTextWriter.WriteRawString(
+  const value: string; profile: TZUGFeRDProfiles);
+var
+  infoForCurrentNode: TZUGFeRDStackInfo;
+  cleanedValue: string;
+begin
+  cleanedValue := value;
+  if not _IsValidXmlString(cleanedValue) then
+  begin
+    if AutomaticallyCleanInvalidXmlCharacters then
+      cleanedValue := _CleanInvalidXmlChars(cleanedValue)
+    else
+      raise Exception.CreateFmt('''%s'' contains illegal characters for xml.', [cleanedValue]);
+  end;
+
+  if XmlStack.Count = 0 then
+    Exit;
+
+  infoForCurrentNode := XmlStack.Peek;
+  if not infoForCurrentNode.IsVisible then
+    Exit;
+
+  NeedToIndentEndElement := True;
+
+  // Write value as text to current node
+  if XmlNodeStack.Count > 0 then
+    XmlNodeStack.Peek.Text := XmlNodeStack.Peek.Text + cleanedValue;
+end;
+
+procedure TZUGFeRDProfileAwareXmlTextWriter.WriteRawIndention(
+  profile: TZUGFeRDProfiles);
+var
+  infoForCurrentNode: TZUGFeRDStackInfo;
+  i: Integer;
+  indentStr: string;
+begin
+  if XmlStack.Count = 0 then
+    Exit;
+
+  infoForCurrentNode := XmlStack.Peek;
+  if not infoForCurrentNode.IsVisible then
+    Exit;
+
+  NeedToIndentEndElement := True;
+
+  // Write indention according to current xml tree position
+  // In Delphi, indention is typically handled automatically by the XML framework
+  // This is a simplified implementation
+  if XmlNodeStack.Count > 0 then
+  begin
+    indentStr := '';
+    for i := 0 to XmlStack.Count - 1 do
+      indentStr := indentStr + '  '; // Default indent is 2 spaces
+
+    if XmlNodeStack.Peek.Text <> '' then
+      XmlNodeStack.Peek.Text := XmlNodeStack.Peek.Text + indentStr;
+  end;
+end;
+
+procedure TZUGFeRDProfileAwareXmlTextWriter.WriteComment(
+  const comment: string; profile: TZUGFeRDProfiles);
+var
+  infoForCurrentNode: TZUGFeRDStackInfo;
+  cleanedComment: string;
+begin
+  cleanedComment := comment;
+  if not _IsValidXmlString(cleanedComment) then
+  begin
+    if AutomaticallyCleanInvalidXmlCharacters then
+      cleanedComment := _CleanInvalidXmlChars(cleanedComment)
+    else
+      raise Exception.CreateFmt('''%s'' contains illegal characters for xml.', [cleanedComment]);
+  end;
+
+  if XmlStack.Count > 0 then
+  begin
+    infoForCurrentNode := XmlStack.Peek;
+    if not infoForCurrentNode.IsVisible then
+      Exit;
+  end;
+
+  // Write XML comment
+  // Note: Delphi's IXMLNode doesn't directly support comments in the same way
+  // This would require using the underlying DOM interface
+  // Simplified implementation - actual implementation would depend on XML framework
+end;
+
+procedure TZUGFeRDProfileAwareXmlTextWriter.SetNamespaces(_namespaces: TDictionary<string, string>);
+begin
+  if Assigned(Namespaces) then
+    Namespaces.Free;
+  Namespaces := _namespaces;
+end;
+
+function TZUGFeRDProfileAwareXmlTextWriter._CleanInvalidXmlChars(const input: string): string;
+var
+  output: TStringBuilder;
+  c: Char;
+begin
+  output := TStringBuilder.Create(Length(input));
+  try
+    for c in input do
+    begin
+      if _IsValidXmlChar(c) then
+        output.Append(c);
+    end;
+    Result := output.ToString;
+  finally
+    output.Free;
+  end;
+end;
+
+function TZUGFeRDProfileAwareXmlTextWriter._IsValidXmlString(const input: string): Boolean;
+var
+  c: Char;
+begin
+  if input = '' then
+    Exit(True); // empty strings are valid
+
+  for c in input do
+  begin
+    if not _IsValidXmlChar(c) then
+      Exit(False);
+  end;
+  Result := True;
+end;
+
+function TZUGFeRDProfileAwareXmlTextWriter._IsValidXmlChar(c: Char): Boolean;
+begin
+  Result :=
+    (c = #$09) or (c = #$0A) or (c = #$0D) or
+    ((Ord(c) >= $20) and (Ord(c) <= $D7FF)) or
+    ((Ord(c) >= $E000) and (Ord(c) <= $FFFD));
+  // Note: Characters >= $10000 would require surrogate pair handling in Delphi
 end;
 
 end.

@@ -21,7 +21,9 @@ interface
 
 uses
   System.Types, System.Classes, System.Contnrs,
-  intf.ZUGFeRDBaseReferencedDocument;
+  intf.ZUGFeRDBaseReferencedDocument,
+  intf.ZUGFeRDInvoiceTypes,
+  intf.ZUGFeRDHelper;
 
 type
   {$IF CompilerVersion >= 36.0}
@@ -33,37 +35,19 @@ type
   /// Detailed Information about Preceding Invoice
   /// </summary>
   TZUGFeRDInvoiceReferencedDocument = class(TZUGFeRDBaseReferencedDocument)
+  private
+    FTypeCode: ZUGFeRDNullable<TZUGFeRDInvoiceType>;
   public
-  end;
+    /// <summary>
+    /// BT-X-332 - Can be used in the case of a final invoice following a prepaid invoice to refer to the previous prepaid invoices.
+    /// Code list UNCL 1001 restricted as BT-3.
+    /// </summary>
+    property TypeCode: ZUGFeRDNullable<TZUGFeRDInvoiceType> read FTypeCode write FTypeCode;
+ end;
 
-  TZUGFeRDInvoiceReferencedDocumentObjectList = class(TObjectList)
-  protected
-    function GetItem(Index: TInvoiceListItemType): TZUGFeRDInvoiceReferencedDocument;
-    procedure SetItem(Index: TInvoiceListItemType; AItem: TZUGFeRDInvoiceReferencedDocument);
-  public
-	  function  Extract(Item: TObject): TZUGFeRDInvoiceReferencedDocument;
-	  function  First: TZUGFeRDInvoiceReferencedDocument;
-	  function  Last: TZUGFeRDInvoiceReferencedDocument;
-	  property  Items[Index: TInvoiceListItemType]: TZUGFeRDInvoiceReferencedDocument read GetItem write SetItem; default;
-  end;
 
 implementation
 
 { TZUGFeRDInvoiceReferencedDocumentObjectList }
-
-function TZUGFeRDInvoiceReferencedDocumentObjectList.Extract(Item: TObject): TZUGFeRDInvoiceReferencedDocument;
-begin Result := TZUGFeRDInvoiceReferencedDocument(inherited Extract(Item)); end;
-
-function TZUGFeRDInvoiceReferencedDocumentObjectList.First: TZUGFeRDInvoiceReferencedDocument;
-begin if Count = 0 then Result := nil else Result := TZUGFeRDInvoiceReferencedDocument(inherited First); end;
-
-function TZUGFeRDInvoiceReferencedDocumentObjectList.GetItem(Index: TInvoiceListItemType): TZUGFeRDInvoiceReferencedDocument;
-begin Result := TZUGFeRDInvoiceReferencedDocument(inherited Items[Index]); end;
-
-function TZUGFeRDInvoiceReferencedDocumentObjectList.Last: TZUGFeRDInvoiceReferencedDocument;
-begin if Count = 0 then Result := nil else Result := TZUGFeRDInvoiceReferencedDocument(inherited Last); end;
-
-procedure TZUGFeRDInvoiceReferencedDocumentObjectList.SetItem(Index: TInvoiceListItemType; AItem: TZUGFeRDInvoiceReferencedDocument);
-begin inherited Items[Index] := AItem; end;
 
 end.
