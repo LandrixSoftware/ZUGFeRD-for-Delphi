@@ -75,7 +75,7 @@ type
     ///
     /// Previously, PCE was also used. This has been removed.
     /// </summary>
-    [EnumStringValue('C62", "PCE')]
+    [EnumStringValue('C62')]
     C62,
 
     /// <summary>
@@ -878,7 +878,7 @@ begin
   Map(AB,      'AB');
   Map(ACT,     'ACT');
   Map(C26,     'C26');
-  Map(C62,     'C62", "PCE');
+  Map(C62,     'C62');
   Map(CEL,     'CEL');
   Map(CGM,     'CGM');
   Map(CLF,     'CLF');
