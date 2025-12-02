@@ -113,8 +113,10 @@ type
   EnumStringValueAttribute = class(TCustomAttribute)
   private
     FValue: string;
+    FValue2: string;
   public
-    constructor Create(const AValue: string);
+    constructor Create(const AValue: string); overload;
+    constructor Create(const AValue: string; const AValue2: string); overload;
   end;
 
   // efficient O(1) mapper for mapping between enums and strings
@@ -719,6 +721,13 @@ begin
   FValue := AValue;
 end;
 
+constructor EnumStringValueAttribute.Create(const AValue: string; const AValue2: string);
+begin
+  inherited Create;
+  FValue := AValue;
+  FValue2 := AValue2;
+end;
+
 { TEnumExtensions }
 
 class constructor TEnumExtensions<TEnum>.Create;
@@ -735,7 +744,11 @@ end;
 
 class procedure TEnumExtensions<TEnum>.RegisterMapping(EnumValue: TEnum; const StringValue: string);
 begin
-  FEnumToString.AddOrSetValue(EnumValue, StringValue);
+  // For Enum -> String mapping: only use the first value registered for this enum
+  if not FEnumToString.ContainsKey(EnumValue) then
+    FEnumToString.Add(EnumValue, StringValue);
+
+  // For String -> Enum mapping: allow all string values to map to the enum
   FStringToEnum.AddOrSetValue(StringValue, EnumValue);
 end;
 
