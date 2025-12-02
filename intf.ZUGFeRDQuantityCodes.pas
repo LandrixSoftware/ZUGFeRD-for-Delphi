@@ -75,7 +75,7 @@ type
     ///
     /// Previously, PCE was also used. This has been removed.
     /// </summary>
-    [EnumStringValue('C62", "PCE')]
+    [EnumStringValue('C62', 'PCE')]
     C62,
 
     /// <summary>
@@ -167,7 +167,7 @@ type
     /// square hectometre
     /// Abbreviation: ha
     /// </summary>
-    [EnumStringValue('H18", "HAR')]
+    [EnumStringValue('H18', 'HAR')]
     H18,
 
     /// <summary>
@@ -241,7 +241,7 @@ type
     /// Kilometer
     /// Abkürzung: km (Rec20r13) für XRechnung
     /// </summary>
-    [EnumStringValue('KMT", "KTM')]
+    [EnumStringValue('KMT', 'KTM')]
     KMT,
 
     /// <summary>
@@ -622,7 +622,7 @@ type
     /// <summary>
     /// Block
     /// </summary>
-    [EnumStringValue('XOK", "D64')]
+    [EnumStringValue('XOK', 'D64')]
     XOK,
 
     /// <summary>
@@ -878,7 +878,8 @@ begin
   Map(AB,      'AB');
   Map(ACT,     'ACT');
   Map(C26,     'C26');
-  Map(C62,     'C62", "PCE');
+  Map(C62,     'C62');
+  Map(C62,     'PCE');
   Map(CEL,     'CEL');
   Map(CGM,     'CGM');
   Map(CLF,     'CLF');
@@ -895,7 +896,8 @@ begin
   Map(EA,      'EA');
   Map(GV,      'GV');
   Map(H87,     'H87');
-  Map(H18,     'H18", "HAR');
+  Map(H18,     'H18');
+  Map(H18,     'HAR');
   Map(HLT,     'HLT');
   Map(HUR,     'HUR');
   Map(IE,      'IE');
@@ -908,7 +910,8 @@ begin
   Map(KVR,     'KVR');
   Map(CEN,     'CEN');
   Map(CMT,     'CMT');
-  Map(KMT,     'KMT", "KTM');
+  Map(KMT,     'KMT');
+  Map(KMT,     'KTM');
   Map(KWH,     'KWH');
   Map(KWT,     'KWT');
   Map(LS,      'LS');
@@ -971,7 +974,8 @@ begin
   Map(XDR,     'XDR');
   Map(XCR,     'XCR');
   Map(XCU,     'XCU');
-  Map(XOK,     'XOK", "D64');
+  Map(XOK,     'XOK');
+  Map(XOK,     'D64');
   Map(XPU,     'XPU');
   Map(XCH,     'XCH');
   Map(XBK,     'XBK');

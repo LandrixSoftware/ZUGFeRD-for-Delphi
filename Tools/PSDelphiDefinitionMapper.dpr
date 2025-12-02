@@ -13,7 +13,7 @@ uses
 type
   TEnumValue = record
     Name: string;
-    StringValue: string;
+    StringValues: TArray<string>;
   end;
 
   TMapGenerator = class
@@ -127,12 +127,13 @@ end;
 function TMapGenerator.ParseEnumValues(const Definition: string): TArray<TEnumValue>;
 var
   Lines: TStringList;
-  i: Integer;
+  i, j: Integer;
   Line, TrimmedLine: string;
   EnumValue: TEnumValue;
   List: TList<TEnumValue>;
-  AttributeValue: string;
+  AttributeValues: TArray<string>;
   Match: TMatch;
+  MatchCollection: TMatchCollection;
   ValueName: string;
 begin
   List := TList<TEnumValue>.Create;
@@ -140,7 +141,7 @@ begin
     Lines := TStringList.Create;
     try
       Lines.Text := Definition;
-      AttributeValue := '';
+      SetLength(AttributeValues, 0);
 
       for i := 0 to Lines.Count - 1 do
       begin
@@ -154,10 +155,11 @@ begin
         // Check for EnumStringValue attribute
         if Pos('[EnumStringValue(', TrimmedLine) > 0 then
         begin
-          // Extract value between single quotes
-          Match := TRegEx.Match(TrimmedLine, '\[EnumStringValue\(''([^'']+)''\)\]');
-          if Match.Success then
-            AttributeValue := Match.Groups[1].Value;
+          // Extract all values between single quotes (supports multiple parameters)
+          MatchCollection := TRegEx.Matches(TrimmedLine, '''([^'']+)''');
+          SetLength(AttributeValues, MatchCollection.Count);
+          for j := 0 to MatchCollection.Count - 1 do
+            AttributeValues[j] := MatchCollection[j].Groups[1].Value;
           Continue;
         end;
 
@@ -187,13 +189,16 @@ begin
           if ValueName <> '' then
           begin
             EnumValue.Name := ValueName;
-            if AttributeValue <> '' then
-              EnumValue.StringValue := AttributeValue
+            if Length(AttributeValues) > 0 then
+              EnumValue.StringValues := Copy(AttributeValues)
             else
-              EnumValue.StringValue := ValueName;
+            begin
+              SetLength(EnumValue.StringValues, 1);
+              EnumValue.StringValues[0] := ValueName;
+            end;
 
             List.Add(EnumValue);
-            AttributeValue := ''; // Reset for next value
+            SetLength(AttributeValues, 0); // Reset for next value
           end;
         end;
       end;
@@ -210,8 +215,9 @@ end;
 function TMapGenerator.GenerateMappings(const EnumValues: TArray<TEnumValue>): string;
 var
   Output: TStringBuilder;
-  i: Integer;
+  i, j: Integer;
   MaxNameLength: Integer;
+  IsFirst: Boolean;
 begin
   Output := TStringBuilder.Create;
   try
@@ -222,18 +228,25 @@ begin
         MaxNameLength := Length(EnumValues[i].Name);
 
     // Generate Map calls
+    IsFirst := True;
     for i := 0 to High(EnumValues) do
     begin
-      Output.Append('  Map(');
-      Output.Append(EnumValues[i].Name);
-      Output.Append(',');
-      Output.Append(StringOfChar(' ', MaxNameLength - Length(EnumValues[i].Name) + 1));
-      Output.Append('''');
-      Output.Append(EnumValues[i].StringValue);
-      Output.Append('''');
-      Output.Append(');');
-      if i < High(EnumValues) then
-        Output.AppendLine;
+      // Generate a Map call for each string value
+      for j := 0 to High(EnumValues[i].StringValues) do
+      begin
+        if not IsFirst then
+          Output.AppendLine;
+        IsFirst := False;
+
+        Output.Append('  Map(');
+        Output.Append(EnumValues[i].Name);
+        Output.Append(',');
+        Output.Append(StringOfChar(' ', MaxNameLength - Length(EnumValues[i].Name) + 1));
+        Output.Append('''');
+        Output.Append(EnumValues[i].StringValues[j]);
+        Output.Append('''');
+        Output.Append(');');
+      end;
     end;
 
     Result := Output.ToString;
@@ -314,7 +327,15 @@ begin
 
     // Display found values
     for i := 0 to High(EnumValues) do
-      WriteLn('  ', EnumValues[i].Name, ' -> ''', EnumValues[i].StringValue, '''');
+    begin
+      Write('  ', EnumValues[i].Name, ' -> ');
+      for var j := 0 to High(EnumValues[i].StringValues) do
+      begin
+        if j > 0 then Write(', ');
+        Write('''', EnumValues[i].StringValues[j], '''');
+      end;
+      WriteLn;
+    end;
     WriteLn;
 
     // Generate mappings

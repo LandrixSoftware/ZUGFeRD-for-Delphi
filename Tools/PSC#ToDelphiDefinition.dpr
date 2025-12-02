@@ -273,6 +273,7 @@ begin
         if Pos('[EnumStringValue(', Line) > 0 then
         begin
           Line := StringReplace(Line, '[EnumStringValue("', '[EnumStringValue(''', [rfReplaceAll]);
+          Line := StringReplace(Line, '", "', ''', ''', [rfReplaceAll]); // Handle two parameters
           Line := StringReplace(Line, '")]', ''')]', [rfReplaceAll]);
           Output.AppendLine(Line);
           Inc(i);
