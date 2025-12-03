@@ -1616,13 +1616,13 @@ begin
     end
     else
       writer.WriteElementString('ram:ID', legalOrganization.ID.ID);
-      
-    // filter according to https://github.com/stephanstapel/ZUGFeRD-csharp/pull/221
-    if (Descriptor.Profile = TZUGFeRDProfile.Extended)
-    or ((partyType = TZUGFeRDPartyTypes.SellerTradeParty) and (Descriptor.Profile <> TZUGFeRDProfile.Minimum)) 
-    or ((partyType = TZUGFeRDPartyTypes.BuyerTradeParty) and (Descriptor.Profile in [TZUGFeRDProfile.Comfort, TZUGFeRDProfile.XRechnung1, TZUGFeRDProfile.XRechnung, TZUGFeRDProfile.Extended])) then
-      writer.WriteOptionalElementString('ram:TradingBusinessName', legalOrganization.TradingBusinessName, [Descriptor.Profile]);
   end;
+
+  // filter according to https://github.com/stephanstapel/ZUGFeRD-csharp/pull/221
+  if (Descriptor.Profile = TZUGFeRDProfile.Extended)
+  or ((partyType = TZUGFeRDPartyTypes.SellerTradeParty) and (Descriptor.Profile <> TZUGFeRDProfile.Minimum))
+  or ((partyType = TZUGFeRDPartyTypes.BuyerTradeParty) and (Descriptor.Profile in [TZUGFeRDProfile.Comfort, TZUGFeRDProfile.XRechnung1, TZUGFeRDProfile.XRechnung, TZUGFeRDProfile.Extended])) then
+    writer.WriteOptionalElementString('ram:TradingBusinessName', legalOrganization.TradingBusinessName, [Descriptor.Profile]);
   writer.WriteEndElement();
 end;
 

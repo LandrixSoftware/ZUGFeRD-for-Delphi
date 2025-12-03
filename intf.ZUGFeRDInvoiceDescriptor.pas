@@ -1126,8 +1126,8 @@ begin
   FDebitorBankAccounts           := TObjectList<TZUGFeRDBankAccount>.Create;
   FPaymentMeans                  := nil;//TZUGFeRDPaymentMeans.Create;
   FSellerOrderReferencedDocument := nil;//TZUGFeRDSellerOrderReferencedDocument.Create;
-  FTransportMode.ClearValue;  // ZUGFeRDNullable Record - nicht nil zuweisen!
-  FTaxCurrency                   := TZUGFeRDCurrencyCodes.Unknown;
+  FTransportMode                 := nil;
+  FTaxCurrency                   := nil;
 end;
 
 destructor TZUGFeRDInvoiceDescriptor.Destroy;
