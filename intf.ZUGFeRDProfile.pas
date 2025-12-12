@@ -88,6 +88,8 @@ type
   TZUGFeRDProfiles = set of TZUGFeRDProfile;
 
   TZUGFeRDProfileExtensions = class
+  private
+    class function GetXMPName(profile: TZUGFeRDProfile): string; static;
   public
     class function StringToEnum(const s: string): TZUGFeRDProfile; static;
     class function EnumToString(profile: TZUGFeRDProfile; version: TZUGFeRDVersion): string; static;
@@ -226,6 +228,20 @@ begin
       end;
   else
     raise TZUGFeRDUnsupportedException.Create('New ZUGFeRDVersion defined but not implemented!');
+  end;
+end;
+
+class function TZUGFeRDProfileExtensions.GetXMPName(profile: TZUGFeRDProfile): string;
+begin
+  case profile of
+    TZUGFeRDProfile.BasicWL: Result:= 'BASIC WL';
+    TZUGFeRDProfile.Comfort,
+    TZUGFeRDProfile.XRechnung1,
+    TZUGFeRDProfile.XRechnung: Result:= 'EN 16931';
+    TZUGFeRDProfile.Basic: Result:= 'BASIC';
+    TZUGFeRDProfile.Extended: Result:= 'EXTENDED';
+    TZUGFeRDProfile.Minimum: Result:= 'MINIMUM';
+    TZUGFeRDProfile.EReporting: Result:= 'EREPORTING';
   end;
 end;
 

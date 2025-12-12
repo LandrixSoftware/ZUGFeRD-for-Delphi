@@ -32,21 +32,21 @@ type
     // automatically converted by PSC#ToDelphiDefinition
 
     /// <summary>
-    ///  Die Ware bleibt bis zur vollstÃ¤ndigen Bezahlung
+    ///  Die Ware bleibt bis zur vollständigen Bezahlung
     ///  unser Eigentum. 
     /// </summary>
     EEV,
 
     /// <summary>
-    /// Die Ware bleibt bis zur vollstÃ¤ndigen Bezahlung
+    /// Die Ware bleibt bis zur vollständigen Bezahlung
     /// aller Forderungen unser Eigentum. 
     /// </summary>
     WEV,
 
     /// <summary>
-    /// Die Ware bleibt bis zur vollstÃ¤ndigen Bezahlung
+    /// Die Ware bleibt bis zur vollständigen Bezahlung
     /// unser Eigentum. Dies gilt auch im Falle der
-    /// WeiterverÃ¤uÃŸerung oder -verarbeitung der Ware.
+    /// Weiterveräußerung oder -verarbeitung der Ware.
     /// </summary>
     VEV,
 

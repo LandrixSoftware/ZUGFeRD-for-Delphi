@@ -21,7 +21,7 @@ interface
 
 uses
   System.Classes, System.SysUtils, System.DateUtils, System.StrUtils
-  ,System.Math
+  ,System.Math, System.Generics.Collections
   ,intf.ZUGFeRDInvoiceDescriptor
   ,intf.ZUGFeRDProfileAwareXmlTextWriter
   ,intf.ZUGFeRDProfile
@@ -32,11 +32,12 @@ uses
 
 type
   TZUGFeRDIInvoiceDescriptorWriter = class abstract
+  protected
+    FNamespaces: TDictionary<string, string>;
   public
     procedure Save(descriptor: TZUGFeRDInvoiceDescriptor; stream: TStream; format: TZUGFeRDFormats = TZUGFeRDFormats.CII; options: TZUGFeRDInvoiceFormatOptions = Nil); overload; virtual; abstract;
     procedure Save(descriptor: TZUGFeRDInvoiceDescriptor; const filename: string; format: TZUGFeRDFormats = TZUGFeRDFormats.CII; options: TZUGFeRDInvoiceFormatOptions = Nil); overload;
     function Validate(descriptor: TZUGFeRDInvoiceDescriptor; throwExceptions: Boolean = True): Boolean; virtual; abstract;
-  public
     procedure WriteOptionalElementString(writer: TZUGFeRDProfileAwareXmlTextWriter; const tagName, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
     /// <summary>
     /// Write header comments to XML writer

@@ -114,6 +114,8 @@ type
                     TZUGFeRDProfile.XRechnung1,
                     TZUGFeRDProfile.XRechnung];
   public
+    constructor Create;
+    Destructor Destroy; Override;
     /// <summary>
     /// This function is implemented in class InvoiceDescriptor22Writer.
     /// </summary>
@@ -133,6 +135,24 @@ implementation
 
 { TZUGFeRDInvoiceDescriptor23CIIWriter }
 
+constructor TZUGFeRDInvoiceDescriptor23CIIWriter.Create;
+begin
+  inherited;
+  FNamespaces := TDictionary<string, string>.Create;
+  FNamespaces.Add('rsm', 'urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100');
+  FNamespaces.Add('ram', 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100');
+  FNamespaces.Add('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100');
+  FNamespaces.Add('qdt', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
+  FNamespaces.Add('a', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
+  FNamespaces.Add('xs', 'http://www.w3.org/2001/XMLSchema');
+end;
+
+destructor TZUGFeRDInvoiceDescriptor23CIIWriter.Destroy;
+begin
+  FNamespaces.Free;
+  inherited;
+end;
+
 procedure TZUGFeRDInvoiceDescriptor23CIIWriter.Save (_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream; _format : TZUGFeRDFormats = TZUGFeRDFormats.CII; options: TZUGFeRDInvoiceFormatOptions = Nil);
 var
   streamPosition : Int64;
@@ -148,14 +168,7 @@ begin
   if options<>Nil then
     automaticallyCleanInvalidXmlCharacters:= TZUGFeRDInvoiceFormatOptions(options).AutomaticallyCleanInvalidCharacters;
   Writer := TZUGFeRDProfileAwareXmlTextWriter.Create(_stream,TEncoding.UTF8,Descriptor.Profile, automaticallyCleanInvalidXmlCharacters);
-  var namespaces := TDictionary<string, string>.Create;
-  namespaces.Add('a',   'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
-  namespaces.Add('rsm', 'urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100');
-  namespaces.Add('qdt', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
-  namespaces.Add('ram', 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100');
-  namespaces.Add('xs',  'http://www.w3.org/2001/XMLSchema');
-  namespaces.Add('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100');
-  Writer.SetNamespaces(namespaces);
+  Writer.SetNamespaces(FNamespaces);
 
   Writer.Formatting := TZUGFeRDXmlFomatting.xmlFormatting_Indented;
   Writer.WriteStartDocument;

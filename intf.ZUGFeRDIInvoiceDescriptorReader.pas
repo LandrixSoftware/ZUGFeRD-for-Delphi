@@ -20,31 +20,47 @@ unit intf.ZUGFeRDIInvoiceDescriptorReader;
 interface
 
 uses
-  System.Classes, System.SysUtils, System.IOUtils, System.DateUtils
-  ,Xml.XMLDoc, Xml.xmldom, Xml.XMLIntf
-  ,Xml.Win.msxmldom, Winapi.MSXMLIntf, Winapi.msxml
-  ,intf.ZUGFeRDInvoiceDescriptor
-  ,intf.ZUGFeRDExceptions
-  ,intf.ZUGFeRDXmlHelper;
+  System.Classes, System.SysUtils, System.IOUtils, System.DateUtils,
+  System.Generics.Collections, System.Variants,
+  Xml.XMLDoc, Xml.xmldom, Xml.XMLIntf,
+  Xml.Win.msxmldom, Winapi.MSXMLIntf, Winapi.msxml,
+  intf.ZUGFeRDInvoiceDescriptor,
+  intf.ZUGFeRDExceptions,
+  intf.ZUGFeRDXmlHelper;
 
 type
   TZUGFeRDIInvoiceDescriptorReader = class abstract
+  private
+    procedure AddNamespaceIfExists(const ADomDoc: IXMLDOMDocument2; ADeclared: TDictionary<string, string>; const APrefix, AExpectedUri: string);
+  protected
+    FNamespaces: TDictionary<string, string>;
+    function CreateFixedNamespaceManager(ADoc: IXMLDocument): IXMLDOMDocument2;
+    function IsReadableByThisReaderVersion(AStream: TStream; const AValidURIs: TArray<string>): Boolean; overload;
   public
     function Load(stream: TStream): TZUGFeRDInvoiceDescriptor; overload; virtual; abstract;
-    function IsReadableByThisReaderVersion(stream: TStream): Boolean; overload; virtual; abstract;
-    function IsReadableByThisReaderVersion(xmldocument: IXMLDocument): Boolean; overload; virtual; abstract;
 
     function Load(const filename: string): TZUGFeRDInvoiceDescriptor; overload;
     function Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor; overload; virtual; abstract;
-    function IsReadableByThisReaderVersion(const filename: string): Boolean; overload;
-  protected
-    function IsReadableByThisReaderVersion(stream: TStream; const validURIs: TArray<string>): Boolean; overload;
-    function IsReadableByThisReaderVersion(xmldocument: IXMLDocument; const validURIs: TArray<string>): Boolean; overload;
-    /// Generate namespace manager from XML node
-    function GenerateNamespaceManagerFromNode(Node: IXMLNode): IXMLDocument;
+    function IsReadableByThisReaderVersion(AStream: TStream): Boolean; overload; virtual; abstract;
+    function IsReadableByThisReaderVersion(const AFilename: string): Boolean; overload;
 end;
 
 implementation
+
+function TZUGFeRDIInvoiceDescriptorReader.IsReadableByThisReaderVersion(const AFilename: string): Boolean;
+var
+  LStream: TFileStream;
+begin
+  if not FileExists(AFilename) then
+    raise EFileNotFoundException.Create('File not found: ' + AFilename);
+
+  LStream := TFileStream.Create(AFilename, fmOpenRead or fmShareDenyWrite);
+  try
+    Result := IsReadableByThisReaderVersion(LStream);
+  finally
+    LStream.Free;
+  end;
+end;
 
 function TZUGFeRDIInvoiceDescriptorReader.Load(const filename: string): TZUGFeRDInvoiceDescriptor;
 var
@@ -61,106 +77,118 @@ begin
   end;
 end;
 
-function TZUGFeRDIInvoiceDescriptorReader.IsReadableByThisReaderVersion(const filename: string): Boolean;
+function TZUGFeRDIInvoiceDescriptorReader.CreateFixedNamespaceManager(ADoc: IXMLDocument): IXMLDOMDocument2;
 var
-  fs: TFileStream;
+  LDeclared: TDictionary<string, string>;
+  LAttr: IXMLNode;
+  I: Integer;
+  LPair: TPair<string, string>;
+  LDomDoc: IXMLDOMDocument2;
 begin
-  if not FileExists(filename) then
-    raise TZUGFeRDFileNotFoundException.Create(filename);
+  Result := nil;
 
-  fs := TFileStream.Create(filename, fmOpenRead or fmShareDenyWrite);
+  // MSXML Document Interface holen
+  if not Supports(ADoc.DOMDocument, IXMLDOMDocument2, LDomDoc) then
+    Exit;
+
+  Result := LDomDoc;
+
+  LDeclared := TDictionary<string, string>.Create;
   try
-    Result := IsReadableByThisReaderVersion(fs);
-  finally
-    fs.Free;
-  end;
-end;
-
-function TZUGFeRDIInvoiceDescriptorReader.IsReadableByThisReaderVersion(stream: TStream;
-  const validURIs: TArray<string>): Boolean;
-var
-  oldStreamPosition: Int64;
-  reader: TStreamReader;
-  data: string;
-  validURI: string;
-begin
-  Result := false;
-
-  oldStreamPosition := stream.Position;
-  stream.Position := 0;
-  reader := TStreamReader.Create(stream, TEncoding.UTF8, True, 1024);
-  try
-    data := reader.ReadToEnd.Replace(' ', '').ToLower;
-    for validURI in validURIs do
+    // Alle deklarierten Namespaces aus dem Dokument einlesen
+    if Assigned(ADoc.DocumentElement) then
     begin
-      if data.Contains(Format('>%s<', [validURI.ToLower])) then
+      for I := 0 to ADoc.DocumentElement.AttributeNodes.Count - 1 do
       begin
-        stream.Position := oldStreamPosition;
-        Result := true;
-        exit;
+        LAttr := ADoc.DocumentElement.AttributeNodes[I];
+
+        if LAttr.Prefix = 'xmlns' then
+          LDeclared.AddOrSetValue(LAttr.LocalName, LAttr.NodeValue)
+        else if LAttr.NodeName = 'xmlns' then
+          LDeclared.AddOrSetValue('', LAttr.NodeValue);
       end;
     end;
+
+    // Factur-X / ZUGFeRD relevante Namespaces hinzufügen
+    for LPair in FNamespaces do
+      AddNamespaceIfExists(LDomDoc, LDeclared, LPair.Key, LPair.Value);
   finally
-    reader.Free;
+    LDeclared.Free;
   end;
-
-  stream.Position := oldStreamPosition;
 end;
 
-function TZUGFeRDIInvoiceDescriptorReader.IsReadableByThisReaderVersion(
-  xmldocument: IXMLDocument; const validURIs: TArray<string>): Boolean;
+procedure TZUGFeRDIInvoiceDescriptorReader.AddNamespaceIfExists(
+  const ADomDoc: IXMLDOMDocument2; ADeclared: TDictionary<string, string>;
+  const APrefix, AExpectedUri: string);
 var
-  toValidate,validURI: string;
-  node,node2 : IXMLNode;
+  LExists: Boolean;
+  LValue: string;
+  LCurrentNS: string;
 begin
-  Result := false;
-
-  if xmldocument = nil then
-    exit;
-
-  toValidate := '';
-
-  if (SameText(xmldocument.DocumentElement.NodeName,'Invoice') or
-      SameText(xmldocument.DocumentElement.NodeName,'ubl:Invoice')) then
+  // Prüfen, ob dieser Namespace im Dokument vorkommt
+  LExists := False;
+  for LValue in ADeclared.Values do
   begin
-    if not TZUGFeRDXmlHelper.FindChild(xmldocument.DocumentElement,'cbc:CustomizationID',node) then
-      exit;
-
-    toValidate := node.Text;
-  end else
-  if (SameText(xmldocument.DocumentElement.NodeName,'CrossIndustryInvoice') or
-      SameText(xmldocument.DocumentElement.NodeName,'rsm:CrossIndustryInvoice') or
-      SameText(xmldocument.DocumentElement.NodeName,'CrossIndustryDocument') or
-      SameText(xmldocument.DocumentElement.NodeName,'rsm:CrossIndustryDocument')) then
-  begin
-    if not (TZUGFeRDXmlHelper.FindChild(xmldocument.DocumentElement,'rsm:ExchangedDocumentContext',node) or
-            TZUGFeRDXmlHelper.FindChild(xmldocument.DocumentElement,'ExchangedDocumentContext',node) or
-            TZUGFeRDXmlHelper.FindChild(xmldocument.DocumentElement,'rsm:SpecifiedExchangedDocumentContext',node) or
-            TZUGFeRDXmlHelper.FindChild(xmldocument.DocumentElement,'SpecifiedExchangedDocumentContext',node)) then
-      exit;
-    if not TZUGFeRDXmlHelper.FindChild(node,'ram:GuidelineSpecifiedDocumentContextParameter',node2) then
-      exit;
-    if not TZUGFeRDXmlHelper.FindChild(node2,'ram:ID',node) then
-      exit;
-
-    toValidate := node.Text;
+    if SameText(LValue, AExpectedUri) then
+    begin
+      LExists := True;
+      Break;
+    end;
   end;
 
-  if toValidate <> '' then
-  for validURI in validURIs do
-  if SameText(toValidate,validURI) then
+  if LExists and Assigned(ADomDoc) then
   begin
-    Result := true;
-    break;
+    // Bei MSXML wird SelectionNamespaces als String-Property gesetzt
+    // Format: "xmlns:prefix='uri' xmlns:prefix2='uri2'"
+    try
+      LCurrentNS := VarToStr(ADomDoc.getProperty('SelectionNamespaces'));
+    except
+      LCurrentNS := '';
+    end;
+
+    if LCurrentNS <> '' then
+      LCurrentNS := LCurrentNS + ' ';
+
+    if APrefix = '' then
+      LCurrentNS := LCurrentNS + Format('xmlns=''%s''', [AExpectedUri])
+    else
+      LCurrentNS := LCurrentNS + Format('xmlns:%s=''%s''', [APrefix, AExpectedUri]);
+
+    ADomDoc.setProperty('SelectionNamespaces', LCurrentNS);
   end;
 end;
 
-function TZUGFeRDIInvoiceDescriptorReader.GenerateNamespaceManagerFromNode(Node: IXMLNode): IXMLDocument;
+function TZUGFeRDIInvoiceDescriptorReader.IsReadableByThisReaderVersion(AStream: TStream; const AValidURIs: TArray<string>): Boolean;
+var
+  LOldPosition: Int64;
+  LReader: TStreamReader;
+  LData: string;
+  LValidURI: string;
+  LSearchStr: string;
 begin
-  // In Delphi, namespace handling is typically done through IXMLDocument
-  // This is a simplified implementation - actual namespace management
-  // would depend on the specific XML framework being used
-  Result := Node.OwnerDocument;
+  Result := False;
+  LOldPosition := AStream.Position;
+  try
+    AStream.Position := 0;
+    LReader := TStreamReader.Create(AStream, TEncoding.UTF8, True, 1024);
+    try
+      LData := LReader.ReadToEnd.Replace(' ', '');
+
+      for LValidURI in AValidURIs do
+      begin
+        LSearchStr := '>' + LValidURI + '<';
+        if Pos(LSearchStr.ToLower, LData.ToLower) > 0 then
+        begin
+          Result := True;
+          Break;
+        end;
+      end;
+    finally
+      LReader.Free;
+    end;
+  finally
+    AStream.Position := LOldPosition;
+  end;
 end;
 
 end.

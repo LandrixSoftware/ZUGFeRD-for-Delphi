@@ -74,8 +74,8 @@ begin
     end
     else
     begin
-      // No BOM - assume ANSI
-      Result := TEncoding.Default.GetString(Bytes);
+      // No BOM - read as UTF-8
+      Result := TEncoding.UTF8.GetString(Bytes);
     end;
   finally
     FileStream.Free;

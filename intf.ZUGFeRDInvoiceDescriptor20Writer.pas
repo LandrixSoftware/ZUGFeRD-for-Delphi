@@ -98,6 +98,8 @@ type
                     TZUGFeRDProfile.XRechnung1,
                     TZUGFeRDProfile.XRechnung];
   public
+    constructor Create;
+    Destructor Destroy; Override;
     function Validate(_descriptor: TZUGFeRDInvoiceDescriptor; _throwExceptions: Boolean = True): Boolean; override;
     /// <summary>
     /// Saves the given invoice to the given stream.
@@ -113,6 +115,24 @@ type
 implementation
 
 { TZUGFeRDInvoiceDescriptor20Writer }
+
+constructor TZUGFeRDInvoiceDescriptor20Writer.Create;
+begin
+  inherited;
+  FNamespaces := TDictionary<string, string>.Create;
+  FNamespaces.Add('a', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
+  FNamespaces.Add('rsm', 'urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100');
+  FNamespaces.Add('qdt', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
+  FNamespaces.Add('ram', 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100');
+  FNamespaces.Add('xs', 'http://www.w3.org/2001/XMLSchema');
+  FNamespaces.Add('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100');
+end;
+
+destructor TZUGFeRDInvoiceDescriptor20Writer.Destroy;
+begin
+  FNamespaces.Free;
+  inherited;
+end;
 
 procedure TZUGFeRDInvoiceDescriptor20Writer.Save  (_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream; _format : TZUGFeRDFormats = TZUGFeRDFormats.CII; options: TZUGFeRDInvoiceFormatOptions = Nil);
 var
@@ -132,14 +152,7 @@ begin
   if options<>Nil then
     automaticallyCleanInvalidXmlCharacters:= TZUGFeRDInvoiceFormatOptions(options).AutomaticallyCleanInvalidCharacters;
   Writer := TZUGFeRDProfileAwareXmlTextWriter.Create(_stream,TEncoding.UTF8,Descriptor.Profile, automaticallyCleanInvalidXmlCharacters);
-  var namespaces := TDictionary<string, string>.Create;
-  namespaces.Add('a',   'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
-  namespaces.Add('rsm', 'urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100');
-  namespaces.Add('qdt', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
-  namespaces.Add('ram', 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100');
-  namespaces.Add('xs',  'http://www.w3.org/2001/XMLSchema');
-  namespaces.Add('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100');
-  Writer.SetNamespaces(namespaces);
+  Writer.SetNamespaces(FNamespaces);
 
   Writer.WriteStartDocument;
   WriteHeaderComments(Writer, options);
@@ -326,7 +339,7 @@ begin
       Writer.WriteEndElement(); // !ram:AdditionalReferencedDocument
     end; // !foreach(document)
 
-    var needToWriteGrossUnitPrice: boolean := false;
+    var needToWriteGrossUnitPrice: boolean;
     var hasGrossUnitPrice: boolean := tradeLineItem.GrossUnitPrice.HasValue;
     var hasAllowanceCharges: boolean := tradeLineItem.TradeAllowanceCharges.Count > 0;
 

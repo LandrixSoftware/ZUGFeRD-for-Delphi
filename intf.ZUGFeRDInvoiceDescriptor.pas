@@ -566,6 +566,8 @@ type
     /// <returns></returns>
     class function Load(stream: TStream): TZUGFeRDInvoiceDescriptor; overload;
 
+    class function Load(xmldocument: IXMLDocument): TZUGFeRDInvoiceDescriptor; overload;
+
     /// <summary>
     /// Loads a ZUGFeRD invoice from a file.
     ///
@@ -575,7 +577,7 @@ type
     /// <returns></returns>
     class function Load(filename: String): TZUGFeRDInvoiceDescriptor; overload;
 
-    class function Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor; overload;
+ (*   class function Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor; overload; *)
 
     /// <summary>
     /// Initializes a new invoice object and returns it.
@@ -1363,6 +1365,24 @@ begin
   raise TZUGFeRDUnsupportedException.Create('No ZUGFeRD invoice reader was able to parse this stream!');
 end;
 
+class function TZUGFeRDInvoiceDescriptor.Load(xmldocument: IXMLDocument): TZUGFeRDInvoiceDescriptor;
+var
+  LStream: TMemoryStream;
+begin
+  if xmldocument = nil then
+    raise TZUGFeRDIllegalStreamException.Create('XML document is nil');
+
+  LStream := TMemoryStream.Create;
+  try
+    xmldocument.Encoding := 'UTF-8';
+    xmldocument.SaveToStream(LStream);
+    LStream.Position := 0;
+    Result := Load(LStream);
+  finally
+    LStream.Free;
+  end;
+end;
+
 class function TZUGFeRDInvoiceDescriptor.Load(filename: string): TZUGFeRDInvoiceDescriptor;
 var
   reader: TZUGFeRDIInvoiceDescriptorReader;
@@ -1412,57 +1432,6 @@ begin
   end;
 
   raise TZUGFeRDUnsupportedException.CreateFmt('No ZUGFeRD invoice reader was able to parse this file ''%s''!', [filename]);
-end;
-
-class function TZUGFeRDInvoiceDescriptor.Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor;
-var
-  reader: TZUGFeRDIInvoiceDescriptorReader;
-begin
-  reader := TZUGFeRDInvoiceDescriptor1Reader.Create;
-  try
-    if reader.IsReadableByThisReaderVersion(xmldocument) then
-    begin
-      Result := reader.Load(xmldocument);
-      exit;
-    end;
-  finally
-    reader.Free;
-  end;
-
-  reader := TZUGFeRDInvoiceDescriptor22UBLReader.Create;
-  try
-    if reader.IsReadableByThisReaderVersion(xmldocument) then
-    begin
-      Result := reader.Load(xmldocument);
-      exit;
-    end;
-  finally
-    reader.Free;
-  end;
-
-  reader := TZUGFeRDInvoiceDescriptor23CIIReader.Create;
-  try
-    if reader.IsReadableByThisReaderVersion(xmldocument) then
-    begin
-      Result := reader.Load(xmldocument);
-      exit;
-    end;
-  finally
-    reader.Free;
-  end;
-
-  reader := TZUGFeRDInvoiceDescriptor20Reader.Create;
-  try
-    if reader.IsReadableByThisReaderVersion(xmldocument) then
-    begin
-      Result := reader.Load(xmldocument);
-      exit;
-    end;
-  finally
-    reader.Free;
-  end;
-
-  raise TZUGFeRDUnsupportedException.Create('No ZUGFeRD invoice reader was able to parse this xml document');
 end;
 
 class function TZUGFeRDInvoiceDescriptor.CreateInvoice(const invoiceNo: string; invoiceDate: TDateTime;
