@@ -20,8 +20,8 @@ unit intf.ZUGFeRDInvoiceDescriptor20Reader;
 interface
 
 uses
-  System.SysUtils, System.Classes, System.DateUtils
-  ,System.NetEncoding
+  System.SysUtils, System.Classes, System.DateUtils, System.Generics.Collections,
+  System.NetEncoding
   ,Xml.XMLDoc, Xml.xmldom, Xml.XMLIntf
   ,Xml.Win.msxmldom, Winapi.MSXMLIntf, Winapi.msxml
   ,intf.ZUGFeRDHelper
@@ -77,8 +77,10 @@ type
     function _nodeAsParty(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDParty;
     function _getAdditionalReferencedDocument(a_oXmlNode : IXmlDomNode {nsmgr: XmlNamespaceManager := nil; }) : TZUGFeRDAdditionalReferencedDocument;
   public
+    constructor Create;
+    destructor Destroy; override;
     function IsReadableByThisReaderVersion(stream: TStream): Boolean; override;
-    function IsReadableByThisReaderVersion(xmldocument: IXMLDocument): Boolean; override;
+
     /// <summary>
     /// Parses the ZUGFeRD invoice from the given stream.
     ///
@@ -96,6 +98,25 @@ implementation
 
 { TZUGFeRDInvoiceDescriptor20Reader }
 
+constructor TZUGFeRDInvoiceDescriptor20Reader.Create;
+begin
+  inherited;
+  FNamespaces := TDictionary<string, string>.Create;
+  FNamespaces.Add('a', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
+  FNamespaces.Add('rsm', 'urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100');
+  FNamespaces.Add('qdt', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
+  FNamespaces.Add('ram', 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100');
+  FNamespaces.Add('xs', 'http://www.w3.org/2001/XMLSchema');
+  FNamespaces.Add('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100');
+  FNamespaces.Add('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:15');
+end;
+
+destructor TZUGFeRDInvoiceDescriptor20Reader.Destroy;
+begin
+  FNamespaces.Free;
+  inherited;
+end;
+
 function TZUGFeRDInvoiceDescriptor20Reader.GetValidURIs : TArray<string>;
 begin
   Result := TArray<string>.Create(
@@ -111,12 +132,6 @@ function TZUGFeRDInvoiceDescriptor20Reader.IsReadableByThisReaderVersion(
   stream: TStream): Boolean;
 begin
   Result := IsReadableByThisReaderVersion(stream, GetValidURIs);
-end;
-
-function TZUGFeRDInvoiceDescriptor20Reader.IsReadableByThisReaderVersion(
-  xmldocument: IXMLDocument): Boolean;
-begin
-  Result := IsReadableByThisReaderVersion(xmldocument, GetValidURIs);
 end;
 
 function TZUGFeRDInvoiceDescriptor20Reader.Load(stream: TStream): TZUGFeRDInvoiceDescriptor;
@@ -144,8 +159,9 @@ var
   i : Integer;
 begin
   doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(xmldocument);
-
-  //XmlNamespaceManager nsmgr = _GenerateNamespaceManagerFromNode(doc.DocumentElement);
+  // XmlNamespaceManager nsmgr = _CreateFixedNamespaceManager(doc);
+  // if not(nsmgr.HasNamespace('rsm')) then
+  //   nsmgr.AddNamespace('rsm', nsmgr.DefaultNamespace);
 
   Result := TZUGFeRDInvoiceDescriptor.Create;
 

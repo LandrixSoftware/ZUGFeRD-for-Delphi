@@ -76,7 +76,6 @@ type
   {$HINTS ON}
   public
     function IsReadableByThisReaderVersion(stream: TStream): Boolean; override;
-    function IsReadableByThisReaderVersion(xmldocument: IXMLDocument): Boolean; override;
 
     /// <summary>
     /// Parses the ZUGFeRD invoice from the given stream.
@@ -104,16 +103,9 @@ begin
   );
 end;
 
-function TZUGFeRDInvoiceDescriptor22UBLReader.IsReadableByThisReaderVersion(
-  stream: TStream): Boolean;
+function TZUGFeRDInvoiceDescriptor22UBLReader.IsReadableByThisReaderVersion(stream: TStream): Boolean;
 begin
   Result := IsReadableByThisReaderVersion(stream, GetValidURIs);
-end;
-
-function TZUGFeRDInvoiceDescriptor22UBLReader.IsReadableByThisReaderVersion(
-  xmldocument : IXMLDocument): Boolean;
-begin
-  Result := IsReadableByThisReaderVersion(xmldocument, GetValidURIs);
 end;
 
 function TZUGFeRDInvoiceDescriptor22UBLReader.Load(stream: TStream): TZUGFeRDInvoiceDescriptor;

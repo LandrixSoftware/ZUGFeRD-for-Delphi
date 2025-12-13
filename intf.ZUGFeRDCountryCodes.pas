@@ -143,7 +143,7 @@ type
     AW,
 
     /// <summary>
-    /// Ã…land Islands
+    /// Åland Islands
     /// </summary>
     [EnumStringValue('AX')]
     AX,
@@ -209,7 +209,7 @@ type
     BJ,
 
     /// <summary>
-    /// Saint BarthÃ©lemy
+    /// Saint Barthélemy
     /// </summary>
     [EnumStringValue('BL')]
     BL,
@@ -317,7 +317,7 @@ type
     CH,
 
     /// <summary>
-    /// CÃ´te d'Ivoire
+    /// Côte d'Ivoire
     /// </summary>
     [EnumStringValue('CI')]
     CI,
@@ -371,7 +371,7 @@ type
     CV,
 
     /// <summary>
-    /// CuraÃ§ao
+    /// Curaçao
     /// </summary>
     [EnumStringValue('CW')]
     CW,
@@ -1181,7 +1181,7 @@ type
     QA,
 
     /// <summary>
-    /// RÃ©union
+    /// Réunion
     /// </summary>
     [EnumStringValue('RE')]
     RE,

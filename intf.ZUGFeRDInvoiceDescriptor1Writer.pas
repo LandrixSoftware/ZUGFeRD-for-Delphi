@@ -90,6 +90,8 @@ type
                     TZUGFeRDProfile.XRechnung1,
                     TZUGFeRDProfile.XRechnung];
   public
+    constructor Create;
+    Destructor Destroy; Override;
     function Validate(_descriptor: TZUGFeRDInvoiceDescriptor; _throwExceptions: Boolean = True): Boolean; override;
     /// <summary>
     /// Saves the given invoice to the given stream.
@@ -104,6 +106,22 @@ type
 implementation
 
 { TZUGFeRDInvoiceDescriptor1Writer }
+
+constructor TZUGFeRDInvoiceDescriptor1Writer.Create;
+begin
+  inherited;
+  FNamespaces := TDictionary<string, string>.Create;
+  FNamespaces.Add('xsi', 'http://www.w3.org/2001/XMLSchema-instance');
+  FNamespaces.Add('rsm', 'urn:ferd:CrossIndustryDocument:invoice:1p0');
+  FNamespaces.Add('ram', 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:12');
+  FNamespaces.Add('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:15');
+end;
+
+destructor TZUGFeRDInvoiceDescriptor1Writer.Destroy;
+begin
+  FNamespaces.Free;
+  inherited;
+end;
 
 procedure TZUGFeRDInvoiceDescriptor1Writer.Save(_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream; _format : TZUGFeRDFormats = TZUGFeRDFormats.CII; options: TZUGFeRDInvoiceFormatOptions = Nil);
 var
@@ -128,12 +146,7 @@ begin
     automaticallyCleanInvalidXmlCharacters:= TZUGFeRDInvoiceFormatOptions(options).AutomaticallyCleanInvalidCharacters;
   Writer := TZUGFeRDProfileAwareXmlTextWriter.Create(_stream,TEncoding.UTF8,Descriptor.Profile, automaticallyCleanInvalidXmlCharacters);
   Writer.Formatting := TZUGFeRDXmlFomatting.xmlFormatting_Indented;
-  var namespaces := TDictionary<string, string>.Create;
-  namespaces.Add('xsi', 'http://www.w3.org/2001/XMLSchema-instance');
-  namespaces.Add('rsm', 'urn:ferd:CrossIndustryDocument:invoice:1p0');
-  namespaces.Add('ram', 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:12');
-  namespaces.Add('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:15');
-  Writer.SetNamespaces(namespaces);
+  Writer.SetNamespaces(FNamespaces);
 
   Writer.WriteStartDocument;
   WriteHeaderComments(Writer, options);

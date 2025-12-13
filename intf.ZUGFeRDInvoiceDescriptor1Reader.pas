@@ -20,8 +20,8 @@ unit intf.ZUGFeRDInvoiceDescriptor1Reader;
 interface
 
 uses
-  System.SysUtils, System.Classes, System.DateUtils
-  ,Xml.XMLDoc, Xml.XMLIntf
+  System.SysUtils, System.Classes, System.DateUtils, System.Generics.Collections,
+  Xml.XMLDoc, Xml.XMLIntf
   ,Xml.Win.msxmldom, Winapi.MSXMLIntf, Winapi.msxml
   ,intf.ZUGFeRDHelper
   ,intf.ZUGFeRDXmlHelper
@@ -63,8 +63,10 @@ type
     function _parseTradeLineItem(tradeLineItem : IXmlDomNode) : TZUGFeRDTradeLineItem;
     function _nodeAsParty(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDParty;
   public
+    constructor Create;
+    Destructor Destroy; Override;
     function IsReadableByThisReaderVersion(stream: TStream): Boolean; override;
-    function IsReadableByThisReaderVersion(xmldocument: IXMLDocument): Boolean; override;
+
     /// <summary>
     /// Parses the ZUGFeRD invoice from the given stream.
     ///
@@ -82,6 +84,22 @@ implementation
 
 { TZUGFeRDInvoiceDescriptor1Reader }
 
+constructor TZUGFeRDInvoiceDescriptor1Reader.Create;
+begin
+  inherited;
+  FNamespaces := TDictionary<string, string>.Create;
+  FNamespaces.Add('xsi', 'http://www.w3.org/2001/XMLSchema-instance');
+  FNamespaces.Add('rsm', 'urn:ferd:CrossIndustryDocument:invoice:1p0');
+  FNamespaces.Add('ram', 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:12');
+  FNamespaces.Add('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:15');
+end;
+
+destructor TZUGFeRDInvoiceDescriptor1Reader.Destroy;
+begin
+  FNamespaces.Free;
+  inherited;
+end;
+
 function TZUGFeRDInvoiceDescriptor1Reader.GetValidURIs : TArray<string>;
 begin
   Result :=  TArray<string>.Create(
@@ -98,12 +116,6 @@ function TZUGFeRDInvoiceDescriptor1Reader.IsReadableByThisReaderVersion(
   stream: TStream): Boolean;
 begin
   Result := IsReadableByThisReaderVersion(stream, GetValidURIs);
-end;
-
-function TZUGFeRDInvoiceDescriptor1Reader.IsReadableByThisReaderVersion(
-  xmldocument: IXMLDocument): Boolean;
-begin
-  Result := IsReadableByThisReaderVersion(xmldocument, GetValidURIs);
 end;
 
 function TZUGFeRDInvoiceDescriptor1Reader.Load(Stream: TStream): TZUGFeRDInvoiceDescriptor;
@@ -130,7 +142,9 @@ var
   i : Integer;
 begin
   doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(xmldocument, true);  // defaults for ZUGFeRD1
-  //XmlNamespaceManager nsmgr = _GenerateNamespaceManagerFromNode(doc.DocumentElement);
+  // XmlNamespaceManager nsmgr = _CreateFixedNamespaceManager(doc);
+  // if not(nsmgr.HasNamespace('rsm')) then
+  //   nsmgr.AddNamespace('rsm', nsmgr.DefaultNamespace);
 
   Result := TZUGFeRDInvoiceDescriptor.Create;
 

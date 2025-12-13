@@ -67,63 +67,63 @@ type
 
     /// <summary>
     /// CIP
-    /// Transport und Versicherung bezahlt nach (benannten Bestimmungsort einfÃ¼gen)
+    /// Transport und Versicherung bezahlt nach (benannten Bestimmungsort einfügen)
     /// </summary>
     [EnumStringValue('CIP')]
     CIP,
 
     /// <summary>
     /// CPT
-    /// Frachtfrei nach (benannten Bestimmungsort einfÃ¼gen)
+    /// Frachtfrei nach (benannten Bestimmungsort einfügen)
     /// </summary>
     [EnumStringValue('CPT')]
     CPT,
 
     /// <summary>
     /// DAP
-    /// Geliefert am Ort (benannten Bestimmungsort einfÃ¼gen)
+    /// Geliefert am Ort (benannten Bestimmungsort einfügen)
     /// </summary>
     [EnumStringValue('DAP')]
     DAP,
 
     /// <summary>
     /// DDP
-    /// Geliefert verzollt (benannten Bestimmungsort einfÃ¼gen)
+    /// Geliefert verzollt (benannten Bestimmungsort einfügen)
     /// </summary>
     [EnumStringValue('DDP')]
     DDP,
 
     /// <summary>
     /// DPU
-    /// Geliefert am Ort der Entladung (benannten Ort der Entladung einfÃ¼gen)
+    /// Geliefert am Ort der Entladung (benannten Ort der Entladung einfügen)
     /// </summary>
     [EnumStringValue('DPU')]
     DPU,
 
     /// <summary>
     /// EXW
-    /// Ab Werk (benannten Ort der Lieferung einfÃ¼gen)
+    /// Ab Werk (benannten Ort der Lieferung einfügen)
     /// </summary>
     [EnumStringValue('EXW')]
     EXW,
 
     /// <summary>
     /// FAS
-    /// Frei LÃ¤ngsseite Schiff (benannten Verschiffungshafen einfÃ¼gen)
+    /// Frei Längsseite Schiff (benannten Verschiffungshafen einfügen)
     /// </summary>
     [EnumStringValue('FAS')]
     FAS,
 
     /// <summary>
     /// FCA
-    /// Frei FrachtfÃ¼hrer (benannten Ort der Zustellung einfÃ¼gen)
+    /// Frei Frachtführer (benannten Ort der Zustellung einfügen)
     /// </summary>
     [EnumStringValue('FCA')]
     FCA,
 
     /// <summary>
     /// FOB
-    /// Frei an Bord (benannten Verschiffungshafen einfÃ¼gen)
+    /// Frei an Bord (benannten Verschiffungshafen einfügen)
     /// </summary>
     [EnumStringValue('FOB')]
     FOB,
