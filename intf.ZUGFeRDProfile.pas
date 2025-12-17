@@ -88,7 +88,7 @@ type
   TZUGFeRDProfiles = set of TZUGFeRDProfile;
 
   TZUGFeRDProfileExtensions = class
-  private
+  protected
     class function GetXMPName(profile: TZUGFeRDProfile): string; static;
   public
     class function StringToEnum(const s: string): TZUGFeRDProfile; static;
