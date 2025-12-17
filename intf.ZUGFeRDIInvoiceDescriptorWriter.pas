@@ -32,8 +32,6 @@ uses
 
 type
   TZUGFeRDIInvoiceDescriptorWriter = class abstract
-  protected
-    FNamespaces: TDictionary<string, string>;
   public
     procedure Save(descriptor: TZUGFeRDInvoiceDescriptor; stream: TStream; format: TZUGFeRDFormats = TZUGFeRDFormats.CII; options: TZUGFeRDInvoiceFormatOptions = Nil); overload; virtual; abstract;
     procedure Save(descriptor: TZUGFeRDInvoiceDescriptor; const filename: string; format: TZUGFeRDFormats = TZUGFeRDFormats.CII; options: TZUGFeRDInvoiceFormatOptions = Nil); overload;

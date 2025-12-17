@@ -83,6 +83,7 @@ type
     procedure _writeOptionalTaxes(_writer : TZUGFeRDProfileAwareXmlTextWriter; options: TZUGFeRDInvoiceFormatOptions);
     procedure _writeNotes(_writer : TZUGFeRDProfileAwareXmlTextWriter;notes : TObjectList<TZUGFeRDNote>);
     procedure _writeElementWithAttribute(_writer: TZUGFeRDProfileAwareXmlTextWriter; tagName, attributeName,attributeValue, nodeValue: String);
+    function GetNameSpaces: TDictionary<string, string>;
   private const
     ALL_PROFILES = [TZUGFeRDProfile.Minimum,
                     TZUGFeRDProfile.BasicWL,
@@ -98,8 +99,6 @@ type
                     TZUGFeRDProfile.XRechnung1,
                     TZUGFeRDProfile.XRechnung];
   public
-    constructor Create;
-    Destructor Destroy; Override;
     function Validate(_descriptor: TZUGFeRDInvoiceDescriptor; _throwExceptions: Boolean = True): Boolean; override;
     /// <summary>
     /// Saves the given invoice to the given stream.
@@ -116,22 +115,15 @@ implementation
 
 { TZUGFeRDInvoiceDescriptor20Writer }
 
-constructor TZUGFeRDInvoiceDescriptor20Writer.Create;
+function TZUGFeRDInvoiceDescriptor20Writer.GetNameSpaces: TDictionary<string, string>;
 begin
-  inherited;
-  FNamespaces := TDictionary<string, string>.Create;
-  FNamespaces.Add('a', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
-  FNamespaces.Add('rsm', 'urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100');
-  FNamespaces.Add('qdt', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
-  FNamespaces.Add('ram', 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100');
-  FNamespaces.Add('xs', 'http://www.w3.org/2001/XMLSchema');
-  FNamespaces.Add('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100');
-end;
-
-destructor TZUGFeRDInvoiceDescriptor20Writer.Destroy;
-begin
-  FNamespaces.Free;
-  inherited;
+  Result := TDictionary<string, string>.Create;
+  Result.Add('a', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
+  Result.Add('rsm', 'urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100');
+  Result.Add('qdt', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
+  Result.Add('ram', 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100');
+  Result.Add('xs', 'http://www.w3.org/2001/XMLSchema');
+  Result.Add('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100');
 end;
 
 procedure TZUGFeRDInvoiceDescriptor20Writer.Save  (_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream; _format : TZUGFeRDFormats = TZUGFeRDFormats.CII; options: TZUGFeRDInvoiceFormatOptions = Nil);
@@ -152,7 +144,7 @@ begin
   if options<>Nil then
     automaticallyCleanInvalidXmlCharacters:= TZUGFeRDInvoiceFormatOptions(options).AutomaticallyCleanInvalidCharacters;
   Writer := TZUGFeRDProfileAwareXmlTextWriter.Create(_stream,TEncoding.UTF8,Descriptor.Profile, automaticallyCleanInvalidXmlCharacters);
-  Writer.SetNamespaces(FNamespaces);
+  Writer.SetNamespaces(GetNameSpaces); // Writer takes ownership of NameSpaces
 
   Writer.WriteStartDocument;
   WriteHeaderComments(Writer, options);

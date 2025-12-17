@@ -99,6 +99,7 @@ type
     procedure _WriteItemLevelAppliedTradeAllowanceCharge(_writer: TZUGFeRDProfileAwareXmlTextWriter; tradeAllowanceCharge: TZUGFeRDAbstractTradeAllowanceCharge);
     procedure _WriteItemLevelSpecifiedTradeAllowanceCharge(_writer: TZUGFeRDProfileAwareXmlTextWriter; specifiedTradeAllowanceCharge: TZUGFeRDAbstractTradeAllowanceCharge);
     function _translateTaxCategoryCode(taxCategoryCode : TZUGFeRDTaxCategoryCodes) : String;
+    function GetNameSpaces: TDictionary<string, string>;
   private const
     ALL_PROFILES = [TZUGFeRDProfile.Minimum,
                     TZUGFeRDProfile.BasicWL,
@@ -114,8 +115,6 @@ type
                     TZUGFeRDProfile.XRechnung1,
                     TZUGFeRDProfile.XRechnung];
   public
-    constructor Create;
-    Destructor Destroy; Override;
     /// <summary>
     /// This function is implemented in class InvoiceDescriptor22Writer.
     /// </summary>
@@ -135,22 +134,15 @@ implementation
 
 { TZUGFeRDInvoiceDescriptor23CIIWriter }
 
-constructor TZUGFeRDInvoiceDescriptor23CIIWriter.Create;
+function TZUGFeRDInvoiceDescriptor23CIIWriter.GetNameSpaces: TDictionary<string, string>;
 begin
-  inherited;
-  FNamespaces := TDictionary<string, string>.Create;
-  FNamespaces.Add('rsm', 'urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100');
-  FNamespaces.Add('ram', 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100');
-  FNamespaces.Add('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100');
-  FNamespaces.Add('qdt', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
-  FNamespaces.Add('a', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
-  FNamespaces.Add('xs', 'http://www.w3.org/2001/XMLSchema');
-end;
-
-destructor TZUGFeRDInvoiceDescriptor23CIIWriter.Destroy;
-begin
-  FNamespaces.Free;
-  inherited;
+  Result := TDictionary<string, string>.Create;
+  Result.Add('rsm', 'urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100');
+  Result.Add('ram', 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100');
+  Result.Add('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100');
+  Result.Add('qdt', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
+  Result.Add('a', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
+  Result.Add('xs', 'http://www.w3.org/2001/XMLSchema');
 end;
 
 procedure TZUGFeRDInvoiceDescriptor23CIIWriter.Save (_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream; _format : TZUGFeRDFormats = TZUGFeRDFormats.CII; options: TZUGFeRDInvoiceFormatOptions = Nil);
@@ -168,7 +160,7 @@ begin
   if options<>Nil then
     automaticallyCleanInvalidXmlCharacters:= TZUGFeRDInvoiceFormatOptions(options).AutomaticallyCleanInvalidCharacters;
   Writer := TZUGFeRDProfileAwareXmlTextWriter.Create(_stream,TEncoding.UTF8,Descriptor.Profile, automaticallyCleanInvalidXmlCharacters);
-  Writer.SetNamespaces(FNamespaces);
+  Writer.SetNamespaces(GetNameSpaces); // Writer takes ownership of NameSpaces
 
   Writer.Formatting := TZUGFeRDXmlFomatting.xmlFormatting_Indented;
   Writer.WriteStartDocument;
