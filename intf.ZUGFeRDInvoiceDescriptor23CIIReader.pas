@@ -722,29 +722,26 @@ begin
     Result.ContractReferencedDocument.LineID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedLineTradeAgreement/ram:ContractReferencedDocument/ram:LineID');
   end;
 
+  // read SpecifiedLineTradeSettlement
   if (tradeLineItem.SelectSingleNode('.//ram:SpecifiedLineTradeSettlement') <> nil) then
   begin
-    nodes := tradeLineItem.SelectSingleNode('.//ram:SpecifiedLineTradeSettlement').ChildNodes;
+    var applicableTradeTaxNode: IXMLDOMNode:= tradeLineItem.SelectSingleNode('.//ram:SpecifiedLineTradeSettlement/ram:ApplicableTradeTax');
+    // TODO: process
+
+    var billingSpecifiedPeriodNode: IXMLDOMNode := tradeLineItem.SelectSingleNode('.//ram:SpecifiedLineTradeSettlement/ram:BillingSpecifiedPeriod');
+    // TODO: process
+
+    nodes := tradeLineItem.SelectNodes('.//ram:SpecifiedLineTradeSettlement/ram:SpecifiedTradeAllowanceCharge');
     for i := 0 to nodes.length-1 do
     begin
-      if SameText(nodes[i].nodeName,'ram:ApplicableTradeTax') then
-      begin
-        //TODO
-      end else
-      if SameText(nodes[i].nodeName,'ram:BillingSpecifiedPeriod') then
-      begin
-        // TODO
-      end else
-      if SameText(nodes[i].nodeName,'ram:SpecifiedTradeAllowanceCharge') then
-      begin
-        var chargeIndicator : Boolean := TZUGFeRDXmlUtils.NodeAsBool(nodes[i], './ram:ChargeIndicator/udt:Indicator');
-        var basisAmount : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './ram:BasisAmount');
-        var basisAmountCurrency : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './ram:BasisAmount/@currencyID');
-        var actualAmount : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './ram:ActualAmount',0);
-        var actualAmountCurrency : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './ram:ActualAmount/@currencyID');
-        var reason : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './ram:Reason');
-        var chargePercentage: ZUGFeRDNullable<Currency> :=TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './ram:CalculationPercent');
-        var reasonCode: String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './ram:ReasonCode');
+      var chargeIndicator : Boolean := TZUGFeRDXmlUtils.NodeAsBool(nodes[i], './ram:ChargeIndicator/udt:Indicator');
+      var basisAmount : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './ram:BasisAmount');
+      var basisAmountCurrency : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './ram:BasisAmount/@currencyID');
+      var actualAmount : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './ram:ActualAmount',0);
+      var actualAmountCurrency : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './ram:ActualAmount/@currencyID');
+      var reason : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './ram:Reason');
+      var chargePercentage: ZUGFeRDNullable<Currency> :=TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './ram:CalculationPercent');
+      var reasonCode: String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './ram:ReasonCode');
 
         if chargeIndicator then
           Result.AddSpecifiedTradeCharge(TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(basisAmountCurrency),
@@ -760,23 +757,30 @@ begin
                                                                 chargePercentage,
                                                                 reason,
                                                                 TEnumExtensions<TZUGFeRDAllowanceReasonCodes>.StringToNullableEnum(reasonCode));
-      end else
-      if SameText(nodes[i].nodeName,'ram:SpecifiedTradeSettlementLineMonetarySummation') then
-      begin
-        //TODO
-      end else
-      if SameText(nodes[i].nodeName,'ram:AdditionalReferencedDocument') then  // BT-128-00
-      begin
-        Result.AdditionalReferencedDocuments.Add(_getAdditionalReferencedDocument(nodes[i]));
-      end else
-      if SameText(nodes[i].nodeName,'ram:ReceivableSpecifiedTradeAccountingAccount') then
-      begin
-        var rstaaItem : TZUGFeRDReceivableSpecifiedTradeAccountingAccount := TZUGFeRDReceivableSpecifiedTradeAccountingAccount.Create;
-        rstaaItem.TradeAccountID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ID');
-        rstaaItem.TradeAccountTypeCode := TEnumExtensions<TZUGFeRDAccountingAccountTypeCodes>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:TypeCode'));
-        Result.ReceivableSpecifiedTradeAccountingAccounts.Add(rstaaItem);
-      end;
     end;
+
+    var specifiedTradeSettlementLineMonetarySummationNode: IXMLDOMNode:= tradeLineItem.SelectSingleNode('.//ram:SpecifiedLineTradeSettlement/ram:SpecifiedTradeSettlementLineMonetarySummation');
+    // TODO: process
+
+    nodes := tradeLineItem.SelectNodes('.//ram:SpecifiedLineTradeSettlement/ram:InvoiceReferencedDocument');
+    for i := 0 to nodes.length-1 do
+    begin
+      // TODO: process
+    end;
+  end;
+
+  nodes := tradeLineItem.SelectNodes('.//ram:SpecifiedLineTradeSettlement/ram:AdditionalReferencedDocument');
+  for i := 0 to nodes.length-1 do
+    Result.AdditionalReferencedDocuments.Add(_getAdditionalReferencedDocument(nodes[i]));
+
+  nodes := tradeLineItem.SelectNodes('.//ram:SpecifiedLineTradeSettlement/ram:ReceivableSpecifiedTradeAccountingAccount');
+  for i := 0 to nodes.length-1 do
+  begin
+    var rstaaItem : TZUGFeRDReceivableSpecifiedTradeAccountingAccount := TZUGFeRDReceivableSpecifiedTradeAccountingAccount.Create;
+    rstaaItem.TradeAccountID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ID');
+    rstaaItem.TradeAccountTypeCode := TEnumExtensions<TZUGFeRDAccountingAccountTypeCodes>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:TypeCode'));
+    Result.ReceivableSpecifiedTradeAccountingAccounts.Add(rstaaItem);
+    break; // an if above would have done it also <g>
   end;
 
   if (tradeLineItem.SelectSingleNode('.//ram:AssociatedDocumentLineDocument') <> nil) then
