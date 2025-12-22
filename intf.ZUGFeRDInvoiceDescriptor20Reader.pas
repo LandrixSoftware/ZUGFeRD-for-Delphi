@@ -108,7 +108,7 @@ begin
   FNamespaces.Add('ram', 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100');
   FNamespaces.Add('xs', 'http://www.w3.org/2001/XMLSchema');
   FNamespaces.Add('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100');
-  FNamespaces.Add('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:15');
+  //FNamespaces.Add('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:15'); TODO pruefen, erst mal auskommentiert wegen Duplikat im Dictionary
 end;
 
 destructor TZUGFeRDInvoiceDescriptor20Reader.Destroy;
