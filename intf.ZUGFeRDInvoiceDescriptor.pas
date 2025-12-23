@@ -1371,7 +1371,6 @@ var
 begin
   if xmldocument = nil then
     raise TZUGFeRDIllegalStreamException.Create('XML document is nil');
-
   LStream := TMemoryStream.Create;
   try
     xmldocument.Encoding := 'UTF-8';
