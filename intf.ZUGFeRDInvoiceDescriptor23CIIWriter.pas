@@ -843,7 +843,8 @@ begin
   //  19. SpecifiedAdvancePayment (optional)
 
   //   1. CreditorReferenceID (BT-90) is only required/allowed on DirectDebit (BR-DE-30)
-  if (Descriptor.PaymentMeans <> nil) and  (Descriptor.PaymentMeans.TypeCode in [TZUGFeRDPaymentMeansTypeCodes.DirectDebit, TZUGFeRDPaymentMeansTypeCodes.SEPADirectDebit])
+  if (Descriptor.PaymentMeans <> nil)
+  and Descriptor.PaymentMeans.TypeCode.HasValue and (Descriptor.PaymentMeans.TypeCode in [TZUGFeRDPaymentMeansTypeCodes.DirectDebit, TZUGFeRDPaymentMeansTypeCodes.SEPADirectDebit])
   and (Descriptor.PaymentMeans.SEPACreditorIdentifier<>'') then
     Writer.WriteOptionalElementString('ram:CreditorReferenceID', Descriptor.PaymentMeans.SEPACreditorIdentifier, ALL_PROFILES  - [TZUGFeRDProfile.Minimum]);
 
