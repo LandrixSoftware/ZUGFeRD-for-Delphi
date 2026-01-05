@@ -91,6 +91,11 @@ type
     FUltimateShipToTaxRegistration: TObjectList<TZUGFeRDTaxRegistration>;
     FUltimateShipToElectronicAddress: TZUGFeRDElectronicAddress;
     FSellerAssignedID: string;
+    FIndustryAssignedID: string;
+    FModelID: string;
+    FBatchID: string;
+    FBrandName: string;
+    FModelName: string;
     FTradeAllowanceCharges: TObjectList<TZUGFeRDAbstractTradeAllowanceCharge>;
     FSpecifiedTradeAllowanceCharges : TObjectList<TZUGFeRDAbstractTradeAllowanceCharge>;
     FTaxPercent: Currency;
@@ -155,7 +160,7 @@ type
     /// <param name="reasonCodeCharge"></param>
     /// <param name="reasonCodeAllowance"></param>
     procedure AddTradeAllowanceCharge(isDiscount: Boolean; currency: TZUGFeRDCurrencyCodes;
-      basisAmount: Currency; actualAmount: Currency;
+      basisAmount: ZUGFeRDNullable<Currency>; actualAmount: Currency;
       reason: string;
       reasonCode: IZUGFeRDNullableParam<TZUGFeRDAllowanceReasonCodes> = Nil);
 
@@ -169,7 +174,7 @@ type
     /// <param name="reason">Reason for the allowance or surcharge</param>
     /// <param name="reasonCode">Reason code for the allowance or surcharge</param>
     function AddTradeAllowance (currency: TZUGFeRDCurrencyCodes;
-      basisAmount: Currency; actualAmount: Currency;
+      basisAmount: ZUGFeRDNullable<Currency>; actualAmount: Currency;
       chargePercentage: Currency;
       reason: string; reasonCode : IZUGFeRDNullableParam<TZUGFeRDAllowanceReasonCodes> = Nil): TZUGFeRDTradeLineItem; overload;
 
@@ -183,7 +188,7 @@ type
     /// <param name="reason">Reason for the allowance or surcharge</param>
     /// <param name="reasonCode">Reason code for the allowance or surcharge</param>
     function AddTradeAllowance (currency: TZUGFeRDCurrencyCodes;
-      basisAmount: Currency; actualAmount: Currency;
+      basisAmount: ZUGFeRDNullable<Currency>; actualAmount: Currency;
       reason: string; reasonCode : IZUGFeRDNullableParam<TZUGFeRDAllowanceReasonCodes> = Nil): TZUGFeRDTradeLineItem; overload;
 
     /// <summary>
@@ -196,7 +201,7 @@ type
     /// <param name="reason">Reason for the allowance or surcharge</param>
     /// <param name="reasonCode">Reason code for the allowance or surcharge</param>
     function AddTradeCharge (currency: TZUGFeRDCurrencyCodes;
-      basisAmount: Currency; actualAmount: Currency;
+      basisAmount: ZUGFeRDNullable<Currency>; actualAmount: Currency;
       chargePercentage: Currency;
       reason: string; reasonCode : IZUGFeRDNullableParam<TZUGFeRDChargeReasonCodes> = Nil): TZUGFeRDTradeLineItem; overload;
 
@@ -209,7 +214,7 @@ type
     /// <param name="reason">Reason for the allowance or surcharge</param>
     /// <param name="reasonCode">Reason code for the allowance or surcharge</param>
     function AddTradeCharge (currency: TZUGFeRDCurrencyCodes;
-      basisAmount: Currency; actualAmount: Currency;
+      basisAmount: ZUGFeRDNullable<Currency>; actualAmount: Currency;
       reason: string; reasonCode : IZUGFeRDNullableParam<TZUGFeRDChargeReasonCodes> = Nil): TZUGFeRDTradeLineItem; overload;
 
     /// <summary>
@@ -221,7 +226,7 @@ type
     /// <param name="actualAmount">The actual allowance or surcharge amount</param>
     /// <param name="reason">Reason for the allowance or surcharge</param>
     procedure AddSpecifiedTradeAllowanceCharge (isDiscount: Boolean; currency: TZUGFeRDCurrencyCodes;
-      basisAmount: Currency; actualAmount: Currency;
+      basisAmount: ZUGFeRDNullable<Currency>; actualAmount: Currency;
       reason: string;
       reasonCode: IZUGFeRDNullableParam<TZUGFeRDAllowanceReasonCodes> = Nil);
 
@@ -234,7 +239,7 @@ type
     /// <param name="actualAmount">The actual allowance or surcharge amount</param>
     /// <param name="reason">Reason for the allowance or surcharge</param>
     procedure AddSpecifiedTradeAllowance (currency: TZUGFeRDCurrencyCodes;
-      basisAmount: Currency; actualAmount: Currency;
+      basisAmount: ZUGFeRDNullable<Currency>; actualAmount: Currency;
       reason: string; reasonCode : IZUGFeRDNullableParam<TZUGFeRDAllowanceReasonCodes> = Nil); overload;
 
     procedure AddSpecifiedTradeAllowance (currency: TZUGFeRDCurrencyCodes;
@@ -252,7 +257,7 @@ type
     /// <param name="actualAmount">The actual allowance or surcharge amount</param>
     /// <param name="reason">Reason for the allowance or surcharge</param>
     procedure AddSpecifiedTradeCharge (currency: TZUGFeRDCurrencyCodes;
-      basisAmount: Currency; actualAmount: Currency;
+      basisAmount: ZUGFeRDNullable<Currency>; actualAmount: Currency;
       reason: string; reasonCode : IZUGFeRDNullableParam<TZUGFeRDChargeReasonCodes> = Nil); overload;
 
     procedure AddSpecifiedTradeCharge (currency: TZUGFeRDCurrencyCodes;
@@ -349,6 +354,31 @@ type
     /// An identification of the item assigned by the buyer.
     /// </summary>
     property BuyerAssignedID: string read FBuyerAssignedID write FBuyerAssignedID;
+
+    /// <summary>
+    /// An identifier, assigned by the Industry, for the item.
+    /// </summary>
+    property IndustryAssignedID: string read FIndustryAssignedID write FIndustryAssignedID;
+
+    /// <summary>
+    /// A unique model identifier for this item.
+    /// </summary>
+    property ModelID: string read FModelID write FModelID;
+
+    /// <summary>
+    /// A batch identifier for this item.
+    /// </summary>
+    property BatchID: string read FBatchID write FBatchID;
+
+    /// <summary>
+    /// The brand name, expressed as text, for this item.
+    /// </summary>
+    property BrandName: string read FBrandName write FBrandName;
+
+    /// <summary>
+    /// A group of business terms providing information about properties of the goods and services ordered.
+    /// </summary>
+    property Modelname: string read FModelName write FModelName;
 
     /// <summary>
     /// An article’s name
@@ -613,7 +643,7 @@ end;
 
 procedure TZUGFeRDTradeLineItem.AddTradeAllowanceCharge(
   isDiscount: Boolean; currency: TZUGFeRDCurrencyCodes;
-  basisAmount: Currency; actualAmount: Currency;
+  basisAmount: ZUGFeRDNullable<Currency>; actualAmount: Currency;
   reason: string;
   reasonCode: IZUGFeRDNullableParam<TZUGFeRDAllowanceReasonCodes> = Nil);
 begin
@@ -625,7 +655,7 @@ end;
 
 function TZUGFeRDTradeLineItem.AddTradeAllowance (
   currency: TZUGFeRDCurrencyCodes;
-  basisAmount: Currency; actualAmount: Currency;
+  basisAmount: ZUGFeRDNullable<Currency>; actualAmount: Currency;
   chargePercentage: Currency;
   reason: string; reasonCode: IZUGFeRDNullableParam<TZUGFeRDAllowanceReasonCodes> = Nil): TZUGFeRDTradeLineItem;
 var
@@ -644,7 +674,7 @@ end;
 
 function TZUGFeRDTradeLineItem.AddTradeAllowance (
   currency: TZUGFeRDCurrencyCodes;
-  basisAmount: Currency; actualAmount: Currency;
+  basisAmount: ZUGFeRDNullable<Currency>; actualAmount: Currency;
   reason: string; reasonCode: IZUGFeRDNullableParam<TZUGFeRDAllowanceReasonCodes> = Nil): TZUGFeRDTradeLineItem;
 var
   TradeAllowance: TZUGFeRDTradeAllowance;
@@ -661,7 +691,7 @@ end;
 
 function TZUGFeRDTradeLineItem.AddTradeCharge (
   currency: TZUGFeRDCurrencyCodes;
-  basisAmount: Currency; actualAmount: Currency;
+  basisAmount: ZUGFeRDNullable<Currency>; actualAmount: Currency;
   chargePercentage: Currency;
   reason: string; reasonCode: IZUGFeRDNullableParam<TZUGFeRDChargeReasonCodes> = Nil): TZUGFeRDTradeLineItem;
 var
@@ -680,7 +710,7 @@ end;
 
 function TZUGFeRDTradeLineItem.AddTradeCharge (
   currency: TZUGFeRDCurrencyCodes;
-  basisAmount: Currency; actualAmount: Currency;
+  basisAmount: ZUGFeRDNullable<Currency>; actualAmount: Currency;
   reason: string; reasonCode: IZUGFeRDNullableParam<TZUGFeRDChargeReasonCodes> = Nil): TZUGFeRDTradeLineItem;
 var
   TradeCharge: TZUGFeRDTradeCharge;
@@ -815,7 +845,7 @@ end;
 
 procedure TZUGFeRDTradeLineItem.AddSpecifiedTradeAllowanceCharge(
   isDiscount: Boolean; currency: TZUGFeRDCurrencyCodes;
-  basisAmount: Currency; actualAmount: Currency;
+  basisAmount: ZUGFeRDNullable<Currency>; actualAmount: Currency;
   reason: string;
   reasonCode: IZUGFeRDNullableParam<TZUGFeRDAllowanceReasonCodes> = Nil);
 begin
@@ -827,7 +857,7 @@ end;
 
 procedure TZUGFeRDTradeLineItem.AddSpecifiedTradeAllowance (
   currency: TZUGFeRDCurrencyCodes;
-  basisAmount: Currency; actualAmount: Currency;
+  basisAmount: ZUGFeRDNullable<Currency>; actualAmount: Currency;
   reason: string; reasonCode: IZUGFeRDNullableParam<TZUGFeRDAllowanceReasonCodes> = Nil);
 var
   TradeAllowance: TZUGFeRDTradeAllowance;
@@ -864,7 +894,7 @@ end;
 
 procedure TZUGFeRDTradeLineItem.AddSpecifiedTradeCharge (
   currency: TZUGFeRDCurrencyCodes;
-  basisAmount: Currency; actualAmount: Currency;
+  basisAmount: ZUGFeRDNullable<Currency>; actualAmount: Currency;
   reason: string; reasonCode: IZUGFeRDNullableParam<TZUGFeRDChargeReasonCodes> = Nil);
 var
   TradeCharge: TZUGFeRDTradeCharge;

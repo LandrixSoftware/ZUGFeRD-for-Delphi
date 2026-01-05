@@ -250,12 +250,18 @@ begin
       end;
 
     if tradeLineItem.IncludedReferencedProducts <> nil then
-      for var IncludedReferencedProduct : TZUGFeRDIncludedReferencedProduct in tradeLineItem.IncludedReferencedProducts do
+      for var includedItem : TZUGFeRDIncludedReferencedProduct in tradeLineItem.IncludedReferencedProducts do
       begin
         Writer.WriteStartElement('ram:IncludedReferencedProduct');
-        Writer.WriteOptionalElementString('ram:Name', IncludedReferencedProduct.Name);
-        if IncludedReferencedProduct.UnitQuantity.HasValue then
-          _writeElementWithAttribute(Writer, 'ram:UnitQuantity', 'unitCode', TEnumExtensions<TZUGFeRDQuantityCodes>.EnumToString(IncludedReferencedProduct.UnitCode), _formatDecimal(IncludedReferencedProduct.UnitQuantity, 4));
+        if (includedItem.GlobalID <> nil) and includedItem.GlobalID.SchemeID.HasValue and (includedItem.GlobalID.ID <> '') then
+          _writeElementWithAttribute(Writer, 'ram:GlobalID', 'schemeID', TEnumExtensions<TZUGFeRDGlobalIDSchemeIdentifiers>.EnumToString(includedItem.GlobalID.SchemeID), includedItem.GlobalID.ID);
+        Writer.WriteOptionalElementString('ram:SellerAssignedID', includedItem.SellerAssignedID);
+        Writer.WriteOptionalElementString('ram:BuyerAssignedID', includedItem.BuyerAssignedID);
+        Writer.WriteOptionalElementString('ram:IndustryAssignedID', includedItem.IndustryAssignedID);
+        Writer.WriteOptionalElementString('ram:Name', includedItem.Name); // BT-X-18
+        Writer.WriteOptionalElementString('ram:Description', includedItem.Description);
+        if includedItem.UnitQuantity.HasValue then
+          _writeElementWithAttribute(Writer, 'ram:UnitQuantity', 'unitCode', TEnumExtensions<TZUGFeRDQuantityCodes>.EnumToString(includedItem.UnitCode), _formatDecimal(includedItem.UnitQuantity, 4));
         Writer.WriteEndElement(); // !ram:IncludedReferencedProduct
       end;
 
