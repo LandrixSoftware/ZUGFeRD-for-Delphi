@@ -68,6 +68,7 @@ uses
   ,intf.ZUGFeRDTradeDeliveryTermCodes
   ,intf.ZUGFeRDIncludedReferencedProduct
   ,intf.ZUGFeRDInvoiceReferencedDocument
+  ,intf.ZUGFeRDMimeTypeMapper
   ;
 
 type
@@ -313,7 +314,6 @@ begin
       begin
           Writer.WriteStartElement('ram:FormattedIssueDateTime');
           Writer.WriteStartElement('qdt:DateTimeString');
-          Writer.WriteAttributeString('format', '102');
           Writer.WriteValue(_formatDate(document.IssueDateTime.Value));
           Writer.WriteEndElement(); // !udt:DateTimeString
           Writer.WriteEndElement(); // !ram:IssueDateTime
@@ -551,6 +551,7 @@ begin
     for var document : TZUGFeRDAdditionalReferencedDocument in Descriptor.AdditionalReferencedDocuments do
     begin
       Writer.WriteStartElement('ram:AdditionalReferencedDocument');
+      Writer.WriteElementString('ram:IssuerAssignedID', document.ID);
 
       if (document.IssueDateTime.HasValue) then
       begin
@@ -567,7 +568,15 @@ begin
       if document.ReferenceTypeCode.HasValue then
         Writer.WriteElementString('ram:ReferenceTypeCode', TEnumExtensions<TZUGFeRDReferenceTypeCodes>.EnumToString(document.ReferenceTypeCode));
 
-      Writer.WriteElementString('ram:ID', document.ID);
+      if (document.AttachmentBinaryObject <> nil) and (document.AttachmentBinaryObject.Size > 0) then
+      begin
+        Writer.WriteStartElement('ram:AttachmentBinaryObject', [TZUGFeRDProfile.Comfort, TZUGFeRDProfile.Extended]);  // BT-125, BT-X-31
+        Writer.WriteAttributeString('filename', document.Filename);
+        Writer.WriteAttributeString('mimeCode', TZUGFeRDMimeTypeMapper.GetMimeType(document.Filename));
+        Writer.WriteValue(TZUGFeRDHelper.GetDataAsBase64(document.AttachmentBinaryObject));
+        Writer.WriteEndElement(); // !AttachmentBinaryObject()
+      end;
+
       Writer.WriteEndElement(); // !ram:AdditionalReferencedDocument
     end; // !foreach(document)
   end;
@@ -589,7 +598,7 @@ begin
 
 if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
   begin
-    _writeOptionalParty(Writer, 'ram:ShipToTradeParty', Descriptor.ShipTo);
+    _writeOptionalParty(Writer, 'ram:ShipToTradeParty', Descriptor.ShipTo, Descriptor.ShipToContact);
     _writeOptionalParty(Writer, 'ram:ShipFromTradeParty', Descriptor.ShipFrom);
   end;
 
@@ -677,7 +686,7 @@ if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
   //  10. SpecifiedTradeSettlementPaymentMeans (optional)
   if (Descriptor.CreditorBankAccounts.Count = 0) and (Descriptor.DebitorBankAccounts.Count = 0) then
   begin
-    if Descriptor.PaymentMeans <> nil then
+    if (Descriptor.PaymentMeans <> nil) and Descriptor.PaymentMeans.TypeCode.HasValue then
     begin
       WriteComment(Writer, options, TZUGFeRDInvoiceCommentConstants.SpecifiedTradeSettlementPaymentMeansComment);
       Writer.WriteStartElement('ram:SpecifiedTradeSettlementPaymentMeans');
@@ -1022,6 +1031,13 @@ begin
   Writer.WriteElementString('udt:Indicator', ifthen(tradeAllowanceCharge.ChargeIndicator,'true','false'));
   Writer.WriteEndElement(); // !ram:ChargeIndicator
 
+  if tradeAllowanceCharge.ChargePercentage.HasValue then
+  begin
+    Writer.WriteStartElement('ram:CalculationPercent'); // allowance: BT-94, charge: BT-101
+    Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ChargePercentage));
+    Writer.WriteEndElement();
+  end;
+
   // TODO: SequenceNumeric
   if tradeAllowanceCharge.BasisAmount.HasValue then
   begin
@@ -1057,7 +1073,7 @@ begin
       Writer.WriteElementString('ram:TypeCode', TEnumExtensions<TZUGFeRDTaxTypes>.EnumToString(tradeAllowanceCharge.Tax.TypeCode), [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
     if tradeAllowanceCharge.Tax.CategoryCode.HasValue then
       Writer.WriteElementString('ram:CategoryCode', TEnumExtensions<TZUGFeRDTaxCategoryCodes>.EnumToString(tradeAllowanceCharge.Tax.CategoryCode), [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
-    Writer.WriteElementString('ram:ApplicablePercent', _formatDecimal(tradeAllowanceCharge.Tax.Percent), [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
+    Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(tradeAllowanceCharge.Tax.Percent), [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
     Writer.WriteEndElement();
   end;
   Writer.WriteEndElement();
