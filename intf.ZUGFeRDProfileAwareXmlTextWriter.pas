@@ -532,11 +532,22 @@ begin
 end;
 
 function TZUGFeRDProfileAwareXmlTextWriter._IsValidXmlChar(c: Char): Boolean;
+var
+  Code: Word;
 begin
+  Code := Ord(c);
+
   Result :=
-    (c = #$09) or (c = #$0A) or (c = #$0D) or
-    ((Ord(c) >= $20) and (Ord(c) <= $D7FF)) or
-    ((Ord(c) >= $E000) and (Ord(c) <= $FFFD));
+    // XML 1.0 erlaubte Steuerzeichen
+    (Code = $09) or (Code = $0A) or (Code = $0D) or
+
+    // BMP ohne Surrogates
+    ((Code >= $20) and (Code <= $D7FF)) or
+    ((Code >= $E000) and (Code <= $FFFD)) or
+
+    //Surrogates zulassen (Teil eines gültigen Paares)
+    ((Code >= $D800) and (Code <= $DFFF));
+
   // Note: Characters >= $10000 would require surrogate pair handling in Delphi
 end;
 
