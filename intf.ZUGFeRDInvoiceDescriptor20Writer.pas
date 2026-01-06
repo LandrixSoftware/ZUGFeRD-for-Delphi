@@ -390,9 +390,9 @@ begin
     begin
       Writer.WriteStartElement('ram:SpecifiedLineTradeDelivery');
       _writeElementWithAttribute(Writer, 'ram:BilledQuantity', 'unitCode', TEnumExtensions<TZUGFeRDQuantityCodes>.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.BilledQuantity, 4));
-      if tradeLineItem.PackageQuantity.HasValue then
+      if tradeLineItem.PackageQuantity.HasValue and (Descriptor.Profile = TZUGFeRDProfile.Extended) then
         _writeElementWithAttribute(Writer, 'ram:PackageQuantity', 'unitCode', TEnumExtensions<TZUGFeRDQuantityCodes>.EnumToString(tradeLineItem.PackageUnitCode), _formatDecimal(tradeLineItem.PackageQuantity, 4));
-      if tradeLineItem.ChargeFreeQuantity.HasValue then
+      if tradeLineItem.ChargeFreeQuantity.HasValue and (Descriptor.Profile = TZUGFeRDProfile.Extended) then
         _writeElementWithAttribute(Writer, 'ram:ChargeFreeQuantity', 'unitCode', TEnumExtensions<TZUGFeRDQuantityCodes>.EnumToString(tradeLineItem.ChargeFreeUnitCode), _formatDecimal(tradeLineItem.ChargeFreeQuantity, 4));
 
       if (tradeLineItem.DeliveryNoteReferencedDocument <> nil) then
@@ -1037,6 +1037,8 @@ begin
   Writer.WriteElementString('udt:Indicator', ifthen(tradeAllowanceCharge.ChargeIndicator,'true','false'));
   Writer.WriteEndElement(); // !ram:ChargeIndicator
 
+  // TODO: SequenceNumeric
+
   if tradeAllowanceCharge.ChargePercentage.HasValue then
   begin
     Writer.WriteStartElement('ram:CalculationPercent'); // allowance: BT-94, charge: BT-101
@@ -1044,7 +1046,6 @@ begin
     Writer.WriteEndElement();
   end;
 
-  // TODO: SequenceNumeric
   if tradeAllowanceCharge.BasisAmount.HasValue then
   begin
     Writer.WriteStartElement('ram:BasisAmount', [TZUGFeRDProfile.Extended]);
