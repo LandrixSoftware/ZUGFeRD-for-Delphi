@@ -274,9 +274,8 @@ begin
 
     Writer.WriteOptionalElementString('ram:SellerAssignedID', tradeLineItem.SellerAssignedID, PROFILE_COMFORT_EXTENDED_XRECHNUNG);
     Writer.WriteOptionalElementString('ram:BuyerAssignedID', tradeLineItem.BuyerAssignedID, PROFILE_COMFORT_EXTENDED_XRECHNUNG);
-
-    // TODO: IndustryAssignedID     // BT-X-532, Von der Industrie zugewiesene Produktkennung
-    // TODO: ModelID                // BT-X-533, Modelkennung des Artikels
+    Writer.WriteOptionalElementString('ram:IndustryAssignedID', tradeLineItem.IndustryAssignedID, [TZUGFeRDProfile.Extended]); // BT-X-532, Von der Industrie zugewiesene Produktkennung
+    Writer.WriteOptionalElementString('ram:ModelID', tradeLineItem.ModelID, [TZUGFeRDProfile.Extended]); // BT-X-533, Modelkennung des Artikels
 
     // BT-153
     Writer.WriteOptionalElementString('ram:Name', tradeLineItem.Name, [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
@@ -284,9 +283,10 @@ begin
 
     Writer.WriteOptionalElementString('ram:Description', tradeLineItem.Description, PROFILE_COMFORT_EXTENDED_XRECHNUNG);
 
-    // TODO: BatchID                // BT-X-534, Kennung der Charge (des Loses) des Artikels
-    // TODO: BrandName              // BT-X-535, Markenname des Artikels
-    // TODO: ModelName              // BT-X-536, Modellbezeichnung des Artikels
+    // TODO: BatchID cardinality 0..n
+    Writer.WriteOptionalElementString('ram:BatchID', tradeLineItem.BatchID, [TZUGFeRDProfile.Extended]); // BT-X-534, Kennung der Charge (des Loses) des Artikels
+    Writer.WriteOptionalElementString('ram:BrandName', tradeLineItem.BrandName, [TZUGFeRDProfile.Extended]); // BT-X-535, Markenname des Artikels
+    Writer.WriteOptionalElementString('ram:ModelName', tradeLineItem.ModelName, [TZUGFeRDProfile.Extended]); // BT-X-536, Modellbezeichnung des Artikels
 
     // BG-32, Artikelattribute
     for var productCharacteristic : TZUGFeRDApplicableProductCharacteristic in tradeLineItem.ApplicableProductCharacteristics do
@@ -328,10 +328,15 @@ begin
       for var includedItem : TZUGFeRDIncludedReferencedProduct in tradeLineItem.IncludedReferencedProducts do
       begin
         Writer.WriteStartElement('ram:IncludedReferencedProduct');
-        // TODO: GlobalID, SellerAssignedID, BuyerAssignedID, IndustryAssignedID, Description
-        Writer.WriteOptionalElementString('ram:Name', includedItem.Name);  // BT-X-18
+        if (includedItem.GlobalID <> nil) and includedItem.GlobalID.SchemeID.HasValue and (includedItem.GlobalID.ID <> '') then
+          _writeElementWithAttribute(Writer, 'ram:GlobalID', 'schemeID', TEnumExtensions<TZUGFeRDGlobalIDSchemeIdentifiers>.EnumToString(includedItem.GlobalID.SchemeID), includedItem.GlobalID.ID);
+        Writer.WriteOptionalElementString('ram:SellerAssignedID', includedItem.SellerAssignedID);
+        Writer.WriteOptionalElementString('ram:BuyerAssignedID', includedItem.BuyerAssignedID);
+        Writer.WriteOptionalElementString('ram:IndustryAssignedID', includedItem.IndustryAssignedID);
+        Writer.WriteOptionalElementString('ram:Name', includedItem.Name); // BT-X-18
+        Writer.WriteOptionalElementString('ram:Description', includedItem.Description);
         if includedItem.UnitQuantity.HasValue then
-          _writeElementWithAttributeWithPrefix (Writer, 'ram:UnitQuantity', 'unitCode', TEnumExtensions<TZUGFeRDQuantityCodes>.EnumToString(tradeLineItem.UnitCode), _formatDecimal(includedItem.UnitQuantity.Value, 4));
+          _writeElementWithAttributeWithPrefix (Writer, 'ram:UnitQuantity', 'unitCode', TEnumExtensions<TZUGFeRDQuantityCodes>.EnumToString(includedItem.UnitCode), _formatDecimal(includedItem.UnitQuantity.Value, 4));
         Writer.WriteEndElement(); // !ram:IncludedReferencedProduct
       end;
 
@@ -1136,7 +1141,7 @@ begin
   _writeAmount(Writer, 'ram:LineTotalAmount', Descriptor.LineTotalAmount, 0.0, 2, false, ALL_PROFILES-[TZUGFeRDProfile.Minimum]);                    // Summe der Nettobeträge aller Rechnungspositionen
   _writeOptionalAmount(Writer, 'ram:ChargeTotalAmount', Descriptor.ChargeTotalAmount, 2, false, ALL_PROFILES-[TZUGFeRDProfile.Minimum]);        // Summe der Zuschläge auf Dokumentenebene
   _writeOptionalAmount(Writer, 'ram:AllowanceTotalAmount', Descriptor.AllowanceTotalAmount, 2, false, ALL_PROFILES-[TZUGFeRDProfile.Minimum]);  // Summe der Abschläge auf Dokumentenebene
- 
+
   if Descriptor.Profile = TZUGFeRDProfile.Extended then
     // there shall be no currency for tax basis total amount, see
     // https://github.com/stephanstapel/ZUGFeRD-csharp/issues/56#issuecomment-655525467

@@ -1018,6 +1018,11 @@ begin
   Map(L94,     'L94');
   Map(Unknown, 'Unknown');
 {.MapEnd}
+  // define older ZUGFeRD 2 mappings
+  Map(XCT, 'CT');
+  Map(XBC, 'BC');
+  Map(XBO, 'BO');
+  Map(XPX, 'PX');
 end;
 
 Initialization

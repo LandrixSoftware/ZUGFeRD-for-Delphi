@@ -510,7 +510,7 @@ begin
   for i := 0 to nodes.length-1 do
   begin
     var chargePercentage: ZUGFeRDNullable<Currency> :=TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:CalculationPercent');
-    var basisAmount: ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:BasisAmount', 0);
+    var basisAmount: ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:BasisAmount');
     var actualAmount: ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:ActualAmount', 0);
     var reason: string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Reason');
     var taxTypeCode: ZUGFeRDNullable<TZUGFeRDTaxTypes> := TEnumExtensions<TZUGFeRDTaxTypes>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:CategoryTradeTax/ram:TypeCode'));
@@ -654,8 +654,13 @@ begin
   Result.GlobalID.ID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:GlobalID');
   Result.SellerAssignedID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:SellerAssignedID');
   Result.BuyerAssignedID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:BuyerAssignedID');
+  Result.IndustryAssignedID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:IndustryAssignedID');
+  Result.ModelID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:ModelID');
   Result.Name := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:Name');
   Result.Description := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:Description');
+  Result.BatchID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:BatchID');
+  Result.BrandName := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:BrandName');
+  Result.ModelName := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:ModelName');
   Result.BilledQuantity := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:BilledQuantity', 0);
   Result.ShipTo := _nodeAsParty(tradeLineItem, './/ram:SpecifiedLineTradeDelivery/ram:ShipToTradeParty');
   Result.ShipToContact := _nodeAsContact(tradeLineItem, '//ram:SpecifiedLineTradeDelivery/ram:ShipToTradeParty/ram:DefinedTradeContact');
@@ -700,7 +705,13 @@ begin
   for i := 0 to nodes.length-1 do
   begin
     var irpItem: TZUGFeRDIncludedReferencedProduct := TZUGFeRDIncludedReferencedProduct.Create;
+    irpItem.GlobalID.SchemeID := TEnumExtensions<TZUGFeRDGlobalIDSchemeIdentifiers>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:GlobalID/@schemeID'));
+    irpItem.GlobalID.ID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:GlobalID');
+    irpItem.SellerAssignedID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:SellerAssignedID');
+    irpItem.BuyerAssignedID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:BuyerAssignedID');
+    irpItem.IndustryAssignedID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:IndustryAssignedID');
     irpItem.Name := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Name');
+    irpItem.Description := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Description');
     irpItem.UnitCode := TEnumExtensions<TZUGFeRDQuantityCodes>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:UnitQuantity/@unitCode'));
     irpItem.UnitQuantity:= TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:UnitQuantity', 0);
     Result.IncludedReferencedProducts.Add(irpItem);
@@ -800,7 +811,7 @@ begin
   begin
 
     var chargeIndicator : Boolean := TZUGFeRDXmlUtils.NodeAsBool(nodes[i], './ram:ChargeIndicator/udt:Indicator');
-    var basisAmount : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './ram:BasisAmount',0);
+    var basisAmount : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './ram:BasisAmount');
     var basisAmountCurrency : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './ram:BasisAmount/@currencyID');
     var actualAmount : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './ram:ActualAmount',0);
     var actualAmountCurrency : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './ram:ActualAmount/@currencyID');
