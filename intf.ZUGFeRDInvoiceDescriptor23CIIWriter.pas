@@ -729,7 +729,8 @@ begin
   //#region 4. AdditionalReferencedDocument
   if (Descriptor.AdditionalReferencedDocuments <> nil) then  // BG-24 | BT-18-00
     for var document : TZUGFeRDAdditionalReferencedDocument in Descriptor.AdditionalReferencedDocuments do
-      _writeAdditionalReferencedDocument(Writer, document, PROFILE_COMFORT_EXTENDED_XRECHNUNG, 'BG-24');
+      _writeAdditionalReferencedDocument(Writer, document, PROFILE_COMFORT_EXTENDED_XRECHNUNG, IfThen(document.ReferenceTypeCode.HasValue, 'BT-18-00', 'BG-24'));
+
   //#endregion
 
   //#region SpecifiedProcuringProject

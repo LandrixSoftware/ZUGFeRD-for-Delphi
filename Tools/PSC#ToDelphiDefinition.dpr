@@ -1,4 +1,4 @@
-program PSCSharpToDelphiDefinition;
+﻿program PSCSharpToDelphiDefinition;
 
 {$APPTYPE CONSOLE}
 

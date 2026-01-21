@@ -322,7 +322,7 @@ type
     MTR,
 
     /// <summary>
-    /// Megawatt Stunde (1000 kW.h)
+    /// Megawatt Stunde (1000 kW.h)
     /// Abkürzung: MWh
     /// </summary>
     MWH,
