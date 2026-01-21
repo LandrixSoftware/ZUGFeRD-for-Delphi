@@ -1,4 +1,4 @@
-program PSDelphiDefinitionMapper;
+﻿program PSDelphiDefinitionMapper;
 
 {$APPTYPE CONSOLE}
 
