@@ -183,7 +183,7 @@ begin
 
   Writer.WriteStartElement('rsm:ExchangedDocument');
   Writer.WriteElementString('ram:ID', Descriptor.InvoiceNo);
-  Writer.WriteElementString('ram:Name', Descriptor.Name, [TZUGFeRDProfile.Extended]);
+  Writer.WriteOptionalElementString('ram:Name', Descriptor.Name, [TZUGFeRDProfile.Extended]);
   Writer.WriteElementString('ram:TypeCode', TEnumExtensions<TZUGFeRDInvoiceType>.EnumToString(Descriptor.Type_));
 
   if Descriptor.InvoiceDate.HasValue then
