@@ -53,13 +53,6 @@ type
     [EnumStringValue('59')]
     _59,
 
-
-		/// <summary>
-    /// batch
-    /// </summary>
-    [EnumStringValue('5B')]
-    _5B,
-
     /// <summary>
     /// Bulk pack
     /// </summary>
@@ -159,12 +152,6 @@ type
     /// </summary>
     EA,
 
-
-    /// <summary>
-    /// foot
-    /// </summary>
-    FOT,
-
     /// <summary>
     /// gigajoule
     /// </summary>
@@ -199,16 +186,6 @@ type
     /// A unit of count defining the number of persons.
     /// </summary>
     IE,
-
-    /// <summary>
-    /// hundred metre
-    /// </summary>
-		JPS,
-
-		/// <summary>
-    /// kilolitre
-    /// </summary>
-		K6,
 
     /// <summary>
     /// lux
@@ -280,16 +257,6 @@ type
     KWT,
 
     /// <summary>
-    /// pound
-    /// </summary>
-    LBR,
-
-    /// <summary>
-    /// length
-    /// </summary>
-    LN,
-
-    /// <summary>
     /// Pauschale
     /// Abkürzung: pausch.
     /// </summary>
@@ -355,7 +322,7 @@ type
     MTR,
 
     /// <summary>
-    /// Megawatt Stunde (1000 kW.h)
+    /// Megawatt Stunde (1000 kW.h)
     /// Abkürzung: MWh
     /// </summary>
     MWH,
@@ -474,11 +441,6 @@ type
     /// </summary>
     QAN,
 
-		/// <summary>
-    /// ream
-    /// </summary>
-    RM,
-
     /// <summary>
     /// Halbjahr
     /// Abkürzung: Halbjahre(e)
@@ -507,26 +469,32 @@ type
     /// <summary>
     /// Flasche
     /// Abkürzung: Fl
+    /// Previously, BO was also used. This has been removed.
     /// </summary>
     /// <remarks>
     /// Bottle, non-protected, cylindrical
     /// A narrow-necked cylindrical shaped vessel without external protective packing material
     /// </remarks>
+    [EnumStringValue('XBO', 'BO')]
     XBO,
 
     /// <summary>
     /// Karton
     /// Abkürzung: Kt
+    /// Previously, CT was also used. This has been removed.
     /// </summary>
+    [EnumStringValue('XCT', 'CT')]
     XCT,
 
     /// <summary>
     /// Palette
     /// Abkürzung: Pal
+    /// Previously, PX was also used. This has been removed.
     /// </summary>
     /// <remarks>
     /// Platform or open-ended box, usually made of wood, on which goods are retained for ease of mechanical handling during transport and storage.
     /// </remarks>
+    [EnumStringValue('XPX', 'PX')]
     XPX,
 
     /// <summary>
@@ -538,7 +506,9 @@ type
     /// <summary>
     /// Kiste oder ein Gestell, das mehrere Flaschen sicher hält
     /// Bottlecrate / bottlerack
+    /// Previously, BC was also used. This has been removed.
     /// </summary>
+    [EnumStringValue('XBC', 'BC')]
     XBC,
 
     /// <summary>
@@ -878,16 +848,6 @@ type
     XPT,
 
     /// <summary>
-    /// Spool
-    /// </summary>
-    XSO,
-
-		/// <summary>
-    /// Bag, plastics film
-    /// </summary>
-    XXD,
-
-    /// <summary>
     /// Pallet, wooden
     /// </summary>
     X8A,
@@ -907,15 +867,11 @@ type
     /// </summary>
     XMS,
 
-		/// <summary>
-    /// Unit
-    /// </summary>
-    XUN,
-
     /// <summary>
     /// ton-force (US short)
     /// </summary>
     L94,
+
 
     /// <summary>
     /// Unknown value
@@ -1012,10 +968,14 @@ begin
   Map(TP,      'TP');
   Map(XBE,     'XBE');
   Map(XBO,     'XBO');
+  Map(XBO,     'BO');
   Map(XCT,     'XCT');
+  Map(XCT,     'CT');
   Map(XPX,     'XPX');
+  Map(XPX,     'PX');
   Map(XRD,     'XRD');
   Map(XBC,     'XBC');
+  Map(XBC,     'BC');
   Map(XBD,     'XBD');
   Map(T3,      'T3');
   Map(XPK,     'XPK');
@@ -1057,6 +1017,8 @@ begin
   Map(Z9,      'Z9');
   Map(XPA,     'XPA');
   Map(E48,     'E48');
+  Map(QB,      'QB');
+  Map(ZP,      'ZP');
   Map(ZZ,      'ZZ');
   Map(CTM,     'CTM');
   Map(XAM,     'XAM');
