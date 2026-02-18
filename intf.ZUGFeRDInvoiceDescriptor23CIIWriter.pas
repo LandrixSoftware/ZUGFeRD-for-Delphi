@@ -324,7 +324,7 @@ begin
       Writer.WriteEndElement(); // !ram:OriginTradeCountry
     end;
 
-    if (Descriptor.Profile=TZUGFeRDProfile.Extended) then
+    if (Descriptor.Profile=TZUGFeRDProfile.Extended) then // BG-X-1
       for var includedItem : TZUGFeRDIncludedReferencedProduct in tradeLineItem.IncludedReferencedProducts do
       begin
         Writer.WriteStartElement('ram:IncludedReferencedProduct');

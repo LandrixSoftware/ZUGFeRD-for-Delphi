@@ -53,6 +53,13 @@ type
     [EnumStringValue('59')]
     _59,
 
+
+		/// <summary>
+    /// batch
+    /// </summary>
+    [EnumStringValue('5B')]
+    _5B,
+
     /// <summary>
     /// Bulk pack
     /// </summary>
@@ -152,6 +159,12 @@ type
     /// </summary>
     EA,
 
+
+    /// <summary>
+    /// foot
+    /// </summary>
+    FOT,
+
     /// <summary>
     /// gigajoule
     /// </summary>
@@ -186,6 +199,16 @@ type
     /// A unit of count defining the number of persons.
     /// </summary>
     IE,
+
+    /// <summary>
+    /// hundred metre
+    /// </summary>
+		JPS,
+
+		/// <summary>
+    /// kilolitre
+    /// </summary>
+		K6,
 
     /// <summary>
     /// lux
@@ -255,6 +278,16 @@ type
     /// Abkürzung: kW
     /// </summary>
     KWT,
+
+    /// <summary>
+    /// pound
+    /// </summary>
+    LBR,
+
+    /// <summary>
+    /// length
+    /// </summary>
+    LN,
 
     /// <summary>
     /// Pauschale
@@ -440,6 +473,11 @@ type
     /// Quarter (of a year)
     /// </summary>
     QAN,
+
+		/// <summary>
+    /// ream
+    /// </summary>
+    RM,
 
     /// <summary>
     /// Halbjahr
@@ -744,6 +782,16 @@ type
     E48,
 
     /// <summary>
+    /// page - hardcopy
+    /// </summary>
+    QB,
+
+    /// <summary>
+    /// page
+    /// </summary>
+    ZP,
+
+    /// <summary>
     /// Mutually Defined
     /// </summary>
     ZZ,
@@ -830,6 +878,16 @@ type
     XPT,
 
     /// <summary>
+    /// Spool
+    /// </summary>
+    XSO,
+
+		/// <summary>
+    /// Bag, plastics film
+    /// </summary>
+    XXD,
+
+    /// <summary>
     /// Pallet, wooden
     /// </summary>
     X8A,
@@ -849,11 +907,15 @@ type
     /// </summary>
     XMS,
 
+		/// <summary>
+    /// Unit
+    /// </summary>
+    XUN,
+
     /// <summary>
     /// ton-force (US short)
     /// </summary>
     L94,
-
 
     /// <summary>
     /// Unknown value

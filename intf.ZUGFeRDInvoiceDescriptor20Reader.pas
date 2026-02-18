@@ -562,8 +562,9 @@ begin
     IncludedReferenceProduct.GlobalID.ID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:GlobalID');
     IncludedReferenceProduct.SellerAssignedID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:SellerAssignedID');
     IncludedReferenceProduct.BuyerAssignedID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:BuyerAssignedID');
-    IncludedReferenceProduct.Description := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Description');
+    IncludedReferenceProduct.IndustryAssignedID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:IndustryAssignedID');
     IncludedReferenceProduct.Name:= TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Name');
+    IncludedReferenceProduct.Description := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Description');
     IncludedReferenceProduct.UnitQuantity:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:UnitQuantity');
     IncludedReferenceProduct.UnitCode:= TEnumExtensions<TZUGFeRDQuantityCodes>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:UnitQuantity/@unitCode'));
     Result.IncludedReferencedProducts.Add(IncludedReferenceProduct);
