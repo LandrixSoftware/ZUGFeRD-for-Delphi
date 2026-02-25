@@ -748,7 +748,7 @@ begin
 
   //#region ApplicableHeaderTradeDelivery
   WriteComment(Writer, options, TZUGFeRDInvoiceCommentConstants.ApplicableHeaderTradeDeliveryComment);
-  Writer.WriteStartElement('ram:ApplicableHeaderTradeDelivery'); // Pflichteintrag
+  Writer.WriteStartElement('ram:ApplicableHeaderTradeDelivery');
 
   //RelatedSupplyChainConsignment --> SpecifiedLogisticsTransportMovement --> ModeCode // Only in extended profile
   if Descriptor.TransportMode <> nil then
