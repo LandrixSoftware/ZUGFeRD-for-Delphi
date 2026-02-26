@@ -361,9 +361,10 @@ var
   xmlNode: IXMLNode;
 begin
   items := XmlStack.ToArray;
-  // items[0] = top (current), items[Length-1] = bottom (root)
+  // Delphi TStack<T>.ToArray returns items in push order:
+  // items[0] = bottom (root), items[Length-1] = top (current)
   // iterate from root to current so start elements are written in document order
-  for i := Length(items) - 1 downto 0 do
+  for i := 0 to Length(items) - 1 do
   begin
     info := items[i];
     if not info.IsVisible then
