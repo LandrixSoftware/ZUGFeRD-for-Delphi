@@ -1,4 +1,4 @@
-﻿{* Licensed to the Apache Software Foundation (ASF) under one
+{* Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -361,10 +361,9 @@ var
   xmlNode: IXMLNode;
 begin
   items := XmlStack.ToArray;
-  // Delphi TStack<T>.ToArray returns items in push order:
-  // items[0] = bottom (root), items[Length-1] = top (current)
+  // items[0] = top (current), items[Length-1] = bottom (root)
   // iterate from root to current so start elements are written in document order
-  for i := 0 to Length(items) - 1 do
+  for i := Length(items) - 1 downto 0 do
   begin
     info := items[i];
     if not info.IsVisible then
