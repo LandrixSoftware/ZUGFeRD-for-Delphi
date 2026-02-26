@@ -28,9 +28,13 @@ uses
   ;
 
 type
-  TZUGFeRDStackInfo = record
+  TZUGFeRDStackInfo = class
     Profile: TZUGFeRDProfiles;
     IsVisible: Boolean;
+    Prefix: string;
+    LocalName: string;
+    NS: string;
+    IsWritten: Boolean;
   end;
 
   //https://github.com/codejanovic/Delphi-Serialization
@@ -54,6 +58,7 @@ type
     function GetFormatting: TZUGFeRDXmlFomatting;
     procedure SetFormatting(value: TZUGFeRDXmlFomatting);
 
+    procedure _FlushPendingStartElements;
     function _DoesProfileFitToCurrentProfile(profiles: TZUGFeRDProfiles): Boolean;
     function _IsNodeVisible: Boolean;
     function _CleanInvalidXmlChars(const input: string): string;
@@ -137,9 +142,20 @@ begin
 end;
 
 destructor TZUGFeRDProfileAwareXmlTextWriter.Destroy;
+var
+  info: TZUGFeRDStackInfo;
 begin
   TextWriter := nil;
-  if Assigned(XmlStack) then begin XmlStack.Free; XmlStack := nil; end;
+  if Assigned(XmlStack) then
+  begin
+    while XmlStack.Count > 0 do
+    begin
+      info := XmlStack.Pop;
+      info.Free;
+    end;
+    XmlStack.Free;
+    XmlStack := nil;
+  end;
   if Assigned(XmlNodeStack) then begin XmlNodeStack.Free; XmlNodeStack := nil; end;
   if Assigned(Namespaces) then begin Namespaces.Free; Namespaces := nil; end;
   inherited;
@@ -184,46 +200,27 @@ procedure TZUGFeRDProfileAwareXmlTextWriter.WriteStartElement(const prefix, loca
 var
   _profile: TZUGFeRDProfiles;
   info: TZUGFeRDStackInfo;
-  xmlNode : IXMLNode;
-  namespaceURI: string;
 begin
   _profile := profile;
   if profile = TZUGFERDPROFILES_DEFAULT then
     _profile := [CurrentProfile];
 
+  info := TZUGFeRDStackInfo.Create;
+  info.Profile := _profile;
+  info.Prefix := prefix;
+  info.LocalName := localName;
+  info.NS := ns;
+
   if (not _IsNodeVisible) or (not _DoesProfileFitToCurrentProfile(_profile)) then
   begin
-    info.Profile := _profile;
-    info.IsVisible := false;
+    info.IsVisible := False;
     XmlStack.Push(info);
-    exit;
+    Exit;
   end;
 
-  info.Profile := _profile;
   info.IsVisible := True;
   XmlStack.Push(info);
-
-  // Get namespace from Namespaces dictionary if prefix is provided
-  namespaceURI := ns;
-  if (prefix <> '') and Namespaces.ContainsKey(prefix) then
-    namespaceURI := Namespaces[prefix];
-
-  // write value
-  if XMLNodeStack.Count = 0 then
-  begin
-    if (prefix <> '') or (namespaceURI <> '') then
-      xmlNode := TextWriter.AddChild(localName, namespaceURI)
-    else
-      xmlNode := TextWriter.AddChild(localName);
-  end
-  else
-  begin
-    if (prefix <> '') or (namespaceURI <> '') then
-      xmlNode := XMLNodeStack.Peek.AddChild(localName, namespaceURI)
-    else
-      xmlNode := XMLNodeStack.Peek.AddChild(localName);
-  end;
-  XmlNodeStack.Push(xmlNode);
+  // Don't write to XML yet - deferred until content is written
 end;
 
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteEndElement;
@@ -231,14 +228,18 @@ var
   infoForCurrentXmlLevel: TZUGFeRDStackInfo;
 begin
   infoForCurrentXmlLevel := XmlStack.Pop;
-  if (_DoesProfileFitToCurrentProfile(infoForCurrentXmlLevel.Profile) and _IsNodeVisible()) then
-  begin
-    if NeedToIndentEndElement then
+  try
+    if infoForCurrentXmlLevel.IsWritten then
     begin
-      WriteRawIndention;
-      NeedToIndentEndElement := False;
+      if NeedToIndentEndElement then
+      begin
+        WriteRawIndention;
+        NeedToIndentEndElement := False;
+      end;
+      XmlNodeStack.Pop;
     end;
-    XmlNodeStack.Pop;
+  finally
+    infoForCurrentXmlLevel.Free;
   end;
 end;
 
@@ -283,6 +284,8 @@ begin
   if (not _IsNodeVisible) or (not _DoesProfileFitToCurrentProfile(_profile)) then
     exit;
 
+  _FlushPendingStartElements;
+
   XMLNodeStack.Peek.AddChild(localName).Text := cleanedValue;
 end;
 
@@ -315,6 +318,8 @@ begin
   if not _DoesProfileFitToCurrentProfile(profile) then
     exit;
 
+  _FlushPendingStartElements;
+
   currentNode := XmlNodeStack.Peek;
   if currentNode = nil then
     exit;
@@ -342,7 +347,55 @@ begin
   if not infoForCurrentNode.IsVisible then
     exit;
 
+  _FlushPendingStartElements;
+
   XmlNodeStack.Peek.Text := cleanedValue;
+end;
+
+procedure TZUGFeRDProfileAwareXmlTextWriter._FlushPendingStartElements;
+var
+  items: TArray<TZUGFeRDStackInfo>;
+  i: Integer;
+  info: TZUGFeRDStackInfo;
+  namespaceURI: string;
+  xmlNode: IXMLNode;
+begin
+  items := XmlStack.ToArray;
+  // items[0] = top (current), items[Length-1] = bottom (root)
+  // iterate from root to current so start elements are written in document order
+  for i := Length(items) - 1 downto 0 do
+  begin
+    info := items[i];
+    if not info.IsVisible then
+      Exit;
+
+    if info.IsWritten then
+      Continue;
+
+    // Resolve namespace
+    namespaceURI := info.NS;
+    if (info.Prefix <> '') and Namespaces.ContainsKey(info.Prefix) then
+      namespaceURI := Namespaces[info.Prefix];
+
+    // Create the XML node
+    if XmlNodeStack.Count = 0 then
+    begin
+      if (info.Prefix <> '') or (namespaceURI <> '') then
+        xmlNode := TextWriter.AddChild(info.LocalName, namespaceURI)
+      else
+        xmlNode := TextWriter.AddChild(info.LocalName);
+    end
+    else
+    begin
+      if (info.Prefix <> '') or (namespaceURI <> '') then
+        xmlNode := XmlNodeStack.Peek.AddChild(info.LocalName, namespaceURI)
+      else
+        xmlNode := XmlNodeStack.Peek.AddChild(info.LocalName);
+    end;
+    XmlNodeStack.Push(xmlNode);
+
+    info.IsWritten := True;
+  end;
 end;
 
 function TZUGFeRDProfileAwareXmlTextWriter._DoesProfileFitToCurrentProfile(profiles: TZUGFeRDProfiles): Boolean;
@@ -426,6 +479,7 @@ begin
   if not infoForCurrentNode.IsVisible then
     Exit;
 
+  _FlushPendingStartElements;
   NeedToIndentEndElement := True;
 
   // Write value as text to current node
@@ -447,6 +501,7 @@ begin
   if not infoForCurrentNode.IsVisible then
     Exit;
 
+  _FlushPendingStartElements;
   NeedToIndentEndElement := True;
 
   // Write indention according to current xml tree position
@@ -484,6 +539,8 @@ begin
     if not infoForCurrentNode.IsVisible then
       Exit;
   end;
+
+  _FlushPendingStartElements;
 
   // Write XML comment
   // Note: Delphi's IXMLNode doesn't directly support comments in the same way
