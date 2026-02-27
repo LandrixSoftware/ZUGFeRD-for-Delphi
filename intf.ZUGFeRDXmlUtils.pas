@@ -244,7 +244,7 @@ begin
 
     jan4 := EncodeDate(StrToInt(year), 1, 4);
     aDay := IncWeek(jan4, StrToInt(week) - 1);
-    aDayOfWeek := DayOfWeek(aDay) - 1;
+    aDayOfWeek := DayOfTheWeek(aDay) - 1; // ISO 8601: Mon=1..Sun=7, -1 => Mon=0..Sun=6
 
     Result := aDay - aDayOfWeek;
     exit;
