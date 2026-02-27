@@ -468,24 +468,40 @@ begin
 
     var chargeIndicator : Boolean := TZUGFeRDXmlUtils.NodeAsBool(nodes[i], './ram:ChargeIndicator/udt:Indicator');
     var basisAmount : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './ram:BasisAmount',0);
-    var calculationPercent : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './ram:CalculationPercent',0);
+    var calculationPercent : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './ram:CalculationPercent');
     var basisAmountCurrency : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './ram:BasisAmount/@currencyID');
     var actualAmount : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './ram:ActualAmount',0);
     var actualAmountCurrency : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './ram:ActualAmount/@currencyID');
     var reason : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './ram:Reason');
 
     if chargeIndicator then // charge
-      Result.AddTradeCharge(TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(basisAmountCurrency),
-                                    basisAmount,
-                                    actualAmount,
-                                    calculationPercent,
-                                    reason)
+    begin
+      if calculationPercent.HasValue then
+        Result.AddTradeCharge(TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(basisAmountCurrency),
+                                      basisAmount,
+                                      actualAmount,
+                                      calculationPercent,
+                                      reason)
+      else
+        Result.AddTradeCharge(TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(basisAmountCurrency),
+                                      basisAmount,
+                                      actualAmount,
+                                      reason);
+    end
     else
-      Result.AddTradeAllowance(TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(basisAmountCurrency),
-                                    basisAmount,
-                                    actualAmount,
-                                    calculationPercent,
-                                    reason);
+    begin
+      if calculationPercent.HasValue then
+        Result.AddTradeAllowance(TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(basisAmountCurrency),
+                                      basisAmount,
+                                      actualAmount,
+                                      calculationPercent,
+                                      reason)
+      else
+        Result.AddTradeAllowance(TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(basisAmountCurrency),
+                                      basisAmount,
+                                      actualAmount,
+                                      reason);
+    end;
   end;
 
   if (Result.UnitCode = TZUGFeRDQuantityCodes.Unknown) then

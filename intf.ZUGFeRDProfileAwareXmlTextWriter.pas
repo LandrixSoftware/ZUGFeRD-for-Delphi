@@ -286,7 +286,10 @@ begin
 
   _FlushPendingStartElements;
 
-  XMLNodeStack.Peek.AddChild(localName).Text := cleanedValue;
+  if ns <> '' then
+    XMLNodeStack.Peek.AddChild(localName, ns).Text := cleanedValue
+  else
+    XMLNodeStack.Peek.AddChild(localName).Text := cleanedValue;
 end;
 
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteStartDocument;
