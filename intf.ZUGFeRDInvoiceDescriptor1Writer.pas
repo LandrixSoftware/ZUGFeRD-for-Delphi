@@ -622,7 +622,12 @@ begin
         Writer.WriteElementString('udt:Indicator', ifthen(tradeAllowanceCharge.ChargeIndicator,'true','false'));
         Writer.WriteEndElement(); // !ram:ChargeIndicator
 
-        _WriteOptionalAmount(Writer, 'ram:CalculationPercent', tradeAllowanceCharge.ChargePercentage);
+        if tradeAllowanceCharge.ChargePercentage.HasValue then
+        begin
+          Writer.WriteStartElement('ram:CalculationPercent');
+          Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ChargePercentage.Value, 4));
+          Writer.WriteEndElement();
+        end;
 
         if tradeAllowanceCharge.BasisAmount.HasValue then
         begin
