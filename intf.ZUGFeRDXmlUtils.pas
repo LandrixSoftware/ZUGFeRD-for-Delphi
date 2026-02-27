@@ -269,6 +269,15 @@ begin
     Result := SafeParseDateTime(year, month, day);
     exit;
   end
+  else if (Length(rawValue) = 16) and (rawValue[5] = '-') and (rawValue[8] = '-') and (rawValue[11] = '+') then // yyyy-mm-dd+hh:mm (date with timezone offset)
+  begin
+    year := Copy(rawValue, 1, 4);
+    month := Copy(rawValue, 6, 2);
+    day := Copy(rawValue, 9, 2);
+
+    Result := SafeParseDateTime(year, month, day);
+    exit;
+  end
   else if Length(rawValue) = 19 then
   begin
     year := Copy(rawValue, 1, 4);
