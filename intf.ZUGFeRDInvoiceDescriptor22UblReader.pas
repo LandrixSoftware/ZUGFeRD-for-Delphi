@@ -80,6 +80,8 @@ type
     function _nodeAsAddressParty(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDParty;
     function _nodeAsLegalOrganization(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDLegalOrganization;
     function _nodeAsBankAccount(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDBankAccount;
+  protected
+    function _IsReadableByThisReaderVersion(AStream: TStream; const AValidURIs: TArray<string>): Boolean; override;
   public
     constructor Create;
     destructor Destroy; override;
@@ -128,8 +130,42 @@ end;
 
 function TZUGFeRDInvoiceDescriptor22UBLReader.IsReadableByThisReaderVersion(stream: TStream): Boolean;
 begin
-  Result := IsReadableByThisReaderVersion(stream, GetValidURIs);
+  Result := _IsReadableByThisReaderVersion(stream, GetValidURIs);
 end;
+
+function TZUGFeRDInvoiceDescriptor22UBLReader._IsReadableByThisReaderVersion(AStream: TStream; const AValidURIs: TArray<string>): Boolean;
+var
+  LOldPosition: Int64;
+  LReader: TStreamReader;
+  LData: string;
+  LValidURI: string;
+  LSearchStr: string;
+begin
+  Result := False;
+  LOldPosition := AStream.Position;
+  try
+    AStream.Position := 0;
+    LReader := TStreamReader.Create(AStream, TEncoding.UTF8, True, 1024);
+    try
+      LData := LReader.ReadToEnd.Replace(' ', '');
+
+      for LValidURI in AValidURIs do
+      begin
+        LSearchStr := '="' + LValidURI + '"';
+        if Pos(LSearchStr.ToLower, LData.ToLower) > 0 then
+        begin
+          Result := True;
+          Break;
+        end;
+      end;
+    finally
+      LReader.Free;
+    end;
+  finally
+    AStream.Position := LOldPosition;
+  end;
+end;
+
 
 function TZUGFeRDInvoiceDescriptor22UBLReader.Load(stream: TStream): TZUGFeRDInvoiceDescriptor;
 var
@@ -355,8 +391,8 @@ begin
   end;
 
   // Billing Period
-  Result.BillingPeriodStart := TZUGFeRDXmlUtils.NodeAsDateTime(doc.documentElement, '//cac:InvoicePeriod/cbc:StartDate');
-  Result.BillingPeriodEnd := TZUGFeRDXmlUtils.NodeAsDateTime(doc.documentElement, '//cac:InvoicePeriod/cbc:EndDate');
+  Result.BillingPeriodStart := TZUGFeRDXmlUtils.NodeAsDateTime(doc.documentElement, '/*[1]/cac:InvoicePeriod/cbc:StartDate');
+  Result.BillingPeriodEnd := TZUGFeRDXmlUtils.NodeAsDateTime(doc.documentElement, '/*[1]/cac:InvoicePeriod/cbc:EndDate');
 
   // Creditor Bank Accounts (BG-17)
   nodes := doc.selectNodes('//cac:PaymentMeans/cac:PayeeFinancialAccount');
@@ -611,9 +647,6 @@ begin
   Result.Name := TZUGFeRDXmlUtils.NodeAsString(node, 'cac:PartyName/cbc:Name');
   Result.SpecifiedLegalOrganization := _nodeAsLegalOrganization(node, 'cac:PartyLegalEntity');
 
-  if Result.Name.Trim = '' then
-    Result.Name := TZUGFeRDXmlUtils.NodeAsString(node, 'cac:PartyLegalEntity/cbc:RegistrationName');
-
   if Result.Description.Trim = '' then
     Result.Description := TZUGFeRDXmlUtils.NodeAsString(node, 'cac:PartyLegalEntity/cbc:CompanyLegalForm');
 end;
@@ -706,7 +739,7 @@ begin
   Result.BuyerAssignedID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './cac:Item/cac:BuyersItemIdentification/cbc:ID');
   Result.Name := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './cac:Item/cbc:Name');
   Result.Description := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/cac:Item/cbc:Description');
-  Result.NetQuantity := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/cac:Price/cbc:BaseQuantity', 1);
+  Result.NetQuantity := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/cac:Price/cbc:BaseQuantity');
   if billedQuantity.HasValue then
     Result.BilledQuantity := billedQuantity.Value
   else

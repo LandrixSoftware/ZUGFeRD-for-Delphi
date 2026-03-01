@@ -131,7 +131,7 @@ end;
 function TZUGFeRDInvoiceDescriptor20Reader.IsReadableByThisReaderVersion(
   stream: TStream): Boolean;
 begin
-  Result := IsReadableByThisReaderVersion(stream, GetValidURIs);
+  Result := _IsReadableByThisReaderVersion(stream, GetValidURIs);
 end;
 
 function TZUGFeRDInvoiceDescriptor20Reader.Load(stream: TStream): TZUGFeRDInvoiceDescriptor;

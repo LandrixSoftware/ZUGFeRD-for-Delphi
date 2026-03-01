@@ -956,7 +956,7 @@ begin
 
     _writer.WriteStartElement('cac:Party', ALL_PROFILES);
 
-    if electronicAddress <> nil then
+    if (electronicAddress <> nil) and (ElectronicAddress.Address<>'') then
     begin
       _writer.WriteStartElement('cbc:EndpointID');
       _writer.WriteAttributeString('schemeID', TEnumExtensions<TZUGFeRDElectronicAddressSchemeIdentifiers>.EnumToString(electronicAddress.ElectronicAddressSchemeID));

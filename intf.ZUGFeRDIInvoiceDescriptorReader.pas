@@ -35,7 +35,7 @@ type
   protected
     FNamespaces: TDictionary<string, string>;
     function CreateFixedNamespaceManager(ADoc: IXMLDocument): IXMLDOMDocument2;
-    function IsReadableByThisReaderVersion(AStream: TStream; const AValidURIs: TArray<string>): Boolean; overload;
+    function _IsReadableByThisReaderVersion(AStream: TStream; const AValidURIs: TArray<string>): Boolean; virtual;
   public
     function Load(stream: TStream): TZUGFeRDInvoiceDescriptor; overload; virtual; abstract;
 
@@ -158,7 +158,7 @@ begin
   end;
 end;
 
-function TZUGFeRDIInvoiceDescriptorReader.IsReadableByThisReaderVersion(AStream: TStream; const AValidURIs: TArray<string>): Boolean;
+function TZUGFeRDIInvoiceDescriptorReader._IsReadableByThisReaderVersion(AStream: TStream; const AValidURIs: TArray<string>): Boolean;
 var
   LOldPosition: Int64;
   LReader: TStreamReader;
