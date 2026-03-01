@@ -130,6 +130,8 @@ begin
   inherited Create;
   FBasisAmount := 0;
   FPercent := 0;
+  FTypeCode := TZUGFeRDTaxTypes.VAT;
+  FCategoryCode := TZUGFeRDTaxCategoryCodes.S;
   FExemptionReason := '';
   FTaxAmount := 0;
 end;

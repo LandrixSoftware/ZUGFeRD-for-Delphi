@@ -81,3 +81,7 @@ __recovery/
 
 Samples/Rechnung_9202174904.pdf
 Samples/Rechnung_9202174904_ZUGFeRD-invoice.xml
+
+# Review-Dokumentation (lokal, nicht einchecken)
+review-*.md
+.claude/
