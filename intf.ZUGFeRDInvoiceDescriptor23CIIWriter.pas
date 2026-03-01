@@ -376,9 +376,8 @@ begin
             Writer.WriteEndElement(); // !qdt:DateTimeString
             Writer.WriteEndElement(); // !ram:FormattedIssueDateTime
           end;
+          Writer.WriteEndElement(); // !ram:BuyerOrderReferencedDocument
         end;
-
-        Writer.WriteEndElement(); // !ram:BuyerOrderReferencedDocument
       end;
       //#endregion
 
@@ -1373,14 +1372,14 @@ begin
   begin
     var allowance:= tradeAllowanceCharge as TZUGFeRDTradeAllowance;
     if allowance.ReasonCode.HasValue then
-      Writer.WriteOptionalElementString('ram:ReasonCode', TEnumExtensions<TZUGFeRDAllowanceReasonCodes>.EnumToString(allowance.ReasonCode));
+      Writer.WriteOptionalElementString('ram:ReasonCode', TEnumExtensions<TZUGFeRDAllowanceReasonCodes>.EnumToString(allowance.ReasonCode), [TZUGFeRDProfile.Extended]);
   end
   else
   if tradeAllowanceCharge is TZUGFeRDTradeCharge then
   begin
     var charge:= tradeAllowanceCharge as TZUGFeRDTradeCharge;
     if charge.ReasonCode.HasValue then
-      Writer.WriteOptionalElementString('ram:ReasonCode', TEnumExtensions<TZUGFeRDChargeReasonCodes>.EnumToString(charge.ReasonCode));
+      Writer.WriteOptionalElementString('ram:ReasonCode', TEnumExtensions<TZUGFeRDChargeReasonCodes>.EnumToString(charge.ReasonCode), [TZUGFeRDProfile.Extended]);
   end;
 
   _writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason, [TZUGFeRDProfile.Extended]);

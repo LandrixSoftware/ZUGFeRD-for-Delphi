@@ -213,7 +213,7 @@ begin
     if (tradeLineItem.AssociatedDocument <> nil) then
     begin
       Writer.WriteStartElement('ram:AssociatedDocumentLineDocument');
-      Writer.WriteElementString('ram:LineID', tradeLineItem.AssociatedDocument.LineID);
+      Writer.WriteOptionalElementString('ram:LineID', tradeLineItem.AssociatedDocument.LineID);
       if tradeLineItem.AssociatedDocument.LineStatusCode.HasValue then
         Writer.WriteOptionalElementString('ram:LineStatusCode', TEnumExtensions<TZUGFeRDLineStatusCodes>.EnumToString(tradeLineItem.AssociatedDocument.LineStatusCode));
       if tradeLineItem.AssociatedDocument.LineStatusReasonCode.HasValue then
@@ -1065,12 +1065,12 @@ begin
 
   if tradeAllowanceCharge.BasisAmount.HasValue then
   begin
-    Writer.WriteStartElement('ram:BasisAmount', [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
+    Writer.WriteStartElement('ram:BasisAmount');
     Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.BasisAmount,2));
     Writer.WriteEndElement();
   end;
 
-  Writer.WriteStartElement('ram:ActualAmount', [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
+  Writer.WriteStartElement('ram:ActualAmount');
   Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ActualAmount, 2));
   Writer.WriteEndElement();
 
@@ -1088,16 +1088,16 @@ begin
       Writer.WriteOptionalElementString('ram:ReasonCode', TEnumExtensions<TZUGFeRDChargeReasonCodes>.EnumToString(charge.ReasonCode));
   end;
 
-  Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason, [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
+  Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason);
 
   if (tradeAllowanceCharge.Tax<> nil) then
   begin
     Writer.WriteStartElement('ram:CategoryTradeTax');
     if tradeAllowanceCharge.Tax.TypeCode.HasValue then
-      Writer.WriteElementString('ram:TypeCode', TEnumExtensions<TZUGFeRDTaxTypes>.EnumToString(tradeAllowanceCharge.Tax.TypeCode), [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
+      Writer.WriteElementString('ram:TypeCode', TEnumExtensions<TZUGFeRDTaxTypes>.EnumToString(tradeAllowanceCharge.Tax.TypeCode));
     if tradeAllowanceCharge.Tax.CategoryCode.HasValue then
-      Writer.WriteElementString('ram:CategoryCode', TEnumExtensions<TZUGFeRDTaxCategoryCodes>.EnumToString(tradeAllowanceCharge.Tax.CategoryCode), [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
-    Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(tradeAllowanceCharge.Tax.Percent), [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
+      Writer.WriteElementString('ram:CategoryCode', TEnumExtensions<TZUGFeRDTaxCategoryCodes>.EnumToString(tradeAllowanceCharge.Tax.CategoryCode));
+    Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(tradeAllowanceCharge.Tax.Percent));
     Writer.WriteEndElement();
   end;
   Writer.WriteEndElement();
@@ -1285,7 +1285,7 @@ begin
 
   if (contact.FaxNo <> '') then
   begin
-    _writer.WriteStartElement('ram:FaxUniversalCommunication');
+    _writer.WriteStartElement('ram:FaxUniversalCommunication', [TZUGFeRDProfile.Extended]);
     _writer.WriteElementString('ram:CompleteNumber', contact.FaxNo);
     _writer.WriteEndElement();
   end;

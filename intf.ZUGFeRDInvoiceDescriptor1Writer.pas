@@ -994,7 +994,7 @@ begin
 
   if (contact.FaxNo <> '') then
   begin
-    _writer.WriteStartElement('ram:FaxUniversalCommunication');
+    _writer.WriteStartElement('ram:FaxUniversalCommunication', [TZUGFeRDProfile.Extended]);
     _writer.WriteElementString('ram:CompleteNumber', contact.FaxNo);
     _writer.WriteEndElement();
   end;
