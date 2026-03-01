@@ -644,7 +644,7 @@ begin
 
   Writer.WriteStartElement('cac:TaxCategory');
   Writer.WriteElementString('cbc:ID', TEnumExtensions<TZUGFeRDTaxCategoryCodes>.EnumToString(tradeAllowanceCharge.Tax.CategoryCode));
-  if tradeAllowanceCharge.Tax.Percent <> 0 then
+  if tradeAllowanceCharge.Tax.Percent.HasValue then
     Writer.WriteElementString('cbc:Percent', _formatDecimal(tradeAllowanceCharge.Tax.Percent));
   Writer.WriteStartElement('cac:TaxScheme');
   Writer.WriteElementString('cbc:ID', TEnumExtensions<TZUGFeRDTaxTypes>.EnumToString(tradeAllowanceCharge.Tax.TypeCode));
