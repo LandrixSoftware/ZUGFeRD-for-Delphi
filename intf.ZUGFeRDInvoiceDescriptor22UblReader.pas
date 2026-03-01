@@ -768,7 +768,7 @@ begin
         TEnumExtensions<TZUGFeRDDesignatedProductClassificationClassCodes>.StringToEnum(
           TZUGFeRDXmlUtils.NodeAsString(nodes[i], './@listID'));
       var listVersionID : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './@listVersionID');
-      Result.AddDesignatedProductClassification(listID, listVersionID, '', nodes[i].text);
+      Result.AddDesignatedProductClassification(listID, listVersionID, nodes[i].text, '');
     end;
 
   // Product Characteristics (BG-32)

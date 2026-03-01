@@ -1030,7 +1030,7 @@ type
     /// <summary>
     ///     Sets up the payment means for SEPA direct debit.
     /// </summary>
-    procedure SetPaymentMeansSepaDirectDebit(const sepaCreditorIdentifier: string; const information: string = '');
+    procedure SetPaymentMeansSepaDirectDebit(const sepaCreditorIdentifier: string; const sepaMandateReference: string; const information: string = '');
 
     procedure SetBillingPeriod (billingPeriodStart, billingPeriodEnd: ZUGFeRDNullable<TDateTime>);
 
@@ -1152,9 +1152,12 @@ begin
   if Assigned(FInvoicee                      ) then begin FInvoicee.Free; FInvoicee := nil; end;
   if Assigned(FInvoiceeTaxRegistration       ) then begin FInvoiceeTaxRegistration.Free; FInvoiceeTaxRegistration := nil; end;
   if Assigned(FInvoicer                      ) then begin FInvoicer.Free; FInvoicer := nil; end;
+  if Assigned(FInvoicerContact               ) then begin FInvoicerContact.Free; FInvoicerContact := nil; end;
   if Assigned(FShipTo                        ) then begin FShipTo.Free; FShipTo := nil; end;
+  if Assigned(FShipToContact                 ) then begin FShipToContact.Free; FShipToContact := nil; end;
   if Assigned(FShipToTaxRegistration         ) then begin FShipToTaxRegistration.Free; FShipToTaxRegistration := nil; end;
   if Assigned(FUltimateShipTo                ) then begin FUltimateShipTo.Free; FUltimateShipTo := nil; end;
+  if Assigned(FUltimateShipToContact         ) then begin FUltimateShipToContact.Free; FUltimateShipToContact := nil; end;
   if Assigned(FPayee                         ) then begin FPayee.Free; FPayee := nil; end;
   if Assigned(FShipFrom                      ) then begin FShipFrom.Free; FShipFrom := nil; end;
   if Assigned(FNotes                         ) then begin FNotes.Free; FNotes := nil; end;
@@ -1593,6 +1596,8 @@ end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetDeliveryNoteReferenceDocument(const deliveryNoteNo: string; deliveryNoteDate: IZUGFeRDNullableParam<TDateTime> = Nil);
 begin
+  if FDeliveryNoteReferencedDocument = nil then
+    FDeliveryNoteReferencedDocument := TZUGFeRDDeliveryNoteReferencedDocument.Create;
   FDeliveryNoteReferencedDocument.ID := deliveryNoteNo;
   FDeliveryNoteReferencedDocument.IssueDateTime:= deliveryNoteDate;
 end;
@@ -1600,13 +1605,17 @@ end;
 procedure TZUGFeRDInvoiceDescriptor.SetDespatchAdviceReferencedDocument(
   despatchAdviceNo: String; despatchAdviceDate: IZUGFeRDNullableParam<TDateTime> = Nil);
 begin
+  if FDespatchAdviceReferencedDocument = nil then
+    FDespatchAdviceReferencedDocument := TZUGFeRDDespatchAdviceReferencedDocument.Create;
   FDespatchAdviceReferencedDocument.ID := despatchAdviceNo;
   FDespatchAdviceReferencedDocument.IssueDateTime:= despatchAdviceDate;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetContractReferencedDocument(const contractNo: string; const contractDate: TDateTime);
 begin
-  FContractReferencedDocument.ID := contractNo; //TODO memeak
+  if FContractReferencedDocument = nil then
+    FContractReferencedDocument := TZUGFeRDContractReferencedDocument.Create;
+  FContractReferencedDocument.ID := contractNo;
   FContractReferencedDocument.IssueDateTime:= contractDate;
 end;
 
@@ -2022,8 +2031,8 @@ begin
   if (not deliveryNoteID.IsEmpty) or (deliveryNoteDate <> Nil) then
     newItem.SetDeliveryNoteReferencedDocument(deliveryNoteID,deliveryNoteDate);
 
-  if (not buyerOrderID.IsEmpty) or (buyerOrderDate <> nil) then
-    newItem.SetOrderReferencedDocument(buyerOrderID, buyerOrderDate);
+  if (not buyerOrderLineID.IsEmpty) or (buyerOrderDate <> nil) or (not buyerOrderID.IsEmpty) then
+    newItem.SetOrderReferencedDocument(buyerOrderID, buyerOrderDate, buyerOrderLineID);
 
   TradeLineItems.Add(newItem);
 
@@ -2043,13 +2052,14 @@ begin
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetPaymentMeansSepaDirectDebit(const sepaCreditorIdentifier: string;
-  const information: string = '');
+  const sepaMandateReference: string; const information: string = '');
 begin
   if Self.PaymentMeans = nil then Self.PaymentMeans := TZUGFeRDPaymentMeans.Create;
 
   Self.PaymentMeans.TypeCode := TZUGFeRDPaymentMeansTypeCodes.SEPADirectDebit;
   Self.PaymentMeans.Information := information;
   Self.PaymentMeans.SEPACreditorIdentifier := sepaCreditorIdentifier;
+  Self.PaymentMeans.SEPAMandateReference := sepaMandateReference;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetBillingPeriod (billingPeriodStart, billingPeriodEnd: ZUGFeRDNullable<TDateTime>);
@@ -2063,7 +2073,7 @@ procedure TZUGFeRDInvoiceDescriptor.SetPaymentMeansFinancialCard(const financial
 begin
   if Self.PaymentMeans = nil then Self.PaymentMeans := TZUGFeRDPaymentMeans.Create;
 
-  PaymentMeans.TypeCode := TZUGFeRDPaymentMeansTypeCodes.SEPADirectDebit;
+  PaymentMeans.TypeCode := TZUGFeRDPaymentMeansTypeCodes.BankCard;
   PaymentMeans.Information := information;
   PaymentMeans.FinancialCard.Id := financialCardId;
   PaymentMeans.FinancialCard.CardholderName := financialCardCardholder;

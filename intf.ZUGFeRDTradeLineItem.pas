@@ -283,7 +283,7 @@ type
 		/// <param name="classCode">Identifier of the item classification (optional)</param>
 		/// <param name="listID">Product classification name (optional)</param>
 		/// <param name="listVersionID">Version of product classification (optional)</param>
-    procedure AddDesignatedProductClassification(listID  : TZUGFeRDDesignatedProductClassificationClassCodes; listVersionID : String = ''; className : String = ''; classCode: string = '');
+    procedure AddDesignatedProductClassification(listID  : TZUGFeRDDesignatedProductClassificationClassCodes; listVersionID : String = ''; classCode: string = ''; className : String = '');
 
     /// <summary>
     /// Recipient of the delivered goods. This party is optional and is written in Extended profile only
@@ -305,7 +305,7 @@ type
     property UltimateShipToTaxRegistration: TObjectList<TZUGFeRDTaxRegistration> read FUltimateShipToTaxRegistration;
     property UltimateShipToElectronicAddress : TZUGFeRDElectronicAddress read FUltimateShipToElectronicAddress;
 
-    function SetContractReferencedDocument(contractReferencedId: string; contractReferencedDate: IZUGFeRDNullableParam<TDateTime>): TZUGFeRDTradeLineItem;
+    function SetContractReferencedDocument(contractReferencedId: string; contractReferencedDate: IZUGFeRDNullableParam<TDateTime>; contractReferencedLineId: string = ''): TZUGFeRDTradeLineItem;
 
     /// <summary>
     /// The value given here refers to the superior line. In this way, a hierarchy tree of invoice items can be mapped.
@@ -328,14 +328,14 @@ type
     /// <param name="deliveryNoteId">The identifier of the delivery note. BT-X-92</param>
     /// <param name="deliveryNoteDate">The date of the delivery note. BT-X-94</param>
     /// <param name="deliveryNoteReferencedLineId">The identifier of the delivery note item. BT-X-93</param>
-    function SetDeliveryNoteReferencedDocument(deliveryNoteId: string; deliveryNoteDate: IZUGFeRDNullableParam<TDateTime>): TZUGFeRDTradeLineItem;
+    function SetDeliveryNoteReferencedDocument(deliveryNoteId: string; deliveryNoteDate: IZUGFeRDNullableParam<TDateTime>; deliveryNoteReferencedLineId: string = ''): TZUGFeRDTradeLineItem;
 
     /// <summary>
 		/// Please note that XRechnung/ FacturX allows a maximum of one such reference
     /// and will only output the referenced order line id
     /// but not issuer assigned id and date
 		/// </summary>
-    function SetOrderReferencedDocument(orderReferencedId: string; orderReferencedDate: IZUGFeRDNullableParam<TDateTime>): TZUGFeRDTradeLineItem;
+    function SetOrderReferencedDocument(orderReferencedId: string; orderReferencedDate: IZUGFeRDNullableParam<TDateTime>; orderReferencedLineId: string = ''): TZUGFeRDTradeLineItem;
   public
     /// <summary>
     /// The identification of articles based on a registered scheme
@@ -592,7 +592,7 @@ begin
   inherited Create;
   FGlobalID := TZUGFeRDGlobalID.Create;
   FNetUnitPrice:= 0.0;
-  FGrossUnitPrice:= 0.0;
+  FGrossUnitPrice.ClearValue;
   FAssociatedDocument:= TZUGFeRDAssociatedDocument.Create(LineId);
   FTaxType:= TZUGFeRDTaxTypes.VAT; // Default Value
   FBillingPeriodStart.ClearValue;
@@ -738,7 +738,7 @@ begin
   Result:= Self
 end;
 
-function TZUGFeRDTradeLineItem.SetDeliveryNoteReferencedDocument(deliveryNoteId: string; deliveryNoteDate: IZUGFeRDNullableParam<TDateTime>): TZUGFeRDTradeLineItem;
+function TZUGFeRDTradeLineItem.SetDeliveryNoteReferencedDocument(deliveryNoteId: string; deliveryNoteDate: IZUGFeRDNullableParam<TDateTime>; deliveryNoteReferencedLineId: string = ''): TZUGFeRDTradeLineItem;
 begin
   if FDeliveryNoteReferencedDocument = nil then
     FDeliveryNoteReferencedDocument := TZUGFeRDDeliveryNoteReferencedDocument.Create;
@@ -746,6 +746,7 @@ begin
   begin
     ID := deliveryNoteId;
     IssueDateTime:= deliveryNoteDate;
+    LineID := deliveryNoteReferencedLineId;
   end;
   Result:= self
 end;
@@ -757,10 +758,10 @@ begin
   FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(true));
 
   FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].ID := id;
-  if date <= 0 then
+  if issueDateTime <= 0 then
     FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].IssueDateTime:= Nil
   else
-    FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].IssueDateTime:= date;
+    FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].IssueDateTime:= issueDateTime;
   FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].ReferenceTypeCode := code;
 end;
 
@@ -775,10 +776,10 @@ begin
 
   FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].ReferenceTypeCode := referenceTypeCode;
   FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].ID := id;
-  if date <= 0 then
+  if issueDateTime <= 0 then
     FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].IssueDateTime:= Nil
   else
-    FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].IssueDateTime:= date;
+    FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].IssueDateTime:= issueDateTime;
   FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].Name := name;
   FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].AttachmentBinaryObject.Clear;
   FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].AttachmentBinaryObject.LoadFromStream(attachmentBinaryObject);
@@ -794,7 +795,7 @@ begin
   FIncludedReferencedProducts[FIncludedReferencedProducts.Count - 1].UnitCode := UnitCode;
 end;
 
-function TZUGFeRDTradeLineItem.SetOrderReferencedDocument(orderReferencedId: string; orderReferencedDate: IZUGFeRDNullableParam<TDateTime>): TZUGFeRDTradeLineItem;
+function TZUGFeRDTradeLineItem.SetOrderReferencedDocument(orderReferencedId: string; orderReferencedDate: IZUGFeRDNullableParam<TDateTime>; orderReferencedLineId: string = ''): TZUGFeRDTradeLineItem;
 begin
   if FBuyerOrderReferencedDocument = nil then
     FBuyerOrderReferencedDocument := TZUGFeRDBuyerOrderReferencedDocument.Create;
@@ -802,18 +803,20 @@ begin
   begin
     ID := orderReferencedId;
     IssueDateTime:= orderReferencedDate;
+    LineID := orderReferencedLineId;
   end;
   Result:= self;
 end;
 
-function TZUGFeRDTradeLineItem.SetContractReferencedDocument(contractReferencedId: string; contractReferencedDate: IZUGFeRDNullableParam<TDateTime>): TZUGFeRDTradeLineItem;
+function TZUGFeRDTradeLineItem.SetContractReferencedDocument(contractReferencedId: string; contractReferencedDate: IZUGFeRDNullableParam<TDateTime>; contractReferencedLineId: string = ''): TZUGFeRDTradeLineItem;
 begin
   if FContractReferencedDocument = nil then
-    FContractReferencedDocument := ContractReferencedDocument.Create;
+    FContractReferencedDocument := TZUGFeRDContractReferencedDocument.Create;
   with FContractReferencedDocument do
   begin
     ID := contractReferencedId;
     IssueDateTime:= contractReferencedDate;
+    LineID := contractReferencedLineId;
   end;
   Result:= self
 end;
@@ -821,8 +824,8 @@ end;
 procedure TZUGFeRDTradeLineItem.AddDesignatedProductClassification(
   listID:  TZUGFeRDDesignatedProductClassificationClassCodes;
   listVersionID: String;
-  className : String;
-  classCode: string
+  classCode: string;
+  className : String
 );
 begin
   DesignedProductClassifications.Add(TZUGFeRDDesignatedProductClassification.Create);
@@ -839,7 +842,8 @@ begin
   with FReceivableSpecifiedTradeAccountingAccounts[FReceivableSpecifiedTradeAccountingAccounts.Count - 1] do
   begin
     TradeAccountID := AccountID;
-    TradeAccountTypeCode := AccountTypeCode.Value;
+    if AccountTypeCode <> nil then
+      TradeAccountTypeCode := AccountTypeCode.Value;
   end;
 end;
 

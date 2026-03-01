@@ -854,7 +854,7 @@ begin
     var classCode : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ClassCode');
     var listID : TZUGFeRDDesignatedProductClassificationClassCodes := TEnumExtensions<TZUGFeRDDesignatedProductClassificationClassCodes>.StringToEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ClassCode/@listID'));
     var listVersionID : String := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ClassCode/@listVersionID');
-    Result.AddDesignatedProductClassification(listID, listVersionID, className, classCode);
+    Result.AddDesignatedProductClassification(listID, listVersionID, classCode, className);
   end;
 
   if tradeLineItem.SelectSingleNode('.//ram:OriginTradeCountry//ram:ID') <> nil then
