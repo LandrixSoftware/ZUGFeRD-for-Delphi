@@ -929,7 +929,8 @@ if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
           if paymentTerms.DueDays.HasValue then
             _writeElementWithAttribute(Writer, 'ram:BasisPeriodMeasure', 'unitCode', TEnumExtensions<TZUGFeRDQuantityCodes>.EnumToString(TZUGFeRDQuantityCodes.DAY), IntToStr(paymentTerms.DueDays.Value));
           _writeOptionalAmount(Writer, 'ram:BasisAmount', paymentTerms.BaseAmount); // forceCurrency false by default
-          Writer.WriteOptionalElementString('ram:CalculationPercent', _formatDecimal(paymentTerms.Percentage));
+          if paymentTerms.Percentage.HasValue then
+            Writer.WriteOptionalElementString('ram:CalculationPercent', _formatDecimal(paymentTerms.Percentage));
           if PaymentTerms.PaymentTermsType = TZUGFeRDPaymentTermsType.Skonto then
             _writeOptionalAmount(Writer, 'ram:ActualDiscountAmount', paymentTerms.ActualAmount)
           else
@@ -962,14 +963,16 @@ if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
             begin
               Writer.WriteStartElement('ram:ApplicableTradePaymentDiscountTerms');
               _writeOptionalAmount(Writer, 'ram:BasisAmount', paymentTerms.BaseAmount);
-              Writer.WriteOptionalElementString('ram:CalculationPercent', _formatDecimal(paymentTerms.Percentage));
+              if paymentTerms.Percentage.HasValue then
+                Writer.WriteOptionalElementString('ram:CalculationPercent', _formatDecimal(paymentTerms.Percentage));
               Writer.WriteEndElement(); // !ram:ApplicableTradePaymentDiscountTerms
             end;
             if paymentTerms.PaymentTermsType = TZUGFeRDPaymentTermsType.Verzug then
             begin
               Writer.WriteStartElement('ram:ApplicableTradePaymentPenaltyTerms');
               _writeOptionalAmount(Writer, 'ram:BasisAmount', paymentTerms.BaseAmount);
-              Writer.WriteOptionalElementString('ram:CalculationPercent', _formatDecimal(paymentTerms.Percentage));
+              if paymentTerms.Percentage.HasValue then
+                Writer.WriteOptionalElementString('ram:CalculationPercent', _formatDecimal(paymentTerms.Percentage));
               Writer.WriteEndElement(); // !ram:ApplicableTradePaymentPenaltyTerms
             end;
           end

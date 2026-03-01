@@ -1102,7 +1102,8 @@ begin
           if paymentTerms.DueDays.HasValue then
             _writeElementWithAttributeWithPrefix(Writer, 'ram:BasisPeriodMeasure', 'unitCode', TEnumExtensions<TZUGFeRDQuantityCodes>.EnumToString(TZUGFeRDQuantityCodes.DAY), IntToStr(paymentTerms.DueDays.Value));
           _writeOptionalAmount(Writer, 'ram:BasisAmount', paymentTerms.BaseAmount); // forceCurrency false by default
-          Writer.WriteOptionalElementString('ram:CalculationPercent', _formatDecimal(paymentTerms.Percentage));
+          if paymentTerms.Percentage.HasValue then
+            Writer.WriteOptionalElementString('ram:CalculationPercent', _formatDecimal(paymentTerms.Percentage));
           if PaymentTerms.PaymentTermsType = TZUGFeRDPaymentTermsType.Skonto then
             _writeOptionalAmount(Writer, 'ram:ActualDiscountAmount', paymentTerms.ActualAmount)
           else

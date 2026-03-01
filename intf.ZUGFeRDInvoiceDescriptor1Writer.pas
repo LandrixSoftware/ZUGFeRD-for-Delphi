@@ -455,7 +455,8 @@ begin
           begin
             Writer.WriteStartElement('ram:ApplicableTradePaymentDiscountTerms');
             _writeOptionalAmount(Writer, 'ram:BasisAmount', paymentTerms.BaseAmount); // forceCurrency false by default
-            Writer.WriteOptionalElementString('ram:CalculationPercent', _formatDecimal(paymentTerms.Percentage));
+            if paymentTerms.Percentage.HasValue then
+              Writer.WriteOptionalElementString('ram:CalculationPercent', _formatDecimal(paymentTerms.Percentage));
             _writeOptionalAmount(Writer, 'ram:ActualDiscountAmount', paymentTerms.ActualAmount);
           Writer.WriteEndElement(); // !ram:ApplicableTradePaymentDiscountTerms
           end;
@@ -463,7 +464,8 @@ begin
           begin
             Writer.WriteStartElement('ram:ApplicableTradePaymentPenaltyTerms');
             _writeOptionalAmount(Writer, 'ram:BasisAmount', paymentTerms.BaseAmount); // forceCurrency false by default
-            Writer.WriteOptionalElementString('ram:CalculationPercent', _formatDecimal(paymentTerms.Percentage));
+            if paymentTerms.Percentage.HasValue then
+              Writer.WriteOptionalElementString('ram:CalculationPercent', _formatDecimal(paymentTerms.Percentage));
             _writeOptionalAmount(Writer, 'ram:ActualPenaltyAmount', paymentTerms.ActualAmount);
             Writer.WriteEndElement(); // !ram:ApplicableTradePaymentPenaltyTerms
           end;
