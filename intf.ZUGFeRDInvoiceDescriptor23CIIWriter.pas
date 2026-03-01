@@ -263,7 +263,7 @@ begin
     // handelt es sich um einen Kommentar?
     var isCommentItem : Boolean := false;
     if (tradeLineItem.AssociatedDocument <> nil)
-    and (tradeLineItem.AssociatedDocument.Notes.Count > 0) and (tradeLineItem.BilledQuantity = 0) and (tradeLineItem.Description<>'') then
+    and (tradeLineItem.AssociatedDocument.Notes.Count > 0) and (tradeLineItem.BilledQuantity = 0) and (tradeLineItem.Description='') then
       isCommentItem := true;
 
     //#region SpecifiedTradeProduct
@@ -486,7 +486,7 @@ begin
 
     if (tradeLineItem.DeliveryNoteReferencedDocument <> nil) then
     begin
-        Writer.WriteStartElement('ram:DeliveryNoteReferencedDocument', ALL_PROFILES - [TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung]); // this violates CII-SR-175 for XRechnung 3
+        Writer.WriteStartElement('ram:DeliveryNoteReferencedDocument', [TZUGFeRDProfile.Extended]); // this violates CII-SR-175 for XRechnung 3
         Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.DeliveryNoteReferencedDocument.ID);
 
         // reference to the delivery note item
@@ -549,7 +549,7 @@ begin
 
     //#region SpecifiedTradeAllowanceCharge (Basic, Comfort, Extended, XRechnung)
     //Abschläge auf Ebene der Rechnungsposition (Basic, Comfort, Extended, XRechnung)
-    if (descriptor.Profile in [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]) then
+    if (descriptor.Profile in [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung]) then
     begin
       // separate writing would change the order, so we do this different than the C# version
       for var specifiedTradeAllowanceCharge in tradeLineItem.SpecifiedTradeAllowanceCharges do
@@ -655,8 +655,8 @@ begin
   if Descriptor.ApplicableTradeDeliveryTermsCode.HasValue then
   begin
     // BG-X-22, BT-X-145
-    Writer.WriteStartElement('ApplicableTradeDeliveryTerms', [TZUGFeRDProfile.Extended]);
-    Writer.WriteElementString('DeliveryTypeCode', TEnumExtensions<TZUGFeRDTradeDeliveryTermCodes>.EnumToString(Descriptor.ApplicableTradeDeliveryTermsCode));
+    Writer.WriteStartElement('ram:ApplicableTradeDeliveryTerms', [TZUGFeRDProfile.Extended]);
+    Writer.WriteElementString('ram:DeliveryTypeCode', TEnumExtensions<TZUGFeRDTradeDeliveryTermCodes>.EnumToString(Descriptor.ApplicableTradeDeliveryTermsCode));
     Writer.WriteEndElement(); // !ApplicableTradeDeliveryTerms
   end;
   //#endregion
@@ -869,7 +869,7 @@ begin
 	Writer.WriteOptionalElementString('ram:InvoiceIssuerReference', Descriptor.SellerReferenceNo, [TZUGFeRDProfile.Extended]);
 
 	//   6. InvoicerTradeParty (optional), BT-X-33
-  _writeOptionalParty(Writer, TZUGFeRDPartyTypes.InvoicerTradeParty, Descriptor.Invoicer, [TZUGFeRDProfile.Extended]);
+  _writeOptionalParty(Writer, TZUGFeRDPartyTypes.InvoicerTradeParty, Descriptor.Invoicer, [TZUGFeRDProfile.Extended], Descriptor.InvoicerContact);
 
   //   7. InvoiceeTradeParty (optional), BG-X-36
   _writeOptionalParty(Writer, TZUGFeRDPartyTypes.InvoiceeTradeParty, Descriptor.Invoicee, [TZUGFeRDProfile.Extended], Nil, Nil, Descriptor.InvoiceeTaxRegistration);
@@ -1084,7 +1084,8 @@ begin
           _writeElementWithAttributeWithPrefix(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(PaymentTerms.DueDate.Value));
           Writer.WriteEndElement(); // !ram:DueDateDateTime
         end;
-        Writer.WriteOptionalElementString('ram:DirectDebitMandateID', _descriptor.PaymentMeans.SEPAMandateReference);
+        if (_descriptor.PaymentMeans <> nil) then
+          Writer.WriteOptionalElementString('ram:DirectDebitMandateID', _descriptor.PaymentMeans.SEPAMandateReference);
         _writeOptionalAmount(Writer, 'ram:PartialPaymentAmount', paymentTerms.PartialPaymentAmount);
         if PaymentTerms.PaymentTermsType.HasValue then
         begin
@@ -1122,14 +1123,15 @@ begin
     for var PaymentTerms: TZUGFeRDPaymentTerms in Descriptor.PaymentTermsList do
     begin
       Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
-      Writer.WriteOptionalElementString('ram:Description', PaymentTerms.Description);
+      Writer.WriteOptionalElementString('ram:Description', PaymentTerms.Description, ALL_PROFILES - [TZUGFeRDProfile.Minimum]);
       if (PaymentTerms.DueDate.HasValue) then
       begin
-        Writer.WriteStartElement('ram:DueDateDateTime');
+        Writer.WriteStartElement('ram:DueDateDateTime', ALL_PROFILES - [TZUGFeRDProfile.Minimum]);
         _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(PaymentTerms.DueDate.Value));
         Writer.WriteEndElement(); // !ram:DueDateDateTime
       end;
-      Writer.WriteOptionalElementString('ram:DirectDebitMandateID', _descriptor.PaymentMeans.SEPAMandateReference);
+      if (_descriptor.PaymentMeans <> nil) then
+        Writer.WriteOptionalElementString('ram:DirectDebitMandateID', _descriptor.PaymentMeans.SEPAMandateReference, ALL_PROFILES - [TZUGFeRDProfile.Minimum]);
       Writer.WriteEndElement(); // !ram:SpecifiedTradePaymentTerms
     end;
   end;
@@ -1161,7 +1163,7 @@ begin
   begin
     Writer.WriteStartElement('ram:InvoiceReferencedDocument',ALL_PROFILES-[TZUGFeRDProfile.Minimum]);
     Writer.WriteOptionalElementString('ram:IssuerAssignedID', InvoiceReferencedDocument.ID);
-    Writer.WriteOptionalElementString('TypeCode', TEnumExtensions<TZUGFeRDInvoiceType>.EnumToString(invoiceReferencedDocument.TypeCode), [TZUGFeRDProfile.Extended]); // BT-X-332
+    Writer.WriteOptionalElementString('ram:TypeCode', TEnumExtensions<TZUGFeRDInvoiceType>.EnumToString(invoiceReferencedDocument.TypeCode), [TZUGFeRDProfile.Extended]); // BT-X-332
     if invoiceReferencedDocument.IssueDateTime.HasValue then
     begin
       Writer.WriteStartElement('ram:FormattedIssueDateTime');
@@ -1670,7 +1672,7 @@ begin
   end;
 
   if (Party.ID <> nil) and (Party.ID.ID <> '') then
-    writer.WriteOptionalElementString('ID', party.ID.ID);
+    writer.WriteOptionalElementString('ram:ID', party.ID.ID);
 
   if (party.GlobalID <> nil) and (party.GlobalID.ID <> '') and party.GlobalID.SchemeID.HasValue then
   begin
@@ -1757,7 +1759,7 @@ begin
 
   if (contact.FaxNo <> '') then
   begin
-    _writer.WriteStartElement('ram:FaxUniversalCommunication',ALL_PROFILES - [TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung]);
+    _writer.WriteStartElement('ram:FaxUniversalCommunication',[TZUGFeRDProfile.Extended]);
     _writer.WriteElementString('ram:CompleteNumber', contact.FaxNo);
     _writer.WriteEndElement();
   end;
