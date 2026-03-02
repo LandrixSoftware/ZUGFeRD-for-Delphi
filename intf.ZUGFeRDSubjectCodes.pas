@@ -175,6 +175,21 @@ type
   /// </summary>
   TXD,
 
+  /// <summary>
+  /// Warehouse instruction/information
+  ///
+  /// Note contains warehouse information.
+  /// </summary>
+  WHI,
+
+  /// <summary>
+  /// Mutually defined
+  ///
+  /// Note contains information mutually defined by trading partners.
+  /// </summary>
+  ZZZ,
+
+
 
   /// <summary>
   /// Unknown value
@@ -214,6 +229,8 @@ begin
   Map(REG,     'REG');
   Map(SUR,     'SUR');
   Map(TXD,     'TXD');
+  Map(WHI,     'WHI');
+  Map(ZZZ,     'ZZZ');
   Map(Unknown, 'Unknown');
 {.MapEnd}
 end;

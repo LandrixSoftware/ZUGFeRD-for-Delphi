@@ -186,20 +186,20 @@ begin
       Result.Messages.Add(Format('===> %f x %f%% = %f', [kv.Value, kv.Key, _taxTotal]));
     end;
 
-    grandTotal := lineTotal - allowanceTotal + taxTotal;
+    grandTotal := lineTotal - allowanceTotal + taxTotal + chargeTotal;
 
     Result.Messages.Add(Format('Recalculated tax total = %f', [taxTotal]));
     Result.Messages.Add(Format('Recalculated grand total = %f EUR(tax basis total + tax total)', [grandTotal]));
     Result.Messages.Add('Recalculating invoice monetary summation DONE!');
     Result.Messages.Add(Format('==> result: MonetarySummation[lineTotal = %f, chargeTotal = %f, allowanceTotal = %f, taxBasisTotal = %f, taxTotal = %f, grandTotal = %f, totalPrepaid = %f, duePayable = %f]',
       [lineTotal,
-       0.0, // chargeTotal
+       chargeTotal,
        allowanceTotal,
-       lineTotal - allowanceTotal, // - chargeTotal
+       lineTotal - allowanceTotal + chargeTotal, // tax basis total
        taxTotal,
        grandTotal,
-       0.0, // prepaid
-       lineTotal - allowanceTotal + taxTotal // - chargetotal + prepaid
+       0.0, // prepaid (TODO)
+       lineTotal - allowanceTotal + taxTotal + chargeTotal // + prepaid
        ]));
 
     var _taxBasisTotal : Currency := 0;

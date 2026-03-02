@@ -124,10 +124,10 @@ begin
   inherited Create;
   FChargeIndicator:= false;
   FReason:= '';
-  FBasisAmount:= 0;
+  FBasisAmount.ClearValue;
   FCurrency:= TZUGFeRDCurrencyCodes.Unknown;
   FActualAmount:= 0;
-  FChargePercentage:= 0;
+  FChargePercentage.ClearValue;
 end;
 
 { TZUGFeRDTradeAllowance }

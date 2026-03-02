@@ -244,7 +244,7 @@ begin
 
     jan4 := EncodeDate(StrToInt(year), 1, 4);
     aDay := IncWeek(jan4, StrToInt(week) - 1);
-    aDayOfWeek := DayOfWeek(aDay) - 1;
+    aDayOfWeek := DayOfTheWeek(aDay) - 1; // ISO 8601: Mon=1..Sun=7, -1 => Mon=0..Sun=6
 
     Result := aDay - aDayOfWeek;
     exit;
@@ -261,6 +261,15 @@ begin
     exit;
   end
   else if (Length(rawValue) = 10) and (rawValue[5] = '-') and (rawValue[8] = '-') then // yyyy-mm-dd
+  begin
+    year := Copy(rawValue, 1, 4);
+    month := Copy(rawValue, 6, 2);
+    day := Copy(rawValue, 9, 2);
+
+    Result := SafeParseDateTime(year, month, day);
+    exit;
+  end
+  else if (Length(rawValue) = 16) and (rawValue[5] = '-') and (rawValue[8] = '-') and (rawValue[11] = '+') then // yyyy-mm-dd+hh:mm (date with timezone offset)
   begin
     year := Copy(rawValue, 1, 4);
     month := Copy(rawValue, 6, 2);

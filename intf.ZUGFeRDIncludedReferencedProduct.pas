@@ -33,7 +33,7 @@ type
   private
     FName: string;
     FUnitQuantity: ZUGFeRDNullable<Currency>;
-    FUnitCode: TZUGFeRDQuantityCodes;
+    FUnitCode: ZUGFeRDNullable<TZUGFeRDQuantityCodes>;
     FSellerAssignedID: string;
     FBuyerAssignedID: string;
     FIndustryAssignedID: string;
@@ -62,7 +62,7 @@ type
     ///
     /// BT-X-20-1
     /// </summary>
-    property UnitCode: TZUGFeRDQuantityCodes read FUnitCode write FUnitCode;
+    property UnitCode: ZUGFeRDNullable<TZUGFeRDQuantityCodes> read FUnitCode write FUnitCode;
 
     /// <summary>
     /// The identification of articles based on a registered scheme
