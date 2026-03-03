@@ -1,5 +1,13 @@
 program ZfDUnitTest;
 
+// Debug-Tipp: Einige Tests pruefen erwartete Exceptions (UBLNonAvailability,
+// TestInvalidXmlWithException). Der Delphi-Debugger haelt bei diesen an.
+// Um das zu unterdruecken:
+//   Tools > Options > Debugger Options > Language Exceptions
+//   Exception-Typen zur Ignore-Liste hinzufuegen:
+//   - TZUGFeRDUnsupportedException
+//   - Exception (fuer illegale XML-Zeichen)
+
 {$APPTYPE CONSOLE}
 
 {$STRONGLINKTYPES ON}

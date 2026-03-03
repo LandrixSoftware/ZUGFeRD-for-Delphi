@@ -552,13 +552,9 @@ begin
   try
     ms := TMemoryStream.Create;
     try
-      try
-        desc.Save(ms, version, profile, TZUGFeRDFormats.UBL);
-        Assert.Fail('Expected TZUGFeRDUnsupportedException');
-      except
-        on E: TZUGFeRDUnsupportedException do
-          ; // Expected
-      end;
+      Assert.WillRaise(
+        procedure begin desc.Save(ms, version, profile, TZUGFeRDFormats.UBL) end,
+        TZUGFeRDUnsupportedException);
     finally
       ms.Free;
     end;
@@ -1443,13 +1439,8 @@ begin
     desc.InvoiceNo := #$001B;
     invoiceStream := TMemoryStream.Create;
     try
-      try
-        desc.Save(invoiceStream, version, profile, format);
-        Assert.Fail('Expected exception');
-      except
-        on E: Exception do
-          ; // Expected
-      end;
+      Assert.WillRaiseAny(
+        procedure begin desc.Save(invoiceStream, version, profile, format) end);
     finally
       invoiceStream.Free;
     end;
