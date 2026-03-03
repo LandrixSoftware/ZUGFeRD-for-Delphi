@@ -30,6 +30,8 @@ type
     [Test]
     procedure TestParentLineId;
     [Test]
+    procedure TestTaxRepresentativePartyNoNestedPartyElement;
+    [Test]
     procedure TestInvoiceCreation;
     [Test]
     procedure TestTradelineitemProductCharacterstics;
@@ -259,6 +261,53 @@ begin
         Assert.AreEqual('2', loadedInvoice.TradeLineItems[3].AssociatedDocument.ParentLineID);
         Assert.AreEqual('2.2', loadedInvoice.TradeLineItems[4].AssociatedDocument.ParentLineID);
         Assert.AreEqual('', loadedInvoice.TradeLineItems[5].AssociatedDocument.ParentLineID);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TXRechnungUBLTests.TestTaxRepresentativePartyNoNestedPartyElement;
+var
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+  content: string;
+  bytes: TBytes;
+begin
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.SellerTaxRepresentative := TZUGFeRDParty.Create;
+    desc.SellerTaxRepresentative.Name := 'Tax Rep GmbH';
+    desc.SellerTaxRepresentative.Postcode := '12345';
+    desc.SellerTaxRepresentative.City := 'Berlin';
+    desc.SellerTaxRepresentative.Country := TZUGFeRDCountryCodes.DE;
+    desc.AddSellerTaxRepresentativeTaxRegistration('DE999999999', TZUGFeRDTaxRegistrationSchemeID.VA);
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+
+      // Verify XML structure: TaxRepresentativeParty must NOT contain nested cac:Party
+      SetLength(bytes, ms.Size);
+      ms.Position := 0;
+      ms.ReadBuffer(bytes, ms.Size);
+      content := TEncoding.UTF8.GetString(bytes);
+      Assert.IsTrue(content.Contains('<cac:TaxRepresentativeParty>'),
+        'TaxRepresentativeParty element should exist');
+      Assert.IsFalse(TRegEx.IsMatch(content, '<cac:TaxRepresentativeParty>\s*<cac:Party>'),
+        'TaxRepresentativeParty must not contain nested cac:Party element (UBL schema)');
+
+      // Verify roundtrip
+      ms.Position := 0;
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        Assert.IsNotNull(loadedInvoice.SellerTaxRepresentative);
+        Assert.AreEqual('Tax Rep GmbH', loadedInvoice.SellerTaxRepresentative.Name);
       finally
         loadedInvoice.Free;
       end;
