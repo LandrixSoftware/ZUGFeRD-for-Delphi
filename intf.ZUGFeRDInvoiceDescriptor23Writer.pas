@@ -103,7 +103,14 @@ begin
     raise TZUGFeRDIllegalStreamException.Create('Cannot write to stream');
 
   if _format = UBL then
-    _writer := TZUGFeRDInvoiceDescriptor22UBLWriter.Create
+  begin
+    if _descriptor.Profile = TZUGFeRDProfile.XRechnung then
+      _writer := TZUGFeRDInvoiceDescriptor22UBLWriter.Create
+    else
+      raise TZUGFeRDUnsupportedException.Create(
+        'Profile ' + TEnumExtensions<TZUGFeRDProfile>.EnumToString(_descriptor.Profile) +
+        ' and format UBL is not supported for ZUGFeRD version 2.3.');
+  end
   else
     _writer := TZUGFeRDInvoiceDescriptor23CIIWriter.Create;
   try
@@ -128,8 +135,7 @@ begin
   if (_descriptor.Profile <> TZUGFeRDProfile.Extended) then // check tax types, only extended TZUGFeRDProfile allows tax types other than vat
   begin
     for var l : TZUGFeRDTradeLineItem in _descriptor.TradeLineItems do
-    if not ((l.TaxType = TZUGFeRDTaxTypes.Unknown) or
-      (l.TaxType = TZUGFeRDTaxTypes.VAT)) then
+    if l.TaxType.HasValue and (l.TaxType <> TZUGFeRDTaxTypes.VAT) then
     begin
       if (_throwExceptions) then
         raise TZUGFeRDUnsupportedException.Create('Tax types other than VAT only possible with extended TZUGFeRDProfile.')

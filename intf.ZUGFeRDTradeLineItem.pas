@@ -772,7 +772,7 @@ procedure TZUGFeRDTradeLineItem.AddAdditionalReferencedDocument(id: string;
   attachmentBinaryObject : TStream = nil; filename : String = '');
 
 begin
-  FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(true));
+  FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(attachmentBinaryObject <> nil));
 
   FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].ReferenceTypeCode := referenceTypeCode;
   FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].ID := id;
@@ -781,8 +781,12 @@ begin
   else
     FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].IssueDateTime:= issueDateTime;
   FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].Name := name;
-  FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].AttachmentBinaryObject.Clear;
-  FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].AttachmentBinaryObject.LoadFromStream(attachmentBinaryObject);
+  if attachmentBinaryObject <> nil then
+  begin
+    attachmentBinaryObject.Position := 0;
+    FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].AttachmentBinaryObject.CopyFrom(attachmentBinaryObject, attachmentBinaryObject.Size);
+    FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].AttachmentBinaryObject.Position := 0;
+  end;
   FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].Filename := filename;
   FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1].TypeCode := typeCode;
 end;

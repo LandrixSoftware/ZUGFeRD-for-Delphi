@@ -1444,6 +1444,7 @@ begin
   Result.InvoiceNo := invoiceNo;
   Result.Currency := currency;
   Result.PaymentReference := invoiceNoAsReference;
+  Result.Type_ := TZUGFeRDInvoiceType.Invoice;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.AddNote(const note: string;
@@ -1578,12 +1579,17 @@ procedure TZUGFeRDInvoiceDescriptor.AddAdditionalReferencedDocument(const id: st
   issueDateTime: IZUGFeRDNullableParam<TDateTime> = Nil; const name: string = ''; referenceTypeCode: IZUGFeRDNullableParam<TZUGFeRDReferenceTypeCodes> = Nil;
   const attachmentBinaryObject: TMemoryStream = nil; const filename: string = '');
 begin
-  FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(false));
+  FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(attachmentBinaryObject <> nil));
   FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].ReferenceTypeCode := referenceTypeCode;
   FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].ID := id;
   FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].IssueDateTime:= issueDateTime;
   FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].Name := name;
-  FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].AttachmentBinaryObject := attachmentBinaryObject;
+  if attachmentBinaryObject <> nil then
+  begin
+    attachmentBinaryObject.Position := 0;
+    FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].AttachmentBinaryObject.CopyFrom(attachmentBinaryObject, attachmentBinaryObject.Size);
+    FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].AttachmentBinaryObject.Position := 0;
+  end;
   FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].Filename := filename;
   FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].TypeCode := typeCode;
 end;

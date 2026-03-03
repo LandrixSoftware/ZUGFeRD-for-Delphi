@@ -196,13 +196,14 @@ begin
         Lines.Text := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Description');
         for var Line in Lines do
         begin
-          if (Length(Line)>0) and (Line[1]='#') then
-            Terms.Add(Line)
+          var TrimmedLine: string := Trim(Line);
+          if (Length(TrimmedLine)>0) and (TrimmedLine[1]='#') then
+            Terms.Add(TrimmedLine)
           else // preserve text descriptions
             if Description='' then
-              Description:= Line
+              Description:= Trim(Line)
             else
-              Description:= Description+#13#10+Line
+              Description:= Description+#13#10+Trim(Line)
         end;
       finally
         Lines.Free
@@ -713,7 +714,7 @@ begin
     irpItem.Name := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Name');
     irpItem.Description := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Description');
     irpItem.UnitCode := TEnumExtensions<TZUGFeRDQuantityCodes>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:UnitQuantity/@unitCode'));
-    irpItem.UnitQuantity:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:UnitQuantity', 0);
+    irpItem.UnitQuantity:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:UnitQuantity');
     Result.IncludedReferencedProducts.Add(irpItem);
   end;
 

@@ -137,7 +137,6 @@ begin
   if options<>Nil then
     automaticallyCleanInvalidXmlCharacters:= TZUGFeRDInvoiceFormatOptions(options).AutomaticallyCleanInvalidCharacters;
   Writer := TZUGFeRDProfileAwareXmlTextWriter.Create(_stream,TEncoding.UTF8,Descriptor.Profile, automaticallyCleanInvalidXmlCharacters);
-  Writer.Formatting := TZUGFeRDXmlFomatting.xmlFormatting_Indented;
   Writer.SetNamespaces(GetNameSpaces); // Writer takes ownership of NameSpaces
 
   Writer.WriteStartDocument;
@@ -1060,8 +1059,7 @@ begin
   if (_descriptor.Profile <> TZUGFeRDProfile.Extended) then // check tax types, only extended TZUGFeRDProfile allows tax types other than vat
   begin
     for var l : TZUGFeRDTradeLineItem in _descriptor.TradeLineItems do
-    if not ((l.TaxType = TZUGFeRDTaxTypes.Unknown) or
-      (l.TaxType = TZUGFeRDTaxTypes.VAT)) then
+    if l.TaxType.HasValue and (l.TaxType <> TZUGFeRDTaxTypes.VAT) then
     begin
       if (_throwExceptions) then
         raise TZUGFeRDUnsupportedException.Create('Tax types other than VAT only possible with extended TZUGFeRDProfile.')

@@ -109,7 +109,7 @@ begin
   TextWriter.Version := '1.0';
   TextWriter.StandAlone := 'yes';
   TextWriter.Encoding := 'UTF-8';
-  TextWriter.Options := [doNodeAutoCreate, doAttrNull];
+  TextWriter.Options := [doNodeAutoCreate, doAttrNull, doNodeAutoIndent];
 
   XmlStack := TStack<TZUGFeRDStackInfo>.Create;
   XmlNodeStack := TStack<IXMLNode>.Create;
@@ -131,7 +131,7 @@ begin
   TextWriter.Version := '1.0';
   TextWriter.StandAlone := 'yes';
   TextWriter.Encoding := 'UTF-8';
-  TextWriter.Options := [doNodeAutoCreate, doAttrNull];
+  TextWriter.Options := [doNodeAutoCreate, doAttrNull, doNodeAutoIndent];
 
   XmlStack := TStack<TZUGFeRDStackInfo>.Create;
   XmlNodeStack := TStack<IXMLNode>.Create;
@@ -527,6 +527,7 @@ procedure TZUGFeRDProfileAwareXmlTextWriter.WriteComment(
 var
   infoForCurrentNode: TZUGFeRDStackInfo;
   cleanedComment: string;
+  commentNode: IXMLNode;
 begin
   cleanedComment := comment;
   if not _IsValidXmlString(cleanedComment) then
@@ -546,10 +547,11 @@ begin
 
   _FlushPendingStartElements;
 
-  // Write XML comment
-  // Note: Delphi's IXMLNode doesn't directly support comments in the same way
-  // This would require using the underlying DOM interface
-  // Simplified implementation - actual implementation would depend on XML framework
+  commentNode := TextWriter.CreateNode(cleanedComment, ntComment);
+  if XmlNodeStack.Count = 0 then
+    TextWriter.ChildNodes.Add(commentNode)
+  else
+    XmlNodeStack.Peek.ChildNodes.Add(commentNode);
 end;
 
 procedure TZUGFeRDProfileAwareXmlTextWriter.SetNamespaces(_namespaces: TDictionary<string, string>);

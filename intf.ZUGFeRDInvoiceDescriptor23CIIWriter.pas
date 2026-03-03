@@ -162,7 +162,6 @@ begin
   Writer := TZUGFeRDProfileAwareXmlTextWriter.Create(_stream,TEncoding.UTF8,Descriptor.Profile, automaticallyCleanInvalidXmlCharacters);
   Writer.SetNamespaces(GetNameSpaces); // Writer takes ownership of NameSpaces
 
-  Writer.Formatting := TZUGFeRDXmlFomatting.xmlFormatting_Indented;
   Writer.WriteStartDocument;
   WriteHeaderComments(Writer, options);
 
@@ -1724,14 +1723,19 @@ begin
       // for buyer : BT-48
     for var _reg : TZUGFeRDTaxRegistration in taxRegistrations do
     begin
-      if (_reg.No <> '') then
+      if _reg.No <> '' then
       begin
-        writer.WriteStartElement('ram:SpecifiedTaxRegistration');
-        writer.WriteStartElement('ram:ID');
-        writer.WriteAttributeString('schemeID', TEnumExtensions<TZUGFeRDTaxRegistrationSchemeID>.EnumToString(_reg.SchemeID));
-        writer.WriteValue(_reg.No);
-        writer.WriteEndElement();
-        writer.WriteEndElement();
+        // FC allowed only in Comfort and Extended Profile for TZUGFeRDPartyTypes.SellerTradeParty (and TODO: TZUGFeRDPartyTypes.ItemSellerTradeParty)
+        if (_reg.SchemeID=TZUGFeRDTaxRegistrationSchemeID.VA)
+        or ((_reg.SchemeID=TZUGFeRDTaxRegistrationSchemeID.FC) and (partyType In [TZUGFeRDPartyTypes.SellerTradeParty]) and (Descriptor.Profile in [TZUGFeRDProfile.Extended, TZUGFeRDProfile.Comfort])) then
+        begin
+          writer.WriteStartElement('ram:SpecifiedTaxRegistration');
+          writer.WriteStartElement('ram:ID');
+          writer.WriteAttributeString('schemeID', TEnumExtensions<TZUGFeRDTaxRegistrationSchemeID>.EnumToString(_reg.SchemeID));
+          writer.WriteValue(_reg.No);
+          writer.WriteEndElement();
+          writer.WriteEndElement();
+        end;
       end;
     end;
   end;
