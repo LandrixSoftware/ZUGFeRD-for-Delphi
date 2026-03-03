@@ -34,6 +34,10 @@ type
     [Test]
     procedure TestExtendedInvoiceWithIncludedItems;
     [Test]
+    procedure TestTradeLineItemProductFieldsRoundtrip;
+    [Test]
+    procedure TestIncludedReferencedProductFieldsRoundtrip;
+    [Test]
     procedure TestReferenceEReportingFacturXInvoice;
     [Test]
     procedure TestReferenceBasicFacturXInvoice;
@@ -452,6 +456,163 @@ begin
         Assert.AreEqual<TZUGFeRDQuantityCodes>(TZUGFeRDQuantityCodes.C62, loadedInvoice.TradeLineItems[0].IncludedReferencedProducts[0].UnitCode.Value);
         Assert.AreEqual('Test2', loadedInvoice.TradeLineItems[0].IncludedReferencedProducts[1].Name);
         Assert.IsFalse(loadedInvoice.TradeLineItems[0].IncludedReferencedProducts[1].UnitQuantity.HasValue);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+// Roundtrip test for TradeLineItem product identification fields:
+// IndustryAssignedID, ModelID, BatchID, BrandName, ModelName
+// These fields are Extended profile only (CII 2.3).
+procedure TZUGFeRD22Tests.TestTradeLineItemProductFieldsRoundtrip;
+var
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+  lineItem: TZUGFeRDTradeLineItem;
+  loadedLineItem: TZUGFeRDTradeLineItem;
+begin
+  desc := TZUGFeRDInvoiceDescriptor.Load(DemodataPath('zugferd21\zugferd_2p1_EXTENDED_Warenrechnung-factur-x.xml'));
+  try
+    desc.TradeLineItems.Clear;
+
+    lineItem := desc._AddTradeLineItem(
+      {lineID=}          '1',
+      {name=}            'Test Product',
+      {netUnitPrice=}    TZUGFeRDNullableParam<Currency>.Create(5.0),
+      {description=}     '',
+      {unitCode=}        TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+      {unitQuantity=}    nil,
+      {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(5.0),
+      {billedQuantity=}  10,
+      {lineTotalAmount=} 0,
+      {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+      {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+      {taxPercent=}      19.0,
+      {comment=}         '',
+      {id=}              nil,
+      {sellerAssignedID=} 'SELLER-001'
+    );
+    lineItem.BuyerAssignedID := 'BUYER-001';
+    lineItem.IndustryAssignedID := 'IND-12345';
+    lineItem.ModelID := 'MDL-67890';
+    lineItem.BatchID := 'BATCH-2025-001';
+    lineItem.BrandName := 'TestBrand';
+    lineItem.ModelName := 'TestModel Pro';
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
+      ms.Position := 0;
+
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        Assert.AreEqual<Integer>(1, loadedInvoice.TradeLineItems.Count);
+        loadedLineItem := loadedInvoice.TradeLineItems[0];
+        Assert.AreEqual('Test Product', loadedLineItem.Name);
+        Assert.AreEqual('SELLER-001', loadedLineItem.SellerAssignedID);
+        Assert.AreEqual('BUYER-001', loadedLineItem.BuyerAssignedID);
+        Assert.AreEqual('IND-12345', loadedLineItem.IndustryAssignedID);
+        Assert.AreEqual('MDL-67890', loadedLineItem.ModelID);
+        Assert.AreEqual('BATCH-2025-001', loadedLineItem.BatchID);
+        Assert.AreEqual('TestBrand', loadedLineItem.BrandName);
+        Assert.AreEqual('TestModel Pro', loadedLineItem.ModelName);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+// Roundtrip test for IncludedReferencedProduct fields:
+// GlobalID, SellerAssignedID, BuyerAssignedID, IndustryAssignedID, Description
+procedure TZUGFeRD22Tests.TestIncludedReferencedProductFieldsRoundtrip;
+var
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+  lineItem: TZUGFeRDTradeLineItem;
+  loadedLineItem: TZUGFeRDTradeLineItem;
+  product1, product2: TZUGFeRDIncludedReferencedProduct;
+  inclProd: TZUGFeRDIncludedReferencedProduct;
+begin
+  desc := TZUGFeRDInvoiceDescriptor.Load(DemodataPath('zugferd21\zugferd_2p1_EXTENDED_Warenrechnung-factur-x.xml'));
+  try
+    desc.TradeLineItems.Clear;
+
+    lineItem := desc._AddTradeLineItem(
+      {lineID=}          '1',
+      {name=}            'Main Product',
+      {netUnitPrice=}    TZUGFeRDNullableParam<Currency>.Create(20.0),
+      {description=}     '',
+      {unitCode=}        TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+      {unitQuantity=}    nil,
+      {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(20.0),
+      {billedQuantity=}  5,
+      {lineTotalAmount=} 0,
+      {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+      {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+      {taxPercent=}      19.0
+    );
+
+    // Add included product with all new fields set
+    inclProd := TZUGFeRDIncludedReferencedProduct.Create;
+    inclProd.GlobalID.Free;
+    inclProd.GlobalID := TZUGFeRDGlobalID.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.EAN, '4012345999999');
+    inclProd.SellerAssignedID := 'SEL-REF-001';
+    inclProd.BuyerAssignedID := 'BUY-REF-001';
+    inclProd.IndustryAssignedID := 'IND-REF-001';
+    inclProd.Name := 'Included Part A';
+    inclProd.Description := 'Description of included part A';
+    inclProd.UnitQuantity := ZUGFeRDNullable<Currency>.Create(2);
+    inclProd.UnitCode := TZUGFeRDQuantityCodes.C62;
+    lineItem.IncludedReferencedProducts.Add(inclProd);
+
+    // Add a second included product with minimal fields
+    inclProd := TZUGFeRDIncludedReferencedProduct.Create;
+    inclProd.Name := 'Included Part B';
+    inclProd.Description := 'Description of included part B';
+    lineItem.IncludedReferencedProducts.Add(inclProd);
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
+      ms.Position := 0;
+
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        Assert.AreEqual<Integer>(1, loadedInvoice.TradeLineItems.Count);
+        loadedLineItem := loadedInvoice.TradeLineItems[0];
+        Assert.AreEqual<Integer>(2, loadedLineItem.IncludedReferencedProducts.Count);
+
+        // Verify first included product (all fields)
+        product1 := loadedLineItem.IncludedReferencedProducts[0];
+        Assert.AreEqual<TZUGFeRDGlobalIDSchemeIdentifiers>(TZUGFeRDGlobalIDSchemeIdentifiers.EAN, product1.GlobalID.SchemeID);
+        Assert.AreEqual('4012345999999', product1.GlobalID.ID);
+        Assert.AreEqual('SEL-REF-001', product1.SellerAssignedID);
+        Assert.AreEqual('BUY-REF-001', product1.BuyerAssignedID);
+        Assert.AreEqual('IND-REF-001', product1.IndustryAssignedID);
+        Assert.AreEqual('Included Part A', product1.Name);
+        Assert.AreEqual('Description of included part A', product1.Description);
+        Assert.AreEqual<Currency>(2, product1.UnitQuantity.Value);
+        Assert.AreEqual<TZUGFeRDQuantityCodes>(TZUGFeRDQuantityCodes.C62, product1.UnitCode.Value);
+
+        // Verify second included product (minimal fields)
+        product2 := loadedLineItem.IncludedReferencedProducts[1];
+        Assert.AreEqual('Included Part B', product2.Name);
+        Assert.AreEqual('Description of included part B', product2.Description);
+        Assert.AreEqual('', product2.SellerAssignedID);
+        Assert.AreEqual('', product2.BuyerAssignedID);
+        Assert.AreEqual('', product2.IndustryAssignedID);
+        Assert.IsFalse(product2.UnitQuantity.HasValue);
       finally
         loadedInvoice.Free;
       end;
