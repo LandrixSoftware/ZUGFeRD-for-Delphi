@@ -118,6 +118,8 @@ type
     [Test]
     procedure TestParty_WithTaxRegistration;
     [Test]
+    procedure TestBuyerFCTaxRegistrationFiltered;
+    [Test]
     procedure TestUltimateShipToTradePartyOnItemLevel;
     [Test]
     procedure TestMimetypeOfEmbeddedAttachment;
@@ -2192,6 +2194,46 @@ begin
         Assert.IsNotNull(loadedInvoice.Invoicee);
         Assert.AreEqual<Integer>(1, loadedInvoice.InvoiceeTaxRegistration.Count);
         Assert.AreEqual('DE987654321', loadedInvoice.InvoiceeTaxRegistration[0].No);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TZUGFeRD22Tests.TestBuyerFCTaxRegistrationFiltered;
+var
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+begin
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    // CreateInvoice already adds Seller with FC + VA
+    // Add both FC + VA for Buyer as well
+    desc.AddBuyerTaxRegistration('99/999/99999', TZUGFeRDTaxRegistrationSchemeID.FC);
+    desc.AddBuyerTaxRegistration('DE987654321', TZUGFeRDTaxRegistrationSchemeID.VA);
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
+      ms.Position := 0;
+
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        // Seller: both FC + VA written (Extended allows FC for Seller)
+        Assert.AreEqual<Integer>(2, loadedInvoice.SellerTaxRegistration.Count,
+          'Seller should have 2 TaxRegistrations (FC + VA)');
+
+        // Buyer: only VA, FC was filtered out
+        Assert.AreEqual<Integer>(1, loadedInvoice.BuyerTaxRegistration.Count,
+          'Buyer should have only 1 TaxRegistration (VA), FC is filtered');
+        Assert.AreEqual<TZUGFeRDTaxRegistrationSchemeID>(
+          TZUGFeRDTaxRegistrationSchemeID.VA,
+          loadedInvoice.BuyerTaxRegistration[0].SchemeID);
       finally
         loadedInvoice.Free;
       end;
