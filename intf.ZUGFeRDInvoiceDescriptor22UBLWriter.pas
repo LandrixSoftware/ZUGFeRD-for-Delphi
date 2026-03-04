@@ -91,7 +91,6 @@ type
     procedure _WriteTradeLineItem(tradeLineItem: TZUGFeRDTradeLineItem; isInvoice: Boolean; options: TZUGFeRDInvoiceFormatOptions);
     procedure _WriteItemLevelSpecifiedTradeAllowanceCharge(specifiedTradeAllowanceCharge: TZUGFeRDAbstractTradeAllowanceCharge);
     procedure _WriteCommodityClassification(_writer: TZUGFeRDProfileAwareXmlTextWriter; designatedProductClassifications: TObjectList<TZUGFeRDDesignatedProductClassification>);
-    function _encodeInvoiceType(type_ : TZUGFeRDInvoiceType) : Integer;
     function _IsInvoiceAccordingToUBLSpecification(type_: TZUGFeRDInvoiceType): Boolean;
     function _mapTaxRegistrationSchemeID(schemeID: TZUGFeRDTaxRegistrationSchemeID): string;
     function GetNameSpaces(isInvoice: Boolean): TDictionary<string, string>;
@@ -151,9 +150,11 @@ begin
   Descriptor := _descriptor;
   isInvoice := _IsInvoiceAccordingToUBLSpecification(Descriptor.Type_);
 
-  Writer := TZUGFeRDProfileAwareXmlTextWriter.Create(_stream, TEncoding.UTF8, Descriptor.Profile);
+  var automaticallyCleanInvalidXmlCharacters: Boolean := False;
+  if options <> nil then
+    automaticallyCleanInvalidXmlCharacters := options.AutomaticallyCleanInvalidCharacters;
+  Writer := TZUGFeRDProfileAwareXmlTextWriter.Create(_stream, TEncoding.UTF8, Descriptor.Profile, automaticallyCleanInvalidXmlCharacters);
   Writer.SetNamespaces(GetNameSpaces(isInvoice));
-  Writer.Formatting := TZUGFeRDXmlFomatting.xmlFormatting_Indented;
   Writer.WriteStartDocument;
 
   WriteHeaderComments(Writer, options);
@@ -162,18 +163,18 @@ begin
   // UBL has different namespace for different types
   if isInvoice then
   begin
-    Writer.WriteStartElement('ubl:Invoice');
-    Writer.WriteAttributeString('xmlns', 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2');
+    Writer.WriteStartElement('ubl', 'Invoice', '');
+    Writer.WriteAttributeString('xmlns', 'ubl', '', 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2');
   end
   else
   begin
-    Writer.WriteStartElement('ubl:CreditNote');
-    Writer.WriteAttributeString('xmlns', 'urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2');
+    Writer.WriteStartElement('ubl', 'CreditNote', '');
+    Writer.WriteAttributeString('xmlns', 'ubl', '', 'urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2');
   end;
-  Writer.WriteAttributeString('xmlns', 'cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
-  Writer.WriteAttributeString('xmlns', 'cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
-  Writer.WriteAttributeString('xmlns', 'ext', 'urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2');
-  Writer.WriteAttributeString('xmlns', 'xs', 'http://www.w3.org/2001/XMLSchema');
+  Writer.WriteAttributeString('xmlns', 'cac', '', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+  Writer.WriteAttributeString('xmlns', 'cbc', '', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+  Writer.WriteAttributeString('xmlns', 'ext', '', 'urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2');
+  Writer.WriteAttributeString('xmlns', 'xs', '', 'http://www.w3.org/2001/XMLSchema');
   // #endregion
 
   Writer.WriteElementString('cbc:CustomizationID', 'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0');
@@ -953,7 +954,9 @@ begin
         _writer.WriteStartElement('cac:TaxRepresentativeParty', ALL_PROFILES);
     end;
 
-    _writer.WriteStartElement('cac:Party', ALL_PROFILES);
+    // TaxRepresentativeParty is already of type PartyType in UBL, no nested cac:Party needed
+    if partyType <> TZUGFeRDPartyTypes.SellerTaxRepresentativeTradeParty then
+      _writer.WriteStartElement('cac:Party', ALL_PROFILES);
 
     if (electronicAddress <> nil) and (ElectronicAddress.Address<>'') then
     begin
@@ -1081,7 +1084,8 @@ begin
       _writer.WriteEndElement; // !Contact
     end;
 
-    _writer.WriteEndElement; // !Party
+    if partyType <> TZUGFeRDPartyTypes.SellerTaxRepresentativeTradeParty then
+      _writer.WriteEndElement; // !Party
     _writer.WriteEndElement; // !AccountingSupplierParty / AccountingCustomerParty / TaxRepresentativeParty
   end;
 end;
@@ -1155,13 +1159,6 @@ begin
 end;
 
 
-function TZUGFeRDInvoiceDescriptor22UBLWriter._encodeInvoiceType(
-  type_: TZUGFeRDInvoiceType): Integer;
-begin
-  Result := Integer(type_);
-end;
-
-
 function TZUGFeRDInvoiceDescriptor22UBLWriter._IsInvoiceAccordingToUBLSpecification(
   type_: TZUGFeRDInvoiceType): Boolean;
 begin
@@ -1211,9 +1208,9 @@ function TZUGFeRDInvoiceDescriptor22UBLWriter._mapTaxRegistrationSchemeID(
 begin
   case schemeID of
     TZUGFeRDTaxRegistrationSchemeID.VA: Result := 'VAT';
-    TZUGFeRDTaxRegistrationSchemeID.FC: Result := 'TAX';
+    TZUGFeRDTaxRegistrationSchemeID.FC: Result := 'ID';
   else
-    Result := 'TAX';
+    Result := 'ID';
   end;
 end;
 

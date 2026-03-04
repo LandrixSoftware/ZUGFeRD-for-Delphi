@@ -77,6 +77,7 @@ type
     function GetValidURIs : TArray<string>;
     function _parseTradeLineItem(tradeLineItem : IXmlDomNode; isInvoice: Boolean; const parentLineId: string = '') : TZUGFeRDTradeLineItem;
     function _nodeAsParty(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDParty;
+    procedure _addSubLineItems(parentNode: IXMLDOMNode; const parentLineId: string; isInvoice: Boolean; tradeLineItems: TObjectList<TZUGFeRDTradeLineItem>);
     function _nodeAsAddressParty(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDParty;
     function _nodeAsLegalOrganization(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDLegalOrganization;
     function _nodeAsBankAccount(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDBankAccount;
@@ -561,34 +562,47 @@ begin
     if item <> nil then
     begin
       Result.TradeLineItems.Add(item);
+      _addSubLineItems(nodes[i], item.AssociatedDocument.LineID, isInvoice, Result.TradeLineItems);
+    end;
+  end;
+end;
 
-      // Handle sub-invoice lines recursively
-      var subSelector : string;
-      if isInvoice then
-        subSelector := './/cac:SubInvoiceLine'
-      else
-        subSelector := './/cac:SubCreditNoteLine';
+procedure TZUGFeRDInvoiceDescriptor22UBLReader._addSubLineItems(
+  parentNode: IXMLDOMNode; const parentLineId: string; isInvoice: Boolean;
+  tradeLineItems: TObjectList<TZUGFeRDTradeLineItem>);
+var
+  subSelector: string;
+  subNodes: IXMLDOMNodeList;
+  j, k: Integer;
+  subItem: TZUGFeRDTradeLineItem;
+  isDuplicate: Boolean;
+begin
+  if isInvoice then
+    subSelector := 'cac:SubInvoiceLine'
+  else
+    subSelector := 'cac:SubCreditNoteLine';
 
-      var subNodes : IXMLDOMNodeList := nodes[i].selectNodes(subSelector);
-      if subNodes <> nil then
-        for var j : Integer := 0 to subNodes.length - 1 do
+  subNodes := parentNode.selectNodes(subSelector);
+  if subNodes = nil then Exit;
+
+  for j := 0 to subNodes.length - 1 do
+  begin
+    subItem := _parseTradeLineItem(subNodes[j], isInvoice, parentLineId);
+    if subItem <> nil then
+    begin
+      isDuplicate := False;
+      for k := 0 to tradeLineItems.Count - 1 do
+        if tradeLineItems[k].AssociatedDocument.LineID = subItem.AssociatedDocument.LineID then
         begin
-          var subItem : TZUGFeRDTradeLineItem := _parseTradeLineItem(subNodes[j], isInvoice, item.AssociatedDocument.LineID);
-          if subItem <> nil then
-          begin
-            // Check for duplicates
-            var isDuplicate : Boolean := False;
-            for var k : Integer := 0 to Result.TradeLineItems.Count - 1 do
-              if Result.TradeLineItems[k].AssociatedDocument.LineID = subItem.AssociatedDocument.LineID then
-              begin
-                isDuplicate := True;
-                subItem.Free;
-                break;
-              end;
-            if not isDuplicate then
-              Result.TradeLineItems.Add(subItem);
-          end;
+          isDuplicate := True;
+          subItem.Free;
+          Break;
         end;
+      if not isDuplicate then
+      begin
+        tradeLineItems.Add(subItem);
+        _addSubLineItems(subNodes[j], subItem.AssociatedDocument.LineID, isInvoice, tradeLineItems);
+      end;
     end;
   end;
 end;
