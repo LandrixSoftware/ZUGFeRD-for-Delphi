@@ -254,7 +254,7 @@ begin
 
       loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
       try
-        Assert.AreEqual(6, loadedInvoice.TradeLineItems.Count);
+        Assert.AreEqual<NativeInt>(6, loadedInvoice.TradeLineItems.Count);
         Assert.AreEqual('', loadedInvoice.TradeLineItems[0].AssociatedDocument.ParentLineID);
         Assert.AreEqual('', loadedInvoice.TradeLineItems[1].AssociatedDocument.ParentLineID);
         Assert.AreEqual('2', loadedInvoice.TradeLineItems[2].AssociatedDocument.ParentLineID);
@@ -335,7 +335,7 @@ begin
       try
         Assert.IsNull(loadedInvoice.Invoicee);
         Assert.IsNotNull(loadedInvoice.Seller);
-        Assert.AreEqual(2, loadedInvoice.Taxes.Count);
+        Assert.AreEqual<NativeInt>(2, loadedInvoice.Taxes.Count);
         Assert.AreEqual('Max Mustermann', loadedInvoice.SellerContact.Name);
         Assert.IsNull(loadedInvoice.BuyerContact);
       finally
@@ -371,7 +371,7 @@ begin
       loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
       try
         Assert.IsNotNull(loadedInvoice.TradeLineItems);
-        Assert.AreEqual(2, loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics.Count);
+        Assert.AreEqual<NativeInt>(2, loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics.Count);
         Assert.AreEqual('Test Description', loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics[0].Description);
         Assert.AreEqual('3 kg', loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics[1].Value);
       finally
@@ -448,7 +448,7 @@ begin
       loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
       try
         Assert.IsNotNull(loadedInvoice.TradeLineItems);
-        Assert.AreEqual(2, loadedInvoice.TradeLineItems[0].AdditionalReferencedDocuments.Count);
+        Assert.AreEqual<NativeInt>(2, loadedInvoice.TradeLineItems[0].AdditionalReferencedDocuments.Count);
         Assert.AreEqual('testid', loadedInvoice.TradeLineItems[0].AdditionalReferencedDocuments[0].ID);
         Assert.AreEqual('testid2', loadedInvoice.TradeLineItems[0].AdditionalReferencedDocuments[1].ID);
       finally
@@ -607,7 +607,7 @@ begin
 
       loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
       try
-        Assert.AreEqual(1, loadedInvoice.AdditionalReferencedDocuments.Count);
+        Assert.AreEqual<NativeInt>(1, loadedInvoice.AdditionalReferencedDocuments.Count);
 
         for doc in loadedInvoice.AdditionalReferencedDocuments do
         begin
@@ -774,7 +774,7 @@ begin
       loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
       try
         // test writing and parsing
-        Assert.AreEqual(2, loadedInvoice.Taxes.Count);
+        Assert.AreEqual<NativeInt>(2, loadedInvoice.Taxes.Count);
         allVAT := True;
         for i := 0 to loadedInvoice.Taxes.Count - 1 do
           if loadedInvoice.Taxes[i].TypeCode.Value <> TZUGFeRDTaxTypes.VAT then
@@ -1525,7 +1525,7 @@ begin
       loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
       try
         Assert.IsNotNull(loadedInvoice);
-        Assert.AreEqual(taxCount + 1, loadedInvoice.Taxes.Count);
+        Assert.AreEqual<NativeInt>(taxCount + 1, loadedInvoice.Taxes.Count);
         Assert.AreEqual('Tax exemption reason', loadedInvoice.Taxes[loadedInvoice.Taxes.Count - 1].ExemptionReason);
         Assert.AreEqual(TZUGFeRDTaxExemptionReasonCodes.VATEX_EU_132, loadedInvoice.Taxes[loadedInvoice.Taxes.Count - 1].ExemptionReasonCode.Value);
       finally
@@ -1558,7 +1558,7 @@ begin
       loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
       try
         Assert.IsNotNull(loadedInvoice);
-        Assert.AreEqual(3, loadedInvoice.Notes.Count); // 2 notes are already added by the InvoiceProvider
+        Assert.AreEqual<NativeInt>(3, loadedInvoice.Notes.Count); // 2 notes are already added by the InvoiceProvider
         Assert.AreEqual(note, loadedInvoice.Notes[loadedInvoice.Notes.Count - 1].Content);
       finally
         loadedInvoice.Free;
@@ -1614,9 +1614,9 @@ begin
   desc := TZUGFeRDInvoiceDescriptor.Load(DemodataPath('xRechnung\ubl-cn-br-de-17-test-557-code-326.xml'));
   try
     Assert.AreEqual(TZUGFeRDInvoiceType.PartialInvoice, desc.Type_);
-    Assert.AreEqual(1, desc.Notes.Count);
+    Assert.AreEqual<NativeInt>(1, desc.Notes.Count);
     Assert.AreEqual('Invoice Note Description', desc.Notes[0].Content);
-    Assert.AreEqual(2, desc.TradeLineItems.Count);
+    Assert.AreEqual<NativeInt>(2, desc.TradeLineItems.Count);
     Assert.AreEqual('Beratung', desc.TradeLineItems[0].Name);
     Assert.AreEqual('Anforderungmanagament', desc.TradeLineItems[0].Description);
     Assert.AreEqual('Beratung', desc.TradeLineItems[desc.TradeLineItems.Count - 1].Name);
@@ -1633,9 +1633,9 @@ begin
   desc := TZUGFeRDInvoiceDescriptor.Load(DemodataPath('xRechnung\ubl-cn-br-de-17-test-559-code-384.xml'));
   try
     Assert.AreEqual(TZUGFeRDInvoiceType.Correction, desc.Type_);
-    Assert.AreEqual(1, desc.Notes.Count);
+    Assert.AreEqual<NativeInt>(1, desc.Notes.Count);
     Assert.AreEqual('Invoice Note Description', desc.Notes[0].Content);
-    Assert.AreEqual(2, desc.TradeLineItems.Count);
+    Assert.AreEqual<NativeInt>(2, desc.TradeLineItems.Count);
     Assert.AreEqual('Beratung', desc.TradeLineItems[0].Name);
     Assert.AreEqual('Anforderungmanagament', desc.TradeLineItems[0].Description);
     Assert.AreEqual('Beratung', desc.TradeLineItems[desc.TradeLineItems.Count - 1].Name);
@@ -1682,7 +1682,7 @@ begin
     Assert.AreEqual('harry.hirsch@hhhtb.de', desc.SellerContact.EmailAddress);
     Assert.AreEqual('012345 78 657 - 8', desc.SellerContact.PhoneNo);
 
-    Assert.AreEqual(2, desc.TradeLineItems.Count);
+    Assert.AreEqual<NativeInt>(2, desc.TradeLineItems.Count);
 
     Assert.AreEqual('0815', desc.TradeLineItems[0].SellerAssignedID);
     Assert.AreEqual('Leimbinder', desc.TradeLineItems[0].Name);
@@ -1874,7 +1874,7 @@ begin
   desc := TZUGFeRDInvoiceDescriptor.Load(DemodataPath('xRechnung\ubl-cn-br-de-17-test-559-code-384.xml'));
   try
     Assert.AreEqual(TZUGFeRDInvoiceType.Correction, desc.Type_);
-    Assert.AreEqual(2, desc.TradeLineItems.Count);
+    Assert.AreEqual<NativeInt>(2, desc.TradeLineItems.Count);
     Assert.AreEqual<Currency>(33, desc.TradeLineItems[0].BilledQuantity);
     Assert.AreEqual(TZUGFeRDQuantityCodes.XPP, desc.TradeLineItems[0].UnitCode.Value);
     Assert.AreEqual<Currency>(42, desc.TradeLineItems[desc.TradeLineItems.Count - 1].BilledQuantity);

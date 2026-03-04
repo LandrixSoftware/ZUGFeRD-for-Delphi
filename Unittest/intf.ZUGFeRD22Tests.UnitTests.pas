@@ -1,4 +1,4 @@
-{* Licensed to the Apache Software Foundation (ASF) under one
+﻿{* Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -4425,7 +4425,7 @@ begin
     'zugferd24-facturx1008\de\Beispiele\4. EXTENDED\EXTENDED_Warenrechnung\EXTENDED_Warenrechnung.xml'));
   try
     Assert.IsNotEmpty(desc.PaymentTermsList[0].Description);
-    Assert.AreEqual('Bei Zahlung innerhalb 14 Tagen gewähren wir 2,0% Skonto.', desc.PaymentTermsList[0].Description);
+    Assert.AreEqual(true,SameText('Bei Zahlung innerhalb 14 Tagen gewähren wir 2,0% Skonto.', desc.PaymentTermsList[0].Description));
   finally
     desc.Free;
   end;

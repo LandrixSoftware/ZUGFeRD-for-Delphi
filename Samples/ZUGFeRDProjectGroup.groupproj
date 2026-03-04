@@ -6,7 +6,7 @@
         <Projects Include="ZUGFeRDProject.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="..\Test\DUnitXZUGFeRDTest.dproj">
+        <Projects Include="..\Unittest\ZfDUnitTest.dproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -26,23 +26,23 @@
     <Target Name="ZUGFeRDProject:Make">
         <MSBuild Projects="ZUGFeRDProject.dproj" Targets="Make"/>
     </Target>
-    <Target Name="DUnitXZUGFeRDTest">
-        <MSBuild Projects="..\Test\DUnitXZUGFeRDTest.dproj"/>
+    <Target Name="ZfDUnitTest">
+        <MSBuild Projects="..\Unittest\ZfDUnitTest.dproj"/>
     </Target>
-    <Target Name="DUnitXZUGFeRDTest:Clean">
-        <MSBuild Projects="..\Test\DUnitXZUGFeRDTest.dproj" Targets="Clean"/>
+    <Target Name="ZfDUnitTest:Clean">
+        <MSBuild Projects="..\Unittest\ZfDUnitTest.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="DUnitXZUGFeRDTest:Make">
-        <MSBuild Projects="..\Test\DUnitXZUGFeRDTest.dproj" Targets="Make"/>
+    <Target Name="ZfDUnitTest:Make">
+        <MSBuild Projects="..\Unittest\ZfDUnitTest.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="ZUGFeRDProject;DUnitXZUGFeRDTest"/>
+        <CallTarget Targets="ZUGFeRDProject;ZfDUnitTest"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="ZUGFeRDProject:Clean;DUnitXZUGFeRDTest:Clean"/>
+        <CallTarget Targets="ZUGFeRDProject:Clean;ZfDUnitTest:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="ZUGFeRDProject:Make;DUnitXZUGFeRDTest:Make"/>
+        <CallTarget Targets="ZUGFeRDProject:Make;ZfDUnitTest:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

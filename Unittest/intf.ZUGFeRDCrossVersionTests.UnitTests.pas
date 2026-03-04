@@ -495,11 +495,11 @@ begin
     numberOfTradeLineItems := desc.TradeLineItems.Count;
     desc.AddTradeLineCommentItem(expectedComment);
 
-    Assert.AreEqual(numberOfTradeLineItems + 1, desc.TradeLineItems.Count);
+    Assert.AreEqual<NativeInt>(numberOfTradeLineItems + 1, desc.TradeLineItems.Count);
     lastIdx := desc.TradeLineItems.Count - 1;
     Assert.IsNotNull(desc.TradeLineItems[lastIdx].AssociatedDocument);
     Assert.IsNotNull(desc.TradeLineItems[lastIdx].AssociatedDocument.Notes);
-    Assert.AreEqual(1, desc.TradeLineItems[lastIdx].AssociatedDocument.Notes.Count);
+    Assert.AreEqual<NativeInt>(1, desc.TradeLineItems[lastIdx].AssociatedDocument.Notes.Count);
     Assert.AreEqual(expectedComment, desc.TradeLineItems[lastIdx].AssociatedDocument.Notes[0].Content);
   finally
     desc.Free;
@@ -511,12 +511,12 @@ begin
     numberOfTradeLineItems := desc.TradeLineItems.Count;
     desc.AddTradeLineCommentItem(expectedCustomLineId, expectedComment, '', '');
 
-    Assert.AreEqual(numberOfTradeLineItems + 1, desc.TradeLineItems.Count);
+    Assert.AreEqual<NativeInt>(numberOfTradeLineItems + 1, desc.TradeLineItems.Count);
     lastIdx := desc.TradeLineItems.Count - 1;
     Assert.IsNotNull(desc.TradeLineItems[lastIdx].AssociatedDocument);
     Assert.IsNotNull(desc.TradeLineItems[lastIdx].AssociatedDocument.LineID);
     Assert.IsNotNull(desc.TradeLineItems[lastIdx].AssociatedDocument.Notes);
-    Assert.AreEqual(1, desc.TradeLineItems[lastIdx].AssociatedDocument.Notes.Count);
+    Assert.AreEqual<NativeInt>(1, desc.TradeLineItems[lastIdx].AssociatedDocument.Notes.Count);
     Assert.AreEqual(expectedComment, desc.TradeLineItems[lastIdx].AssociatedDocument.Notes[0].Content);
   finally
     desc.Free;
@@ -635,7 +635,7 @@ begin
       actual_ := TZUGFeRDInvoiceDescriptor.Load(ms);
       try
         Assert.AreEqual(expected.Taxes.Count, actual_.Taxes.Count);
-        Assert.AreEqual(1, actual_.Taxes.Count);
+        Assert.AreEqual<NativeInt>(1, actual_.Taxes.Count);
         actualTax := actual_.Taxes[0];
         Assert.AreEqual<Currency>(198, actualTax.BasisAmount);
         Assert.AreEqual<Currency>(19, actualTax.Percent);
@@ -1028,9 +1028,9 @@ begin
 
       loadedExtended := TZUGFeRDInvoiceDescriptor.Load(ms);
       try
-        Assert.AreEqual(1, loadedExtended.TradeLineItems.Count);
+        Assert.AreEqual<NativeInt>(1, loadedExtended.TradeLineItems.Count);
         Assert.AreEqual(grossPrice, loadedExtended.TradeLineItems[0].GrossUnitPrice.Value);
-        Assert.AreEqual(0, loadedExtended.TradeLineItems[0].SpecifiedTradeAllowanceCharges.Count);
+        Assert.AreEqual<NativeInt>(0, loadedExtended.TradeLineItems[0].SpecifiedTradeAllowanceCharges.Count);
       finally
         loadedExtended.Free;
       end;
@@ -1044,9 +1044,9 @@ begin
 
       loadedXRechnung := TZUGFeRDInvoiceDescriptor.Load(ms);
       try
-        Assert.AreEqual(1, loadedXRechnung.TradeLineItems.Count);
+        Assert.AreEqual<NativeInt>(1, loadedXRechnung.TradeLineItems.Count);
         Assert.IsFalse(loadedXRechnung.TradeLineItems[0].GrossUnitPrice.HasValue);
-        Assert.AreEqual(0, loadedXRechnung.TradeLineItems[0].SpecifiedTradeAllowanceCharges.Count);
+        Assert.AreEqual<NativeInt>(0, loadedXRechnung.TradeLineItems[0].SpecifiedTradeAllowanceCharges.Count);
       finally
         loadedXRechnung.Free;
       end;
@@ -1093,9 +1093,9 @@ begin
 
       loadedExtended := TZUGFeRDInvoiceDescriptor.Load(ms);
       try
-        Assert.AreEqual(1, loadedExtended.TradeLineItems.Count);
+        Assert.AreEqual<NativeInt>(1, loadedExtended.TradeLineItems.Count);
         Assert.AreEqual(grossPrice, loadedExtended.TradeLineItems[0].GrossUnitPrice.Value);
-        Assert.AreEqual(1, loadedExtended.TradeLineItems[0].TradeAllowanceCharges.Count);
+        Assert.AreEqual<NativeInt>(1, loadedExtended.TradeLineItems[0].TradeAllowanceCharges.Count);
         Assert.AreEqual(grossPrice, loadedExtended.TradeLineItems[0].TradeAllowanceCharges[0].BasisAmount.Value);
         Assert.AreEqual(discountAmount, loadedExtended.TradeLineItems[0].TradeAllowanceCharges[0].ActualAmount);
       finally
@@ -1111,9 +1111,9 @@ begin
 
       loadedXRechnung := TZUGFeRDInvoiceDescriptor.Load(ms);
       try
-        Assert.AreEqual(1, loadedXRechnung.TradeLineItems.Count);
+        Assert.AreEqual<NativeInt>(1, loadedXRechnung.TradeLineItems.Count);
         Assert.AreEqual(grossPrice, loadedXRechnung.TradeLineItems[0].GrossUnitPrice.Value);
-        Assert.AreEqual(1, loadedXRechnung.TradeLineItems[0].TradeAllowanceCharges.Count);
+        Assert.AreEqual<NativeInt>(1, loadedXRechnung.TradeLineItems[0].TradeAllowanceCharges.Count);
         Assert.IsFalse(loadedXRechnung.TradeLineItems[0].TradeAllowanceCharges[0].BasisAmount.HasValue); // not written in XRechnung
         Assert.AreEqual(discountAmount, loadedXRechnung.TradeLineItems[0].TradeAllowanceCharges[0].ActualAmount);
       finally

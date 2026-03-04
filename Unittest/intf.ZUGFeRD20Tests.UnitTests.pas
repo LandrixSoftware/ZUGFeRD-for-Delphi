@@ -171,7 +171,7 @@ begin
 
       loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
       try
-        Assert.AreEqual(3, loadedInvoice.TradeLineItems.Count);
+        Assert.AreEqual<NativeInt>(3, loadedInvoice.TradeLineItems.Count);
         Assert.AreEqual(TZUGFeRDLineStatusCodes.New, loadedInvoice.TradeLineItems[0].AssociatedDocument.LineStatusCode.Value);
         Assert.AreEqual(TZUGFeRDLineStatusReasonCodes.DETAIL, loadedInvoice.TradeLineItems[0].AssociatedDocument.LineStatusReasonCode.Value);
         Assert.IsFalse(loadedInvoice.TradeLineItems[1].AssociatedDocument.LineStatusCode.HasValue);
@@ -198,7 +198,7 @@ begin
     Assert.AreEqual(TZUGFeRDProfile.Basic, desc.Profile);
     Assert.AreEqual(TZUGFeRDInvoiceType.Invoice, desc.Type_);
     Assert.AreEqual('471102', desc.InvoiceNo);
-    Assert.AreEqual(1, desc.TradeLineItems.Count);
+    Assert.AreEqual<NativeInt>(1, desc.TradeLineItems.Count);
     Assert.AreEqual<Currency>(198.0, desc.LineTotalAmount.Value);
     Assert.IsFalse(desc.IsTest);
   finally
@@ -215,7 +215,7 @@ begin
     Assert.AreEqual(TZUGFeRDProfile.Extended, desc.Profile);
     Assert.AreEqual(TZUGFeRDInvoiceType.Invoice, desc.Type_);
     Assert.AreEqual('R87654321012345', desc.InvoiceNo);
-    Assert.AreEqual(6, desc.TradeLineItems.Count);
+    Assert.AreEqual<NativeInt>(6, desc.TradeLineItems.Count);
     Assert.AreEqual<Currency>(457.20, desc.LineTotalAmount.Value);
     Assert.IsTrue(desc.IsTest);
   finally
@@ -303,7 +303,7 @@ begin
   try
     for i := 0 to desc.TradeLineItems.Count - 1 do
     begin
-      Assert.AreEqual(0, desc.TradeLineItems[i].ApplicableProductCharacteristics.Count,
+      Assert.AreEqual<NativeInt>(0, desc.TradeLineItems[i].ApplicableProductCharacteristics.Count,
         Format('TradeLineItem[%d].ApplicableProductCharacteristics should be empty', [i]));
     end;
   finally
@@ -321,7 +321,7 @@ begin
 
     Assert.AreEqual('DE98ZZZ09999999999', desc.PaymentMeans.SEPACreditorIdentifier);
     Assert.AreEqual('REF A-123', desc.PaymentMeans.SEPAMandateReference);
-    Assert.AreEqual(1, desc.DebitorBankAccounts.Count);
+    Assert.AreEqual<NativeInt>(1, desc.DebitorBankAccounts.Count);
     Assert.AreEqual('DE21860000000086001055', desc.DebitorBankAccounts[0].IBAN);
 
     Assert.IsTrue(desc.PaymentTermsList.Count > 0, 'PaymentTermsList should not be empty');
@@ -452,7 +452,7 @@ begin
       try
         Assert.AreEqual('DE98ZZZ09999999999', d2.PaymentMeans.SEPACreditorIdentifier);
         Assert.AreEqual('REF A-123', d2.PaymentMeans.SEPAMandateReference);
-        Assert.AreEqual(1, d2.DebitorBankAccounts.Count);
+        Assert.AreEqual<NativeInt>(1, d2.DebitorBankAccounts.Count);
         Assert.AreEqual('DE21860000000086001055', d2.DebitorBankAccounts[0].IBAN);
       finally
         d2.Free;
@@ -564,7 +564,7 @@ begin
 
       loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
       try
-        Assert.AreEqual(3, loadedInvoice.AdditionalReferencedDocuments.Count);
+        Assert.AreEqual<NativeInt>(3, loadedInvoice.AdditionalReferencedDocuments.Count);
 
         for i := 0 to loadedInvoice.AdditionalReferencedDocuments.Count - 1 do
         begin
