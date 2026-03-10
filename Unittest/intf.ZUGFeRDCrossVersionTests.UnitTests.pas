@@ -2042,7 +2042,7 @@ begin
         xmlContent.Contains('ShipToTradeParty'),
         'ShipToTradeParty not found in XML (version=' + IntToStr(_version) +
         ', profile=' + IntToStr(_profile) + '). XML excerpt: ' +
-        xmlContent.Substring(0, Min(Length(xmlContent), 2000))
+        Copy(xmlContent, 1, 2000)
       );
 
       ms.Position := 0;
