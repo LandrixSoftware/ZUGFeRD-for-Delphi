@@ -1240,8 +1240,8 @@ begin
 
   _writer.WriteStartElement('ram:PostalTradeAddress');
   _writer.WriteOptionalElementString('ram:PostcodeCode', Party.Postcode);
-  _writer.WriteOptionalElementString('ram:LineOne', ifthen(Party.ContactName = '', Party.Street,Party.ContactName));
-  if Party.ContactName <> '' then
+  _writer.WriteOptionalElementString('ram:LineOne', ifthen(Party.Street2 <> '', Party.Street2, ifthen(Party.ContactName <> '', Party.ContactName, Party.Street)));
+  if (Party.Street2 <> '') or (Party.ContactName <> '') then
     _writer.WriteOptionalElementString('ram:LineTwo', Party.Street);
   _writer.WriteOptionalElementString('ram:LineThree', Party.AddressLine3); // BT-163
   _writer.WriteOptionalElementString('ram:CityName', Party.City);

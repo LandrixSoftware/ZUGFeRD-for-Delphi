@@ -404,11 +404,13 @@ begin
 
   if (not lineTwo.IsEmpty) then
   begin
-    Result.ContactName := lineOne;
+    Result.Street2 := lineOne;
+    Result.ContactName := lineOne; // backward compatibility
     Result.Street := lineTwo;
   end else
   begin
     Result.Street := lineOne;
+    Result.Street2 := '';
     Result.ContactName := '';
   end;
 end;

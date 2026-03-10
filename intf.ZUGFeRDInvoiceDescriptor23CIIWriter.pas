@@ -1692,8 +1692,8 @@ begin
   begin
     writer.WriteStartElement('ram:PostalTradeAddress');
     writer.WriteOptionalElementString('ram:PostcodeCode', party.Postcode); //buyer: BT-53
-    writer.WriteOptionalElementString('ram:LineOne', ifthen(party.ContactName='',party.Street,party.ContactName)); //buyer: BT-50
-    if (party.ContactName<>'') then
+    writer.WriteOptionalElementString('ram:LineOne', ifthen(party.Street2 <> '', party.Street2, ifthen(party.ContactName <> '', party.ContactName, party.Street))); //buyer: BT-50
+    if (party.Street2 <> '') or (party.ContactName <> '') then
       writer.WriteOptionalElementString('ram:LineTwo', party.Street); //buyer: BT-51
 
     writer.WriteOptionalElementString('ram:LineThree', party.AddressLine3); //buyer: BT-163
