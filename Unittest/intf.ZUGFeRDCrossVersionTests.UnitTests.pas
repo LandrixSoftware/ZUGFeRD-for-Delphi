@@ -243,7 +243,7 @@ type
     procedure TestAvoidEmptyElementsWithMinimalInvoice(_version: Integer; _format: Integer; _profile: Integer);
 
     [Test]
-    // V1-CII-Ext-present skipped: v1.0 ShipTo on item level needs further investigation
+    [TestCase('V1-CII-Ext-present',      '100,0,4,1')]
     [TestCase('V20-CII-Ext-present',     '200,0,4,1')]
     [TestCase('V23-CII-Ext-present',     '230,0,4,1')]
     [TestCase('V23-UBL-XR-not-present',  '230,1,32,0')]
@@ -2015,6 +2015,8 @@ var
   shallBePresent: Boolean;
   desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
   ms: TMemoryStream;
+  xmlContent: string;
+  xmlBytes: TBytes;
 begin
   version := TZUGFeRDVersion(_version);
   format := TZUGFeRDFormats(_format);
@@ -2030,8 +2032,20 @@ begin
     ms := TMemoryStream.Create;
     try
       desc.Save(ms, version, profile, format);
-      ms.Position := 0;
 
+      // DIAGNOSTIC: verify ShipToTradeParty is present in generated XML
+      SetLength(xmlBytes, ms.Size);
+      ms.Position := 0;
+      ms.ReadBuffer(xmlBytes[0], ms.Size);
+      xmlContent := TEncoding.UTF8.GetString(xmlBytes);
+      Assert.IsTrue(
+        xmlContent.Contains('ShipToTradeParty'),
+        'ShipToTradeParty not found in XML (version=' + IntToStr(_version) +
+        ', profile=' + IntToStr(_profile) + '). XML excerpt: ' +
+        xmlContent.Substring(0, Min(Length(xmlContent), 2000))
+      );
+
+      ms.Position := 0;
       loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
       try
         Assert.IsNotNull(loadedInvoice.TradeLineItems);
