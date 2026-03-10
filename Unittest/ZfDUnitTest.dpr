@@ -69,6 +69,25 @@ var
 begin
   CoInitialize(nil);
   try
+    // Warn when running under the Delphi debugger
+    if DebugHook <> 0 then
+    begin
+      System.Writeln('');
+      System.Writeln('*** WARNING: Running under the Delphi debugger ***');
+      System.Writeln('');
+      System.Writeln('Some tests intentionally raise exceptions (e.g. TestInvalidXmlWithException,');
+      System.Writeln('TestUBLNonAvailability). The debugger will stop at these expected exceptions.');
+      System.Writeln('');
+      System.Writeln('To suppress this, go to:');
+      System.Writeln('  Tools > Options > Debugger Options > Language Exceptions');
+      System.Writeln('and add these exception types to the ignore list:');
+      System.Writeln('  - TZUGFeRDUnsupportedException');
+      System.Writeln('  - Exception (for illegal XML character tests)');
+      System.Writeln('');
+      System.Writeln('Press <Enter> to continue anyway...');
+      System.Readln;
+    end;
+
     runner := TDUnitX.CreateRunner;
     runner.UseRTTI := True;
 
