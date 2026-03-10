@@ -65,12 +65,13 @@ var
   logger : ITestLogger;
   nunitLogger : ITestLogger;
   xmlOutputFile : string;
-  exitCode : Integer;
 begin
   CoInitialize(nil);
   try
     // Warn when running under the Delphi debugger
+    {$WARN SYMBOL_PLATFORM OFF}
     if DebugHook <> 0 then
+    {$WARN SYMBOL_PLATFORM DEFAULT}
     begin
       System.Writeln('');
       System.Writeln('*** WARNING: Running under the Delphi debugger ***');
@@ -107,9 +108,9 @@ begin
 
     results := runner.Execute;
 
-    exitCode := 0;
+    ExitCode := 0;
     if not results.AllPassed then
-      exitCode := 1;
+      ExitCode := 1;
 
     // Only wait for keypress when running interactively (stdin is a console)
     if IsConsole then
@@ -117,8 +118,6 @@ begin
       System.Write('Done.. press <Enter> key to quit.');
       System.Readln;
     end;
-
-    ExitCode := exitCode;
   except
     on E: Exception do
     begin
