@@ -673,6 +673,9 @@ begin
       if tradeLineItem.ChargeFreeQuantity.HasValue then
         _writeElementWithAttribute(Writer, 'ram:ChargeFreeQuantity', 'unitCode', TEnumExtensions<TZUGFeRDQuantityCodes>.EnumToString(tradeLineItem.ChargeFreeUnitCode), _formatDecimal(tradeLineItem.ChargeFreeQuantity, 4));
 
+      if (tradeLineItem.ShipTo <> nil) and (Descriptor.Profile = TZUGFeRDProfile.Extended) then
+        _writeOptionalParty(Writer, 'ram:ShipToTradeParty', tradeLineItem.ShipTo);
+
       if (tradeLineItem.DeliveryNoteReferencedDocument<> nil) then
       begin
           Writer.WriteStartElement('ram:DeliveryNoteReferencedDocument');

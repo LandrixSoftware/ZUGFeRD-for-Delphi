@@ -395,6 +395,9 @@ begin
       if tradeLineItem.PackageQuantity.HasValue and (Descriptor.Profile = TZUGFeRDProfile.Extended) then
         _writeElementWithAttribute(Writer, 'ram:PackageQuantity', 'unitCode', TEnumExtensions<TZUGFeRDQuantityCodes>.EnumToString(tradeLineItem.PackageUnitCode), _formatDecimal(tradeLineItem.PackageQuantity, 4));
 
+      if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
+        _writeOptionalParty(Writer, 'ram:ShipToTradeParty', tradeLineItem.ShipTo, tradeLineItem.ShipToContact);
+
       if (tradeLineItem.DeliveryNoteReferencedDocument <> nil) then
       begin
         Writer.WriteStartElement('ram:DeliveryNoteReferencedDocument');

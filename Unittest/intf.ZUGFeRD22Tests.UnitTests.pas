@@ -4835,7 +4835,7 @@ begin
       {unitQuantity=}   nil,  // no basis quantity: standard = 1
       {grossUnitPrice=} TZUGFeRDNullableParam<Currency>.Create(5.5),
       {billedQuantity=} 50,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} nil,  // not set: writer will calculate 5.5 * 50 = 275
       {taxType=}        TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}   TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}     7,
@@ -4881,7 +4881,7 @@ begin
       {unitQuantity=}   TZUGFeRDNullableParam<Currency>.Create(10),  // basis quantity = 10
       {grossUnitPrice=} TZUGFeRDNullableParam<Currency>.Create(5.5),
       {billedQuantity=} 50,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} nil,  // not set: writer will calculate 5.5 * 50 / 10 = 27.50
       {taxType=}        TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}   TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}     7,
