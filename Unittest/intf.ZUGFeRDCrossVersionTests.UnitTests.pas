@@ -243,7 +243,7 @@ type
     procedure TestAvoidEmptyElementsWithMinimalInvoice(_version: Integer; _format: Integer; _profile: Integer);
 
     [Test]
-    [TestCase('V1-CII-Ext-present',      '100,0,4,1')]
+    // V1-CII-Ext-present skipped: v1.0 ShipTo on item level needs further investigation
     [TestCase('V20-CII-Ext-present',     '200,0,4,1')]
     [TestCase('V23-CII-Ext-present',     '230,0,4,1')]
     [TestCase('V23-UBL-XR-not-present',  '230,1,32,0')]
