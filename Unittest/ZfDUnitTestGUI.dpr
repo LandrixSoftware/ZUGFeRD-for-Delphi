@@ -9,6 +9,7 @@ uses
   Winapi.Windows,
   Vcl.Forms,
   Vcl.Dialogs,
+  System.UITypes,
   SysUtils,
   DUnitX.Loggers.GUI.VCL,
   DUnitX.Loggers.XML.NUnit,
@@ -37,7 +38,9 @@ begin
     TDUnitX.Options.XMLOutputFile := ExtractFilePath(ParamStr(0)) + 'dunitx-results.xml';
 
     // Warn when running under the Delphi debugger
+    {$WARN SYMBOL_PLATFORM OFF}
     if DebugHook <> 0 then
+    {$WARN SYMBOL_PLATFORM DEFAULT}
       MessageDlg(
         'Running under the Delphi debugger.' + sLineBreak + sLineBreak +
         'Some tests intentionally raise exceptions (e.g. TestInvalidXmlWithException,' + sLineBreak +
