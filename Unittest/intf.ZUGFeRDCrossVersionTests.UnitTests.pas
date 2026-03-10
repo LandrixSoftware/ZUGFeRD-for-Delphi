@@ -2015,8 +2015,6 @@ var
   shallBePresent: Boolean;
   desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
   ms: TMemoryStream;
-  xmlContent: string;
-  xmlBytes: TBytes;
 begin
   version := TZUGFeRDVersion(_version);
   format := TZUGFeRDFormats(_format);
@@ -2032,18 +2030,6 @@ begin
     ms := TMemoryStream.Create;
     try
       desc.Save(ms, version, profile, format);
-
-      // DIAGNOSTIC: verify ShipToTradeParty is present in generated XML
-      SetLength(xmlBytes, ms.Size);
-      ms.Position := 0;
-      ms.ReadBuffer(xmlBytes[0], ms.Size);
-      xmlContent := TEncoding.UTF8.GetString(xmlBytes);
-      Assert.IsTrue(
-        xmlContent.Contains('ShipToTradeParty'),
-        'ShipToTradeParty not found in XML (version=' + IntToStr(_version) +
-        ', profile=' + IntToStr(_profile) + '). XML excerpt: ' +
-        Copy(xmlContent, 1, 2000)
-      );
 
       ms.Position := 0;
       loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
