@@ -232,6 +232,16 @@ type
     procedure TestAlternateNamespace;
     [Test]
     procedure TestLocalNamespace;
+    [Test]
+    procedure TestFinancialInstitutionBICEmpty;
+    [Test]
+    procedure TestNoBICIDForDebitorFinancialInstitution;
+    [Test]
+    procedure TestBasisQuantityStandard;
+    [Test]
+    procedure TestBasisQuantityMultiple;
+    [Test]
+    procedure TestAccountingCost;
   end;
 
 implementation
@@ -289,7 +299,8 @@ uses
   intf.ZUGFeRDReceivableSpecifiedTradeAccountingAccount,
   intf.ZUGFeRDIncludedReferencedProduct,
   intf.ZUGFeRDDeliveryNoteReferencedDocument,
-  intf.ZUGFeRDBuyerOrderReferencedDocument;
+  intf.ZUGFeRDBuyerOrderReferencedDocument,
+  intf.ZUGFeRDFormats;
 
 { TZUGFeRD22Tests }
 
@@ -4736,5 +4747,207 @@ begin
     invoice.Free;
   end;
 end;
+
+/// <summary>
+/// This test ensures that BIC won't be written if empty
+/// </summary>
+procedure TZUGFeRD22Tests.TestFinancialInstitutionBICEmpty;
+var
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+begin
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    // PayeeSpecifiedCreditorFinancialInstitution: clear BIC
+    desc.CreditorBankAccounts[0].BIC := '';
+    // PayerSpecifiedDebtorFinancialInstitution: add debitor account with empty BIC
+    desc.AddDebitorFinancialAccount('DE02120300000000202051', '');
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Comfort);
+      ms.Position := 0;
+
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        // No PayeeSpecifiedCreditorFinancialInstitution shall be present if BIC is empty
+        Assert.AreEqual('', loadedInvoice.CreditorBankAccounts[0].BIC);
+        // No PayerSpecifiedDebtorFinancialInstitution is ever written for debitor accounts
+        Assert.AreEqual('', loadedInvoice.DebitorBankAccounts[0].BIC);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end; // !TestFinancialInstitutionBICEmpty()
+
+/// <summary>
+/// This test ensures that no BIC is created for the debitor account even if it is specified
+/// </summary>
+procedure TZUGFeRD22Tests.TestNoBICIDForDebitorFinancialInstitution;
+var
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+begin
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    // PayerSpecifiedDebtorFinancialInstitution: add debitor account with BIC
+    desc.AddDebitorFinancialAccount('DE02120300000000202051', 'MYBIC');
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Comfort);
+      ms.Position := 0;
+
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        // PayerSpecifiedDebtorFinancialInstitution is never written, so BIC is always empty for debitor
+        Assert.AreEqual('', loadedInvoice.DebitorBankAccounts[0].BIC);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end; // !TestNoBICIDForDebitorFinancialInstitution()
+
+procedure TZUGFeRD22Tests.TestBasisQuantityStandard;
+var
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+  lineItem: TZUGFeRDTradeLineItem;
+begin
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.TradeLineItems.Clear;
+    lineItem := desc.AddTradeLineItem(
+      {name=}           'Joghurt Banane',
+      {netUnitPrice=}   TZUGFeRDNullableParam<Currency>.Create(5.5),
+      {description=}    '',
+      {unitCode=}       TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+      {unitQuantity=}   nil,  // no basis quantity: standard = 1
+      {grossUnitPrice=} TZUGFeRDNullableParam<Currency>.Create(5.5),
+      {billedQuantity=} 50,
+      {lineTotalAmount=} 0,
+      {taxType=}        TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+      {categoryCode=}   TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+      {taxPercent=}     7,
+      {comment=}        '',
+      {id=}             TZUGFeRDGlobalID.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.EAN, '4000050986428'),
+      {sellerAssignedID=} 'ARNR2'
+    );
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
+      ms.Position := 0;
+
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        // 5.5 * 50 / 1 = 275.00
+        Assert.AreEqual<Currency>(275.00, loadedInvoice.TradeLineItems[0].LineTotalAmount.Value);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end; // !TestBasisQuantityStandard()
+
+procedure TZUGFeRD22Tests.TestBasisQuantityMultiple;
+var
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+  lineItem: TZUGFeRDTradeLineItem;
+begin
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.TradeLineItems.Clear;
+    lineItem := desc.AddTradeLineItem(
+      {name=}           'Joghurt Banane',
+      {netUnitPrice=}   TZUGFeRDNullableParam<Currency>.Create(5.5),
+      {description=}    '',
+      {unitCode=}       TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+      {unitQuantity=}   TZUGFeRDNullableParam<Currency>.Create(10),  // basis quantity = 10
+      {grossUnitPrice=} TZUGFeRDNullableParam<Currency>.Create(5.5),
+      {billedQuantity=} 50,
+      {lineTotalAmount=} 0,
+      {taxType=}        TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+      {categoryCode=}   TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+      {taxPercent=}     7,
+      {comment=}        '',
+      {id=}             TZUGFeRDGlobalID.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.EAN, '4000050986428'),
+      {sellerAssignedID=} 'ARNR2'
+    );
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
+      ms.Position := 0;
+
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        // 5.5 * 50 / 10 = 27.50
+        Assert.AreEqual<Currency>(27.50, loadedInvoice.TradeLineItems[0].LineTotalAmount.Value);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end; // !TestBasisQuantityMultiple()
+
+procedure TZUGFeRD22Tests.TestAccountingCost;
+var
+  d, d2: TZUGFeRDInvoiceDescriptor;
+  stream: TMemoryStream;
+  accounts: TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>;
+  found: Boolean;
+  i: Integer;
+begin
+  d := TZUGFeRDInvoiceDescriptor.CreateInvoice('471103', EncodeDate(2025, 11, 11), TZUGFeRDCurrencyCodes.EUR);
+  try
+    d.Type_ := TZUGFeRDInvoiceType.Invoice;
+    d.AddReceivableSpecifiedTradeAccountingAccount('BRE');
+
+    stream := TMemoryStream.Create;
+    try
+      d.Save(stream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+      stream.Position := 0;
+
+      d2 := TZUGFeRDInvoiceDescriptor.Load(stream);
+      try
+        accounts := d2.ReceivableSpecifiedTradeAccountingAccounts;
+        found := False;
+        for i := 0 to accounts.Count - 1 do
+          if accounts[i].TradeAccountID = 'BRE' then
+          begin
+            found := True;
+            Break;
+          end;
+        Assert.IsTrue(found);
+      finally
+        d2.Free;
+      end;
+    finally
+      stream.Free;
+    end;
+  finally
+    d.Free;
+  end;
+end; // !TestAccountingCost()
 
 end.
