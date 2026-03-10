@@ -4835,7 +4835,6 @@ begin
       {unitQuantity=}   nil,  // no basis quantity: standard = 1
       {grossUnitPrice=} TZUGFeRDNullableParam<Currency>.Create(5.5),
       {billedQuantity=} 50,
-      {lineTotalAmount=} nil,  // not set: writer will calculate 5.5 * 50 = 275
       {taxType=}        TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}   TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}     7,
@@ -4843,6 +4842,8 @@ begin
       {id=}             TZUGFeRDGlobalID.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.EAN, '4000050986428'),
       {sellerAssignedID=} 'ARNR2'
     );
+    // Clear LineTotalAmount so the writer calculates it as netUnitPrice * billedQuantity
+    lineItem.LineTotalAmount.ClearValue;
 
     ms := TMemoryStream.Create;
     try
@@ -4881,7 +4882,6 @@ begin
       {unitQuantity=}   TZUGFeRDNullableParam<Currency>.Create(10),  // basis quantity = 10
       {grossUnitPrice=} TZUGFeRDNullableParam<Currency>.Create(5.5),
       {billedQuantity=} 50,
-      {lineTotalAmount=} nil,  // not set: writer will calculate 5.5 * 50 / 10 = 27.50
       {taxType=}        TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}   TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}     7,
@@ -4889,6 +4889,8 @@ begin
       {id=}             TZUGFeRDGlobalID.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.EAN, '4000050986428'),
       {sellerAssignedID=} 'ARNR2'
     );
+    // Clear LineTotalAmount so the writer calculates it as netUnitPrice * billedQuantity / unitQuantity
+    lineItem.LineTotalAmount.ClearValue;
 
     ms := TMemoryStream.Create;
     try
