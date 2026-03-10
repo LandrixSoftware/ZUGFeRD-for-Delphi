@@ -4843,7 +4843,7 @@ begin
       {sellerAssignedID=} 'ARNR2'
     );
     // Clear LineTotalAmount so the writer calculates it as netUnitPrice * billedQuantity
-    lineItem.LineTotalAmount := nil;  // nil → HasValue=false, writer will calculate
+    lineItem.LineTotalAmount := ZUGFeRDNullable<Currency>.Create(False);  // HasValue=false, writer will calculate
 
     ms := TMemoryStream.Create;
     try
@@ -4890,7 +4890,7 @@ begin
       {sellerAssignedID=} 'ARNR2'
     );
     // Clear LineTotalAmount so the writer calculates it as netUnitPrice * billedQuantity / unitQuantity
-    lineItem.LineTotalAmount := nil;  // nil → HasValue=false, writer will calculate
+    lineItem.LineTotalAmount := ZUGFeRDNullable<Currency>.Create(False);  // HasValue=false, writer will calculate
 
     ms := TMemoryStream.Create;
     try
