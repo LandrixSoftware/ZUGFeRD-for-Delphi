@@ -64,6 +64,8 @@ var
   results : IRunResults;
   logger : ITestLogger;
   nunitLogger : ITestLogger;
+  xmlOutputFile : string;
+  exitCode : Integer;
 begin
   CoInitialize(nil);
   try
@@ -76,16 +78,34 @@ begin
       runner.AddLogger(logger);
     end;
 
-    nunitLogger := TDUnitXXMLNUnitFileLogger.Create(TDUnitX.Options.XMLOutputFile);
+    // Use explicit path so Claude Code always finds the XML at the same location
+    xmlOutputFile := TDUnitX.Options.XMLOutputFile;
+    if xmlOutputFile = '' then
+      xmlOutputFile := ExtractFilePath(ParamStr(0)) + 'dunitx-results.xml';
+
+    nunitLogger := TDUnitXXMLNUnitFileLogger.Create(xmlOutputFile);
     runner.AddLogger(nunitLogger);
 
     results := runner.Execute;
 
-    System.Write('Done.. press <Enter> key to quit.');
-    System.Readln;
+    exitCode := 0;
+    if not results.AllPassed then
+      exitCode := 1;
+
+    // Only wait for keypress when running interactively (stdin is a console)
+    if IsConsole then
+    begin
+      System.Write('Done.. press <Enter> key to quit.');
+      System.Readln;
+    end;
+
+    ExitCode := exitCode;
   except
     on E: Exception do
+    begin
       System.Writeln(E.ClassName, ': ', E.Message);
+      ExitCode := 2;
+    end;
   end;
   CoUninitialize;
 end.
