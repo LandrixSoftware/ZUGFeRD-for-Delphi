@@ -6,7 +6,9 @@ program ZfDUnitTestGUI;
 
 uses
   Winapi.ActiveX,
+  Winapi.Windows,
   Vcl.Forms,
+  Vcl.Dialogs,
   SysUtils,
   DUnitX.Loggers.GUI.VCL,
   DUnitX.Loggers.XML.NUnit,
@@ -33,6 +35,20 @@ begin
     // The VCL GUI runner registers itself as a logger and runs tests automatically.
     // NUnit XML is also written so results can be read programmatically.
     TDUnitX.Options.XMLOutputFile := ExtractFilePath(ParamStr(0)) + 'dunitx-results.xml';
+
+    // Warn when running under the Delphi debugger
+    if DebugHook <> 0 then
+      MessageDlg(
+        'Running under the Delphi debugger.' + sLineBreak + sLineBreak +
+        'Some tests intentionally raise exceptions (e.g. TestInvalidXmlWithException,' + sLineBreak +
+        'TestUBLNonAvailability). The debugger will stop at these expected exceptions.' + sLineBreak + sLineBreak +
+        'To suppress this, go to:' + sLineBreak +
+        '  Tools > Options > Debugger Options > Language Exceptions' + sLineBreak +
+        'and add the following exception types to the ignore list:' + sLineBreak +
+        '  - TZUGFeRDUnsupportedException' + sLineBreak +
+        '  - Exception (for illegal XML character tests)' + sLineBreak + sLineBreak +
+        'Alternatively, run ZfDUnitTest.exe (console runner) without the debugger.',
+        mtInformation, [mbOK], 0);
 
     Application.Initialize;
     Application.Title := 'ZfD Unit Tests';
