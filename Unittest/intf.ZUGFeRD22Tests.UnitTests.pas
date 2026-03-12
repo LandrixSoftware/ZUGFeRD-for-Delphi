@@ -4222,8 +4222,7 @@ procedure TZUGFeRD22Tests.TestOfficialXRechnungFileForPaymentTerms;
 var
   desc: TZUGFeRDInvoiceDescriptor;
 begin
-  // C# hat kein TryReadXRechnungPaymentTerms - speichert Description as-is (1 PaymentTerms).
-  // Delphi parst #SKONTO# Zeilen strukturiert: 3 PaymentTerms, Description nur die Freitext-Zeilen.
+  // #SKONTO# Zeilen werden strukturiert geparst: 3 PaymentTerms, Description nur die Freitext-Zeilen.
   desc := TZUGFeRDInvoiceDescriptor.Load(DocumentationPath(
     'xRechnung\XRechnung 2.3.1\Schematron\generated\cii-br-de-18-freespace-test-599-identity.xml'));
   try
