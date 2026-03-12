@@ -41,6 +41,7 @@ type
     FCountry: ZUGFeRDNullable<TZUGFeRDCountryCodes>;
     FStreet: string;
     FGlobalID: TZUGFeRDGlobalID;
+    FStreet2: string;
     FAddressLine3: string;
     FCountrySubdivisionName: string;
     FSpecifiedLegalOrganization: TZUGFeRDLegalOrganization;
@@ -94,6 +95,12 @@ type
     /// Global identifier
     /// </summary>
     property GlobalID: TZUGFeRDGlobalID read FGlobalID write FGlobalID;
+
+    /// <summary>
+    /// Additional address line (LineTwo in CII, AdditionalStreetName in UBL)
+    /// e.g. used for BT-36, BT-51
+    /// </summary>
+    property Street2: string read FStreet2 write FStreet2;
 
     /// <summary>
     /// Address line 3

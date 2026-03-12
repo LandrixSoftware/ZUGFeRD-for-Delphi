@@ -679,21 +679,13 @@ begin
 
   Result := TZUGFeRDParty.Create;
   Result.Street := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:StreetName');
-  Result.AddressLine3 := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:AdditionalStreetName');
+  Result.Street2 := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:AdditionalStreetName');
+  Result.AddressLine3 := TZUGFeRDXmlUtils.NodeAsString(node, 'cac:AddressLine/cbc:Line');
   Result.City := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:CityName');
   Result.Postcode := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:PostalZone');
   Result.CountrySubdivisionName := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:CountrySubentity');
   Result.Country := TEnumExtensions<TZUGFeRDCountryCodes>.StringToNullableEnum(
     TZUGFeRDXmlUtils.NodeAsString(node, 'cac:Country/cbc:IdentificationCode'));
-
-  var addressLine2 : string := TZUGFeRDXmlUtils.NodeAsString(node, 'cac:AddressLine/cbc:Line');
-  if addressLine2.Trim <> '' then
-  begin
-    if Result.AddressLine3.Trim = '' then
-      Result.AddressLine3 := addressLine2
-    else if Result.ContactName.Trim = '' then
-      Result.ContactName := addressLine2;
-  end;
 end;
 
 function TZUGFeRDInvoiceDescriptor22UBLReader._nodeAsBankAccount(basenode: IXmlDomNode;

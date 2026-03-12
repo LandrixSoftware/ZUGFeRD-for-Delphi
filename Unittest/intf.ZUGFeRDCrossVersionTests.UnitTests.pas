@@ -241,6 +241,13 @@ type
     [TestCase('V23-CII-Ext',     '230,0,4')]
     [TestCase('V23-UBL-XR',      '230,1,32')]
     procedure TestAvoidEmptyElementsWithMinimalInvoice(_version: Integer; _format: Integer; _profile: Integer);
+
+    [Test]
+    [TestCase('V1-CII-Ext-present',      '100,0,4,1')]
+    [TestCase('V20-CII-Ext-present',     '200,0,4,1')]
+    [TestCase('V23-CII-Ext-present',     '230,0,4,1')]
+    [TestCase('V23-UBL-XR-not-present',  '230,1,32,0')]
+    procedure TestShipToTradePartyOnItemLevel(_version: Integer; _format: Integer; _profile: Integer; _shallBePresent: Integer);
   end;
 
 implementation
@@ -1999,6 +2006,58 @@ begin
     desc.Free;
   end;
 end;
+
+procedure TZUGFeRDCrossVersionTests.TestShipToTradePartyOnItemLevel(_version: Integer; _format: Integer; _profile: Integer; _shallBePresent: Integer);
+var
+  version: TZUGFeRDVersion;
+  format: TZUGFeRDFormats;
+  profile: TZUGFeRDProfile;
+  shallBePresent: Boolean;
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+begin
+  version := TZUGFeRDVersion(_version);
+  format := TZUGFeRDFormats(_format);
+  profile := TZUGFeRDProfile(_profile);
+  shallBePresent := _shallBePresent <> 0;
+
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.TradeLineItems[0].ShipTo := TZUGFeRDParty.Create;
+    desc.TradeLineItems[0].ShipTo.Name := 'ShipTo';
+    desc.TradeLineItems[0].ShipTo.City := 'ShipToCity';
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, version, profile, format);
+
+      ms.Position := 0;
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        Assert.IsNotNull(loadedInvoice.TradeLineItems);
+
+        if shallBePresent then
+        begin
+          Assert.IsNotNull(loadedInvoice.TradeLineItems[0].ShipTo);
+          Assert.IsNull(loadedInvoice.TradeLineItems[0].UltimateShipTo);
+          Assert.AreEqual('ShipTo', loadedInvoice.TradeLineItems[0].ShipTo.Name);
+          Assert.AreEqual('ShipToCity', loadedInvoice.TradeLineItems[0].ShipTo.City);
+        end
+        else
+        begin
+          if profile <> TZUGFeRDProfile.Minimum then // no tradelineitems in Minimum
+            Assert.IsNull(loadedInvoice.TradeLineItems[0].ShipTo);
+        end;
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end; // !TestShipToTradePartyOnItemLevel()
 
 initialization
   TDUnitX.RegisterTestFixture(TZUGFeRDCrossVersionTests);

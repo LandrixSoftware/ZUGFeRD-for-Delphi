@@ -9,6 +9,9 @@
         <Projects Include="..\Unittest\ZfDUnitTest.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="..\Unittest\ZfDUnitTestGUI.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -35,14 +38,23 @@
     <Target Name="ZfDUnitTest:Make">
         <MSBuild Projects="..\Unittest\ZfDUnitTest.dproj" Targets="Make"/>
     </Target>
+    <Target Name="ZfDUnitTestGUI">
+        <MSBuild Projects="..\Unittest\ZfDUnitTestGUI.dproj"/>
+    </Target>
+    <Target Name="ZfDUnitTestGUI:Clean">
+        <MSBuild Projects="..\Unittest\ZfDUnitTestGUI.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ZfDUnitTestGUI:Make">
+        <MSBuild Projects="..\Unittest\ZfDUnitTestGUI.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="ZUGFeRDProject;ZfDUnitTest"/>
+        <CallTarget Targets="ZUGFeRDProject;ZfDUnitTest;ZfDUnitTestGUI"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="ZUGFeRDProject:Clean;ZfDUnitTest:Clean"/>
+        <CallTarget Targets="ZUGFeRDProject:Clean;ZfDUnitTest:Clean;ZfDUnitTestGUI:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="ZUGFeRDProject:Make;ZfDUnitTest:Make"/>
+        <CallTarget Targets="ZUGFeRDProject:Make;ZfDUnitTest:Make;ZfDUnitTestGUI:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

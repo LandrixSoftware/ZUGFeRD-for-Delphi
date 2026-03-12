@@ -365,7 +365,7 @@ begin
 
       Writer.WriteStartElement('cac:Address');
       Writer.WriteOptionalElementString('cbc:StreetName', Descriptor.ShipTo.Street);
-      Writer.WriteOptionalElementString('cbc:AdditionalStreetName', Descriptor.ShipTo.AddressLine3);
+      Writer.WriteOptionalElementString('cbc:AdditionalStreetName', Descriptor.ShipTo.Street2);
       Writer.WriteOptionalElementString('cbc:CityName', Descriptor.ShipTo.City);
       Writer.WriteOptionalElementString('cbc:PostalZone', Descriptor.ShipTo.Postcode);
       Writer.WriteOptionalElementString('cbc:CountrySubentity', Descriptor.ShipTo.CountrySubdivisionName);
@@ -1026,7 +1026,13 @@ begin
 
     _writer.WriteStartElement('cac:PostalAddress');
     Writer.WriteOptionalElementString('cbc:StreetName', party.Street);
-    Writer.WriteOptionalElementString('cbc:AdditionalStreetName', party.AddressLine3);
+    Writer.WriteOptionalElementString('cbc:AdditionalStreetName', party.Street2);
+    if party.AddressLine3 <> '' then
+    begin
+      _writer.WriteStartElement('cac:AddressLine');
+      Writer.WriteOptionalElementString('cbc:Line', party.AddressLine3);
+      _writer.WriteEndElement; // !AddressLine
+    end;
     Writer.WriteElementString('cbc:CityName', party.City);
     Writer.WriteElementString('cbc:PostalZone', party.Postcode);
     Writer.WriteOptionalElementString('cbc:CountrySubentity', party.CountrySubdivisionName);

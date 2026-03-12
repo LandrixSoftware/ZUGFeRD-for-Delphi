@@ -404,11 +404,13 @@ begin
 
   if (not lineTwo.IsEmpty) then
   begin
-    Result.ContactName := lineOne;
+    Result.Street2 := lineOne;
+    Result.ContactName := lineOne; // backward compatibility
     Result.Street := lineTwo;
   end else
   begin
     Result.Street := lineOne;
+    Result.Street2 := '';
     Result.ContactName := '';
   end;
 end;
@@ -439,6 +441,7 @@ begin
   Result.PackageUnitCode := TEnumExtensions<TZUGFeRDQuantityCodes>.StringToEnum(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:PackageQuantity/@unitCode'));
   Result.ChargeFreeQuantity := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:ChargeFreeQuantity');
   Result.ChargeFreeUnitCode := TEnumExtensions<TZUGFeRDQuantityCodes>.StringToEnum(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:ChargeFreeQuantity/@unitCode'));
+  Result.ShipTo := _nodeAsParty(tradeLineItem, './/ram:ShipToTradeParty');
   Result.LineTotalAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/ram:LineTotalAmount', 0);
   Result.TaxCategoryCode := TEnumExtensions<TZUGFeRDTaxCategoryCodes>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:CategoryCode'));
   Result.TaxType := TEnumExtensions<TZUGFeRDTaxTypes>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:TypeCode'));

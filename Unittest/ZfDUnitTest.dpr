@@ -64,9 +64,31 @@ var
   results : IRunResults;
   logger : ITestLogger;
   nunitLogger : ITestLogger;
+  xmlOutputFile : string;
 begin
   CoInitialize(nil);
   try
+    // Warn when running under the Delphi debugger
+    {$WARN SYMBOL_PLATFORM OFF}
+    if DebugHook <> 0 then
+    {$WARN SYMBOL_PLATFORM DEFAULT}
+    begin
+      System.Writeln('');
+      System.Writeln('*** WARNING: Running under the Delphi debugger ***');
+      System.Writeln('');
+      System.Writeln('Some tests intentionally raise exceptions (e.g. TestInvalidXmlWithException,');
+      System.Writeln('TestUBLNonAvailability). The debugger will stop at these expected exceptions.');
+      System.Writeln('');
+      System.Writeln('To suppress this, go to:');
+      System.Writeln('  Tools > Options > Debugger Options > Language Exceptions');
+      System.Writeln('and add these exception types to the ignore list:');
+      System.Writeln('  - TZUGFeRDUnsupportedException');
+      System.Writeln('  - Exception (for illegal XML character tests)');
+      System.Writeln('');
+      System.Writeln('Press <Enter> to continue anyway...');
+      System.Readln;
+    end;
+
     runner := TDUnitX.CreateRunner;
     runner.UseRTTI := True;
 
@@ -76,16 +98,32 @@ begin
       runner.AddLogger(logger);
     end;
 
-    nunitLogger := TDUnitXXMLNUnitFileLogger.Create(TDUnitX.Options.XMLOutputFile);
+    // Use explicit path so Claude Code always finds the XML at the same location
+    xmlOutputFile := TDUnitX.Options.XMLOutputFile;
+    if xmlOutputFile = '' then
+      xmlOutputFile := ExtractFilePath(ParamStr(0)) + 'dunitx-results.xml';
+
+    nunitLogger := TDUnitXXMLNUnitFileLogger.Create(xmlOutputFile);
     runner.AddLogger(nunitLogger);
 
     results := runner.Execute;
 
-    System.Write('Done.. press <Enter> key to quit.');
-    System.Readln;
+    ExitCode := 0;
+    if not results.AllPassed then
+      ExitCode := 1;
+
+    // Only wait for keypress when running interactively (stdin is a console)
+    if IsConsole then
+    begin
+      System.Write('Done.. press <Enter> key to quit.');
+      System.Readln;
+    end;
   except
     on E: Exception do
+    begin
       System.Writeln(E.ClassName, ': ', E.Message);
+      ExitCode := 2;
+    end;
   end;
   CoUninitialize;
 end.
