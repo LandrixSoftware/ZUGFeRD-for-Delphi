@@ -1725,9 +1725,9 @@ begin
     begin
       if _reg.No <> '' then
       begin
-        // FC allowed only in Comfort and Extended Profile for TZUGFeRDPartyTypes.SellerTradeParty (and TODO: TZUGFeRDPartyTypes.ItemSellerTradeParty)
+        // FC allowed only in Comfort, Extended and XRechnung Profile for TZUGFeRDPartyTypes.SellerTradeParty (and TODO: TZUGFeRDPartyTypes.ItemSellerTradeParty)
         if (_reg.SchemeID=TZUGFeRDTaxRegistrationSchemeID.VA)
-        or ((_reg.SchemeID=TZUGFeRDTaxRegistrationSchemeID.FC) and (partyType In [TZUGFeRDPartyTypes.SellerTradeParty]) and (Descriptor.Profile in [TZUGFeRDProfile.Extended, TZUGFeRDProfile.Comfort])) then
+        or ((_reg.SchemeID=TZUGFeRDTaxRegistrationSchemeID.FC) and (partyType In [TZUGFeRDPartyTypes.SellerTradeParty]) and (Descriptor.Profile in PROFILE_COMFORT_EXTENDED_XRECHNUNG)) then
         begin
           writer.WriteStartElement('ram:SpecifiedTaxRegistration');
           writer.WriteStartElement('ram:ID');
