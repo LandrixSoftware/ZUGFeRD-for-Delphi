@@ -86,3 +86,13 @@ Samples/Rechnung_9202174904_ZUGFeRD-invoice.xml
 review-*.md
 .claude/
 CLAUDE.md
+
+Unittest/dunitx-results.xml
+
+Unittest/test.xml
+
+Unittest/ZfDUnitTest.delphilsp.json
+
+Unittest/ZfDUnitTestGUI.delphilsp.json
+
+Unittest/ZfDUnitTestGUI.ini
