@@ -699,7 +699,7 @@ begin
   if strBase64BinaryData <> '' then
   begin
     Result.AttachmentBinaryObject := TMemoryStream.Create;
-    var strBase64BinaryDataBytes : TBytes := TNetEncoding.Base64String.DecodeStringToBytes(strBase64BinaryData);
+    var strBase64BinaryDataBytes : TBytes := TNetEncoding.Base64.DecodeStringToBytes(strBase64BinaryData);
     Result.AttachmentBinaryObject.Write(strBase64BinaryDataBytes,Length(strBase64BinaryDataBytes));
   end;
   Result.Filename := TZUGFeRDXmlUtils.NodeAsString(a_oXmlNode, 'ram:AttachmentBinaryObject/@filename');

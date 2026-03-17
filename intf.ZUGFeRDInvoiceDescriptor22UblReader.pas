@@ -541,7 +541,7 @@ begin
       if strBase64BinaryData <> '' then
       begin
         document.AttachmentBinaryObject := TMemoryStream.Create;
-        var strBase64BinaryDataBytes : TBytes := TNetEncoding.Base64String.DecodeStringToBytes(strBase64BinaryData);
+        var strBase64BinaryDataBytes : TBytes := TNetEncoding.Base64.DecodeStringToBytes(strBase64BinaryData);
         document.AttachmentBinaryObject.Write(strBase64BinaryDataBytes, Length(strBase64BinaryDataBytes));
       end;
     end;
@@ -819,7 +819,7 @@ begin
         if strBase64BinaryData <> '' then
         begin
           document.AttachmentBinaryObject := TMemoryStream.Create;
-          var strBase64BinaryDataBytes : TBytes := TNetEncoding.Base64String.DecodeStringToBytes(strBase64BinaryData);
+          var strBase64BinaryDataBytes : TBytes := TNetEncoding.Base64.DecodeStringToBytes(strBase64BinaryData);
           document.AttachmentBinaryObject.Write(strBase64BinaryDataBytes, Length(strBase64BinaryDataBytes));
         end;
       end;
