@@ -1015,11 +1015,11 @@ begin
       end;
     end;
 
-    if party.Name <> '' then
+    if (party.SpecifiedLegalOrganization <> nil) and (party.SpecifiedLegalOrganization.TradingBusinessName <> '') then
     begin
       _writer.WriteStartElement('cac:PartyName');
       _writer.WriteStartElement('cbc:Name');
-      _writer.WriteValue(party.Name);
+      _writer.WriteValue(party.SpecifiedLegalOrganization.TradingBusinessName);
       _writer.WriteEndElement; // !Name
       _writer.WriteEndElement; // !PartyName
     end;
@@ -1057,22 +1057,24 @@ begin
       end;
     end;
 
-    if (party.SpecifiedLegalOrganization <> nil) or (party.Description <> '') then
+    if (party.SpecifiedLegalOrganization <> nil) or (party.Description <> '') or (party.Name <> '') then
     begin
       _writer.WriteStartElement('cac:PartyLegalEntity');
-      if party.SpecifiedLegalOrganization <> nil then
-        _writer.WriteOptionalElementString('cbc:RegistrationName', party.SpecifiedLegalOrganization.TradingBusinessName);
-
-      if (party.SpecifiedLegalOrganization <> nil) and
-         (party.SpecifiedLegalOrganization.ID <> nil) and
-         (party.SpecifiedLegalOrganization.ID.ID <> '') then
+      if (party.SpecifiedLegalOrganization <> nil) or (party.Name <> '') then
       begin
-        // Party legal registration identifier (BT-30)
-        Writer.WriteStartElement('cbc:CompanyID');
-        if party.SpecifiedLegalOrganization.ID.SchemeID.HasValue then
-          Writer.WriteAttributeString('schemeID', TEnumExtensions<TZUGFeRDGlobalIDSchemeIdentifiers>.EnumToString(party.SpecifiedLegalOrganization.ID.SchemeID.Value));
-        Writer.WriteValue(party.SpecifiedLegalOrganization.ID.ID);
-        Writer.WriteEndElement; // !CompanyID
+        _writer.WriteOptionalElementString('cbc:RegistrationName', party.Name);
+
+        if (party.SpecifiedLegalOrganization <> nil) and
+           (party.SpecifiedLegalOrganization.ID <> nil) and
+           (party.SpecifiedLegalOrganization.ID.ID <> '') then
+        begin
+          // Party legal registration identifier (BT-30)
+          Writer.WriteStartElement('cbc:CompanyID');
+          if party.SpecifiedLegalOrganization.ID.SchemeID.HasValue then
+            Writer.WriteAttributeString('schemeID', TEnumExtensions<TZUGFeRDGlobalIDSchemeIdentifiers>.EnumToString(party.SpecifiedLegalOrganization.ID.SchemeID.Value));
+          Writer.WriteValue(party.SpecifiedLegalOrganization.ID.ID);
+          Writer.WriteEndElement; // !CompanyID
+        end;
       end;
 
       // Party additional legal information (BT-33)

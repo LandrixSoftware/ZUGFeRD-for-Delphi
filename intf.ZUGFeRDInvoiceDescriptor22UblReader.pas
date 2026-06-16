@@ -622,7 +622,7 @@ begin
     TEnumExtensions<TZUGFeRDGlobalIDSchemeIdentifiers>.StringToNullableEnum(
       TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:CompanyID/@schemeID')),
     TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:CompanyID'),
-    TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:RegistrationName'));
+    TZUGFeRDXmlUtils.NodeAsString(baseNode, 'cac:PartyName/cbc:Name'));
 end;
 
 function TZUGFeRDInvoiceDescriptor22UBLReader._nodeAsParty(basenode: IXmlDomNode;
@@ -658,7 +658,7 @@ begin
     Result.GlobalID := TZUGFeRDGlobalID.Create;
   end;
 
-  Result.Name := TZUGFeRDXmlUtils.NodeAsString(node, 'cac:PartyName/cbc:Name');
+  Result.Name := TZUGFeRDXmlUtils.NodeAsString(node, 'cac:PartyLegalEntity/cbc:RegistrationName');
   Result.SpecifiedLegalOrganization := _nodeAsLegalOrganization(node, 'cac:PartyLegalEntity');
 
   if Result.Description.Trim = '' then
