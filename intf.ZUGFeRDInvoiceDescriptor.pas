@@ -124,6 +124,7 @@ type
     FAllowanceTotalAmount: ZUGFeRDNullable<Currency>;
     FTaxBasisAmount: ZUGFeRDNullable<Currency>;
     FTaxTotalAmount: ZUGFeRDNullable<Currency>;
+    FTaxTotalAmountInAccountingCurrency: ZUGFeRDNullable<Currency>;
     FGrandTotalAmount: ZUGFeRDNullable<Currency>;
     FTotalPrepaidAmount: ZUGFeRDNullable<Currency>;
     FRoundingAmount: ZUGFeRDNullable<Currency>;
@@ -396,14 +397,22 @@ type
     property TaxBasisAmount: ZUGFeRDNullable<Currency> read FTaxBasisAmount write FTaxBasisAmount;
 
     /// <summary>
-    /// The total VAT amount for the invoice.
-    /// The VAT total amount expressed in the accounting currency accepted or required in the country of the seller
+    /// The total VAT amount for the invoice in invoice currency (BT-5).
+    ///
+    /// BT-110
+    /// </summary>
+    property TaxTotalAmount: ZUGFeRDNullable<Currency> read FTaxTotalAmount write FTaxTotalAmount;
+
+    /// <summary>
+    /// The total VAT amount expressed in the accounting currency (BT-6).
     ///
     /// To be used when the VAT accounting currency (BT-6) differs from the Invoice currency code (BT-5) in accordance
     /// with article 230 of Directive 2006/112 / EC on VAT. The VAT amount in accounting currency is not used
-    /// in the calculation of the Invoice totals..
+    /// in the calculation of the Invoice totals.
+    ///
+    /// BT-111
     /// </summary>
-    property TaxTotalAmount: ZUGFeRDNullable<Currency> read FTaxTotalAmount write FTaxTotalAmount;
+    property TaxTotalAmountInAccountingCurrency: ZUGFeRDNullable<Currency> read FTaxTotalAmountInAccountingCurrency write FTaxTotalAmountInAccountingCurrency;
 
     /// <summary>
     /// Invoice total amount with VAT
@@ -868,6 +877,15 @@ type
       const aAllowanceTotalAmount: Currency = 0; const aTaxBasisAmount: Currency = 0; const aTaxTotalAmount: Currency = 0;
       const aGrandTotalAmount: Currency = 0; const aTotalPrepaidAmount: Currency = 0; const aDuePayableAmount: Currency = 0;
       const aRoundingAmount: Currency = 0);
+
+    /// <summary>
+    /// For specific scenarios, it might be necessary to specify the tax total amount in the accounting currency of the buyer or seller (instead of the invoice currency).
+    /// This happens e.g. when the invoice is issued to a buyer in a foreign country and the tax authorities need to receive the tax total in the local currency
+    /// for tax reporting purposes.
+    /// </summary>
+    /// <param name="taxTotalInAccountingCurrency">Tax in accounting currency</param>
+    /// <param name="accountingCurrency">The accounting currency</param>
+    procedure SetTaxTotalInAccountingCurrency(const taxTotalInAccountingCurrency: Currency; const accountingCurrency: TZUGFeRDCurrencyCodes);
 
     /// <summary>
     /// Add information about VAT and apply to the invoice line items for goods and services on the invoice.
@@ -1821,6 +1839,12 @@ begin
   TotalPrepaidAmount:= aTotalPrepaidAmount;
   DuePayableAmount:= aDuePayableAmount;
   RoundingAmount:= aRoundingAmount;
+end;
+
+procedure TZUGFeRDInvoiceDescriptor.SetTaxTotalInAccountingCurrency(const taxTotalInAccountingCurrency: Currency; const accountingCurrency: TZUGFeRDCurrencyCodes);
+begin
+  TaxTotalAmountInAccountingCurrency:= taxTotalInAccountingCurrency;
+  TaxCurrency:= accountingCurrency;
 end;
 
 function TZUGFeRDInvoiceDescriptor.AddApplicableTradeTax(const calculatedAmount, basisAmount: Currency;

@@ -1010,6 +1010,17 @@ if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
   _writeOptionalAmount(Writer, 'ram:AllowanceTotalAmount', Descriptor.AllowanceTotalAmount);
   _writeOptionalAmount(Writer, 'ram:TaxBasisTotalAmount', Descriptor.TaxBasisAmount);
   _writeOptionalAmount(Writer, 'ram:TaxTotalAmount', Descriptor.TaxTotalAmount, 2, true);
+
+  // BT-111: TaxTotalAmount in accounting currency — only when BT-6 (TaxCurrency) differs from BT-5 (Currency)
+  if Descriptor.TaxCurrency.HasValue and (Descriptor.TaxCurrency.Value <> Descriptor.Currency) and
+     Descriptor.TaxTotalAmountInAccountingCurrency.HasValue then
+  begin
+    Writer.WriteStartElement('ram:TaxTotalAmount');
+    Writer.WriteAttributeString('currencyID', TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Descriptor.TaxCurrency.Value));
+    Writer.WriteValue(_formatDecimal(Descriptor.TaxTotalAmountInAccountingCurrency.Value, 2));
+    Writer.WriteEndElement(); // !ram:TaxTotalAmount
+  end;
+
   _writeOptionalAmount(Writer, 'ram:RoundingAmount', Descriptor.RoundingAmount, 2, false, [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);  // RoundingAmount  //Rundungsbetrag
   _writeOptionalAmount(Writer, 'ram:GrandTotalAmount', Descriptor.GrandTotalAmount);
 

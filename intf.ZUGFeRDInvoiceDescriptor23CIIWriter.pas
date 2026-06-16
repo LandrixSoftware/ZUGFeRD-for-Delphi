@@ -1150,7 +1150,18 @@ begin
     _writeOptionalAmount(Writer, 'ram:TaxBasisTotalAmount', Descriptor.TaxBasisAmount, 2, false)   // Rechnungsgesamtbetrag ohne Umsatzsteuer
   else
     _writeOptionalAmount(Writer, 'ram:TaxBasisTotalAmount', Descriptor.TaxBasisAmount);   // Rechnungsgesamtbetrag ohne Umsatzsteuer
-  _writeOptionalAmount(Writer, 'ram:TaxTotalAmount', Descriptor.TaxTotalAmount, 2, true);               // Gesamtbetrag der Rechnungsumsatzsteuer, Steuergesamtbetrag in Buchungswährung
+  _writeOptionalAmount(Writer, 'ram:TaxTotalAmount', Descriptor.TaxTotalAmount, 2, true);               // BT-110: Gesamtbetrag der Rechnungsumsatzsteuer in Rechnungswährung
+
+  // BT-111: TaxTotalAmount in accounting currency — only when BT-6 (TaxCurrency) differs from BT-5 (Currency)
+  if Descriptor.TaxCurrency.HasValue and (Descriptor.TaxCurrency.Value <> Descriptor.Currency) and
+     Descriptor.TaxTotalAmountInAccountingCurrency.HasValue then
+  begin
+    Writer.WriteStartElement('ram:TaxTotalAmount');
+    Writer.WriteAttributeString('currencyID', TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Descriptor.TaxCurrency.Value));
+    Writer.WriteValue(_formatDecimal(Descriptor.TaxTotalAmountInAccountingCurrency.Value, 2));
+    Writer.WriteEndElement(); // !ram:TaxTotalAmount
+  end;
+
   _writeOptionalAmount(Writer, 'ram:RoundingAmount', Descriptor.RoundingAmount, 2, false,[TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung]);  // RoundingAmount  //Rundungsbetrag
   _writeOptionalAmount(Writer, 'ram:GrandTotalAmount', Descriptor.GrandTotalAmount);                                // Rechnungsgesamtbetrag einschließlich Umsatzsteuer
   _writeOptionalAmount(Writer, 'ram:TotalPrepaidAmount', Descriptor.TotalPrepaidAmount);                            // Vorauszahlungsbetrag
