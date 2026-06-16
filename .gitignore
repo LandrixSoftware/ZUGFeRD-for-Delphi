@@ -38,6 +38,7 @@ Distribution/java
 Distribution/mustangproject
 Samples/Win64
 Samples/Win32
+Vendor
 
 *.WinMerge
 # Delphi compiler-generated binaries (safe to delete)
