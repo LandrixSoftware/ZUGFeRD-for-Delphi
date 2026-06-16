@@ -108,6 +108,11 @@ type
   AET,
 
   /// <summary>
+  /// Processing Instructions
+  /// </summary>
+  BAR,
+
+  /// <summary>
   /// Waste information
   /// </summary>
   /// Text describing waste related information.
@@ -129,6 +134,17 @@ type
   /// </summary>
   /// The free text contains payment details.
   PMD,
+
+  /// <summary>
+  /// Delivery information
+  /// </summary>
+  DEL,
+
+  /// <summary>
+  /// Delivery instructions
+  /// </summary>
+  /// The free text contains delivery instructions.
+  DIN,
 
   /// <summary>
   /// Payment information
@@ -220,10 +236,13 @@ begin
   Map(ACB,     'ACB');
   Map(ADU,     'ADU');
   Map(AET,     'AET');
+  Map(BAR,     'BAR');
   Map(BLU,     'BLU');
   Map(COI,     'COI');
   Map(CUS,     'CUS');
   Map(PMD,     'PMD');
+  Map(DEL,     'DEL');
+  Map(DIN,     'DIN');
   Map(PMT,     'PMT');
   Map(PRF,     'PRF');
   Map(REG,     'REG');

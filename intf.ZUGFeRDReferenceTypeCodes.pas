@@ -73,6 +73,15 @@ type
     AAS,
 
     /// <summary>
+    /// Declarant's Customs identity number
+    ///
+    /// Reference to the party whose posted bond or security is
+    /// being declared in order to accept responsibility for a
+    /// goods declaration and the applicable duties and taxes.
+    /// </summary>
+    ABP,
+
+    /// <summary>
     /// Zollerklärungsnummer
     /// </summary>
     ABT,
@@ -266,6 +275,7 @@ begin
   Map(AAL,     'AAL');
   Map(AAM,     'AAM');
   Map(AAS,     'AAS');
+  Map(ABP,     'ABP');
   Map(ABT,     'ABT');
   Map(ABZ,     'ABZ');
   Map(AER,     'AER');
