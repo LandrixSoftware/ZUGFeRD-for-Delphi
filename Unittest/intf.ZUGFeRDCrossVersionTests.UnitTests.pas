@@ -248,12 +248,26 @@ type
     [TestCase('V23-CII-Ext-present',     '230,0,4,1')]
     [TestCase('V23-UBL-XR-not-present',  '230,1,32,0')]
     procedure TestShipToTradePartyOnItemLevel(_version: Integer; _format: Integer; _profile: Integer; _shallBePresent: Integer);
+
+    [Test]
+    [TestCase('V20', '200')]
+    [TestCase('V23', '230')]
+    procedure TestTaxTotalAmountBT110AndBT111DualCurrency(_version: Integer);
+
+    [Test]
+    [TestCase('V20', '200')]
+    [TestCase('V23', '230')]
+    procedure TestTaxTotalAmountBT110OnlyWhenTaxCurrencyEqualsCurrency(_version: Integer);
+
+    [Test]
+    [TestCase('V23', '230')]
+    procedure TestSellerOrderReferencedDocumentOnItemLevel(_version: Integer);
   end;
 
 implementation
 
 uses
-  System.SysUtils, System.Classes, System.Generics.Collections,
+  System.SysUtils, System.StrUtils, System.Classes, System.Generics.Collections,
   Xml.XMLDoc, Xml.XMLIntf,
   intf.ZUGFeRDInvoiceDescriptor,
   intf.ZUGFeRDInvoiceProvider,
@@ -281,6 +295,7 @@ uses
   intf.ZUGFeRDAssociatedDocument,
   intf.ZUGFeRDDeliveryNoteReferencedDocument,
   intf.ZUGFeRDContractReferencedDocument,
+  intf.ZUGFeRDSellerOrderReferencedDocument,
   intf.ZUGFeRDExceptions,
   intf.ZUGFeRDInvoiceFormatOptions;
 
@@ -2058,6 +2073,151 @@ begin
     desc.Free;
   end;
 end; // !TestShipToTradePartyOnItemLevel()
+
+function _CountSubstring(const haystack, needle: string): Integer;
+var
+  p: Integer;
+begin
+  Result := 0;
+  p := Pos(needle, haystack);
+  while p > 0 do
+  begin
+    Inc(Result);
+    p := PosEx(needle, haystack, p + Length(needle));
+  end;
+end;
+
+procedure TZUGFeRDCrossVersionTests.TestTaxTotalAmountBT110AndBT111DualCurrency(_version: Integer);
+var
+  version: TZUGFeRDVersion;
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+  bytes: TBytes;
+  xmlContent: string;
+begin
+  version := TZUGFeRDVersion(_version);
+
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice; // Currency = EUR (BT-5), TaxTotalAmount = 56.87 (BT-110)
+  try
+    // BT-6 = CHF (accounting currency), BT-111 = 62.50
+    desc.TaxCurrency := TZUGFeRDCurrencyCodes.CHF;
+    desc.TaxTotalAmountInAccountingCurrency := 62.50;
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, version, TZUGFeRDProfile.Extended);
+      ms.Position := 0;
+
+      // Check raw XML: exactly two TaxTotalAmount elements, one of them in CHF (BT-111)
+      SetLength(bytes, ms.Size);
+      ms.ReadBuffer(bytes[0], ms.Size);
+      xmlContent := TEncoding.UTF8.GetString(bytes);
+
+      Assert.AreEqual(2, _CountSubstring(xmlContent, '<ram:TaxTotalAmount'),
+        'Two TaxTotalAmount elements expected when TaxCurrency differs from Currency');
+      Assert.IsTrue(Pos('currencyID="CHF"', xmlContent) > 0,
+        'BT-111 element with accounting currencyID="CHF" must be present');
+
+      // Verify round-trip
+      ms.Position := 0;
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        Assert.AreEqual<Currency>(56.87, loadedInvoice.TaxTotalAmount.Value, 'BT-110 value must survive round-trip');
+        Assert.AreEqual<Currency>(62.50, loadedInvoice.TaxTotalAmountInAccountingCurrency.Value, 'BT-111 value must survive round-trip');
+        Assert.IsTrue(loadedInvoice.TaxCurrency.HasValue, 'TaxCurrency (BT-6) must survive round-trip');
+        Assert.AreEqual(Ord(TZUGFeRDCurrencyCodes.CHF), Ord(loadedInvoice.TaxCurrency.Value), 'TaxCurrency (BT-6) must be CHF');
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end; // !TestTaxTotalAmountBT110AndBT111DualCurrency()
+
+procedure TZUGFeRDCrossVersionTests.TestTaxTotalAmountBT110OnlyWhenTaxCurrencyEqualsCurrency(_version: Integer);
+var
+  version: TZUGFeRDVersion;
+  desc: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+  bytes: TBytes;
+  xmlContent: string;
+begin
+  version := TZUGFeRDVersion(_version);
+
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    // BT-6 explicitly set but same as BT-5 (EUR) -> should behave like single currency
+    desc.TaxCurrency := TZUGFeRDCurrencyCodes.EUR;
+    desc.TaxTotalAmountInAccountingCurrency := 56.87;
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, version, TZUGFeRDProfile.Comfort);
+      ms.Position := 0;
+
+      SetLength(bytes, ms.Size);
+      ms.ReadBuffer(bytes[0], ms.Size);
+      xmlContent := TEncoding.UTF8.GetString(bytes);
+
+      Assert.AreEqual(1, _CountSubstring(xmlContent, '<ram:TaxTotalAmount'),
+        'Only BT-110 expected when TaxCurrency equals Currency');
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end; // !TestTaxTotalAmountBT110OnlyWhenTaxCurrencyEqualsCurrency()
+
+procedure TZUGFeRDCrossVersionTests.TestSellerOrderReferencedDocumentOnItemLevel(_version: Integer);
+var
+  version: TZUGFeRDVersion;
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  line, loadedLine: TZUGFeRDTradeLineItem;
+  orderId: string;
+  orderDate: TDateTime;
+  ms: TMemoryStream;
+begin
+  version := TZUGFeRDVersion(_version);
+
+  orderId := 'ORDER84359';
+  orderDate := EncodeDate(2024, 6, 1);
+
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    line := desc.AddTradeLineItem('SellerOrderReferencedDocument-Text',
+      TZUGFeRDNullableParam<Currency>.Create(0), '',
+      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62));
+    line.SellerOrderReferencedDocument := TZUGFeRDSellerOrderReferencedDocument.Create;
+    line.SellerOrderReferencedDocument.ID := orderId;
+    line.SellerOrderReferencedDocument.IssueDateTime := orderDate;
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, version, TZUGFeRDProfile.Extended);
+      ms.Position := 0;
+
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        loadedLine := loadedInvoice.TradeLineItems[loadedInvoice.TradeLineItems.Count - 1];
+
+        Assert.IsNotNull(loadedLine);
+        Assert.IsNotNull(loadedLine.SellerOrderReferencedDocument);
+        Assert.AreEqual(orderId, loadedLine.SellerOrderReferencedDocument.ID);
+        Assert.AreEqual(orderDate, loadedLine.SellerOrderReferencedDocument.IssueDateTime.Value);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end; // !TestSellerOrderReferencedDocumentOnItemLevel()
 
 initialization
   TDUnitX.RegisterTestFixture(TZUGFeRDCrossVersionTests);
