@@ -428,8 +428,10 @@ begin
       //#region AdditionalReferencedDocument (Extended)
 
       //Detailangaben zu einer zusätzlichen Dokumentenreferenz
+      //InvoiceDataSheet belongs only into BT-128-00 (settlement), not here
       for var document : TZUGFeRDAdditionalReferencedDocument in tradeLineItem.AdditionalReferencedDocuments do
-        _writeAdditionalReferencedDocument(Writer, document, [TZUGFeRDProfile.Extended], 'BG-X-3');
+        if document.TypeCode <> TZUGFeRDAdditionalReferencedDocumentTypeCode.InvoiceDataSheet then
+          _writeAdditionalReferencedDocument(Writer, document, [TZUGFeRDProfile.Extended], 'BG-X-3');
       //#endregion
 
       //#region GrossPriceProductTradePrice (Comfort, Extended, XRechnung)
@@ -1612,7 +1614,7 @@ begin
   begin
     _writer.WriteStartElement('ram:IncludedNote', profile);
     if note.ContentCode.HasValue then
-      _writer.WriteElementString('ram:ContentCode', TEnumExtensions<TZUGFeRDContentCodes>.EnumToString(note.ContentCode));
+      _writer.WriteElementString('ram:ContentCode', TEnumExtensions<TZUGFeRDContentCodes>.EnumToString(note.ContentCode), [TZUGFeRDProfile.Extended]);
     _writer.WriteOptionalElementString('ram:Content', note.Content);
     if note.SubjectCode.HasValue then
       _writer.WriteElementString('ram:SubjectCode', TEnumExtensions<TZUGFeRDSubjectCodes>.EnumToString(note.SubjectCode));
