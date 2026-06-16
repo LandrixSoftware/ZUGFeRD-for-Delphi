@@ -41,6 +41,7 @@ uses
   intf.ZUGFeRDTaxCategoryCodes,
   intf.ZUGFeRDDeliveryNoteReferencedDocument,
   intf.ZUGFeRDBuyerOrderReferencedDocument,
+  intf.ZUGFeRDSellerOrderReferencedDocument,
   intf.ZUGFeRDAccountingAccountTypeCodes,
   intf.ZUGFeRDChargeReasonCodes,
   intf.ZUGFeRDAllowanceReasonCodes,
@@ -113,6 +114,7 @@ type
     FDeliveryNoteReferencedDocument: TZUGFeRDDeliveryNoteReferencedDocument;
     FGlobalID: TZUGFeRDGlobalID;
     FBuyerOrderReferencedDocument: TZUGFeRDBuyerOrderReferencedDocument;
+    FSellerOrderReferencedDocument: TZUGFeRDSellerOrderReferencedDocument;
     FGrossUnitPrice: ZUGFeRDNullable<Currency>;
   public
     /// <summary>
@@ -528,6 +530,13 @@ type
     property BuyerOrderReferencedDocument: TZUGFeRDBuyerOrderReferencedDocument read FBuyerOrderReferencedDocument write FBuyerOrderReferencedDocument;
 
     /// <summary>
+    /// Details of the associated order confirmation (seller's order)
+    ///
+    /// BT-X (item level)
+    /// </summary>
+    property SellerOrderReferencedDocument: TZUGFeRDSellerOrderReferencedDocument read FSellerOrderReferencedDocument write FSellerOrderReferencedDocument;
+
+    /// <summary>
     /// Detailed information about the corresponding delivery note
     /// </summary>
     property DeliveryNoteReferencedDocument: TZUGFeRDDeliveryNoteReferencedDocument read FDeliveryNoteReferencedDocument write FDeliveryNoteReferencedDocument;
@@ -605,6 +614,7 @@ begin
   FUltimateShipToTaxRegistration:= TObjectList<TZUGFeRDTaxRegistration>.Create;
   FUltimateShipToElectronicAddress:= TZUGFeRDElectronicAddress.Create;
   FBuyerOrderReferencedDocument:= nil;//TZUGFeRDBuyerOrderReferencedDocument.Create;
+  FSellerOrderReferencedDocument:= nil;//TZUGFeRDSellerOrderReferencedDocument.Create;
   FDeliveryNoteReferencedDocument:= nil;//TZUGFeRDDeliveryNoteReferencedDocument.Create;
   FContractReferencedDocument:= nil;//TZUGFeRDContractReferencedDocument.Create;
   FAdditionalReferencedDocuments:= TObjectList<TZUGFeRDAdditionalReferencedDocument>.Create;
@@ -629,6 +639,7 @@ begin
   if Assigned(FUltimateShipToTaxRegistration          ) then begin FUltimateShipToTaxRegistration.Free; FUltimateShipToTaxRegistration := nil; end;
   if Assigned(FUltimateShipToElectronicAddress        ) then begin FUltimateShipToElectronicAddress.Free; FUltimateShipToElectronicAddress := nil; end;
   if Assigned(FBuyerOrderReferencedDocument) then begin FBuyerOrderReferencedDocument.Free; FBuyerOrderReferencedDocument := nil; end;
+  if Assigned(FSellerOrderReferencedDocument) then begin FSellerOrderReferencedDocument.Free; FSellerOrderReferencedDocument := nil; end;
   if Assigned(FDeliveryNoteReferencedDocument) then begin FDeliveryNoteReferencedDocument.Free; FDeliveryNoteReferencedDocument := nil; end;
   if Assigned(FContractReferencedDocument) then begin FContractReferencedDocument.Free; FContractReferencedDocument := nil; end;
   if Assigned(FAdditionalReferencedDocuments) then begin FAdditionalReferencedDocuments.Free; FAdditionalReferencedDocuments := nil; end;

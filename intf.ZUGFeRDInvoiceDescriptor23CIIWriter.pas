@@ -404,6 +404,27 @@ begin
       end;
       //#endregion
 
+      //#region SellerOrderReferencedDocument (Extended)
+      if (tradeLineItem.SellerOrderReferencedDocument <> nil) and
+         (tradeLineItem.SellerOrderReferencedDocument.ID <> '') then
+      begin
+        Writer.WriteStartElement('ram:SellerOrderReferencedDocument', [TZUGFeRDProfile.Extended]);
+        Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.SellerOrderReferencedDocument.ID);
+
+        if (tradeLineItem.SellerOrderReferencedDocument.IssueDateTime.HasValue) then
+        begin
+          Writer.WriteStartElement('ram:FormattedIssueDateTime',[TZUGFeRDProfile.Extended]);
+          Writer.WriteStartElement('qdt:DateTimeString');
+          Writer.WriteAttributeString('format', '102');
+          Writer.WriteValue(_formatDate(tradeLineItem.SellerOrderReferencedDocument.IssueDateTime.Value));
+          Writer.WriteEndElement(); // !qdt:DateTimeString
+          Writer.WriteEndElement(); // !ram:FormattedIssueDateTime
+        end;
+
+        Writer.WriteEndElement(); // !ram:SellerOrderReferencedDocument
+      end;
+      //#endregion
+
       //#region AdditionalReferencedDocument (Extended)
 
       //Detailangaben zu einer zusätzlichen Dokumentenreferenz

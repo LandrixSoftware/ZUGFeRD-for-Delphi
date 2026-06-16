@@ -734,6 +734,13 @@ begin
     Result.BuyerOrderReferencedDocument.LineID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedLineTradeAgreement/ram:BuyerOrderReferencedDocument/ram:LineID');
   end;
 
+  if (tradeLineItem.SelectSingleNode('.//ram:SpecifiedLineTradeAgreement/ram:SellerOrderReferencedDocument') <> nil) then
+  begin
+    Result.SellerOrderReferencedDocument:= TZUGFeRDSellerOrderReferencedDocument.Create;
+    Result.SellerOrderReferencedDocument.ID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedLineTradeAgreement/ram:SellerOrderReferencedDocument/ram:IssuerAssignedID');
+    Result.SellerOrderReferencedDocument.IssueDateTime := TZUGFeRDXmlUtils.NodeAsDateTime(tradeLineItem, './/ram:SpecifiedLineTradeAgreement/ram:SellerOrderReferencedDocument/ram:FormattedIssueDateTime/qdt:DateTimeString');
+  end;
+
   if (tradeLineItem.SelectSingleNode('.//ram:SpecifiedLineTradeAgreement/ram:ContractReferencedDocument') <> nil) then
   begin
     Result.ContractReferencedDocument := TZUGFeRDContractReferencedDocument.Create;
