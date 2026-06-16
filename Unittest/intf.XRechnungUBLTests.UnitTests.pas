@@ -1660,23 +1660,23 @@ begin
     Assert.AreEqual('0815-99-1', desc.OrderNo);
     Assert.AreEqual(TZUGFeRDCurrencyCodes.EUR, desc.Currency);
 
-    Assert.AreEqual('', desc.Buyer.Name);
+    Assert.AreEqual('Rechnungs Roulette GmbH & Co KG', desc.Buyer.Name);
     Assert.AreEqual('Klein Schlappstadt a.d. Lusche', desc.Buyer.City);
     Assert.AreEqual('12345', desc.Buyer.Postcode);
     Assert.AreEqual(TZUGFeRDCountryCodes.DE, desc.Buyer.Country.Value);
     Assert.AreEqual('Beispielgasse 17b', desc.Buyer.Street);
-    Assert.AreEqual('Rechnungs Roulette GmbH & Co KG', desc.Buyer.SpecifiedLegalOrganization.TradingBusinessName);
+    Assert.AreEqual('', desc.Buyer.SpecifiedLegalOrganization.TradingBusinessName);
 
     Assert.AreEqual('Manfred Mustermann', desc.BuyerContact.Name);
     Assert.AreEqual('manfred.mustermann@rr.de', desc.BuyerContact.EmailAddress);
     Assert.AreEqual('012345 98 765 - 44', desc.BuyerContact.PhoneNo);
 
-    Assert.AreEqual('', desc.Seller.Name);
+    Assert.AreEqual('Harry Hirsch Holz- und Trockenbau', desc.Seller.Name);
     Assert.AreEqual('Klein Schlappstadt a.d. Lusche', desc.Seller.City);
     Assert.AreEqual('12345', desc.Seller.Postcode);
     Assert.AreEqual(TZUGFeRDCountryCodes.DE, desc.Seller.Country.Value);
     Assert.AreEqual('Beispielgasse 17a', desc.Seller.Street);
-    Assert.AreEqual('Harry Hirsch Holz- und Trockenbau', desc.Seller.SpecifiedLegalOrganization.TradingBusinessName);
+    Assert.AreEqual('', desc.Seller.SpecifiedLegalOrganization.TradingBusinessName);
 
     Assert.AreEqual('Harry Hirsch', desc.SellerContact.Name);
     Assert.AreEqual('harry.hirsch@hhhtb.de', desc.SellerContact.EmailAddress);
