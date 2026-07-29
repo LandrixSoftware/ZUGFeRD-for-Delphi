@@ -38,6 +38,8 @@ uses
   ,intf.ZUGFeRDGlobalID,intf.ZUGFeRDGlobalIDSchemeIdentifiers
   ,intf.ZUGFeRDCountryCodes
   ,intf.ZUGFeRDTaxRegistrationSchemeID
+  ,intf.ZUGFeRDAdvancePayment
+  ,intf.ZUGFeRDTax
   ,intf.ZUGFeRDElectronicAddressSchemeIdentifiers
   ,intf.ZUGFeRDContact
   ,intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes
@@ -609,6 +611,36 @@ begin
       TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ID'),
       TEnumExtensions<TZUGFeRDAccountingAccountTypeCodes>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:TypeCode')));
 
+  // Vorauszahlungen / Anzahlungen, BG-X-45 (nur EXTENDED)
+  nodes := doc.SelectNodes('//ram:ApplicableHeaderTradeSettlement/ram:SpecifiedAdvancePayment');
+  for i := 0 to nodes.length-1 do
+  begin
+    var advancePayment: TZUGFeRDAdvancePayment := TZUGFeRDAdvancePayment.Create;
+    advancePayment.PaidAmount := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './ram:PaidAmount');
+    advancePayment.FormattedReceivedDateTime := TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i],
+      './ram:FormattedReceivedDateTime/qdt:DateTimeString');
+
+    var taxNodes: IXMLDOMNodeList := nodes[i].selectNodes('./ram:IncludedTradeTax');
+    for var taxIndex: Integer := 0 to taxNodes.length-1 do
+    begin
+      var includedTax: TZUGFeRDTax := TZUGFeRDTax.Create;
+      includedTax.TaxAmount := TZUGFeRDXmlUtils.NodeAsDecimal(taxNodes[taxIndex], './ram:CalculatedAmount', 0).Value;
+      includedTax.TypeCode := TEnumExtensions<TZUGFeRDTaxTypes>.StringToNullableEnum(
+        TZUGFeRDXmlUtils.NodeAsString(taxNodes[taxIndex], './ram:TypeCode'));
+      includedTax.CategoryCode := TEnumExtensions<TZUGFeRDTaxCategoryCodes>.StringToNullableEnum(
+        TZUGFeRDXmlUtils.NodeAsString(taxNodes[taxIndex], './ram:CategoryCode'));
+      includedTax.Percent := TZUGFeRDXmlUtils.NodeAsDecimal(taxNodes[taxIndex], './ram:RateApplicablePercent', 0).Value;
+      advancePayment.IncludedTradeTaxes.Add(includedTax);
+    end;
+
+    if nodes[i].selectSingleNode('./ram:InvoiceSpecifiedReferencedDocument') <> nil then
+      advancePayment.SetInvoiceReferencedDocument(
+        TZUGFeRDXmlUtils.NodeAsString(nodes[i], './ram:InvoiceSpecifiedReferencedDocument/ram:IssuerAssignedID'),
+        TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './ram:InvoiceSpecifiedReferencedDocument/ram:FormattedIssueDateTime/qdt:DateTimeString'));
+
+    Result.AdvancePayments.Add(advancePayment);
+  end;
+
   Result.OrderDate:= TZUGFeRDXmlUtils.NodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeAgreement/ram:BuyerOrderReferencedDocument/ram:FormattedIssueDateTime/qdt:DateTimeString');
   Result.OrderNo := TZUGFeRDXmlUtils.NodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeAgreement/ram:BuyerOrderReferencedDocument/ram:IssuerAssignedID');
 
@@ -698,8 +730,13 @@ begin
   if parentLineId<>'' then
     Result.SetParentLineId(parentLineId);
 
-  if lineStatusCode.HasValue and LineStatusReasonCode.HasValue then
-    Result.SetLineStatus(lineStatusCode.Value, LineStatusReasonCode.Value);
+  // Beide Felder werden unabhaengig voneinander uebernommen: die offiziellen
+  // ZUGFeRD-Beispiele nutzen LineStatusReasonCode (BT-X-9) auch ohne
+  // LineStatusCode (BT-X-8), z.B. in den Abschlagsrechnungen mit SubInvoiceLine.
+  if lineStatusCode.HasValue then
+    Result.AssociatedDocument.LineStatusCode := lineStatusCode;
+  if lineStatusReasonCode.HasValue then
+    Result.AssociatedDocument.LineStatusReasonCode := lineStatusReasonCode;
 
   nodes := tradeLineItem.SelectNodes('.//ram:SpecifiedTradeProduct/ram:ApplicableProductCharacteristic');
   for i := 0 to nodes.length-1 do
@@ -787,7 +824,10 @@ begin
     end;
 
     var specifiedTradeSettlementLineMonetarySummationNode: IXMLDOMNode:= tradeLineItem.SelectSingleNode('.//ram:SpecifiedLineTradeSettlement/ram:SpecifiedTradeSettlementLineMonetarySummation');
-    // TODO: process
+    if specifiedTradeSettlementLineMonetarySummationNode <> nil then
+      // Gesamtbetrag der Positionszu- und -abschlaege, nur EXTENDED
+      Result.TotalAllowanceChargeAmount := TZUGFeRDXmlUtils.NodeAsDecimal(
+        specifiedTradeSettlementLineMonetarySummationNode, './ram:TotalAllowanceChargeAmount');
 
     nodes := tradeLineItem.SelectNodes('.//ram:SpecifiedLineTradeSettlement/ram:InvoiceReferencedDocument');
     for i := 0 to nodes.length-1 do

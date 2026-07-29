@@ -55,6 +55,7 @@ uses
   intf.ZUGFeRDInvoiceReferencedDocument,
   intf.ZUGFeRDBankAccount,
   intf.ZUGFeRDReceivableSpecifiedTradeAccountingAccount,
+  intf.ZUGFeRDAdvancePayment,
   intf.ZUGFeRDPaymentMeans,
   intf.ZUGFeRDSellerOrderReferencedDocument,
   intf.ZUGFeRDVersion,
@@ -135,6 +136,7 @@ type
     FPaymentTermsList: TObjectList<TZUGFeRDPaymentTerms>;
     FInvoiceReferencedDocuments: TObjectList<TZUGFeRDInvoiceReferencedDocument>;
     FReceivableSpecifiedTradeAccountingAccounts: TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>;
+    FAdvancePayments: TObjectList<TZUGFeRDAdvancePayment>;
     FCreditorBankAccounts: TObjectList<TZUGFeRDBankAccount>;
     FDebitorBankAccounts: TObjectList<TZUGFeRDBankAccount>;
     FPaymentMeans: TZUGFeRDPaymentMeans;
@@ -485,6 +487,13 @@ type
     /// Detailed information about the accounting reference
     /// </summary>
     property ReceivableSpecifiedTradeAccountingAccounts: TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount> read FReceivableSpecifiedTradeAccountingAccounts;
+
+    /// <summary>
+    /// Detailed information about advance payments, BG-X-45
+    ///
+    /// Vorauszahlungen / Anzahlungen. Nur im EXTENDED-Profil zulaessig.
+    /// </summary>
+    property AdvancePayments: TObjectList<TZUGFeRDAdvancePayment> read FAdvancePayments;
 
     /// <summary>
     /// Credit Transfer
@@ -1148,6 +1157,7 @@ begin
   FPaymentTermsList              := TObjectList<TZUGFeRDPaymentTerms>.Create;
   FInvoiceReferencedDocuments    := TObjectList<TZUGFeRDInvoiceReferencedDocument>.Create;
   FReceivableSpecifiedTradeAccountingAccounts:= TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>.Create;
+  FAdvancePayments               := TObjectList<TZUGFeRDAdvancePayment>.Create;
   FCreditorBankAccounts          := TObjectList<TZUGFeRDBankAccount>.Create;
   FDebitorBankAccounts           := TObjectList<TZUGFeRDBankAccount>.Create;
   FPaymentMeans                  := nil;//TZUGFeRDPaymentMeans.Create;
@@ -1192,6 +1202,7 @@ begin
   if Assigned(FPaymentTermsList              ) then begin FPaymentTermsList.Free; FPaymentTermsList := nil; end;
   if Assigned(FInvoiceReferencedDocuments    ) then begin FInvoiceReferencedDocuments.Free; FInvoiceReferencedDocuments := nil; end;
   if Assigned(FReceivableSpecifiedTradeAccountingAccounts) then begin FReceivableSpecifiedTradeAccountingAccounts.Free; FReceivableSpecifiedTradeAccountingAccounts := nil; end;
+  if Assigned(FAdvancePayments               ) then begin FAdvancePayments.Free; FAdvancePayments := nil; end;
   if Assigned(FCreditorBankAccounts         ) then begin FCreditorBankAccounts.Free; FCreditorBankAccounts := nil; end;
   if Assigned(FDebitorBankAccounts          ) then begin FDebitorBankAccounts.Free; FDebitorBankAccounts := nil; end;
   if Assigned(FPaymentMeans                 ) then begin FPaymentMeans.Free; FPaymentMeans := nil; end;

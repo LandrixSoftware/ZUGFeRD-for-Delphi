@@ -111,6 +111,7 @@ type
     FTaxCategoryCode: ZUGFeRDNullable<TZUGFeRDTaxCategoryCodes>;
     FNetUnitPrice: ZUGFeRDNullable<Currency>;
     FLineTotalAmount: ZUGFeRDNullable<Currency>;
+    FTotalAllowanceChargeAmount: ZUGFeRDNullable<Currency>;
     FDeliveryNoteReferencedDocument: TZUGFeRDDeliveryNoteReferencedDocument;
     FGlobalID: TZUGFeRDGlobalID;
     FBuyerOrderReferencedDocument: TZUGFeRDBuyerOrderReferencedDocument;
@@ -415,6 +416,14 @@ type
     /// BT-131
     /// </summary>
     property LineTotalAmount: ZUGFeRDNullable<Currency> read FLineTotalAmount write FLineTotalAmount;
+
+    /// <summary>
+    /// Total amount of the line item allowances and charges
+    ///
+    /// Gesamtbetrag der Positionszu- und -abschlaege.
+    /// Nur im EXTENDED-Profil zulaessig, in EN16931 und darunter als "not used" markiert.
+    /// </summary>
+    property TotalAllowanceChargeAmount: ZUGFeRDNullable<Currency> read FTotalAllowanceChargeAmount write FTotalAllowanceChargeAmount;
 
     /// <summary>
     /// Detailed information about the invoicing period

@@ -32,6 +32,14 @@ type
     [Test]
     procedure TestLineStatusCode;
     [Test]
+    procedure TestLineStatusReasonCodeWithoutStatusCode;
+    [Test]
+    procedure TestLineTotalAllowanceChargeAmount;
+    [Test]
+    procedure TestAdvancePayment;
+    [Test]
+    procedure TestReferenceAdvancePaymentFromDocumentation;
+    [Test]
     procedure TestExtendedInvoiceWithIncludedItems;
     [Test]
     procedure TestTradeLineItemProductFieldsRoundtrip;
@@ -254,6 +262,7 @@ uses
   intf.ZUGFeRDInvoiceTypes,
   intf.ZUGFeRDVersion,
   intf.ZUGFeRDHelper,
+  intf.ZUGFeRDAdvancePayment,
   intf.ZUGFeRDCurrencyCodes,
   intf.ZUGFeRDCountryCodes,
   intf.ZUGFeRDQuantityCodes,
@@ -421,6 +430,235 @@ begin
     finally
       ms.Free;
     end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// Die offiziellen ZUGFeRD-Beispiele (z.B. die Abschlagsrechnungen mit SubInvoiceLine)
+/// nutzen LineStatusReasonCode (BT-X-9) ohne LineStatusCode (BT-X-8). Der Reader muss
+/// den Grund daher auch allein uebernehmen und nicht nur im Paar.
+/// </summary>
+procedure TZUGFeRD22Tests.TestLineStatusReasonCodeWithoutStatusCode;
+var
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  tradeLineItem: TZUGFeRDTradeLineItem;
+  ms: TMemoryStream;
+begin
+  desc := TZUGFeRDInvoiceDescriptor.Load(DemodataPath('zugferd21\zugferd_2p1_EXTENDED_Warenrechnung-factur-x.xml'));
+  try
+    desc.TradeLineItems.Clear;
+
+    tradeLineItem := desc.AddTradeLineItem(
+      {name=}            'Trennbl'+#$00E4+'tter A4',
+      {netUnitPrice=}    TZUGFeRDNullableParam<Currency>.Create(9.9),
+      {description=}     '',
+      {unitCode=}        TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+      {unitQuantity=}    nil,
+      {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(9.9),
+      {billedQuantity=}  20,
+      {lineTotalAmount=} 0,
+      {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+      {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+      {taxPercent=}      19.0
+    );
+    // bewusst ohne LineStatusCode, deshalb nicht ueber SetLineStatus
+    tradeLineItem.AssociatedDocument.LineStatusReasonCode := TZUGFeRDLineStatusReasonCodes.GROUP;
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
+      ms.Position := 0;
+
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        Assert.AreEqual<Integer>(1, loadedInvoice.TradeLineItems.Count);
+        Assert.IsFalse(loadedInvoice.TradeLineItems[0].AssociatedDocument.LineStatusCode.HasValue);
+        Assert.IsTrue(loadedInvoice.TradeLineItems[0].AssociatedDocument.LineStatusReasonCode.HasValue,
+          'LineStatusReasonCode ohne LineStatusCode ging beim Lesen verloren');
+        Assert.AreEqual<TZUGFeRDLineStatusReasonCodes>(TZUGFeRDLineStatusReasonCodes.GROUP,
+          loadedInvoice.TradeLineItems[0].AssociatedDocument.LineStatusReasonCode.Value);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// Gesamtbetrag der Positionszu- und -abschlaege auf Zeilenebene. Nur EXTENDED
+/// darf das Element fuehren, EN16931 markiert es als "not used".
+/// </summary>
+procedure TZUGFeRD22Tests.TestLineTotalAllowanceChargeAmount;
+var
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  tradeLineItem: TZUGFeRDTradeLineItem;
+  ms: TMemoryStream;
+begin
+  desc := TZUGFeRDInvoiceDescriptor.Load(DemodataPath('zugferd21\zugferd_2p1_EXTENDED_Warenrechnung-factur-x.xml'));
+  try
+    desc.TradeLineItems.Clear;
+
+    tradeLineItem := desc.AddTradeLineItem(
+      {name=}            'Trennbl'+#$00E4+'tter A4',
+      {netUnitPrice=}    TZUGFeRDNullableParam<Currency>.Create(9.9),
+      {description=}     '',
+      {unitCode=}        TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+      {unitQuantity=}    nil,
+      {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(9.9),
+      {billedQuantity=}  20,
+      {lineTotalAmount=} 198,
+      {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+      {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+      {taxPercent=}      19.0
+    );
+    tradeLineItem.TotalAllowanceChargeAmount := 12.5;
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
+      ms.Position := 0;
+
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        Assert.AreEqual<Integer>(1, loadedInvoice.TradeLineItems.Count);
+        Assert.IsTrue(loadedInvoice.TradeLineItems[0].TotalAllowanceChargeAmount.HasValue,
+          'TotalAllowanceChargeAmount ging beim Schreiben oder Lesen verloren');
+        Assert.AreEqual<Currency>(12.5, loadedInvoice.TradeLineItems[0].TotalAllowanceChargeAmount.Value);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+
+    // In EN16931 darf das Element nicht geschrieben werden
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Comfort);
+      ms.Position := 0;
+
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        Assert.IsFalse(loadedInvoice.TradeLineItems[0].TotalAllowanceChargeAmount.HasValue,
+          'TotalAllowanceChargeAmount darf ausserhalb von EXTENDED nicht geschrieben werden');
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// Vorauszahlungen / Anzahlungen, BG-X-45. Nur EXTENDED fuehrt das Element.
+/// </summary>
+procedure TZUGFeRD22Tests.TestAdvancePayment;
+var
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  advancePayment: TZUGFeRDAdvancePayment;
+  includedTax: TZUGFeRDTax;
+  ms: TMemoryStream;
+begin
+  desc := TZUGFeRDInvoiceDescriptor.Load(DemodataPath('zugferd21\zugferd_2p1_EXTENDED_Warenrechnung-factur-x.xml'));
+  try
+    desc.AdvancePayments.Clear;
+
+    advancePayment := TZUGFeRDAdvancePayment.Create;
+    advancePayment.PaidAmount := 2975.0;
+    advancePayment.FormattedReceivedDateTime := EncodeDate(2025, 6, 7);
+
+    includedTax := TZUGFeRDTax.Create;
+    includedTax.TaxAmount := 1900;
+    includedTax.TypeCode := TZUGFeRDTaxTypes.VAT;
+    includedTax.CategoryCode := TZUGFeRDTaxCategoryCodes.S;
+    includedTax.Percent := 19;
+    advancePayment.IncludedTradeTaxes.Add(includedTax);
+
+    advancePayment.SetInvoiceReferencedDocument('R202506-01',
+      TZUGFeRDNullableParam<TDateTime>.Create(EncodeDate(2025, 6, 1)));
+    desc.AdvancePayments.Add(advancePayment);
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
+      ms.Position := 0;
+
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        Assert.AreEqual<Integer>(1, loadedInvoice.AdvancePayments.Count);
+        Assert.AreEqual<Currency>(2975.0, loadedInvoice.AdvancePayments[0].PaidAmount.Value);
+        Assert.AreEqual(EncodeDate(2025, 6, 7), loadedInvoice.AdvancePayments[0].FormattedReceivedDateTime.Value);
+
+        Assert.AreEqual<Integer>(1, loadedInvoice.AdvancePayments[0].IncludedTradeTaxes.Count);
+        Assert.AreEqual<Currency>(1900, loadedInvoice.AdvancePayments[0].IncludedTradeTaxes[0].TaxAmount);
+        Assert.AreEqual<TZUGFeRDTaxTypes>(TZUGFeRDTaxTypes.VAT, loadedInvoice.AdvancePayments[0].IncludedTradeTaxes[0].TypeCode.Value);
+        Assert.AreEqual<TZUGFeRDTaxCategoryCodes>(TZUGFeRDTaxCategoryCodes.S, loadedInvoice.AdvancePayments[0].IncludedTradeTaxes[0].CategoryCode.Value);
+        Assert.AreEqual<Currency>(19, loadedInvoice.AdvancePayments[0].IncludedTradeTaxes[0].Percent);
+
+        Assert.IsNotNull(loadedInvoice.AdvancePayments[0].InvoiceSpecifiedReferencedDocument);
+        Assert.AreEqual('R202506-01', loadedInvoice.AdvancePayments[0].InvoiceSpecifiedReferencedDocument.ID);
+        Assert.AreEqual(EncodeDate(2025, 6, 1), loadedInvoice.AdvancePayments[0].InvoiceSpecifiedReferencedDocument.IssueDateTime.Value);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+
+    // Ausserhalb von EXTENDED darf das Element nicht geschrieben werden
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Comfort);
+      ms.Position := 0;
+
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        Assert.AreEqual<Integer>(0, loadedInvoice.AdvancePayments.Count);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// Liest die Anzahlungen aus dem offiziellen Beispiel der Projektabschlussrechnung.
+/// Wird uebersprungen, wenn die Dokumentation lokal nicht ausgepackt ist.
+/// </summary>
+procedure TZUGFeRD22Tests.TestReferenceAdvancePaymentFromDocumentation;
+var
+  fileName: string;
+  desc: TZUGFeRDInvoiceDescriptor;
+begin
+  fileName := DocumentationPath(
+    'zugferd24-facturx1008\de\Beispiele\4. EXTENDED\EXTENDED_Projektabschlussrechnung\EXTENDED_Projektabschlussrechnung.xml');
+  if not TFile.Exists(fileName) then
+  begin
+    Log('Uebersprungen: ' + fileName + ' nicht vorhanden');
+    Exit;
+  end;
+
+  desc := TZUGFeRDInvoiceDescriptor.Load(fileName);
+  try
+    Assert.AreEqual<Integer>(4, desc.AdvancePayments.Count);
+    Assert.AreEqual<Currency>(2975.0, desc.AdvancePayments[0].PaidAmount.Value);
+    Assert.AreEqual(EncodeDate(2025, 6, 7), desc.AdvancePayments[0].FormattedReceivedDateTime.Value);
+    Assert.AreEqual<Integer>(1, desc.AdvancePayments[0].IncludedTradeTaxes.Count);
+    Assert.AreEqual<Currency>(1900, desc.AdvancePayments[0].IncludedTradeTaxes[0].TaxAmount);
+    Assert.AreEqual('R202506-01', desc.AdvancePayments[0].InvoiceSpecifiedReferencedDocument.ID);
   finally
     desc.Free;
   end;

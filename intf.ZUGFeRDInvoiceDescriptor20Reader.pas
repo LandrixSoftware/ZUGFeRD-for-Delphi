@@ -530,8 +530,11 @@ begin
 
   Result := TZUGFeRDTradeLineItem.Create(lineId);
 
-  if lineStatusCode.HasValue and lineStatusReasonCode.HasValue then
-    Result.SetLineStatus(lineStatusCode.Value, lineStatusReasonCode.Value);
+  // Beide Felder werden unabhaengig voneinander uebernommen, siehe 23CII-Reader
+  if lineStatusCode.HasValue then
+    Result.AssociatedDocument.LineStatusCode := lineStatusCode;
+  if lineStatusReasonCode.HasValue then
+    Result.AssociatedDocument.LineStatusReasonCode := lineStatusReasonCode;
 
   Result.GlobalID.SchemeID := TEnumExtensions<TZUGFeRDGlobalIDSchemeIdentifiers>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:GlobalID/@schemeID'));
   Result.GlobalID.ID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:GlobalID');

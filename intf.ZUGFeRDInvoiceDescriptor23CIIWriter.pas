@@ -41,6 +41,7 @@ uses
   ,intf.ZUGFeRDCountryCodes
   ,intf.ZUGFeRDTaxRegistrationSchemeID
   ,intf.ZUGFeRDTax
+  ,intf.ZUGFeRDAdvancePayment
   ,intf.ZUGFeRDTaxTypes
   ,intf.ZUGFeRDTaxCategoryCodes
   ,intf.ZUGFeRDDateTypeCodes
@@ -602,8 +603,11 @@ begin
     Writer.WriteValue(_formatDecimal(_total));
     Writer.WriteEndElement(); // !ram:LineTotalAmount
 
-    //ToDo: TotalAllowanceChargeAmount
     //Gesamtbetrag der Positionszu- und Abschläge
+    //Nur EXTENDED, in EN16931 und darunter als "not used" markiert
+    _writeOptionalAmount(Writer, 'ram:TotalAllowanceChargeAmount',
+      tradeLineItem.TotalAllowanceChargeAmount, 2, false, [TZUGFeRDProfile.Extended]);
+
     Writer.WriteEndElement(); // ram:SpecifiedTradeSettlementMonetarySummation
     //#endregion
 
@@ -1228,7 +1232,55 @@ begin
         break;  // Only BasicWL and Extended allow multiple accounts
     end;
 
-  // TODO: SpecifiedAdvancePayment (0..unbounded), BG-X-45
+  //#region SpecifiedAdvancePayment
+  //Vorauszahlungen / Anzahlungen, BG-X-45. Nur EXTENDED, 0..n.
+  for var advancePayment: TZUGFeRDAdvancePayment in Descriptor.AdvancePayments do
+  begin
+    Writer.WriteStartElement('ram:SpecifiedAdvancePayment', [TZUGFeRDProfile.Extended]);
+
+    _writeOptionalAmount(Writer, 'ram:PaidAmount', advancePayment.PaidAmount, 2, false, [TZUGFeRDProfile.Extended]);
+
+    if advancePayment.FormattedReceivedDateTime.HasValue then
+    begin
+      Writer.WriteStartElement('ram:FormattedReceivedDateTime', [TZUGFeRDProfile.Extended]);
+      Writer.WriteStartElement('qdt:DateTimeString');
+      Writer.WriteAttributeString('format', '102');
+      Writer.WriteValue(_formatDate(advancePayment.FormattedReceivedDateTime.Value));
+      Writer.WriteEndElement(); // !qdt:DateTimeString
+      Writer.WriteEndElement(); // !ram:FormattedReceivedDateTime
+    end;
+
+    for var includedTax: TZUGFeRDTax in advancePayment.IncludedTradeTaxes do
+    begin
+      Writer.WriteStartElement('ram:IncludedTradeTax', [TZUGFeRDProfile.Extended]);
+      Writer.WriteOptionalElementString('ram:CalculatedAmount', _formatDecimal(includedTax.TaxAmount));
+      if includedTax.TypeCode.HasValue then
+        Writer.WriteOptionalElementString('ram:TypeCode', TEnumExtensions<TZUGFeRDTaxTypes>.EnumToString(includedTax.TypeCode));
+      if includedTax.CategoryCode.HasValue then
+        Writer.WriteOptionalElementString('ram:CategoryCode', TEnumExtensions<TZUGFeRDTaxCategoryCodes>.EnumToString(includedTax.CategoryCode));
+      Writer.WriteOptionalElementString('ram:RateApplicablePercent', _formatDecimal(includedTax.Percent));
+      Writer.WriteEndElement(); // !ram:IncludedTradeTax
+    end;
+
+    if Assigned(advancePayment.InvoiceSpecifiedReferencedDocument) then
+    begin
+      Writer.WriteStartElement('ram:InvoiceSpecifiedReferencedDocument', [TZUGFeRDProfile.Extended]);
+      Writer.WriteOptionalElementString('ram:IssuerAssignedID', advancePayment.InvoiceSpecifiedReferencedDocument.ID);
+      if advancePayment.InvoiceSpecifiedReferencedDocument.IssueDateTime.HasValue then
+      begin
+        Writer.WriteStartElement('ram:FormattedIssueDateTime');
+        Writer.WriteStartElement('qdt:DateTimeString');
+        Writer.WriteAttributeString('format', '102');
+        Writer.WriteValue(_formatDate(advancePayment.InvoiceSpecifiedReferencedDocument.IssueDateTime.Value));
+        Writer.WriteEndElement(); // !qdt:DateTimeString
+        Writer.WriteEndElement(); // !ram:FormattedIssueDateTime
+      end;
+      Writer.WriteEndElement(); // !ram:InvoiceSpecifiedReferencedDocument
+    end;
+
+    Writer.WriteEndElement(); // !ram:SpecifiedAdvancePayment
+  end;
+  //#endregion
 
   //#endregion
   Writer.WriteEndElement(); // !ram:ApplicableHeaderTradeSettlement
