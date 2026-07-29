@@ -919,6 +919,86 @@ type
     XUN,
 
     /// <summary>
+    /// inch
+    /// </summary>
+    INH,
+
+    /// <summary>
+    /// square inch
+    /// </summary>
+    INK,
+
+    /// <summary>
+    /// cubic inch
+    /// </summary>
+    INQ,
+
+    /// <summary>
+    /// bar [unit of pressure]
+    /// </summary>
+    BAR,
+
+    /// <summary>
+    /// gigawatt hour
+    /// </summary>
+    GWH,
+
+    /// <summary>
+    /// Container, not otherwise specified as transport equipment
+    /// </summary>
+    XCN,
+
+    /// <summary>
+    /// Cylinder
+    /// </summary>
+    XCY,
+
+    /// <summary>
+    /// Coil
+    /// </summary>
+    XCL,
+
+    /// <summary>
+    /// Envelope
+    /// </summary>
+    XEN,
+
+    /// <summary>
+    /// Jar
+    /// </summary>
+    XJR,
+
+    /// <summary>
+    /// Keg
+    /// </summary>
+    XKG,
+
+    /// <summary>
+    /// Pail
+    /// </summary>
+    XPL,
+
+    /// <summary>
+    /// Reel
+    /// </summary>
+    XRL,
+
+    /// <summary>
+    /// Sachet
+    /// </summary>
+    XSH,
+
+    /// <summary>
+    /// Vat
+    /// </summary>
+    XVA,
+
+    /// <summary>
+    /// Vial
+    /// </summary>
+    XVI,
+
+    /// <summary>
     /// ton-force (US short)
     /// </summary>
     L94,
@@ -1100,6 +1180,22 @@ begin
   Map(XCW,     'XCW');
   Map(XMS,     'XMS');
   Map(XUN,     'XUN');
+  Map(INH,     'INH');
+  Map(INK,     'INK');
+  Map(INQ,     'INQ');
+  Map(BAR,     'BAR');
+  Map(GWH,     'GWH');
+  Map(XCN,     'XCN');
+  Map(XCY,     'XCY');
+  Map(XCL,     'XCL');
+  Map(XEN,     'XEN');
+  Map(XJR,     'XJR');
+  Map(XKG,     'XKG');
+  Map(XPL,     'XPL');
+  Map(XRL,     'XRL');
+  Map(XSH,     'XSH');
+  Map(XVA,     'XVA');
+  Map(XVI,     'XVI');
   Map(L94,     'L94');
   Map(Unknown, 'Unknown');
 {.MapEnd}

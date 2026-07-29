@@ -251,6 +251,12 @@ type
     property SellerElectronicAddress : TZUGFeRDElectronicAddress read FSellerElectronicAddress;
 
     property SellerTaxRepresentative: TZUGFeRDParty read FSellerTaxRepresentative write FSellerTaxRepresentative;
+
+    /// <summary>
+    /// List of tax registration numbers for the seller tax representative.
+    ///
+    /// BT-63
+    /// </summary>
     property SellerTaxRepresentativeTaxRegistration: TObjectList<TZUGFeRDTaxRegistration> read FSellerTaxRepresentativeTaxRegistration;
 
   	/// <summary>

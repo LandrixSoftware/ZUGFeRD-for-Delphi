@@ -108,6 +108,12 @@ type
   AET,
 
   /// <summary>
+  /// Consignment routing
+  /// </summary>
+  /// Information on routing of the consignment.
+  AIN,
+
+  /// <summary>
   /// Processing Instructions
   /// </summary>
   BAR,
@@ -236,6 +242,7 @@ begin
   Map(ACB,     'ACB');
   Map(ADU,     'ADU');
   Map(AET,     'AET');
+  Map(AIN,     'AIN');
   Map(BAR,     'BAR');
   Map(BLU,     'BLU');
   Map(COI,     'COI');
