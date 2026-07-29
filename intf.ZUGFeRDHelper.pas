@@ -775,9 +775,14 @@ end;
 
 class function TEnumExtensions<TEnum>.StringToEnum(const Value: string): TEnum;
 begin
-  Result := Default(TEnum);
-  if Trim(Value) <> '' then
-    FStringToEnum.TryGetValue(Value, Result); // also returns Default(TEnum) if not found
+  if (Trim(Value) <> '') and FStringToEnum.TryGetValue(Value, Result) then
+    exit;
+
+  // Unbekannte Codes duerfen nicht still auf den ersten Enum-Wert abgebildet werden,
+  // sonst ist z.B. eine unbekannte listID nicht mehr von einer echten Angabe zu
+  // unterscheiden. Enums, die einen Wert 'Unknown' registriert haben, liefern diesen.
+  if not FStringToEnum.TryGetValue('Unknown', Result) then
+    Result := Default(TEnum);
 end;
 
 end.
