@@ -10,7 +10,7 @@ Subject to the Apache license https://www.apache.org/licenses/LICENSE-2.0.html
 
 ## Synchronization point to the C# library
 
-https://github.com/stephanstapel/ZUGFeRD-csharp/commit/924552051fbbaa91870e77c2da67414df59ada1a
+https://github.com/stephanstapel/ZUGFeRD-csharp/commit/06a497ee432fbb1a867ee0064985ea38f23e2547
 
 ## TODO
 Tests and writing support for ZUGFeRD invoices are still missing.

@@ -151,24 +151,27 @@ begin
 
     for var charge in descriptor.GetTradeCharges do
     begin
-      Result.Messages.Add(Format('==> added %f to %f%%', [-charge.Amount, charge.Tax.Percent]));
+      // ActualAmount, nicht Amount: die geerbte Amount-Property der Basisklasse wird
+      // fuer Zu- und Abschlaege nirgends befuellt und ist daher immer 0
+      Result.Messages.Add(Format('==> added %f to %f%%', [charge.ActualAmount, charge.Tax.Percent]));
 
       if not lineTotalPerTax.ContainsKey(charge.Tax.Percent) then
         lineTotalPerTax.Add(charge.Tax.Percent, 0);
 
-      lineTotalPerTax[charge.Tax.Percent] := lineTotalPerTax[charge.Tax.Percent] - charge.Amount;
-      chargeTotal:= chargeTotal + charge.Amount
+      // Ein Zuschlag erhoeht die Bemessungsgrundlage, nur der Abschlag weiter unten verringert sie
+      lineTotalPerTax[charge.Tax.Percent] := lineTotalPerTax[charge.Tax.Percent] + charge.ActualAmount;
+      chargeTotal:= chargeTotal + charge.ActualAmount
     end;
 
     for var allowance in descriptor.GetTradeAllowances do
     begin
-      Result.Messages.Add(Format('==> added %f to %f%%', [-allowance.Amount, allowance.Tax.Percent]));
+      Result.Messages.Add(Format('==> subtracted %f from %f%%', [allowance.ActualAmount, allowance.Tax.Percent]));
 
       if not lineTotalPerTax.ContainsKey(allowance.Tax.Percent) then
         lineTotalPerTax.Add(allowance.Tax.Percent, 0);
 
-      lineTotalPerTax[allowance.Tax.Percent] := lineTotalPerTax[allowance.Tax.Percent] - allowance.Amount;
-      allowanceTotal := allowanceTotal + allowance.Amount;
+      lineTotalPerTax[allowance.Tax.Percent] := lineTotalPerTax[allowance.Tax.Percent] - allowance.ActualAmount;
+      allowanceTotal := allowanceTotal + allowance.ActualAmount;
     end;
 
     Result.Messages.Add('Adding tax amounts from invoice service charge...');
@@ -226,7 +229,7 @@ begin
     end
     else
     begin
-      Result.Messages.Add(Format('trade.settlement.monetarySummation.taxTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [taxTotal, descriptor.TaxTotalAmount.GetValueOrDefault]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.taxTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f]', [taxTotal, descriptor.TaxTotalAmount.GetValueOrDefault]));
       Result.IsValid := false;
     end;
 
@@ -236,7 +239,7 @@ begin
     end
     else
     begin
-      Result.Messages.Add(Format('trade.settlement.monetarySummation.lineTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [lineTotal, descriptor.LineTotalAmount.GetValueOrDefault]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.lineTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f]', [lineTotal, descriptor.LineTotalAmount.GetValueOrDefault]));
       Result.IsValid := false;
     end;
 
@@ -251,12 +254,22 @@ begin
     end
     else
     begin
-      Result.Messages.Add(Format('trade.settlement.monetarySummation.grandTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [grandTotal, descriptor.GrandTotalAmount.GetValueOrDefault]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.grandTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f]', [grandTotal, descriptor.GrandTotalAmount.GetValueOrDefault]));
       Result.IsValid := false;
     end;
 
     {
-      * @todo Richtige Validierung implementieren
+      * @todo Richtige Validierung implementieren.
+      *
+      * Der Vergleich unten stellt _taxBasisTotal gegen sich selbst und kann deshalb
+      * nie fehlschlagen - die Pruefung ist wirkungslos. Offen ist die fachliche Frage,
+      * wogegen die Bemessungsgrundlage zu pruefen ist: gegen descriptor.TaxBasisAmount
+      * oder gegen die nachgerechnete Summe (lineTotal - allowanceTotal + chargeTotal).
+      *
+      * Zweite offene Baustelle in dieser Routine: die Nachrechnung ignoriert
+      * Positionsrabatte (tradeLineItem.TradeAllowanceCharges) und rundet nicht je
+      * Steuersatz. Deshalb meldet der Validator die Beispielrechnungen der
+      * Dokumentation als ungueltig, obwohl sie es nicht sind.
     }
     if Abs(_taxBasisTotal - _taxBasisTotal) < 0.01 then
     begin
@@ -264,7 +277,7 @@ begin
     end
     else
     begin
-      Result.Messages.Add(Format('trade.settlement.monetarySummation.taxBasisTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [_taxBasisTotal, _taxBasisTotal]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.taxBasisTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f]', [_taxBasisTotal, _taxBasisTotal]));
       Result.IsValid := false;
     end;
 
@@ -274,7 +287,7 @@ begin
     end
     else
     begin
-      Result.Messages.Add(Format('trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [allowanceTotal, _allowanceTotal]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f]', [allowanceTotal, _allowanceTotal]));
       Result.IsValid := false;
     end;
 
@@ -284,7 +297,7 @@ begin
     end
     else
     begin
-      Result.Messages.Add(Format('trade.settlement.monetarySummation.chargeTotal  Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f] | Actual value: %4f)', [chargeTotal, _chargeTotal]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.chargeTotal  Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f]', [chargeTotal, _chargeTotal]));
       Result.IsValid := false;
     end;
 
