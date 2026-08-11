@@ -211,7 +211,12 @@ type
   /// </summary>
   ZZZ,
 
-
+  /// <summary>
+  /// Other service information
+  ///
+  /// OSI is a code from the UNTDID 4451 code list
+  /// </summary>
+  OSI,
 
   /// <summary>
   /// Unknown value
@@ -257,6 +262,7 @@ begin
   Map(TXD,     'TXD');
   Map(WHI,     'WHI');
   Map(ZZZ,     'ZZZ');
+  Map(OSI,     'OSI');
   Map(Unknown, 'Unknown');
 {.MapEnd}
 end;
