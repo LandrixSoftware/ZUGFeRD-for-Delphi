@@ -107,9 +107,11 @@ begin
     if _descriptor.Profile = TZUGFeRDProfile.XRechnung then
       _writer := TZUGFeRDInvoiceDescriptor22UBLWriter.Create
     else
+      // Meldung nennt die gueltige Kombination, sonst raet der Aufrufer
       raise TZUGFeRDUnsupportedException.Create(
         'Profile ' + TEnumExtensions<TZUGFeRDProfile>.EnumToString(_descriptor.Profile) +
-        ' and format UBL is not supported for ZUGFeRD version 2.3.');
+        ' and format UBL is not supported for ZUGFeRD version 2.3. ' +
+        'Format UBL is only allowed with profile XRechnung.');
   end
   else
     _writer := TZUGFeRDInvoiceDescriptor23CIIWriter.Create;

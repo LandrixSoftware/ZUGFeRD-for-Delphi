@@ -756,8 +756,21 @@ begin
   Result.TaxType := TEnumExtensions<TZUGFeRDTaxTypes>.StringToNullableEnum(
     TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/cac:Item/cac:ClassifiedTaxCategory/cac:TaxScheme/cbc:ID'));
   Result.TaxPercent := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/cac:Item/cac:ClassifiedTaxCategory/cbc:Percent', 0);
-  Result.NetUnitPrice := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/cac:Price/cbc:PriceAmount', 0);
-  Result.GrossUnitPrice := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/cac:Price/cbc:PriceAmount', 0);
+  Result.NetUnitPrice := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/cac:Price/cbc:PriceAmount', 0); // BT-146
+
+  // BT-147/BT-148: Der Preisnachlass haengt in UBL unter cac:Price und ist etwas anderes
+  // als die Zu- und Abschlaege der Position selbst (BG-27/BG-28) weiter unten.
+  var priceAllowanceChargeNode : IXMLDOMNode := tradeLineItem.selectSingleNode('./cac:Price/cac:AllowanceCharge');
+  var priceBasisAmount : ZUGFeRDNullable<Currency> := nil;
+  if priceAllowanceChargeNode <> nil then
+    priceBasisAmount := TZUGFeRDXmlUtils.NodeAsDecimal(priceAllowanceChargeNode, './cbc:BaseAmount'); // BT-148
+
+  if priceBasisAmount.HasValue then
+    Result.GrossUnitPrice := priceBasisAmount
+  else if priceAllowanceChargeNode <> nil then
+    // BT-148 ist optional; der Bruttopreis ist dann der Nettopreis zuzueglich des Nachlasses (BT-147)
+    Result.GrossUnitPrice := Result.NetUnitPrice.GetValueOrDefault +
+      TZUGFeRDXmlUtils.NodeAsDecimal(priceAllowanceChargeNode, './cbc:Amount', 0).GetValueOrDefault;
   Result.UnitCode := unitCode;
   Result.BillingPeriodStart := TZUGFeRDXmlUtils.NodeAsDateTime(tradeLineItem, './/cac:InvoicePeriod/cbc:StartDate');
   Result.BillingPeriodEnd := TZUGFeRDXmlUtils.NodeAsDateTime(tradeLineItem, './/cac:InvoicePeriod/cbc:EndDate');
@@ -833,27 +846,53 @@ begin
     for i := 0 to nodes.length - 1 do
       Result.AssociatedDocument.Notes.Add(TZUGFeRDNote.Create(nodes[i].text));
 
-  // Line-level AllowanceCharges
+  // BG-27/BG-28: Zu- und Abschlaege der Position selbst. Nur direkte Kindknoten, denn der
+  // Preisnachlass unter cac:Price (BT-147/BT-148) ist ein anderes Konzept und wird darunter
+  // getrennt eingelesen.
   nodes := tradeLineItem.selectNodes('./cac:AllowanceCharge');
   if nodes <> nil then
     for i := 0 to nodes.length - 1 do
     begin
       var chargeIndicator : Boolean := TZUGFeRDXmlUtils.NodeAsBool(nodes[i], './cbc:ChargeIndicator');
-      var basisAmount : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './cbc:BaseAmount');
+      var basisAmount : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './cbc:BaseAmount'); // BT-137/BT-142
       var basisAmountCurrency : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './cbc:BaseAmount/@currencyID');
-      var actualAmount : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './cbc:Amount', 0);
+      var actualAmount : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './cbc:Amount', 0); // BT-136/BT-141
       var reason : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './cbc:AllowanceChargeReason');
-      var chargePercentage : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './cbc:MultiplierFactorNumeric');
+      var reasonCode : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './cbc:AllowanceChargeReasonCode');
+      var chargePercentage : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './cbc:MultiplierFactorNumeric'); // BT-138/BT-143
 
       if chargeIndicator then // charge
-        Result.AddTradeCharge(
+        Result.AddSpecifiedTradeCharge(
           TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(basisAmountCurrency),
-          basisAmount, actualAmount, chargePercentage, reason)
+          basisAmount, actualAmount, chargePercentage, reason,
+          TEnumExtensions<TZUGFeRDChargeReasonCodes>.StringToNullableEnum(reasonCode))
       else // allowance
-        Result.AddTradeAllowance(
+        Result.AddSpecifiedTradeAllowance(
           TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(basisAmountCurrency),
-          basisAmount, actualAmount, chargePercentage, reason);
+          basisAmount, actualAmount, chargePercentage, reason,
+          TEnumExtensions<TZUGFeRDAllowanceReasonCodes>.StringToNullableEnum(reasonCode));
     end;
+
+  // BT-147/BT-148: Nachlass auf den Einzelpreis. UBL laesst davon einen je Position zu.
+  if priceAllowanceChargeNode <> nil then
+  begin
+    var priceChargeIndicator : Boolean := TZUGFeRDXmlUtils.NodeAsBool(priceAllowanceChargeNode, './cbc:ChargeIndicator');
+    var priceActualAmount : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(priceAllowanceChargeNode, './cbc:Amount', 0); // BT-147
+    var priceCurrency : string := TZUGFeRDXmlUtils.NodeAsString(priceAllowanceChargeNode, './cbc:Amount/@currencyID');
+    var priceReason : string := TZUGFeRDXmlUtils.NodeAsString(priceAllowanceChargeNode, './cbc:AllowanceChargeReason');
+    var priceReasonCode : string := TZUGFeRDXmlUtils.NodeAsString(priceAllowanceChargeNode, './cbc:AllowanceChargeReasonCode');
+
+    if priceChargeIndicator then // charge
+      Result.AddTradeCharge(
+        TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(priceCurrency),
+        priceBasisAmount, priceActualAmount, priceReason,
+        TEnumExtensions<TZUGFeRDChargeReasonCodes>.StringToNullableEnum(priceReasonCode))
+    else // allowance
+      Result.AddTradeAllowance(
+        TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(priceCurrency),
+        priceBasisAmount, priceActualAmount, priceReason,
+        TEnumExtensions<TZUGFeRDAllowanceReasonCodes>.StringToNullableEnum(priceReasonCode));
+  end;
 
   // UnitCode fallback
   if not Result.UnitCode.HasValue then

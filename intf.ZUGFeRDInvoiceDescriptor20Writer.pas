@@ -1166,7 +1166,11 @@ begin
     _writer.WriteEndElement(); // !CalculatedAmount
 
     _writer.WriteElementString('ram:TypeCode', TEnumExtensions<TZUGFeRDTaxTypes>.EnumToString(tax.TypeCode));
-    _writer.WriteOptionalElementString('ram:ExemptionReason', tax.ExemptionReason);
+
+    // BR-Z-10: bei Steuerkategorie Z (Nullsatz) darf kein Befreiungsgrund stehen
+    if (not tax.CategoryCode.HasValue) or (tax.CategoryCode.Value <> TZUGFeRDTaxCategoryCodes.Z) then
+      _writer.WriteOptionalElementString('ram:ExemptionReason', tax.ExemptionReason);
+
     _writer.WriteStartElement('ram:BasisAmount');
     _writer.WriteValue(_formatDecimal(tax.BasisAmount));
     _writer.WriteEndElement(); // !BasisAmount
@@ -1187,7 +1191,9 @@ begin
 
     if tax.CategoryCode.HasValue then
       _writer.WriteElementString('ram:CategoryCode', TEnumExtensions<TZUGFeRDTaxCategoryCodes>.EnumToString(tax.CategoryCode));
-    if tax.ExemptionReasonCode.hasValue then
+    // BR-Z-10: bei Steuerkategorie Z (Nullsatz) darf kein Befreiungsgrund stehen
+    if tax.ExemptionReasonCode.hasValue and
+       ((not tax.CategoryCode.HasValue) or (tax.CategoryCode.Value <> TZUGFeRDTaxCategoryCodes.Z)) then
       _writer.WriteElementString('ram:ExemptionReasonCode', TEnumExtensions<TZUGFeRDTaxExemptionReasonCodes>.EnumToString(tax.ExemptionReasonCode));
     if tax.TaxPointDate.HasValue then
     begin

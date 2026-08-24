@@ -25,7 +25,8 @@ uses
   intf.ZUGFeRD22Tests.UnitTests in 'intf.ZUGFeRD22Tests.UnitTests.pas',
   intf.ZUGFeRDCrossVersionTests.UnitTests in 'intf.ZUGFeRDCrossVersionTests.UnitTests.pas',
   intf.XRechnungUBLTests.UnitTests in 'intf.XRechnungUBLTests.UnitTests.pas',
-  intf.ZUGFeRDDocumentationSweep.UnitTests in 'intf.ZUGFeRDDocumentationSweep.UnitTests.pas'
+  intf.ZUGFeRDDocumentationSweep.UnitTests in 'intf.ZUGFeRDDocumentationSweep.UnitTests.pas',
+  intf.ZUGFeRDInvoiceValidatorTests.UnitTests in 'intf.ZUGFeRDInvoiceValidatorTests.UnitTests.pas'
 //  intf.ZUGFeRDDataTypeReaderTests.UnitTests in 'intf.ZUGFeRDDataTypeReaderTests.UnitTests.pas'
   ;
 

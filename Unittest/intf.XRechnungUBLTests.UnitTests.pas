@@ -44,6 +44,8 @@ type
     [Test]
     procedure TestAllowanceChargeOnDocumentLevel;
     [Test]
+    procedure TestLineLevelAllowanceIsNotMixedWithPriceDiscount;
+    [Test]
     procedure TestInvoiceWithAttachment;
     [Test]
     procedure TestActualDeliveryDateWithoutDeliveryAddress;
@@ -555,6 +557,83 @@ begin
         Assert.AreEqual(TZUGFeRDTaxTypes.VAT, loadedAllowance.Tax.TypeCode.Value, 'taxTypeCode');
         Assert.AreEqual(TZUGFeRDTaxCategoryCodes.AA, loadedAllowance.Tax.CategoryCode.Value, 'taxCategoryCode');
         Assert.AreEqual<Currency>(taxPercent, loadedAllowance.Tax.Percent, 'taxPercent');
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// UBL kennt zwei verschiedene Rabatte auf einer Position: die Zu- und Abschlaege der
+/// Position selbst (BG-27/BG-28, cac:InvoiceLine/cac:AllowanceCharge) und den Nachlass
+/// auf den Einzelpreis (BT-147/BT-148, cac:Price/cac:AllowanceCharge). Der Reader hat
+/// beides frueher in denselben Topf gelegt, wodurch ein Zeilenrabatt beim Schreiben nach
+/// CII unter GrossPriceProductTradePrice landete statt im SpecifiedTradeAllowanceCharge.
+/// </summary>
+procedure TXRechnungUBLTests.TestLineLevelAllowanceIsNotMixedWithPriceDiscount;
+var
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+  lineItem, loadedLine: TZUGFeRDTradeLineItem;
+begin
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.TradeLineItems.Clear;
+
+    lineItem := desc.AddTradeLineItem(
+      {name=}            'Artikel mit beiden Rabattarten',
+      {netUnitPrice=}    TZUGFeRDNullableParam<Currency>.Create(9.0),
+      {description=}     '',
+      {unitCode=}        TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+      {unitQuantity=}    nil,
+      {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(10.0),
+      {billedQuantity=}  10,
+      {lineTotalAmount=} 85,
+      {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+      {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+      {taxPercent=}      19.0
+    );
+
+    // BT-147/BT-148: Nachlass auf den Einzelpreis, 10,00 brutto abzueglich 1,00
+    lineItem.AddTradeAllowance(TZUGFeRDCurrencyCodes.EUR,
+      TZUGFeRDNullableParam<Currency>.Create(10.0), 1.0, 'Preisnachlass');
+
+    // BG-27: Abschlag auf die Position selbst
+    lineItem.AddSpecifiedTradeAllowance(TZUGFeRDCurrencyCodes.EUR,
+      TZUGFeRDNullableParam<Currency>.Create(90.0), 5.0, 'Mengenrabatt');
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+      ms.Position := 0;
+
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        Assert.AreEqual<Integer>(1, loadedInvoice.TradeLineItems.Count);
+        loadedLine := loadedInvoice.TradeLineItems[0];
+
+        Assert.AreEqual<Integer>(1, loadedLine.SpecifiedTradeAllowanceCharges.Count,
+          'Der Zeilenabschlag (BG-27) fehlt oder wurde dem Preisnachlass zugeschlagen');
+        Assert.AreEqual<Currency>(5.0, loadedLine.SpecifiedTradeAllowanceCharges[0].ActualAmount);
+        Assert.AreEqual('Mengenrabatt', loadedLine.SpecifiedTradeAllowanceCharges[0].Reason);
+
+        Assert.AreEqual<Integer>(1, loadedLine.TradeAllowanceCharges.Count,
+          'Der Preisnachlass (BT-147) fehlt oder wurde dem Zeilenabschlag zugeschlagen');
+        Assert.AreEqual<Currency>(1.0, loadedLine.TradeAllowanceCharges[0].ActualAmount);
+        // Ein Grund wird bewusst nicht geprueft: BG-29 kennt nur BT-146 bis BT-150,
+        // fuer den Preisnachlass ist in EN16931 kein Grund vorgesehen. Der UBL-Writer
+        // schreibt ihn daher nicht, er kann den Roundtrip also nicht ueberstehen.
+
+        // BT-148 stand als BaseAmount in der Datei und muss als Bruttopreis zurueckkommen
+        Assert.IsTrue(loadedLine.GrossUnitPrice.HasValue, 'GrossUnitPrice fehlt');
+        Assert.AreEqual<Currency>(10.0, loadedLine.GrossUnitPrice.Value,
+          'GrossUnitPrice muss BT-148 sein, nicht der Nettopreis');
+        Assert.AreEqual<Currency>(9.0, loadedLine.NetUnitPrice.Value);
       finally
         loadedInvoice.Free;
       end;
