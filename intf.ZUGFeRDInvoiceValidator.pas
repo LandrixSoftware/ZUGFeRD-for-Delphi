@@ -179,7 +179,7 @@ begin
 
     // TODO ausgeben: Recalculating tax basis for tax percentages: [Key{percentage=7.00, code=[VAT] Value added tax, category=[S] Standard rate}, Key{percentage=19.00, code=[VAT] Value added tax, category=[S] Standard rate}]
 
-    Result.Messages.Add(Format('Recalculated tax basis = %f', [lineTotal - allowanceTotal]));
+    Result.Messages.Add(Format('Recalculated tax basis = %f', [lineTotal - allowanceTotal + chargeTotal]));
     Result.Messages.Add('Calculating tax total...');
 
     for kv in lineTotalPerTax do
