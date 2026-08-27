@@ -52,6 +52,10 @@ type
     [Test]
     procedure TestInvalidTaxTotalIsReported;
     [Test]
+    procedure TestMissingTaxBasisAmountIsReported;
+    [Test]
+    procedure TestInvalidTaxBasisAmountIsReported;
+    [Test]
     procedure TestValidationDoesNotRaiseOnDeviation;
   end;
 
@@ -183,6 +187,50 @@ begin
       Assert.IsFalse(validationResult.IsValid, 'Falscher Steuerbetrag wurde nicht bemaengelt');
       Assert.IsTrue(validationResult.Messages.Text.Contains('taxTotal'),
         'Die Meldungen benennen den beanstandeten Wert nicht');
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TZUGFeRDInvoiceValidatorTests.TestMissingTaxBasisAmountIsReported;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateBalancedInvoice(False);
+  try
+    desc.TaxBasisAmount := ZUGFeRDNullable<Currency>.Create(False);
+
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(validationResult.IsValid, 'Fehlende Steuerbasis wurde nicht beanstandet');
+      Assert.IsTrue(validationResult.Messages.Text.Contains('Kein TaxBasisAmount vorhanden'),
+        'Die Meldungen benennen die fehlende Steuerbasis nicht');
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TZUGFeRDInvoiceValidatorTests.TestInvalidTaxBasisAmountIsReported;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateBalancedInvoice(False);
+  try
+    desc.TaxBasisAmount := 199;
+
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(validationResult.IsValid, 'Abweichende Steuerbasis wurde nicht beanstandet');
+      Assert.IsTrue(validationResult.Messages.Text.Contains('taxBasisTotal'),
+        'Die Meldungen benennen die abweichende Steuerbasis nicht');
     finally
       validationResult.Free;
     end;
