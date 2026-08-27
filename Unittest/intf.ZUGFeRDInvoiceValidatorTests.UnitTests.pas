@@ -18,13 +18,12 @@
 unit intf.ZUGFeRDInvoiceValidatorTests.UnitTests;
 
 /// <summary>
-/// Tests fuer TZUGFeRDInvoiceValidator.
+/// Tests für TZUGFeRDInvoiceValidator.
 ///
 /// Der Validator rechnet die Summen einer Rechnung nach und vergleicht sie mit den
-/// angegebenen Werten. Die Tests bauen dafuer bewusst minimale Rechnungen auf, deren
-/// Summen exakt aufgehen - die Beispielrechnungen der Dokumentation eignen sich nicht,
-/// weil der Validator Positionsrabatte noch nicht beruecksichtigt (siehe das @todo in
-/// der Unit).
+/// angegebenen Werten. Die Tests bauen dafür bewusst minimale Rechnungen auf, deren
+/// Summen exakt aufgehen. Die Beispielrechnungen der Dokumentation eignen sich nicht,
+/// weil die vorgelagerte Nachrechnung Positionsrabatte weiterhin nicht berücksichtigt.
 /// </summary>
 
 interface
