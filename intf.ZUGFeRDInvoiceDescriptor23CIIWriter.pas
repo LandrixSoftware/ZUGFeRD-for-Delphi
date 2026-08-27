@@ -101,6 +101,7 @@ type
     procedure _WriteItemLevelSpecifiedTradeAllowanceCharge(_writer: TZUGFeRDProfileAwareXmlTextWriter; specifiedTradeAllowanceCharge: TZUGFeRDAbstractTradeAllowanceCharge);
     function _translateTaxCategoryCode(taxCategoryCode : TZUGFeRDTaxCategoryCodes) : String;
     function GetNameSpaces: TDictionary<string, string>;
+    procedure _validateAdvancePayments;
   private const
     ALL_PROFILES = [TZUGFeRDProfile.Minimum,
                     TZUGFeRDProfile.BasicWL,
@@ -146,6 +147,40 @@ begin
   Result.Add('xs', 'http://www.w3.org/2001/XMLSchema');
 end;
 
+/// <summary>
+/// Prüft die Pflichtangaben der nur im EXTENDED-Profil ausgegebenen Vorauszahlungen.
+/// </summary>
+procedure TZUGFeRDInvoiceDescriptor23CIIWriter._validateAdvancePayments;
+begin
+  if Descriptor.Profile <> TZUGFeRDProfile.Extended then
+    Exit;
+
+  for var advancePayment: TZUGFeRDAdvancePayment in Descriptor.AdvancePayments do
+  begin
+    if not Assigned(advancePayment) then
+      raise TZUGFeRDMissingDataException.Create('Advance payment paid amount is required (BG-X-45).');
+    if not advancePayment.PaidAmount.HasValue then
+      raise TZUGFeRDMissingDataException.Create('Advance payment paid amount is required (BG-X-45).');
+
+    if not Assigned(advancePayment.IncludedTradeTaxes) then
+      raise TZUGFeRDMissingDataException.Create('At least one included trade tax is required for an advance payment (BG-X-45).');
+    if advancePayment.IncludedTradeTaxes.Count = 0 then
+      raise TZUGFeRDMissingDataException.Create('At least one included trade tax is required for an advance payment (BG-X-45).');
+
+    for var includedTax: TZUGFeRDTax in advancePayment.IncludedTradeTaxes do
+    begin
+      if not Assigned(includedTax) then
+        raise TZUGFeRDMissingDataException.Create('Advance payment tax type and category are required (BG-X-45).');
+      if not includedTax.TypeCode.HasValue or not includedTax.CategoryCode.HasValue then
+        raise TZUGFeRDMissingDataException.Create('Advance payment tax type and category are required (BG-X-45).');
+    end;
+
+    if Assigned(advancePayment.InvoiceSpecifiedReferencedDocument) and
+      (Trim(advancePayment.InvoiceSpecifiedReferencedDocument.ID) = '') then
+      raise TZUGFeRDMissingDataException.Create('Advance payment invoice reference ID is required when a reference is specified (BG-X-45).');
+  end;
+end;
+
 procedure TZUGFeRDInvoiceDescriptor23CIIWriter.Save (_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream; _format : TZUGFeRDFormats = TZUGFeRDFormats.CII; options: TZUGFeRDInvoiceFormatOptions = Nil);
 var
   streamPosition : Int64;
@@ -157,6 +192,7 @@ begin
   streamPosition := _stream.Position;
 
   Descriptor := _descriptor;
+  _validateAdvancePayments;
   var automaticallyCleanInvalidXmlCharacters: boolean := false;
   if options<>Nil then
     automaticallyCleanInvalidXmlCharacters:= TZUGFeRDInvoiceFormatOptions(options).AutomaticallyCleanInvalidCharacters;
@@ -1266,6 +1302,10 @@ begin
     begin
       Writer.WriteStartElement('ram:InvoiceSpecifiedReferencedDocument', [TZUGFeRDProfile.Extended]);
       Writer.WriteOptionalElementString('ram:IssuerAssignedID', advancePayment.InvoiceSpecifiedReferencedDocument.ID);
+      if advancePayment.InvoiceSpecifiedReferencedDocument.TypeCode.HasValue then
+        Writer.WriteOptionalElementString('ram:TypeCode',
+          TEnumExtensions<TZUGFeRDInvoiceType>.EnumToString(
+            advancePayment.InvoiceSpecifiedReferencedDocument.TypeCode));
       if advancePayment.InvoiceSpecifiedReferencedDocument.IssueDateTime.HasValue then
       begin
         Writer.WriteStartElement('ram:FormattedIssueDateTime');

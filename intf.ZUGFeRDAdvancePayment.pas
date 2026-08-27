@@ -23,15 +23,14 @@ uses
   System.SysUtils, System.Generics.Collections,
   intf.ZUGFeRDTax,
   intf.ZUGFeRDInvoiceReferencedDocument,
+  intf.ZUGFeRDInvoiceTypes,
   intf.ZUGFeRDHelper;
 
 type
   /// <summary>
   /// Detailangaben zu einer Vorauszahlung / Anzahlung, BG-X-45.
   ///
-  /// Nur im EXTENDED-Profil zulaessig (ram:SpecifiedAdvancePayment, 0..n).
-  /// Das Element InvoiceSpecifiedReferencedDocument gibt es erst ab
-  /// Factur-X 1.08 / ZUGFeRD 2.4.
+  /// Nur im EXTENDED-Profil zulässig (ram:SpecifiedAdvancePayment, 0..n).
   /// </summary>
   TZUGFeRDAdvancePayment = class
   private
@@ -59,7 +58,7 @@ type
     property IncludedTradeTaxes: TObjectList<TZUGFeRDTax> read FIncludedTradeTaxes;
 
     /// <summary>
-    /// Referenz auf die zugehoerige Vorauszahlungsrechnung, BT-X-47.
+    /// Referenz auf die zugehörige Vorauszahlungsrechnung, BT-X-47.
     /// nil, solange keine Referenz gesetzt wurde.
     /// </summary>
     property InvoiceSpecifiedReferencedDocument: TZUGFeRDInvoiceReferencedDocument read FInvoiceSpecifiedReferencedDocument write FInvoiceSpecifiedReferencedDocument;
@@ -67,10 +66,12 @@ type
     /// <summary>
     /// Legt die Referenz auf die Vorauszahlungsrechnung an bzw. aktualisiert sie.
     /// </summary>
-    procedure SetInvoiceReferencedDocument(const id: string; const issueDateTime: IZUGFeRDNullableParam<TDateTime> = nil);
+    procedure SetInvoiceReferencedDocument(const id: string;
+      const issueDateTime: IZUGFeRDNullableParam<TDateTime> = nil;
+      const typeCode: IZUGFeRDNullableParam<TZUGFeRDInvoiceType> = nil);
 
     /// <summary>
-    /// Fuegt eine enthaltene Steuer hinzu und liefert sie zurueck.
+    /// Fügt eine enthaltene Steuer hinzu und liefert sie zurück.
     /// </summary>
     function AddIncludedTradeTax(const tax: TZUGFeRDTax): TZUGFeRDTax;
   end;
@@ -102,12 +103,14 @@ begin
 end;
 
 procedure TZUGFeRDAdvancePayment.SetInvoiceReferencedDocument(const id: string;
-  const issueDateTime: IZUGFeRDNullableParam<TDateTime>);
+  const issueDateTime: IZUGFeRDNullableParam<TDateTime>;
+  const typeCode: IZUGFeRDNullableParam<TZUGFeRDInvoiceType>);
 begin
   if not Assigned(FInvoiceSpecifiedReferencedDocument) then
     FInvoiceSpecifiedReferencedDocument := TZUGFeRDInvoiceReferencedDocument.Create;
   FInvoiceSpecifiedReferencedDocument.ID := id;
   FInvoiceSpecifiedReferencedDocument.IssueDateTime := issueDateTime;
+  FInvoiceSpecifiedReferencedDocument.TypeCode := typeCode;
 end;
 
 function TZUGFeRDAdvancePayment.AddIncludedTradeTax(const tax: TZUGFeRDTax): TZUGFeRDTax;

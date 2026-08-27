@@ -38,6 +38,10 @@ type
     [Test]
     procedure TestAdvancePayment;
     [Test]
+    procedure TestAdvancePaymentMandatoryDataValidation;
+    [Test]
+    procedure TestAdvancePaymentReaderRejectsMissingMandatoryData;
+    [Test]
     procedure TestReferenceAdvancePaymentFromDocumentation;
     [Test]
     procedure TestExtendedInvoiceWithIncludedItems;
@@ -256,6 +260,7 @@ implementation
 
 uses
   System.SysUtils, System.Classes, System.Generics.Collections, System.IOUtils,
+  System.RegularExpressions,
   intf.ZUGFeRDInvoiceDescriptor,
   intf.ZUGFeRDInvoiceProvider,
   intf.ZUGFeRDProfile,
@@ -309,7 +314,8 @@ uses
   intf.ZUGFeRDIncludedReferencedProduct,
   intf.ZUGFeRDDeliveryNoteReferencedDocument,
   intf.ZUGFeRDBuyerOrderReferencedDocument,
-  intf.ZUGFeRDFormats;
+  intf.ZUGFeRDFormats,
+  intf.ZUGFeRDExceptions;
 
 { TZUGFeRD22Tests }
 
@@ -559,7 +565,7 @@ begin
 end;
 
 /// <summary>
-/// Vorauszahlungen / Anzahlungen, BG-X-45. Nur EXTENDED fuehrt das Element.
+/// Vorauszahlungen / Anzahlungen, BG-X-45. Nur EXTENDED führt das Element.
 /// </summary>
 procedure TZUGFeRD22Tests.TestAdvancePayment;
 var
@@ -584,7 +590,8 @@ begin
     advancePayment.IncludedTradeTaxes.Add(includedTax);
 
     advancePayment.SetInvoiceReferencedDocument('R202506-01',
-      TZUGFeRDNullableParam<TDateTime>.Create(EncodeDate(2025, 6, 1)));
+      TZUGFeRDNullableParam<TDateTime>.Create(EncodeDate(2025, 6, 1)),
+      TZUGFeRDNullableParam<TZUGFeRDInvoiceType>.Create(TZUGFeRDInvoiceType.PartialInvoice));
     desc.AdvancePayments.Add(advancePayment);
 
     ms := TMemoryStream.Create;
@@ -606,6 +613,9 @@ begin
 
         Assert.IsNotNull(loadedInvoice.AdvancePayments[0].InvoiceSpecifiedReferencedDocument);
         Assert.AreEqual('R202506-01', loadedInvoice.AdvancePayments[0].InvoiceSpecifiedReferencedDocument.ID);
+        Assert.IsTrue(loadedInvoice.AdvancePayments[0].InvoiceSpecifiedReferencedDocument.TypeCode.HasValue);
+        Assert.AreEqual<TZUGFeRDInvoiceType>(TZUGFeRDInvoiceType.PartialInvoice,
+          loadedInvoice.AdvancePayments[0].InvoiceSpecifiedReferencedDocument.TypeCode.Value);
         Assert.AreEqual(EncodeDate(2025, 6, 1), loadedInvoice.AdvancePayments[0].InvoiceSpecifiedReferencedDocument.IssueDateTime.Value);
       finally
         loadedInvoice.Free;
@@ -614,7 +624,7 @@ begin
       ms.Free;
     end;
 
-    // Ausserhalb von EXTENDED darf das Element nicht geschrieben werden
+    // Außerhalb von EXTENDED darf das Element nicht geschrieben werden
     ms := TMemoryStream.Create;
     try
       desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Comfort);
@@ -635,8 +645,138 @@ begin
 end;
 
 /// <summary>
+/// Prüft die Pflichtangaben von Vorauszahlungen vor dem Schreiben.
+/// </summary>
+procedure TZUGFeRD22Tests.TestAdvancePaymentMandatoryDataValidation;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  advancePayment: TZUGFeRDAdvancePayment;
+  includedTax: TZUGFeRDTax;
+
+  procedure AssertSaveRaisesMissingData;
+  var
+    stream: TMemoryStream;
+  begin
+    stream := TMemoryStream.Create;
+    try
+      Assert.WillRaise(
+        procedure
+        begin
+          desc.Save(stream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
+        end,
+        TZUGFeRDMissingDataException);
+    finally
+      stream.Free;
+    end;
+  end;
+
+begin
+  desc := TZUGFeRDInvoiceDescriptor.Load(DemodataPath('zugferd21\zugferd_2p1_EXTENDED_Warenrechnung-factur-x.xml'));
+  try
+    desc.AdvancePayments.Clear;
+    advancePayment := TZUGFeRDAdvancePayment.Create;
+    desc.AdvancePayments.Add(advancePayment);
+
+    AssertSaveRaisesMissingData;
+
+    advancePayment.PaidAmount := 2975.0;
+    AssertSaveRaisesMissingData;
+
+    includedTax := TZUGFeRDTax.Create;
+    includedTax.TypeCode := nil;
+    advancePayment.IncludedTradeTaxes.Add(includedTax);
+    AssertSaveRaisesMissingData;
+
+    includedTax.TypeCode := TZUGFeRDTaxTypes.VAT;
+    includedTax.CategoryCode := nil;
+    AssertSaveRaisesMissingData;
+
+    includedTax.CategoryCode := TZUGFeRDTaxCategoryCodes.S;
+    advancePayment.SetInvoiceReferencedDocument('');
+    AssertSaveRaisesMissingData;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// Prüft, dass fehlende XML-Pflichtwerte nicht als Nullwerte übernommen werden.
+/// </summary>
+procedure TZUGFeRD22Tests.TestAdvancePaymentReaderRejectsMissingMandatoryData;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  advancePayment: TZUGFeRDAdvancePayment;
+  includedTax: TZUGFeRDTax;
+  stream: TMemoryStream;
+  bytes: TBytes;
+  xmlContent: string;
+
+  procedure AssertRemovalRaisesMissingData(const pattern: string);
+  var
+    invalidXml: string;
+    invalidStream: TStringStream;
+    loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  begin
+    invalidXml := TRegEx.Replace(xmlContent, pattern, '', [roSingleLine]);
+    Assert.IsTrue(invalidXml <> xmlContent, 'Das zu entfernende XML-Pflichtfeld wurde nicht gefunden.');
+
+    invalidStream := TStringStream.Create(invalidXml, TEncoding.UTF8);
+    loadedInvoice := nil;
+    try
+      Assert.WillRaise(
+        procedure
+        begin
+          invalidStream.Position := 0;
+          loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(invalidStream);
+        end,
+        TZUGFeRDMissingDataException);
+    finally
+      loadedInvoice.Free;
+      invalidStream.Free;
+    end;
+  end;
+
+begin
+  desc := TZUGFeRDInvoiceDescriptor.Load(DemodataPath('zugferd21\zugferd_2p1_EXTENDED_Warenrechnung-factur-x.xml'));
+  try
+    desc.AdvancePayments.Clear;
+    advancePayment := TZUGFeRDAdvancePayment.Create;
+    advancePayment.PaidAmount := 2975.0;
+
+    includedTax := TZUGFeRDTax.Create;
+    includedTax.TaxAmount := 1900;
+    includedTax.TypeCode := TZUGFeRDTaxTypes.VAT;
+    includedTax.CategoryCode := TZUGFeRDTaxCategoryCodes.S;
+    advancePayment.IncludedTradeTaxes.Add(includedTax);
+
+    advancePayment.SetInvoiceReferencedDocument('R202506-01');
+    desc.AdvancePayments.Add(advancePayment);
+
+    stream := TMemoryStream.Create;
+    try
+      desc.Save(stream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
+      SetLength(bytes, stream.Size);
+      stream.Position := 0;
+      stream.ReadBuffer(bytes, stream.Size);
+      xmlContent := TEncoding.UTF8.GetString(bytes);
+    finally
+      stream.Free;
+    end;
+
+    AssertRemovalRaisesMissingData('<ram:PaidAmount(?:\s[^>]*)?>.*?</ram:PaidAmount>');
+    AssertRemovalRaisesMissingData('<ram:IncludedTradeTax>.*?</ram:IncludedTradeTax>');
+    AssertRemovalRaisesMissingData('<ram:CalculatedAmount(?:\s[^>]*)?>.*?</ram:CalculatedAmount>');
+    AssertRemovalRaisesMissingData('<ram:TypeCode>VAT</ram:TypeCode>');
+    AssertRemovalRaisesMissingData('<ram:CategoryCode>S</ram:CategoryCode>');
+    AssertRemovalRaisesMissingData('<ram:IssuerAssignedID>R202506-01</ram:IssuerAssignedID>');
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
 /// Liest die Anzahlungen aus dem offiziellen Beispiel der Projektabschlussrechnung.
-/// Wird uebersprungen, wenn die Dokumentation lokal nicht ausgepackt ist.
+/// Wird übersprungen, wenn die Dokumentation lokal nicht ausgepackt ist.
 /// </summary>
 procedure TZUGFeRD22Tests.TestReferenceAdvancePaymentFromDocumentation;
 var
