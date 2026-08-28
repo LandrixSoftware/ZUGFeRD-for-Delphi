@@ -38,11 +38,12 @@ type
   private
     /// <summary>
     /// Baut eine Rechnung mit einer Position (2 x 100,00 zu 19%) und optionalen
-    /// Zu- und Abschlägen. Die Summen im Descriptor sind passend gesetzt, der
-    /// Validator muss die Rechnung also als gueltig ansehen.
+    /// Zu- und Abschlägen, Vorauszahlung und Rundung. Die Summen im Descriptor
+    /// sind passend gesetzt, der Validator muss die Rechnung also als gueltig ansehen.
     /// </summary>
     function CreateBalancedInvoice(const withCharge: Boolean;
-      const lineAllowance: Currency = 0; const lineCharge: Currency = 0): TZUGFeRDInvoiceDescriptor;
+      const lineAllowance: Currency = 0; const lineCharge: Currency = 0;
+      const prepaidAmount: Currency = 0; const roundingAmount: Currency = 0): TZUGFeRDInvoiceDescriptor;
   public
     [Test]
     procedure TestValidInvoiceWithoutAllowanceOrCharge;
@@ -54,6 +55,16 @@ type
     procedure TestValidInvoiceWithLineCharge;
     [Test]
     procedure TestPriceAllowanceIsNotSubtractedTwice;
+    [Test]
+    procedure TestValidInvoiceWithPrepaidAmount;
+    [Test]
+    procedure TestValidInvoiceWithRoundingAmount;
+    [Test]
+    procedure TestMissingDuePayableAmountIsReported;
+    [Test]
+    procedure TestInvalidDuePayableAmountIsReported;
+    [Test]
+    procedure TestDuePayableUsesDeclaredGrandTotalAmount;
     [Test]
     procedure TestInvalidTaxTotalIsReported;
     [Test]
@@ -80,9 +91,10 @@ uses
 { TZUGFeRDInvoiceValidatorTests }
 
 function TZUGFeRDInvoiceValidatorTests.CreateBalancedInvoice(
-  const withCharge: Boolean; const lineAllowance, lineCharge: Currency): TZUGFeRDInvoiceDescriptor;
+  const withCharge: Boolean; const lineAllowance, lineCharge, prepaidAmount,
+  roundingAmount: Currency): TZUGFeRDInvoiceDescriptor;
 var
-  lineTotal, chargeTotal, taxBasis, taxTotal: Currency;
+  lineTotal, chargeTotal, taxBasis, taxTotal, grandTotal: Currency;
   lineItem: TZUGFeRDTradeLineItem;
 begin
   Result := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-4711', EncodeDate(2026, 1, 15),
@@ -130,6 +142,7 @@ begin
   // Ein Zuschlag erhoeht die Bemessungsgrundlage
   taxBasis := lineTotal + chargeTotal;
   taxTotal := taxBasis * 19 / 100;
+  grandTotal := taxBasis + taxTotal;
 
   Result.AddApplicableTradeTax({calculatedAmount=} taxTotal, {basisAmount=} taxBasis,
     {percent=} 19.0, TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S);
@@ -140,9 +153,10 @@ begin
     {aAllowanceTotalAmount=} 0,
     {aTaxBasisAmount=}       taxBasis,
     {aTaxTotalAmount=}       taxTotal,
-    {aGrandTotalAmount=}     taxBasis + taxTotal,
-    {aTotalPrepaidAmount=}   0,
-    {aDuePayableAmount=}     taxBasis + taxTotal);
+    {aGrandTotalAmount=}     grandTotal,
+    {aTotalPrepaidAmount=}   prepaidAmount,
+    {aDuePayableAmount=}     grandTotal - prepaidAmount + roundingAmount,
+    {aRoundingAmount=}       roundingAmount);
 end;
 
 procedure TZUGFeRDInvoiceValidatorTests.TestValidInvoiceWithLineAllowance;
@@ -198,6 +212,116 @@ begin
     try
       Assert.IsTrue(validationResult.IsValid,
         'Preisnachlass wurde bei der Positionssumme doppelt abgezogen:'#13#10 + validationResult.Messages.Text);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TZUGFeRDInvoiceValidatorTests.TestValidInvoiceWithPrepaidAmount;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateBalancedInvoice(False, {lineAllowance=} 0, {lineCharge=} 0,
+    {prepaidAmount=} 50);
+  try
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsTrue(validationResult.IsValid,
+        'Rechnung mit Vorauszahlung wurde als ungueltig gemeldet:'#13#10 + validationResult.Messages.Text);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TZUGFeRDInvoiceValidatorTests.TestValidInvoiceWithRoundingAmount;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateBalancedInvoice(False, {lineAllowance=} 0, {lineCharge=} 0,
+    {prepaidAmount=} 0, {roundingAmount=} 0.05);
+  try
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsTrue(validationResult.IsValid,
+        'Rechnung mit Rundungsbetrag wurde als ungueltig gemeldet:'#13#10 + validationResult.Messages.Text);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TZUGFeRDInvoiceValidatorTests.TestMissingDuePayableAmountIsReported;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateBalancedInvoice(False);
+  try
+    desc.DuePayableAmount := ZUGFeRDNullable<Currency>.Create(False);
+
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(validationResult.IsValid, 'Fehlender Zahlbetrag wurde nicht beanstandet');
+      Assert.IsTrue(validationResult.Messages.Text.Contains('Kein DuePayableAmount vorhanden'),
+        'Die Meldungen benennen den fehlenden Zahlbetrag nicht');
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TZUGFeRDInvoiceValidatorTests.TestInvalidDuePayableAmountIsReported;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateBalancedInvoice(False, {lineAllowance=} 0, {lineCharge=} 0,
+    {prepaidAmount=} 50, {roundingAmount=} 0.05);
+  try
+    desc.DuePayableAmount := desc.GrandTotalAmount.Value;
+
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(validationResult.IsValid, 'Abweichender Zahlbetrag wurde nicht beanstandet');
+      Assert.IsTrue(validationResult.Messages.Text.Contains('duePayable'),
+        'Die Meldungen benennen den abweichenden Zahlbetrag nicht');
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TZUGFeRDInvoiceValidatorTests.TestDuePayableUsesDeclaredGrandTotalAmount;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateBalancedInvoice(False, {lineAllowance=} 0, {lineCharge=} 0,
+    {prepaidAmount=} 50);
+  try
+    // BR-CO-16 verwendet den deklarierten BT-112, auch wenn dessen eigene Nachrechnung abweicht.
+    desc.GrandTotalAmount := desc.GrandTotalAmount.Value + 1;
+
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(validationResult.IsValid, 'Abweichende Summen wurden nicht beanstandet');
+      Assert.IsTrue(validationResult.Messages.Text.Contains(
+        'monetarySummation.duePayable Message: Berechneter Wert ist['),
+        'BT-115 wurde nicht gegen den deklarierten BT-112 geprueft');
     finally
       validationResult.Free;
     end;

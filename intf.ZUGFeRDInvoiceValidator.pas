@@ -90,7 +90,8 @@ end;
 class function TZUGFeRDInvoiceValidator.Validate(descriptor: TZUGFeRDInvoiceDescriptor; version: TZUGFeRDVersion): TZUGFeRDValidationResult;
 var
   lineCounter: Integer;
-  lineTotal, allowanceTotal, chargeTotal, taxTotal, grandTotal: Currency;
+  lineTotal, allowanceTotal, chargeTotal, taxTotal, grandTotal, prepaid,
+    rounding, duePayable, expectedDuePayable: Currency;
   lineTotalPerTax: TDictionary<Currency, Currency>;
   item: TZUGFeRDTradeLineItem;
   kv: TPair<Currency, Currency>;
@@ -197,6 +198,11 @@ begin
     end;
 
     grandTotal := lineTotal - allowanceTotal + taxTotal + chargeTotal;
+    prepaid := descriptor.TotalPrepaidAmount.GetValueOrDefault;
+    rounding := descriptor.RoundingAmount.GetValueOrDefault;
+
+    // BT-115 ergibt sich aus BT-112 abzüglich BT-113 zuzüglich BT-114.
+    duePayable := grandTotal - prepaid + rounding;
 
     Result.Messages.Add(Format('Recalculated tax total = %f', [taxTotal]));
     Result.Messages.Add(Format('Recalculated grand total = %f EUR(tax basis total + tax total)', [grandTotal]));
@@ -208,8 +214,8 @@ begin
        lineTotal - allowanceTotal + chargeTotal, // tax basis total
        taxTotal,
        grandTotal,
-       0.0, // prepaid (TODO)
-       lineTotal - allowanceTotal + taxTotal + chargeTotal // + prepaid
+       prepaid,
+       duePayable
        ]));
 
     var _taxBasisTotal : Currency := 0;
@@ -263,6 +269,26 @@ begin
     begin
       Result.Messages.Add(Format('trade.settlement.monetarySummation.grandTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f]', [grandTotal, descriptor.GrandTotalAmount.GetValueOrDefault]));
       Result.IsValid := false;
+    end;
+
+    if not descriptor.DuePayableAmount.HasValue then
+    begin
+      Result.Messages.Add('trade.settlement.monetarySummation.duePayable Message: Kein DuePayableAmount vorhanden');
+      Result.IsValid := false;
+    end
+    else if descriptor.GrandTotalAmount.HasValue then
+    begin
+      expectedDuePayable := descriptor.GrandTotalAmount.Value - prepaid + rounding;
+      if Abs(expectedDuePayable - descriptor.DuePayableAmount.Value) < 0.01 then
+      begin
+        Result.Messages.Add(Format('trade.settlement.monetarySummation.duePayable Message: Berechneter Wert ist wie vorhanden:[%4f]', [expectedDuePayable]));
+      end
+      else
+      begin
+        Result.Messages.Add(Format('trade.settlement.monetarySummation.duePayable Message: Berechneter Wert ist[%4f] aber tatsächlicher vorhandener Wert ist[%4f]',
+          [expectedDuePayable, descriptor.DuePayableAmount.Value]));
+        Result.IsValid := false;
+      end;
     end;
 
     {
