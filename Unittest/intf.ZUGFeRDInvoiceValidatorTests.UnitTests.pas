@@ -50,6 +50,8 @@ type
     [Test]
     procedure TestValidInvoiceWithCharge;
     [Test]
+    procedure TestRecalculatedTaxBasisMessageIncludesCharge;
+    [Test]
     procedure TestInvalidTaxTotalIsReported;
     [Test]
     procedure TestValidationDoesNotRaiseOnDeviation;
@@ -160,6 +162,32 @@ begin
     try
       Assert.IsTrue(validationResult.IsValid,
         'Rechnung mit Zuschlag wurde als ungueltig gemeldet:'#13#10 + validationResult.Messages.Text);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// Die protokollierte Neuberechnung von BT-109 muss Kopfzuschläge ebenso
+/// berücksichtigen wie die eigentliche Summenberechnung.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestRecalculatedTaxBasisMessageIncludesCharge;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+  expectedMessage: string;
+begin
+  desc := CreateBalancedInvoice(True);
+  try
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      expectedMessage := Format('Recalculated tax basis = %f', [210.0]);
+      Assert.IsTrue(validationResult.Messages.IndexOf(expectedMessage) >= 0,
+        'Die protokollierte Steuerbasis enthält den Kopfzuschlag nicht:'#13#10 +
+        validationResult.Messages.Text);
     finally
       validationResult.Free;
     end;
