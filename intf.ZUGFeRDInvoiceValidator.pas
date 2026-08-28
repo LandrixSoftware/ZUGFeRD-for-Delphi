@@ -125,6 +125,13 @@ begin
       if item.NetUnitPrice.HasValue then
       begin
         _total := (item.NetUnitPrice.Value * item.BilledQuantity);
+
+        // BT-131 enthält BG-28-Positionszuschläge und vermindert sich um BG-27-Positionsabschläge.
+        for var lineAllowance in item.GetSpecifiedTradeAllowances do
+          _total := _total - lineAllowance.ActualAmount;
+        for var lineCharge in item.GetSpecifiedTradeCharges do
+          _total := _total + lineCharge.ActualAmount;
+
         lineTotal := lineTotal + _total;
       end;
 
@@ -262,8 +269,8 @@ begin
       * Die Summe der Steuerbemessungsgrundlagen der Steueraufschlüsselung (BT-116)
       * muss dem Rechnungsbetrag ohne Umsatzsteuer (BT-109) entsprechen.
       *
-      * Die vorgelagerte Nachrechnung ignoriert weiterhin Positionsrabatte
-      * (tradeLineItem.TradeAllowanceCharges) und rundet nicht je Steuersatz.
+      * Preisnachlässe aus tradeLineItem.TradeAllowanceCharges sind bereits im
+      * Nettoeinzelpreis BT-146 enthalten. Die Nachrechnung rundet nicht je Steuersatz.
       * Deshalb meldet der Validator die Beispielrechnungen der Dokumentation
       * teilweise als ungültig.
     }
