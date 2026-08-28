@@ -259,25 +259,27 @@ begin
     end;
 
     {
-      * @todo Richtige Validierung implementieren.
+      * Die Summe der Steuerbemessungsgrundlagen der Steueraufschlüsselung (BT-116)
+      * muss dem Rechnungsbetrag ohne Umsatzsteuer (BT-109) entsprechen.
       *
-      * Der Vergleich unten stellt _taxBasisTotal gegen sich selbst und kann deshalb
-      * nie fehlschlagen - die Pruefung ist wirkungslos. Offen ist die fachliche Frage,
-      * wogegen die Bemessungsgrundlage zu pruefen ist: gegen descriptor.TaxBasisAmount
-      * oder gegen die nachgerechnete Summe (lineTotal - allowanceTotal + chargeTotal).
-      *
-      * Zweite offene Baustelle in dieser Routine: die Nachrechnung ignoriert
-      * Positionsrabatte (tradeLineItem.TradeAllowanceCharges) und rundet nicht je
-      * Steuersatz. Deshalb meldet der Validator die Beispielrechnungen der
-      * Dokumentation als ungueltig, obwohl sie es nicht sind.
+      * Die vorgelagerte Nachrechnung ignoriert weiterhin Positionsrabatte
+      * (tradeLineItem.TradeAllowanceCharges) und rundet nicht je Steuersatz.
+      * Deshalb meldet der Validator die Beispielrechnungen der Dokumentation
+      * teilweise als ungültig.
     }
-    if Abs(_taxBasisTotal - _taxBasisTotal) < 0.01 then
+    if not descriptor.TaxBasisAmount.HasValue then
+    begin
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.taxBasisTotal Message: Kein TaxBasisAmount vorhanden', []));
+      Result.IsValid := false;
+    end
+    else if Abs(_taxBasisTotal - descriptor.TaxBasisAmount.Value) < 0.01 then
     begin
       Result.Messages.Add(Format('trade.settlement.monetarySummation.taxBasisTotal Message: Berechneter Wert ist wie vorhanden:[%4f]', [_taxBasisTotal]));
     end
     else
     begin
-      Result.Messages.Add(Format('trade.settlement.monetarySummation.taxBasisTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f]', [_taxBasisTotal, _taxBasisTotal]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.taxBasisTotal Message: Berechneter Wert ist[%4f] aber tatsächlicher vorhandener Wert ist[%4f]',
+        [_taxBasisTotal, descriptor.TaxBasisAmount.Value]));
       Result.IsValid := false;
     end;
 
