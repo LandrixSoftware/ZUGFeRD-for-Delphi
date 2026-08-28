@@ -22,8 +22,7 @@ unit intf.ZUGFeRDInvoiceValidatorTests.UnitTests;
 ///
 /// Der Validator rechnet die Summen einer Rechnung nach und vergleicht sie mit den
 /// angegebenen Werten. Die Tests bauen dafür bewusst minimale Rechnungen auf, deren
-/// Summen exakt aufgehen. Die Beispielrechnungen der Dokumentation eignen sich nicht,
-/// weil die vorgelagerte Nachrechnung Positionsrabatte weiterhin nicht berücksichtigt.
+/// Summen exakt aufgehen.
 /// </summary>
 
 interface
@@ -38,16 +37,23 @@ type
   TZUGFeRDInvoiceValidatorTests = class(TZUGFeRDTestBase)
   private
     /// <summary>
-    /// Baut eine Rechnung mit einer Position (2 x 100,00 zu 19%) und optional einem
-    /// Zuschlag auf Kopfebene. Die Summen im Descriptor sind passend gesetzt, der
+    /// Baut eine Rechnung mit einer Position (2 x 100,00 zu 19%) und optionalen
+    /// Zu- und Abschlägen. Die Summen im Descriptor sind passend gesetzt, der
     /// Validator muss die Rechnung also als gueltig ansehen.
     /// </summary>
-    function CreateBalancedInvoice(const withCharge: Boolean): TZUGFeRDInvoiceDescriptor;
+    function CreateBalancedInvoice(const withCharge: Boolean;
+      const lineAllowance: Currency = 0; const lineCharge: Currency = 0): TZUGFeRDInvoiceDescriptor;
   public
     [Test]
     procedure TestValidInvoiceWithoutAllowanceOrCharge;
     [Test]
     procedure TestValidInvoiceWithCharge;
+    [Test]
+    procedure TestValidInvoiceWithLineAllowance;
+    [Test]
+    procedure TestValidInvoiceWithLineCharge;
+    [Test]
+    procedure TestPriceAllowanceIsNotSubtractedTwice;
     [Test]
     procedure TestInvalidTaxTotalIsReported;
     [Test]
@@ -68,19 +74,21 @@ uses
   intf.ZUGFeRDQuantityCodes,
   intf.ZUGFeRDTaxTypes,
   intf.ZUGFeRDTaxCategoryCodes,
+  intf.ZUGFeRDTradeLineItem,
   intf.ZUGFeRDHelper;
 
 { TZUGFeRDInvoiceValidatorTests }
 
 function TZUGFeRDInvoiceValidatorTests.CreateBalancedInvoice(
-  const withCharge: Boolean): TZUGFeRDInvoiceDescriptor;
+  const withCharge: Boolean; const lineAllowance, lineCharge: Currency): TZUGFeRDInvoiceDescriptor;
 var
   lineTotal, chargeTotal, taxBasis, taxTotal: Currency;
+  lineItem: TZUGFeRDTradeLineItem;
 begin
   Result := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-4711', EncodeDate(2026, 1, 15),
     TZUGFeRDCurrencyCodes.EUR);
 
-  Result.AddTradeLineItem(
+  lineItem := Result.AddTradeLineItem(
     {name=}            'Testartikel',
     {netUnitPrice=}    TZUGFeRDNullableParam<Currency>.Create(100),
     {description=}     '',
@@ -94,7 +102,16 @@ begin
     {taxPercent=}      19.0
   );
 
-  lineTotal := 200;
+  if lineAllowance <> 0 then
+    lineItem.AddSpecifiedTradeAllowance(TZUGFeRDCurrencyCodes.EUR, 200,
+      lineAllowance, 'Mengenrabatt');
+  if lineCharge <> 0 then
+    lineItem.AddSpecifiedTradeCharge(TZUGFeRDCurrencyCodes.EUR, 200,
+      lineCharge, 'Positionszuschlag');
+
+  // BT-131 enthält BG-28-Positionszuschläge und vermindert sich um BG-27-Positionsabschläge.
+  lineTotal := 200 - lineAllowance + lineCharge;
+  lineItem.LineTotalAmount := lineTotal;
   chargeTotal := 0;
 
   if withCharge then
@@ -126,6 +143,67 @@ begin
     {aGrandTotalAmount=}     taxBasis + taxTotal,
     {aTotalPrepaidAmount=}   0,
     {aDuePayableAmount=}     taxBasis + taxTotal);
+end;
+
+procedure TZUGFeRDInvoiceValidatorTests.TestValidInvoiceWithLineAllowance;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateBalancedInvoice(False, {lineAllowance=} 10);
+  try
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsTrue(validationResult.IsValid,
+        'Rechnung mit Positionsabschlag wurde als ungueltig gemeldet:'#13#10 + validationResult.Messages.Text);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TZUGFeRDInvoiceValidatorTests.TestValidInvoiceWithLineCharge;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateBalancedInvoice(False, {lineAllowance=} 0, {lineCharge=} 10);
+  try
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsTrue(validationResult.IsValid,
+        'Rechnung mit Positionszuschlag wurde als ungueltig gemeldet:'#13#10 + validationResult.Messages.Text);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TZUGFeRDInvoiceValidatorTests.TestPriceAllowanceIsNotSubtractedTwice;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateBalancedInvoice(False);
+  try
+    // Der Preisnachlass ist bereits im Nettoeinzelpreis BT-146 enthalten und darf BT-131 nicht erneut vermindern.
+    desc.TradeLineItems[0].AddTradeAllowance(TZUGFeRDCurrencyCodes.EUR, 110,
+      10, 'Preisnachlass');
+
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsTrue(validationResult.IsValid,
+        'Preisnachlass wurde bei der Positionssumme doppelt abgezogen:'#13#10 + validationResult.Messages.Text);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
 end;
 
 procedure TZUGFeRDInvoiceValidatorTests.TestValidInvoiceWithoutAllowanceOrCharge;
