@@ -83,6 +83,12 @@ type
     procedure SavingThenReadingAppliedTradeTaxes(_version: Integer; _profile: Integer);
 
     [Test]
+    [TestCase('V20-CII-Ext', '200,0,4')]
+    [TestCase('V23-CII-Ext', '230,0,4')]
+    [TestCase('V23-UBL-XR',  '230,1,32')]
+    procedure TestVATBreakdownExemptionReasons(_version: Integer; _format: Integer; _profile: Integer);
+
+    [Test]
     [TestCase('V1',  '100')]
     [TestCase('V20', '200')]
     [TestCase('V23', '230')]
@@ -280,6 +286,7 @@ uses
   intf.ZUGFeRDQuantityCodes,
   intf.ZUGFeRDTaxTypes,
   intf.ZUGFeRDTaxCategoryCodes,
+  intf.ZUGFeRDTaxExemptionReasonCodes,
   intf.ZUGFeRDGlobalID,
   intf.ZUGFeRDGlobalIDSchemeIdentifiers,
   intf.ZUGFeRDTradeLineItem,
@@ -674,6 +681,63 @@ begin
     end;
   finally
     expected.Free;
+  end;
+end;
+
+procedure TZUGFeRDCrossVersionTests.TestVATBreakdownExemptionReasons(_version: Integer; _format: Integer; _profile: Integer);
+var
+  version: TZUGFeRDVersion;
+  format: TZUGFeRDFormats;
+  profile: TZUGFeRDProfile;
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  tax, zeroRatedTax, exemptTax: TZUGFeRDTax;
+  ms: TMemoryStream;
+begin
+  version := TZUGFeRDVersion(_version);
+  format := TZUGFeRDFormats(_format);
+  profile := TZUGFeRDProfile(_profile);
+
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.AddApplicableTradeTax(0, 10, 0, TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.Z, nil,
+      TZUGFeRDNullableParam<TZUGFeRDTaxExemptionReasonCodes>.Create(TZUGFeRDTaxExemptionReasonCodes.VATEX_EU_132), 'Zero rated reason');
+    desc.AddApplicableTradeTax(0, 20, 0, TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.E, nil,
+      TZUGFeRDNullableParam<TZUGFeRDTaxExemptionReasonCodes>.Create(TZUGFeRDTaxExemptionReasonCodes.VATEX_EU_132), 'Exempt reason');
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, version, profile, format);
+      ms.Position := 0;
+
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        zeroRatedTax := nil;
+        exemptTax := nil;
+        for tax in loadedInvoice.Taxes do
+          if tax.CategoryCode.HasValue then
+          begin
+            if tax.CategoryCode.Value = TZUGFeRDTaxCategoryCodes.Z then
+              zeroRatedTax := tax
+            else if tax.CategoryCode.Value = TZUGFeRDTaxCategoryCodes.E then
+              exemptTax := tax;
+          end;
+
+        Assert.IsNotNull(zeroRatedTax);
+        Assert.AreEqual('', zeroRatedTax.ExemptionReason);
+        Assert.IsFalse(zeroRatedTax.ExemptionReasonCode.HasValue);
+
+        Assert.IsNotNull(exemptTax);
+        Assert.AreEqual('Exempt reason', exemptTax.ExemptionReason);
+        Assert.IsTrue(exemptTax.ExemptionReasonCode.HasValue);
+        Assert.AreEqual<TZUGFeRDTaxExemptionReasonCodes>(TZUGFeRDTaxExemptionReasonCodes.VATEX_EU_132, exemptTax.ExemptionReasonCode.Value);
+      finally
+        FreeAndNil(loadedInvoice);
+      end;
+    finally
+      FreeAndNil(ms);
+    end;
+  finally
+    FreeAndNil(desc);
   end;
 end;
 
