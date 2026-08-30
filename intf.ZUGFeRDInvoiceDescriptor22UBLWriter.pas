@@ -547,10 +547,14 @@ begin
       if tax.CategoryCode <> TZUGFeRDTaxCategoryCodes.O then // BR-O-05
         Writer.WriteElementString('cbc:Percent', _formatDecimal(tax.Percent));
 
-      if tax.ExemptionReasonCode.HasValue then
-        Writer.WriteElementString('cbc:TaxExemptionReasonCode', TEnumExtensions<TZUGFeRDTaxExemptionReasonCodes>.EnumToString(tax.ExemptionReasonCode.Value));
+      // BR-Z-10: Steuerkategorie Z darf keinen Befreiungsgrund enthalten.
+      if (not tax.CategoryCode.HasValue) or (tax.CategoryCode.Value <> TZUGFeRDTaxCategoryCodes.Z) then
+      begin
+        if tax.ExemptionReasonCode.HasValue then
+          Writer.WriteElementString('cbc:TaxExemptionReasonCode', TEnumExtensions<TZUGFeRDTaxExemptionReasonCodes>.EnumToString(tax.ExemptionReasonCode.Value));
 
-      Writer.WriteOptionalElementString('cbc:TaxExemptionReason', tax.ExemptionReason);
+        Writer.WriteOptionalElementString('cbc:TaxExemptionReason', tax.ExemptionReason);
+      end;
       Writer.WriteStartElement('cac:TaxScheme');
       Writer.WriteElementString('cbc:ID', TEnumExtensions<TZUGFeRDTaxTypes>.EnumToString(tax.TypeCode));
       Writer.WriteEndElement; // !TaxScheme
