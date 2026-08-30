@@ -30,6 +30,7 @@ interface
 uses
   DUnitX.TestFramework,
   intf.ZUGFeRDInvoiceDescriptor,
+  intf.ZUGFeRDTaxCategoryCodes,
   intf.ZUGFeRDTestBase;
 
 type
@@ -44,6 +45,11 @@ type
     function CreateBalancedInvoice(const withCharge: Boolean;
       const lineAllowance: Currency = 0; const lineCharge: Currency = 0;
       const prepaidAmount: Currency = 0; const roundingAmount: Currency = 0): TZUGFeRDInvoiceDescriptor;
+    /// <summary>
+    /// Ergänzt eine Rechnungsposition und die zugehörige Steueraufschlüsselung.
+    /// </summary>
+    procedure AddTaxGroup(Descriptor: TZUGFeRDInvoiceDescriptor; const Name: string;
+      const BasisAmount, TaxPercent, TaxAmount: Currency; const CategoryCode: TZUGFeRDTaxCategoryCodes);
   public
     [Test]
     procedure TestValidInvoiceWithoutAllowanceOrCharge;
@@ -70,6 +76,18 @@ type
     [Test]
     procedure TestInvalidTaxTotalIsReported;
     [Test]
+    procedure TestTaxAmountsAreRoundedPerTaxGroup;
+    [Test]
+    procedure TestUnroundedTaxAmountIsReported;
+    [Test]
+    procedure TestTaxAmountDeviationsWithinSameRateAreReported;
+    [Test]
+    procedure TestNegativeMidpointTaxAmountIsRoundedAwayFromZero;
+    [Test]
+    procedure TestNonVatTaxDoesNotAffectVatTotals;
+    [Test]
+    procedure TestMissingTaxTypeIsReported;
+    [Test]
     procedure TestMissingTaxBasisAmountIsReported;
     [Test]
     procedure TestInvalidTaxBasisAmountIsReported;
@@ -86,11 +104,31 @@ uses
   intf.ZUGFeRDCurrencyCodes,
   intf.ZUGFeRDQuantityCodes,
   intf.ZUGFeRDTaxTypes,
-  intf.ZUGFeRDTaxCategoryCodes,
   intf.ZUGFeRDTradeLineItem,
   intf.ZUGFeRDHelper;
 
 { TZUGFeRDInvoiceValidatorTests }
+
+procedure TZUGFeRDInvoiceValidatorTests.AddTaxGroup(
+  Descriptor: TZUGFeRDInvoiceDescriptor; const Name: string;
+  const BasisAmount, TaxPercent, TaxAmount: Currency;
+  const CategoryCode: TZUGFeRDTaxCategoryCodes);
+begin
+  Descriptor.AddTradeLineItem(
+    {name=}            Name,
+    {netUnitPrice=}    TZUGFeRDNullableParam<Currency>.Create(BasisAmount),
+    {description=}     '',
+    {unitCode=}        TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+    {unitQuantity=}    nil,
+    {grossUnitPrice=}  nil,
+    {billedQuantity=}  1,
+    {lineTotalAmount=} BasisAmount,
+    {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+    {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(CategoryCode),
+    {taxPercent=}      TaxPercent);
+  Descriptor.AddApplicableTradeTax({calculatedAmount=} TaxAmount, {basisAmount=} BasisAmount,
+    {percent=} TaxPercent, TZUGFeRDTaxTypes.VAT, CategoryCode);
+end;
 
 function TZUGFeRDInvoiceValidatorTests.CreateBalancedInvoice(
   const withCharge: Boolean; const lineAllowance, lineCharge, prepaidAmount,
@@ -421,6 +459,152 @@ begin
     end;
   finally
     desc.Free;
+  end;
+end;
+
+procedure TZUGFeRDInvoiceValidatorTests.TestTaxAmountsAreRoundedPerTaxGroup;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-ROUND-GROUPS', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
+  try
+    // BR-CO-17 rundet jede Steuergruppe vor der Summierung auf zwei Dezimalstellen.
+    AddTaxGroup(Descriptor, 'Group 19', 0.03, 19, 0.01, TZUGFeRDTaxCategoryCodes.S);
+    AddTaxGroup(Descriptor, 'Group 7', 0.08, 7, 0.01, TZUGFeRDTaxCategoryCodes.S);
+    AddTaxGroup(Descriptor, 'Group 5', 0.11, 5, 0.01, TZUGFeRDTaxCategoryCodes.S);
+    Descriptor.SetTotals(0.22, 0, 0, 0.22, 0.03, 0.25, 0, 0.25);
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsTrue(ValidationResult.IsValid,
+        'Tax amounts rounded per group were rejected:'#13#10 + ValidationResult.Messages.Text);
+    finally
+      FreeAndNil(ValidationResult);
+    end;
+  finally
+    FreeAndNil(Descriptor);
+  end;
+end;
+
+procedure TZUGFeRDInvoiceValidatorTests.TestUnroundedTaxAmountIsReported;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-ROUND-INVALID', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
+  try
+    AddTaxGroup(Descriptor, 'Unrounded group', 0.03, 19, 0.0057, TZUGFeRDTaxCategoryCodes.S);
+    Descriptor.SetTotals(0.03, 0, 0, 0.03, 0.0057, 0.0357, 0, 0.0357);
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(ValidationResult.IsValid, 'Unrounded tax amount was not reported');
+      Assert.IsTrue(ValidationResult.Messages.Text.Contains('BR-CO-17'),
+        'Validation messages do not identify BR-CO-17');
+    finally
+      FreeAndNil(ValidationResult);
+    end;
+  finally
+    FreeAndNil(Descriptor);
+  end;
+end;
+
+procedure TZUGFeRDInvoiceValidatorTests.TestTaxAmountDeviationsWithinSameRateAreReported;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+  Message: string;
+  BRCO17MessageCount: Integer;
+begin
+  Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-ROUND-CATEGORY', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
+  try
+    // Gegensätzliche Abweichungen dürfen sich bei gleichem Steuersatz nicht gegenseitig aufheben.
+    AddTaxGroup(Descriptor, 'Standard rate', 1, 7, 0.08, TZUGFeRDTaxCategoryCodes.S);
+    AddTaxGroup(Descriptor, 'Lower rate', 1, 7, 0.06, TZUGFeRDTaxCategoryCodes.AA);
+    Descriptor.SetTotals(2, 0, 0, 2, 0.14, 2.14, 0, 2.14);
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(ValidationResult.IsValid, 'Tax amount deviations within one rate were not reported');
+      BRCO17MessageCount := 0;
+      for Message in ValidationResult.Messages do
+        if Message.Contains('BR-CO-17') then
+          Inc(BRCO17MessageCount);
+      Assert.AreEqual(2, BRCO17MessageCount, 'Not every tax group was validated separately');
+    finally
+      FreeAndNil(ValidationResult);
+    end;
+  finally
+    FreeAndNil(Descriptor);
+  end;
+end;
+
+procedure TZUGFeRDInvoiceValidatorTests.TestNegativeMidpointTaxAmountIsRoundedAwayFromZero;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-ROUND-NEGATIVE', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
+  try
+    // Der Rundungsmodus entspricht der Betragsformatierung der Writer und rundet Mittelpunkte von null weg.
+    AddTaxGroup(Descriptor, 'Negative midpoint', -0.025, 20, -0.01, TZUGFeRDTaxCategoryCodes.S);
+    Descriptor.SetTotals(-0.025, 0, 0, -0.025, -0.01, -0.035, 0, -0.035);
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsTrue(ValidationResult.IsValid,
+        'Negative midpoint tax amount was not rounded away from zero:'#13#10 + ValidationResult.Messages.Text);
+    finally
+      FreeAndNil(ValidationResult);
+    end;
+  finally
+    FreeAndNil(Descriptor);
+  end;
+end;
+
+procedure TZUGFeRDInvoiceValidatorTests.TestNonVatTaxDoesNotAffectVatTotals;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := CreateBalancedInvoice(False);
+  try
+    // Zusätzliche Extended-Steuern gehören weder zu BT-110 noch zur Summe der VAT-Bemessungsgrundlagen.
+    Descriptor.AddApplicableTradeTax({calculatedAmount=} 10, {basisAmount=} 200,
+      {percent=} 5, TZUGFeRDTaxTypes.AAA, TZUGFeRDTaxCategoryCodes.S);
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsTrue(ValidationResult.IsValid,
+        'Non-VAT tax affected VAT totals:'#13#10 + ValidationResult.Messages.Text);
+    finally
+      FreeAndNil(ValidationResult);
+    end;
+  finally
+    FreeAndNil(Descriptor);
+  end;
+end;
+
+procedure TZUGFeRDInvoiceValidatorTests.TestMissingTaxTypeIsReported;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := CreateBalancedInvoice(False);
+  try
+    Descriptor.Taxes[0].TypeCode := ZUGFeRDNullable<TZUGFeRDTaxTypes>.Create(False);
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(ValidationResult.IsValid, 'Missing tax type was not reported');
+      Assert.IsTrue(ValidationResult.Messages.Text.Contains('Tax type code is required'),
+        'Validation messages do not identify the missing tax type');
+    finally
+      FreeAndNil(ValidationResult);
+    end;
+  finally
+    FreeAndNil(Descriptor);
   end;
 end;
 

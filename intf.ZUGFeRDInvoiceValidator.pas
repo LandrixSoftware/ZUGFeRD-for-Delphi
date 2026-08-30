@@ -20,12 +20,12 @@ unit intf.ZUGFeRDInvoiceValidator;
 interface
 
 uses
-  System.SysUtils,System.TypInfo,System.Classes,
-  System.Generics.Collections
+  System.SysUtils,System.TypInfo,System.Classes,System.Math
   ,intf.ZUGFeRDInvoiceDescriptor
   ,intf.ZUGFeRDTradeLineItem
   ,intf.ZUGFeRDTradeAllowanceCharge
   ,intf.ZUGFeRDTax
+  ,intf.ZUGFeRDTaxTypes
   ,intf.ZUGFeRDVersion
   ;
 
@@ -91,10 +91,8 @@ class function TZUGFeRDInvoiceValidator.Validate(descriptor: TZUGFeRDInvoiceDesc
 var
   lineCounter: Integer;
   lineTotal, allowanceTotal, chargeTotal, taxTotal, grandTotal, prepaid,
-    rounding, duePayable, expectedDuePayable: Currency;
-  lineTotalPerTax: TDictionary<Currency, Currency>;
+    rounding, duePayable, expectedDuePayable, expectedTaxAmount: Currency;
   item: TZUGFeRDTradeLineItem;
-  kv: TPair<Currency, Currency>;
   tax: TZUGFeRDTax;
 begin
   Result := TZUGFeRDValidationResult.Create;
@@ -114,9 +112,7 @@ begin
   chargeTotal := 0;
   taxTotal := 0;
   //grandTotal := 0;
-  lineTotalPerTax := TDictionary<Currency, Currency>.Create;
-  try
-    // line item summation
+  // line item summation
     Result.Messages.Add('Validating invoice monetary summation');
     Result.Messages.Add(Format('Starting recalculating line total from %d items...', [descriptor.TradeLineItems.Count]));
 
@@ -135,11 +131,6 @@ begin
 
         lineTotal := lineTotal + _total;
       end;
-
-      if not lineTotalPerTax.ContainsKey(item.TaxPercent) then
-        lineTotalPerTax.Add(item.TaxPercent, 0);
-
-      lineTotalPerTax[item.TaxPercent] := lineTotalPerTax[item.TaxPercent] + _total;
 
       //retval.Add(String.Format("==> {0}:", ++lineCounter));
       //retval.Add(String.Format("Recalculating item: [{0}]", item.Name));
@@ -163,11 +154,6 @@ begin
       // fuer Zu- und Abschlaege nirgends befuellt und ist daher immer 0
       Result.Messages.Add(Format('==> added %f to %f%%', [charge.ActualAmount, charge.Tax.Percent]));
 
-      if not lineTotalPerTax.ContainsKey(charge.Tax.Percent) then
-        lineTotalPerTax.Add(charge.Tax.Percent, 0);
-
-      // Ein Zuschlag erhoeht die Bemessungsgrundlage, nur der Abschlag weiter unten verringert sie
-      lineTotalPerTax[charge.Tax.Percent] := lineTotalPerTax[charge.Tax.Percent] + charge.ActualAmount;
       chargeTotal:= chargeTotal + charge.ActualAmount
     end;
 
@@ -175,10 +161,6 @@ begin
     begin
       Result.Messages.Add(Format('==> subtracted %f from %f%%', [allowance.ActualAmount, allowance.Tax.Percent]));
 
-      if not lineTotalPerTax.ContainsKey(allowance.Tax.Percent) then
-        lineTotalPerTax.Add(allowance.Tax.Percent, 0);
-
-      lineTotalPerTax[allowance.Tax.Percent] := lineTotalPerTax[allowance.Tax.Percent] - allowance.ActualAmount;
       allowanceTotal := allowanceTotal + allowance.ActualAmount;
     end;
 
@@ -190,11 +172,29 @@ begin
     Result.Messages.Add(Format('Recalculated tax basis = %f', [lineTotal - allowanceTotal + chargeTotal]));
     Result.Messages.Add('Calculating tax total...');
 
-    for kv in lineTotalPerTax do
+    for tax in descriptor.Taxes do
     begin
-      var _taxTotal : Currency := (kv.Value * kv.Key / 100);
-      taxTotal := taxTotal + _taxTotal;
-      Result.Messages.Add(Format('===> %f x %f%% = %f', [kv.Value, kv.Key, _taxTotal]));
+      if not tax.TypeCode.HasValue then
+      begin
+        Result.Messages.Add('Tax type code is required for every tax breakdown');
+        Result.IsValid := false;
+        Continue;
+      end;
+      if tax.TypeCode.Value <> TZUGFeRDTaxTypes.VAT then
+        Continue;
+
+      // BR-CO-17 verlangt die Rundung jeder Steuergruppe vor der Summierung zu BT-110.
+      expectedTaxAmount := SimpleRoundTo(tax.BasisAmount * tax.Percent / 100, -2);
+      taxTotal := taxTotal + expectedTaxAmount;
+      Result.Messages.Add(Format('===> %f x %f%% = %f', [tax.BasisAmount, tax.Percent, expectedTaxAmount]));
+
+      if tax.TaxAmount <> expectedTaxAmount then
+      begin
+        Result.Messages.Add(Format(
+          'BR-CO-17: Berechneter Steuerbetrag ist[%4f] aber vorhandener Steuerbetrag ist[%4f] bei Bemessungsgrundlage[%4f] und Steuersatz[%4f]',
+          [expectedTaxAmount, tax.TaxAmount, tax.BasisAmount, tax.Percent]));
+        Result.IsValid := false;
+      end;
     end;
 
     grandTotal := lineTotal - allowanceTotal + taxTotal + chargeTotal;
@@ -221,7 +221,9 @@ begin
     var _taxBasisTotal : Currency := 0;
     for tax in descriptor.Taxes do
     begin
-      _taxBasisTotal := _taxBasisTotal + tax.BasisAmount;
+      if tax.TypeCode.HasValue then
+        if tax.TypeCode.Value = TZUGFeRDTaxTypes.VAT then
+          _taxBasisTotal := _taxBasisTotal + tax.BasisAmount;
     end;
 
     var _allowanceTotal : Currency := 0;
@@ -339,9 +341,6 @@ begin
     // version-specific validation
     // ZUGFeRD 1.0 version specific validation skipped
 
-  finally
-    lineTotalPerTax.Free;
-  end;
 end;
 
 end.
