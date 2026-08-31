@@ -63,7 +63,7 @@ type
     [Test]
     procedure TestSweepZUGFeRD24FacturX1008;
     [Test]
-    procedure TestSweepZUGFeRD25FacturX1009;
+    procedure TestSweepZUGFeRD252FacturX1092;
   end;
 
 implementation
@@ -212,9 +212,9 @@ begin
   SweepDocumentationVersion('zugferd24-facturx1008');
 end;
 
-procedure TZUGFeRDDocumentationSweepTests.TestSweepZUGFeRD25FacturX1009;
+procedure TZUGFeRDDocumentationSweepTests.TestSweepZUGFeRD252FacturX1092;
 begin
-  SweepDocumentationVersion('zugferd25-facturx1009');
+  SweepDocumentationVersion('zugferd25-facturx1009-02\zugferd252de');
 end;
 
 end.
