@@ -18,15 +18,15 @@
 unit intf.ZUGFeRDDocumentationSweep.UnitTests;
 
 /// <summary>
-/// Laedt saemtliche Beispielrechnungen aus documentation\ und prueft, dass die
+/// Lädt sämtliche Beispielrechnungen aus documentation\ und prüft, dass die
 /// Bibliothek sie einlesen, das Profil erkennen und wieder herausschreiben kann.
 ///
-/// Das ist ein Regressionsnetz, kein fachlicher Test: geprueft wird nur, dass
-/// nichts umfaellt - konkrete Feldwerte pruefen die uebrigen Testunits.
+/// Das ist ein Regressionsnetz, kein fachlicher Test: Geprüft wird nur, dass
+/// nichts ausfällt. Konkrete Feldwerte prüfen die übrigen Testunits.
 ///
-/// Die Beispieldateien sind nicht vollstaendig eingecheckt (die ZIPs der
-/// Dokumentationspakete werden lokal ausgepackt). Fehlt ein Verzeichnis, wird
-/// der jeweilige Test uebersprungen statt fehlzuschlagen.
+/// Jeder registrierte Dokumentationsstand benötigt eingecheckte Beispieldateien.
+/// Fehlende Verzeichnisse oder XML-Beispiele lassen den Test fehlschlagen, damit
+/// ein wirkungsloser Sweep nicht als erfolgreich ausgewiesen wird.
 /// </summary>
 
 interface
@@ -41,12 +41,12 @@ type
   private
     /// <summary>
     /// Sammelt alle Rechnungs-XML unterhalb von documentation\aDocSubDir.
-    /// Ergebnis ist leer, wenn das Verzeichnis fehlt.
+    /// Das aufrufende Sweep-Verfahren prüft Verzeichnis und Ergebnismenge.
     /// </summary>
     function CollectInvoiceFiles(const aDocSubDir: string): TArray<string>;
     /// <summary>
-    /// Laedt jede gefundene Datei und sammelt alle Beanstandungen ein, damit ein
-    /// Lauf saemtliche Probleme meldet und nicht nur das erste.
+    /// Lädt jede gefundene Datei und sammelt alle Beanstandungen ein, damit ein
+    /// Lauf sämtliche Probleme meldet und nicht nur das erste.
     /// </summary>
     procedure SweepDocumentationVersion(const aDocSubDir: string);
   public
@@ -101,7 +101,7 @@ begin
       // Validierungsberichte der Beispiele sind keine Rechnungen
       if ContainsText(fn, '_fx_validation_report') then
         Continue;
-      // Schematron-Testfaelle sind bewusst unvollstaendige Fragmente
+      // Schematron-Testfälle sind bewusst unvollständige Fragmente
       if ContainsText(fn, PathDelim + 'Schematron' + PathDelim) then
         Continue;
       list.Add(fn);
@@ -117,18 +117,19 @@ procedure TZUGFeRDDocumentationSweepTests.SweepDocumentationVersion(
   const aDocSubDir: string);
 var
   files: TArray<string>;
-  fn, rel: string;
+  root, fn, rel: string;
   desc: TZUGFeRDInvoiceDescriptor;
   ms: TMemoryStream;
   errors: TStringList;
   checked: Integer;
 begin
+  root := DocumentationPath(aDocSubDir);
+  Assert.IsTrue(TDirectory.Exists(root),
+    Format('Dokumentationsverzeichnis fehlt: documentation\%s', [aDocSubDir]));
+
   files := CollectInvoiceFiles(aDocSubDir);
-  if Length(files) = 0 then
-  begin
-    Log(Format('Uebersprungen: keine Beispieldateien unter documentation\%s', [aDocSubDir]));
-    Exit;
-  end;
+  Assert.IsTrue(Length(files) > 0,
+    Format('Keine Beispieldateien unter documentation\%s gefunden', [aDocSubDir]));
 
   checked := 0;
   errors := TStringList.Create;
@@ -156,7 +157,7 @@ begin
           Continue;
         end;
 
-        // Zurueckschreiben im erkannten Profil muss ohne Fehler durchlaufen
+        // Zurückschreiben im erkannten Profil muss ohne Fehler durchlaufen
         ms := TMemoryStream.Create;
         try
           try
