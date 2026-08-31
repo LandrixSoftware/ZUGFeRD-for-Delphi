@@ -274,6 +274,19 @@ type
 
     [Test]
     procedure TestTaxTotalAmountBT110OnlyWhenTaxCurrencyEqualsCurrencyUBL;
+
+    [Test]
+    [TestCase('V1-CII-Ext',  '100,0,4')]
+    [TestCase('V20-CII-Ext', '200,0,4')]
+    [TestCase('V23-CII-Ext', '230,0,4')]
+    [TestCase('V23-UBL-XR',  '230,1,32')]
+    procedure TestReaderAcceptsAlternativeNamespacePrefixes(_version: Integer; _format: Integer; _profile: Integer);
+
+    [Test]
+    procedure TestCIIReaderAcceptsLocallyDeclaredRamNamespace;
+
+    [Test]
+    procedure TestCIIReaderDoesNotTreatDifferentNamespaceUriAsRam;
   end;
 
 implementation
@@ -2349,6 +2362,173 @@ begin
     Desc.Free;
   end;
 end; // !TestTaxTotalAmountBT110OnlyWhenTaxCurrencyEqualsCurrencyUBL()
+
+procedure TZUGFeRDCrossVersionTests.TestReaderAcceptsAlternativeNamespacePrefixes(_version: Integer; _format: Integer; _profile: Integer);
+var
+  Version: TZUGFeRDVersion;
+  Format: TZUGFeRDFormats;
+  Profile: TZUGFeRDProfile;
+  Desc, LoadedInvoice: TZUGFeRDInvoiceDescriptor;
+  InvoiceStream: TMemoryStream;
+  ModifiedStream: TStringStream;
+  Bytes: TBytes;
+  XmlContent, ModifiedXml, ExpectedInvoiceNo: string;
+  ExpectedLineItemCount: Integer;
+begin
+  Version := TZUGFeRDVersion(_version);
+  Format := TZUGFeRDFormats(_format);
+  Profile := TZUGFeRDProfile(_profile);
+
+  Desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    ExpectedInvoiceNo := Desc.InvoiceNo;
+    ExpectedLineItemCount := Desc.TradeLineItems.Count;
+
+    InvoiceStream := TMemoryStream.Create;
+    try
+      Desc.Save(InvoiceStream, Version, Profile, Format);
+      SetLength(Bytes, InvoiceStream.Size);
+      InvoiceStream.Position := 0;
+      InvoiceStream.ReadBuffer(Bytes[0], InvoiceStream.Size);
+      XmlContent := TEncoding.UTF8.GetString(Bytes);
+    finally
+      FreeAndNil(InvoiceStream);
+    end;
+
+    ModifiedXml := StringReplace(XmlContent, 'xmlns:rsm=', 'xmlns:document=', [rfReplaceAll]);
+    ModifiedXml := StringReplace(ModifiedXml, 'xmlns:ram=', 'xmlns:aggregate=', [rfReplaceAll]);
+    ModifiedXml := StringReplace(ModifiedXml, 'xmlns:udt=', 'xmlns:unqualified=', [rfReplaceAll]);
+    ModifiedXml := StringReplace(ModifiedXml, 'xmlns:qdt=', 'xmlns:qualified=', [rfReplaceAll]);
+    ModifiedXml := StringReplace(ModifiedXml, 'xmlns:cac=', 'xmlns:commonAggregate=', [rfReplaceAll]);
+    ModifiedXml := StringReplace(ModifiedXml, 'xmlns:cbc=', 'xmlns:commonBasic=', [rfReplaceAll]);
+    ModifiedXml := StringReplace(ModifiedXml, 'xmlns:ubl=', 'xmlns:invoiceDocument=', [rfReplaceAll]);
+    ModifiedXml := StringReplace(ModifiedXml, 'rsm:', 'document:', [rfReplaceAll]);
+    ModifiedXml := StringReplace(ModifiedXml, 'ram:', 'aggregate:', [rfReplaceAll]);
+    ModifiedXml := StringReplace(ModifiedXml, 'udt:', 'unqualified:', [rfReplaceAll]);
+    ModifiedXml := StringReplace(ModifiedXml, 'qdt:', 'qualified:', [rfReplaceAll]);
+    ModifiedXml := StringReplace(ModifiedXml, 'cac:', 'commonAggregate:', [rfReplaceAll]);
+    ModifiedXml := StringReplace(ModifiedXml, 'cbc:', 'commonBasic:', [rfReplaceAll]);
+    ModifiedXml := StringReplace(ModifiedXml, '<ubl:', '<invoiceDocument:', [rfReplaceAll]);
+    ModifiedXml := StringReplace(ModifiedXml, '</ubl:', '</invoiceDocument:', [rfReplaceAll]);
+    Assert.AreNotEqual(XmlContent, ModifiedXml, 'The test invoice must contain namespace prefixes to replace');
+
+    ModifiedStream := TStringStream.Create(ModifiedXml, TEncoding.UTF8);
+    try
+      LoadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ModifiedStream);
+      try
+        Assert.AreEqual(ExpectedInvoiceNo, LoadedInvoice.InvoiceNo, 'Invoice number must be read independently of document prefixes');
+        Assert.AreEqual(ExpectedLineItemCount, LoadedInvoice.TradeLineItems.Count, 'Line items must be read independently of document prefixes');
+        Assert.AreEqual<Currency>(Desc.TaxTotalAmount.Value, LoadedInvoice.TaxTotalAmount.Value,
+          'Tax total must be read independently of document prefixes');
+      finally
+        FreeAndNil(LoadedInvoice);
+      end;
+    finally
+      FreeAndNil(ModifiedStream);
+    end;
+  finally
+    FreeAndNil(Desc);
+  end;
+end; // !TestReaderAcceptsAlternativeNamespacePrefixes()
+
+procedure TZUGFeRDCrossVersionTests.TestCIIReaderAcceptsLocallyDeclaredRamNamespace;
+const
+  RamNamespaceUri = 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100';
+  RamNamespaceDeclaration = 'xmlns:ram="' + RamNamespaceUri + '"';
+var
+  Desc, LoadedInvoice: TZUGFeRDInvoiceDescriptor;
+  InvoiceStream: TMemoryStream;
+  ModifiedStream: TStringStream;
+  Bytes: TBytes;
+  XmlContent, ModifiedXml: string;
+begin
+  Desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    InvoiceStream := TMemoryStream.Create;
+    try
+      Desc.Save(InvoiceStream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended, TZUGFeRDFormats.CII);
+      SetLength(Bytes, InvoiceStream.Size);
+      InvoiceStream.Position := 0;
+      InvoiceStream.ReadBuffer(Bytes[0], InvoiceStream.Size);
+      XmlContent := TEncoding.UTF8.GetString(Bytes);
+    finally
+      FreeAndNil(InvoiceStream);
+    end;
+
+    Assert.IsTrue(Pos(RamNamespaceDeclaration, XmlContent) > 0, 'The generated CII invoice must declare the ram namespace');
+    ModifiedXml := StringReplace(XmlContent, RamNamespaceDeclaration, '', []);
+    ModifiedXml := StringReplace(ModifiedXml, '<rsm:ExchangedDocumentContext>',
+      '<rsm:ExchangedDocumentContext ' + RamNamespaceDeclaration + '>', []);
+    ModifiedXml := StringReplace(ModifiedXml, '<rsm:ExchangedDocument>',
+      '<rsm:ExchangedDocument ' + RamNamespaceDeclaration + '>', []);
+    ModifiedXml := StringReplace(ModifiedXml, '<rsm:SupplyChainTradeTransaction>',
+      '<rsm:SupplyChainTradeTransaction ' + RamNamespaceDeclaration + '>', []);
+
+    ModifiedStream := TStringStream.Create(ModifiedXml, TEncoding.UTF8);
+    try
+      LoadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ModifiedStream);
+      try
+        Assert.AreEqual(Desc.InvoiceNo, LoadedInvoice.InvoiceNo, 'Invoice number must be read with locally declared namespaces');
+        Assert.AreEqual(Desc.TradeLineItems.Count, LoadedInvoice.TradeLineItems.Count,
+          'Line items must be read with locally declared namespaces');
+        Assert.AreEqual<Currency>(Desc.TaxTotalAmount.Value, LoadedInvoice.TaxTotalAmount.Value,
+          'Tax total must be read with locally declared namespaces');
+      finally
+        FreeAndNil(LoadedInvoice);
+      end;
+    finally
+      FreeAndNil(ModifiedStream);
+    end;
+  finally
+    FreeAndNil(Desc);
+  end;
+end; // !TestCIIReaderAcceptsLocallyDeclaredRamNamespace()
+
+procedure TZUGFeRDCrossVersionTests.TestCIIReaderDoesNotTreatDifferentNamespaceUriAsRam;
+const
+  RamNamespaceUri = 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100';
+  DifferentNamespaceUri = 'urn:example:invalid:ReusableAggregateBusinessInformationEntity';
+var
+  Desc, LoadedInvoice: TZUGFeRDInvoiceDescriptor;
+  InvoiceStream: TMemoryStream;
+  ModifiedStream: TStringStream;
+  Bytes: TBytes;
+  XmlContent, ModifiedXml: string;
+begin
+  Desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    InvoiceStream := TMemoryStream.Create;
+    try
+      Desc.Save(InvoiceStream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended, TZUGFeRDFormats.CII);
+      SetLength(Bytes, InvoiceStream.Size);
+      InvoiceStream.Position := 0;
+      InvoiceStream.ReadBuffer(Bytes[0], InvoiceStream.Size);
+      XmlContent := TEncoding.UTF8.GetString(Bytes);
+    finally
+      FreeAndNil(InvoiceStream);
+    end;
+
+    ModifiedXml := StringReplace(XmlContent, RamNamespaceUri, DifferentNamespaceUri, [rfReplaceAll]);
+    Assert.AreNotEqual(XmlContent, ModifiedXml, 'The test invoice must contain the standard ram namespace URI');
+
+    ModifiedStream := TStringStream.Create(ModifiedXml, TEncoding.UTF8);
+    try
+      LoadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ModifiedStream);
+      try
+        Assert.AreEqual(0, LoadedInvoice.TradeLineItems.Count,
+          'Elements from a different namespace URI must not be treated as ram elements');
+        Assert.IsFalse(LoadedInvoice.TaxTotalAmount.HasValue,
+          'Amounts from a different namespace URI must not be treated as ram amounts');
+      finally
+        FreeAndNil(LoadedInvoice);
+      end;
+    finally
+      FreeAndNil(ModifiedStream);
+    end;
+  finally
+    FreeAndNil(Desc);
+  end;
+end; // !TestCIIReaderDoesNotTreatDifferentNamespaceUriAsRam()
 
 procedure TZUGFeRDCrossVersionTests.TestSellerOrderReferencedDocumentOnItemLevel(_version: Integer);
 var

@@ -98,39 +98,38 @@ end;
 
 class function TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(_Xml: IXMLDocument; IsZUGFeRD1: boolean = false): IXMLDOMDocument2;
 var
-  sNsLine: string;
-  ram, rsm, udt, qdt, cac, cbc: string;
-
-  function ReturnNS (Value: string; Default: String; Default1: string = ''): string;
-  begin
-    Result:= Trim(Value);
-    if Result='' then
-      if IsZUGFeRD1 and (Default1<>'') then
-        Result:= Default1
-      else
-        Result:= Default
-  end;
-
+  LNamespaceDeclarations: string;
+  LRamNamespace, LRsmNamespace, LUdtNamespace: string;
 begin
   Result := nil;
   if not _Xml.Active then
     exit;
-  ram:= ReturnNS(_XML.DocumentElement.FindNamespaceURI('ram'), 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100',
-                                                               'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:12');
-  rsm:= ReturnNS(_XML.DocumentElement.FindNamespaceURI('rsm'), 'urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100',
-                                                               'urn:ferd:CrossIndustryDocument:invoice:1p0');
-  udt:= ReturnNS(_XML.DocumentElement.FindNamespaceURI('udt'), 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100',
-                                                               'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:15');
-  qdt:= ReturnNS(_XML.DocumentElement.FindNamespaceURI('qdt'), 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
-  cac:= ReturnNS(_XML.DocumentElement.FindNamespaceURI('cac'), 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
-  cbc:= ReturnNS(_XML.DocumentElement.FindNamespaceURI('cbc'), 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
 
-  sNsLine := Format('xmlns:qdt="%s" xmlns:ram="%s" xmlns:rsm="%s" xmlns:udt="%s" xmlns:cac="%s" xmlns:cbc="%s"', [qdt, ram, rsm, udt, cac, cbc]);
+  // XPath-Präfixe sind interne Bezeichner. Die Namespace-URI bestimmt die fachliche Identität eines XML-Elements.
+  if IsZUGFeRD1 then
+  begin
+    LRamNamespace := 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:12';
+    LRsmNamespace := 'urn:ferd:CrossIndustryDocument:invoice:1p0';
+    LUdtNamespace := 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:15';
+  end
+  else
+  begin
+    LRamNamespace := 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100';
+    LRsmNamespace := 'urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100';
+    LUdtNamespace := 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100';
+  end;
+
+  LNamespaceDeclarations := Format(
+    'xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100" ' +
+    'xmlns:ram="%s" xmlns:rsm="%s" xmlns:udt="%s" ' +
+    'xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" ' +
+    'xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"',
+    [LRamNamespace, LRsmNamespace, LUdtNamespace]);
   Result := CoDOMDocument60.Create;
   Result.preserveWhiteSpace := True; // preserve CRLF on multiline strings also
   Result.loadXML(_Xml.XML.Text);
   Result.setProperty('SelectionLanguage', 'XPath');  // ab 4.0 ist SelectionLanguage eh immer XPath
-  Result.setProperty('SelectionNamespaces', sNsLine);
+  Result.setProperty('SelectionNamespaces', LNamespaceDeclarations);
 end;
 
 
