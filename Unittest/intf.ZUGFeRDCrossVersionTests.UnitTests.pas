@@ -268,6 +268,12 @@ type
     [Test]
     [TestCase('V23', '230')]
     procedure TestSellerOrderReferencedDocumentOnItemLevel(_version: Integer);
+
+    [Test]
+    procedure TestTaxTotalAmountBT110AndBT111DualCurrencyUBL;
+
+    [Test]
+    procedure TestTaxTotalAmountBT110OnlyWhenTaxCurrencyEqualsCurrencyUBL;
   end;
 
 implementation
@@ -275,6 +281,7 @@ implementation
 uses
   System.SysUtils, System.StrUtils, System.Classes, System.Generics.Collections,
   Xml.XMLDoc, Xml.XMLIntf,
+  Winapi.MSXMLIntf, Winapi.msxml,
   intf.ZUGFeRDInvoiceDescriptor,
   intf.ZUGFeRDInvoiceProvider,
   intf.ZUGFeRDProfile,
@@ -2235,6 +2242,113 @@ begin
     desc.Free;
   end;
 end; // !TestTaxTotalAmountBT110OnlyWhenTaxCurrencyEqualsCurrency()
+
+procedure TZUGFeRDCrossVersionTests.TestTaxTotalAmountBT110AndBT111DualCurrencyUBL;
+var
+  Desc, LoadedInvoice: TZUGFeRDInvoiceDescriptor;
+  InvoiceStream, ReorderedStream: TMemoryStream;
+  Bytes: TBytes;
+  XmlContent, ReorderedXml, FirstTaxTotal, SecondTaxTotal, BetweenTaxTotals: string;
+  FirstStart, FirstEnd, SecondStart, SecondEnd: Integer;
+  XmlDoc: IXMLDOMDocument2;
+  TaxTotalNodes: IXMLDOMNodeList;
+  Bt110Node, Bt111Node: IXMLDOMNode;
+begin
+  Desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    Desc.SetTaxTotalInAccountingCurrency(62.50, TZUGFeRDCurrencyCodes.CHF);
+
+    InvoiceStream := TMemoryStream.Create;
+    ReorderedStream := TMemoryStream.Create;
+    try
+      Desc.Save(InvoiceStream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+      SetLength(Bytes, InvoiceStream.Size);
+      InvoiceStream.Position := 0;
+      InvoiceStream.ReadBuffer(Bytes[0], InvoiceStream.Size);
+      XmlContent := TEncoding.UTF8.GetString(Bytes);
+
+      XmlDoc := CoDOMDocument60.Create;
+      Assert.IsTrue(XmlDoc.loadXML(XmlContent), 'The generated UBL invoice must be valid XML');
+      XmlDoc.setProperty('SelectionLanguage', 'XPath');
+      XmlDoc.setProperty('SelectionNamespaces',
+        'xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" ' +
+        'xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"');
+
+      TaxTotalNodes := XmlDoc.selectNodes('/*/cac:TaxTotal');
+      Assert.AreEqual(2, TaxTotalNodes.length, 'Two TaxTotal groups expected for BT-110 and BT-111');
+
+      Bt110Node := XmlDoc.selectSingleNode('/*/cac:TaxTotal[cbc:TaxAmount/@currencyID="EUR"]');
+      Assert.IsNotNull(Bt110Node, 'BT-110 TaxTotal in invoice currency must be present');
+      Assert.IsTrue(Bt110Node.selectNodes('cac:TaxSubtotal').length > 0, 'BT-110 TaxTotal must contain the VAT breakdown');
+
+      Bt111Node := XmlDoc.selectSingleNode('/*/cac:TaxTotal[cbc:TaxAmount/@currencyID="CHF"]');
+      Assert.IsNotNull(Bt111Node, 'BT-111 TaxTotal in accounting currency must be present');
+      Assert.AreEqual(0, Bt111Node.selectNodes('cac:TaxSubtotal').length, 'BT-111 TaxTotal must not contain a VAT breakdown');
+
+      // Die Reihenfolge der beiden TaxTotal-Gruppen ist laut UBL nicht für die fachliche Zuordnung maßgeblich.
+      FirstStart := Pos('<cac:TaxTotal>', XmlContent);
+      FirstEnd := PosEx('</cac:TaxTotal>', XmlContent, FirstStart) + Length('</cac:TaxTotal>');
+      SecondStart := PosEx('<cac:TaxTotal>', XmlContent, FirstEnd);
+      SecondEnd := PosEx('</cac:TaxTotal>', XmlContent, SecondStart) + Length('</cac:TaxTotal>');
+      FirstTaxTotal := Copy(XmlContent, FirstStart, FirstEnd - FirstStart);
+      BetweenTaxTotals := Copy(XmlContent, FirstEnd, SecondStart - FirstEnd);
+      SecondTaxTotal := Copy(XmlContent, SecondStart, SecondEnd - SecondStart);
+      ReorderedXml := Copy(XmlContent, 1, FirstStart - 1) + SecondTaxTotal + BetweenTaxTotals +
+        FirstTaxTotal + Copy(XmlContent, SecondEnd, MaxInt);
+
+      Bytes := TEncoding.UTF8.GetBytes(ReorderedXml);
+      ReorderedStream.WriteBuffer(Bytes[0], Length(Bytes));
+      ReorderedStream.Position := 0;
+      LoadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ReorderedStream);
+      try
+        Assert.AreEqual<Currency>(56.87, LoadedInvoice.TaxTotalAmount.Value, 'BT-110 must be selected by invoice currency');
+        Assert.AreEqual<Currency>(62.50, LoadedInvoice.TaxTotalAmountInAccountingCurrency.Value, 'BT-111 must be selected by accounting currency');
+      finally
+        LoadedInvoice.Free;
+      end;
+    finally
+      ReorderedStream.Free;
+      InvoiceStream.Free;
+    end;
+  finally
+    Desc.Free;
+  end;
+end; // !TestTaxTotalAmountBT110AndBT111DualCurrencyUBL()
+
+procedure TZUGFeRDCrossVersionTests.TestTaxTotalAmountBT110OnlyWhenTaxCurrencyEqualsCurrencyUBL;
+var
+  Desc: TZUGFeRDInvoiceDescriptor;
+  InvoiceStream: TMemoryStream;
+  Bytes: TBytes;
+  XmlContent: string;
+  XmlDoc: IXMLDOMDocument2;
+begin
+  Desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    Desc.SetTaxTotalInAccountingCurrency(56.87, TZUGFeRDCurrencyCodes.EUR);
+
+    InvoiceStream := TMemoryStream.Create;
+    try
+      Desc.Save(InvoiceStream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+      SetLength(Bytes, InvoiceStream.Size);
+      InvoiceStream.Position := 0;
+      InvoiceStream.ReadBuffer(Bytes[0], InvoiceStream.Size);
+      XmlContent := TEncoding.UTF8.GetString(Bytes);
+      XmlDoc := CoDOMDocument60.Create;
+      Assert.IsTrue(XmlDoc.loadXML(XmlContent), 'The generated UBL invoice must be valid XML');
+      XmlDoc.setProperty('SelectionLanguage', 'XPath');
+      XmlDoc.setProperty('SelectionNamespaces',
+        'xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"');
+
+      Assert.AreEqual(1, XmlDoc.selectNodes('/*/cac:TaxTotal').length,
+        'Only BT-110 expected when accounting currency equals invoice currency');
+    finally
+      InvoiceStream.Free;
+    end;
+  finally
+    Desc.Free;
+  end;
+end; // !TestTaxTotalAmountBT110OnlyWhenTaxCurrencyEqualsCurrencyUBL()
 
 procedure TZUGFeRDCrossVersionTests.TestSellerOrderReferencedDocumentOnItemLevel(_version: Integer);
 var

@@ -566,6 +566,20 @@ begin
     Writer.WriteEndElement; // !TaxTotal
   end;
 
+  if (Descriptor.Taxes.Count > 0) and Descriptor.TaxTotalAmount.HasValue and
+     Descriptor.TaxCurrency.HasValue and
+     (Descriptor.TaxCurrency.Value <> Descriptor.Currency) and
+     Descriptor.TaxTotalAmountInAccountingCurrency.HasValue then
+  begin
+    // BT-111 wird als eigene TaxTotal-Gruppe ohne TaxSubtotal geschrieben.
+    Writer.WriteStartElement('cac:TaxTotal');
+    Writer.WriteStartElement('cbc:TaxAmount');
+    Writer.WriteAttributeString('currencyID', TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Descriptor.TaxCurrency.Value));
+    Writer.WriteValue(_formatDecimal(Descriptor.TaxTotalAmountInAccountingCurrency.Value, 2));
+    Writer.WriteEndElement; // !TaxAmount
+    Writer.WriteEndElement; // !TaxTotal
+  end;
+
   WriteComment(Writer, options, TZUGFeRDInvoiceCommentConstants.SpecifiedTradeSettlementHeaderMonetarySummationComment);
   Writer.WriteStartElement('cac:LegalMonetaryTotal');
   _writeOptionalAmount(Writer, 'cbc:LineExtensionAmount', Descriptor.LineTotalAmount, 2, true);

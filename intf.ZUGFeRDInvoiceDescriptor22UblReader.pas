@@ -487,7 +487,13 @@ begin
   Result.ChargeTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:ChargeTotalAmount');
   Result.AllowanceTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:AllowanceTotalAmount');
   Result.TaxBasisAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:TaxExclusiveAmount');
-  Result.TaxTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:TaxTotal/cbc:TaxAmount');
+  Result.TaxTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement,
+    Format('/*/cac:TaxTotal/cbc:TaxAmount[@currencyID=''%s'']',
+      [TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Result.Currency)]));
+  if Result.TaxCurrency.HasValue and (Result.TaxCurrency.Value <> Result.Currency) then
+    Result.TaxTotalAmountInAccountingCurrency := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement,
+      Format('/*/cac:TaxTotal/cbc:TaxAmount[@currencyID=''%s'']',
+        [TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Result.TaxCurrency.Value)]));
   Result.GrandTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount');
   Result.RoundingAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:PayableRoundingAmount');
   Result.TotalPrepaidAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:PrepaidAmount');
