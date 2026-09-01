@@ -124,6 +124,19 @@ begin
       begin
         _total := (item.NetUnitPrice.Value * item.BilledQuantity);
 
+        // BT-146 gilt je Preisbasismenge BT-149, nicht je Einheit. Fehlt BT-149,
+        // ist die Basismenge 1. Der CII-Writer rechnet bei fehlendem BT-131 genauso.
+        if item.NetQuantity.HasValue then
+        begin
+          if item.NetQuantity.Value > 0 then
+            _total := _total / item.NetQuantity.Value
+          else
+          begin
+            Result.Messages.Add(Format('BT-149: Die Preisbasismenge der Position [%s] muss groesser als 0 sein', [item.Name]));
+            Result.IsValid := false;
+          end;
+        end;
+
         // BT-131 enthält BG-28-Positionszuschläge und vermindert sich um BG-27-Positionsabschläge.
         for var lineAllowance in item.GetSpecifiedTradeAllowances do
           _total := _total - lineAllowance.ActualAmount;

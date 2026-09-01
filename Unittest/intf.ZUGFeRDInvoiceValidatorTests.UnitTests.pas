@@ -42,6 +42,11 @@ type
     /// Zu- und Abschlägen, Vorauszahlung und Rundung. Die Summen im Descriptor
     /// sind passend gesetzt, der Validator muss die Rechnung also als gueltig ansehen.
     /// </summary>
+    /// <summary>
+    /// Baut eine Rechnung, deren Nettoeinzelpreis sich auf eine Preisbasismenge
+    /// bezieht (BT-149).
+    /// </summary>
+    function CreateInvoiceWithPriceBaseQuantity(const unitQuantity: Currency): TZUGFeRDInvoiceDescriptor;
     function CreateBalancedInvoice(const withCharge: Boolean;
       const lineAllowance: Currency = 0; const lineCharge: Currency = 0;
       const prepaidAmount: Currency = 0; const roundingAmount: Currency = 0): TZUGFeRDInvoiceDescriptor;
@@ -91,6 +96,10 @@ type
     procedure TestMissingTaxBasisAmountIsReported;
     [Test]
     procedure TestInvalidTaxBasisAmountIsReported;
+    [Test]
+    procedure TestPriceBaseQuantityIsApplied;
+    [Test]
+    procedure TestZeroPriceBaseQuantityIsReported;
     [Test]
     procedure TestConsistentlyWrongTaxBasisIsReported;
     [Test]
@@ -829,6 +838,94 @@ begin
         validationResult.Messages.Text);
       Assert.IsTrue(Pos('Kein LineTotalAmount vorhanden', validationResult.Messages.Text) > 0,
         'Es fehlt die Meldung zum fehlenden BT-106:'#13#10 + validationResult.Messages.Text);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// Baut eine ausgeglichene Rechnung, deren Nettoeinzelpreis BT-146 sich auf eine
+/// Preisbasismenge BT-149 bezieht: 100,00 je 10 Stueck bei 2 berechneten Stueck
+/// ergibt einen Positionsnettobetrag BT-131 von 20,00.
+/// </summary>
+function TZUGFeRDInvoiceValidatorTests.CreateInvoiceWithPriceBaseQuantity(
+  const unitQuantity: Currency): TZUGFeRDInvoiceDescriptor;
+begin
+  Result := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-4711', EncodeDate(2026, 1, 15),
+    TZUGFeRDCurrencyCodes.EUR);
+
+  Result.AddTradeLineItem(
+    {name=}            'Testartikel',
+    {netUnitPrice=}    TZUGFeRDNullableParam<Currency>.Create(100),
+    {description=}     '',
+    {unitCode=}        TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+    {unitQuantity=}    TZUGFeRDNullableParam<Currency>.Create(unitQuantity),
+    {grossUnitPrice=}  nil,
+    {billedQuantity=}  2,
+    {lineTotalAmount=} 20,
+    {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+    {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+    {taxPercent=}      19.0);
+
+  Result.AddApplicableTradeTax({calculatedAmount=} 3.80, {basisAmount=} 20,
+    {percent=} 19.0, TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S);
+
+  Result.SetTotals(
+    {aLineTotalAmount=}      20,
+    {aChargeTotalAmount=}    0,
+    {aAllowanceTotalAmount=} 0,
+    {aTaxBasisAmount=}       20,
+    {aTaxTotalAmount=}       3.80,
+    {aGrandTotalAmount=}     23.80,
+    {aTotalPrepaidAmount=}   0,
+    {aDuePayableAmount=}     23.80);
+end;
+
+/// <summary>
+/// BT-146 gilt je Preisbasismenge BT-149. Wird BT-149 ignoriert, rechnet der
+/// Validator das Zehnfache und verwirft eine gueltige Rechnung.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestPriceBaseQuantityIsApplied;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateInvoiceWithPriceBaseQuantity(10);
+  try
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsTrue(validationResult.IsValid,
+        'Rechnung mit Preisbasismenge wurde als ungueltig gemeldet:'#13#10 +
+        validationResult.Messages.Text);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// Eine Preisbasismenge von 0 ist fachlich unzulaessig und darf nicht still
+/// uebergangen werden.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestZeroPriceBaseQuantityIsReported;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateInvoiceWithPriceBaseQuantity(0);
+  try
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(validationResult.IsValid,
+        'Eine Preisbasismenge von 0 wurde nicht beanstandet:'#13#10 +
+        validationResult.Messages.Text);
+      Assert.IsTrue(Pos('BT-149', validationResult.Messages.Text) > 0,
+        'Es fehlt die Meldung zu BT-149:'#13#10 + validationResult.Messages.Text);
     finally
       validationResult.Free;
     end;
