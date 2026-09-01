@@ -95,6 +95,29 @@ type
     procedure TestDeliveryNoteReferencedDocumentLineIdInExtended(_version: Integer);
 
     [Test]
+    [TestCase('V20-Comfort',     '200,2')]
+    [TestCase('V20-Extended',    '200,4')]
+    [TestCase('V23-Comfort',     '230,2')]
+    [TestCase('V23-Extended',    '230,4')]
+    [TestCase('V23-XRechnung',   '230,32')]
+    [TestCase('V23-XRechnung1',  '230,64')]
+    procedure TestReceivingAdviceReferencedDocumentRoundtrip(_version: Integer; _profile: Integer);
+
+    [Test]
+    [TestCase('V20-Minimum', '200,8')]
+    [TestCase('V20-BasicWL', '200,16')]
+    [TestCase('V20-Basic',   '200,1')]
+    [TestCase('V23-Minimum', '230,8')]
+    [TestCase('V23-BasicWL', '230,16')]
+    [TestCase('V23-Basic',   '230,1')]
+    procedure TestReceivingAdviceReferencedDocumentUnsupportedProfiles(_version: Integer; _profile: Integer);
+
+    [Test]
+    [TestCase('V20', '200')]
+    [TestCase('V23', '230')]
+    procedure TestReceivingAdviceReferencedDocumentOrder(_version: Integer);
+
+    [Test]
     [TestCase('V1',  '100')]
     [TestCase('V20', '200')]
     [TestCase('V23', '230')]
@@ -803,6 +826,136 @@ begin
       finally
         loadedInvoice.Free;
       end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TZUGFeRDCrossVersionTests.TestReceivingAdviceReferencedDocumentRoundtrip(
+  _version: Integer; _profile: Integer);
+const
+  ReceivingAdviceNumber = 'RAR123456789';
+var
+  version: TZUGFeRDVersion;
+  profile: TZUGFeRDProfile;
+  receivingAdviceDate: TDateTime;
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+begin
+  version := TZUGFeRDVersion(_version);
+  profile := TZUGFeRDProfile(_profile);
+  receivingAdviceDate := EncodeDate(2024, 5, 14);
+
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.SetReceivingAdviceReferencedDocument(ReceivingAdviceNumber,
+      TZUGFeRDNullableParam<TDateTime>.Create(receivingAdviceDate));
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, version, profile);
+      ms.Position := 0;
+
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        Assert.IsNotNull(loadedInvoice.ReceivingAdviceReferencedDocument);
+        Assert.AreEqual(ReceivingAdviceNumber, loadedInvoice.ReceivingAdviceReferencedDocument.ID);
+
+        if profile = TZUGFeRDProfile.Extended then
+        begin
+          Assert.IsTrue(loadedInvoice.ReceivingAdviceReferencedDocument.IssueDateTime.HasValue);
+          Assert.AreEqual<TDateTime>(receivingAdviceDate,
+            loadedInvoice.ReceivingAdviceReferencedDocument.IssueDateTime.Value);
+        end
+        else
+          Assert.IsFalse(loadedInvoice.ReceivingAdviceReferencedDocument.IssueDateTime.HasValue);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TZUGFeRDCrossVersionTests.TestReceivingAdviceReferencedDocumentUnsupportedProfiles(
+  _version: Integer; _profile: Integer);
+var
+  version: TZUGFeRDVersion;
+  profile: TZUGFeRDProfile;
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+begin
+  version := TZUGFeRDVersion(_version);
+  profile := TZUGFeRDProfile(_profile);
+
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.SetReceivingAdviceReferencedDocument('RAR123456789');
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, version, profile);
+      ms.Position := 0;
+
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        Assert.IsNull(loadedInvoice.ReceivingAdviceReferencedDocument);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TZUGFeRDCrossVersionTests.TestReceivingAdviceReferencedDocumentOrder(_version: Integer);
+var
+  version: TZUGFeRDVersion;
+  desc: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+  bytes: TBytes;
+  xmlContent: string;
+  despatchPosition: Integer;
+  receivingPosition: Integer;
+  deliveryNotePosition: Integer;
+begin
+  version := TZUGFeRDVersion(_version);
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    if version = TZUGFeRDVersion.Version23 then
+      desc.SetDespatchAdviceReferencedDocument('DESPATCH-1');
+    desc.SetReceivingAdviceReferencedDocument('RECEIVING-1');
+    desc.SetDeliveryNoteReferenceDocument('DELIVERY-1');
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, version, TZUGFeRDProfile.Extended);
+      ms.Position := 0;
+      SetLength(bytes, ms.Size);
+      ms.ReadBuffer(bytes[0], ms.Size);
+      xmlContent := TEncoding.UTF8.GetString(bytes);
+
+      despatchPosition := Pos('<ram:DespatchAdviceReferencedDocument>', xmlContent);
+      receivingPosition := Pos('<ram:ReceivingAdviceReferencedDocument>', xmlContent);
+      deliveryNotePosition := Pos('<ram:DeliveryNoteReferencedDocument>', xmlContent);
+
+      if version = TZUGFeRDVersion.Version23 then
+      begin
+        Assert.IsTrue(despatchPosition > 0);
+        Assert.IsTrue(receivingPosition > despatchPosition);
+      end
+      else
+        Assert.IsTrue(receivingPosition > 0);
+      Assert.IsTrue(deliveryNotePosition > receivingPosition);
     finally
       ms.Free;
     end;

@@ -67,6 +67,7 @@ uses
   intf.ZUGFeRDElectronicAddress,
   intf.ZUGFeRDElectronicAddressSchemeIdentifiers,
   intf.ZUGFeRDDespatchAdviceReferencedDocument,
+  intf.ZUGFeRDReceivingAdviceReferencedDocument,
   intf.ZUGFeRDFormats,
   intf.ZUGFeRDTransportmodeCodes,
   intf.ZUGFeRDAllowanceReasonCodes,
@@ -146,9 +147,11 @@ type
     FSellerOrderReferencedDocument: TZUGFeRDSellerOrderReferencedDocument;
     FTransportMode: ZUGFeRDNullable<TZUGFeRDTransportModeCodes>;
     FDespatchAdviceReferencedDocument: TZUGFeRDDespatchAdviceReferencedDocument;
+    FReceivingAdviceReferencedDocument: TZUGFeRDReceivingAdviceReferencedDocument;
     FInvoicer: TZUGFeRDParty;
     FInvoicerContact: TZUGFeRDContact;
     FSellerReferenceNo: String;
+    procedure SetReceivingAdviceReferencedDocumentValue(const value: TZUGFeRDReceivingAdviceReferencedDocument);
   public
     /// <summary>
     /// Invoice Number
@@ -186,6 +189,11 @@ type
     /// Detailed information about the corresponding despatch advice
     /// </summary>
     property DespatchAdviceReferencedDocument : TZUGFeRDDespatchAdviceReferencedDocument read FDespatchAdviceReferencedDocument write FDespatchAdviceReferencedDocument;
+
+    /// <summary>
+    /// Detailed information about the corresponding receiving advice
+    /// </summary>
+    property ReceivingAdviceReferencedDocument: TZUGFeRDReceivingAdviceReferencedDocument read FReceivingAdviceReferencedDocument write SetReceivingAdviceReferencedDocumentValue;
 
     /// <summary>
     /// Detailed information about the corresponding delivery note
@@ -725,6 +733,13 @@ type
     procedure SetDespatchAdviceReferencedDocument(despatchAdviceNo : String; despatchAdviceDate: IZUGFeRDNullableParam<TDateTime> = Nil);
 
     /// <summary>
+    /// Sets detailed information about the corresponding receiving advice
+    /// </summary>
+    /// <param name="receivingAdviceNo"></param>
+    /// <param name="receivingAdviceDate"></param>
+    procedure SetReceivingAdviceReferencedDocument(const receivingAdviceNo: string; receivingAdviceDate: IZUGFeRDNullableParam<TDateTime> = Nil);
+
+    /// <summary>
     /// Sets detailed information about the corresponding delivery note
     /// </summary>
     /// <param name="deliveryNoteNo"></param>
@@ -1126,6 +1141,7 @@ constructor TZUGFeRDInvoiceDescriptor.Create;
 begin
   FAdditionalReferencedDocuments := TObjectList<TZUGFeRDAdditionalReferencedDocument>.Create;
   FDespatchAdviceReferencedDocument := nil;
+  FReceivingAdviceReferencedDocument := nil;
   FDeliveryNoteReferencedDocument:= nil;//TZUGFeRDDeliveryNoteReferencedDocument.Create;
   FContractReferencedDocument    := nil;//TZUGFeRDContractReferencedDocument.Create;
   FSpecifiedProcuringProject     := nil;//TZUGFeRDSpecifiedProcuringProject.Create;
@@ -1170,6 +1186,7 @@ destructor TZUGFeRDInvoiceDescriptor.Destroy;
 begin
   if Assigned(FAdditionalReferencedDocuments ) then begin FAdditionalReferencedDocuments.Free; FAdditionalReferencedDocuments  := nil; end;
   if Assigned(FDespatchAdviceReferencedDocument) then begin FDespatchAdviceReferencedDocument.Free; FDespatchAdviceReferencedDocument := nil; end;
+  if Assigned(FReceivingAdviceReferencedDocument) then begin FReceivingAdviceReferencedDocument.Free; FReceivingAdviceReferencedDocument := nil; end;
   if Assigned(FDeliveryNoteReferencedDocument) then begin FDeliveryNoteReferencedDocument.Free; FDeliveryNoteReferencedDocument := nil; end;
   if Assigned(FContractReferencedDocument    ) then begin FContractReferencedDocument.Free; FContractReferencedDocument := nil; end;
   if Assigned(FSpecifiedProcuringProject     ) then begin FSpecifiedProcuringProject.Free; FSpecifiedProcuringProject := nil; end;
@@ -1650,6 +1667,25 @@ begin
     FDespatchAdviceReferencedDocument := TZUGFeRDDespatchAdviceReferencedDocument.Create;
   FDespatchAdviceReferencedDocument.ID := despatchAdviceNo;
   FDespatchAdviceReferencedDocument.IssueDateTime:= despatchAdviceDate;
+end;
+
+procedure TZUGFeRDInvoiceDescriptor.SetReceivingAdviceReferencedDocument(
+  const receivingAdviceNo: string; receivingAdviceDate: IZUGFeRDNullableParam<TDateTime> = Nil);
+begin
+  if FReceivingAdviceReferencedDocument = nil then
+    FReceivingAdviceReferencedDocument := TZUGFeRDReceivingAdviceReferencedDocument.Create;
+  FReceivingAdviceReferencedDocument.ID := receivingAdviceNo;
+  FReceivingAdviceReferencedDocument.IssueDateTime := receivingAdviceDate;
+end;
+
+procedure TZUGFeRDInvoiceDescriptor.SetReceivingAdviceReferencedDocumentValue(
+  const value: TZUGFeRDReceivingAdviceReferencedDocument);
+begin
+  if FReceivingAdviceReferencedDocument = value then
+    Exit;
+
+  FReceivingAdviceReferencedDocument.Free;
+  FReceivingAdviceReferencedDocument := value;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetContractReferencedDocument(const contractNo: string; const contractDate: TDateTime);
