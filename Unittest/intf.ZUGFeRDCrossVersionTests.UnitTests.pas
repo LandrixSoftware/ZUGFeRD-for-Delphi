@@ -2417,7 +2417,7 @@ begin
       LoadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ModifiedStream);
       try
         Assert.AreEqual(ExpectedInvoiceNo, LoadedInvoice.InvoiceNo, 'Invoice number must be read independently of document prefixes');
-        Assert.AreEqual(ExpectedLineItemCount, LoadedInvoice.TradeLineItems.Count, 'Line items must be read independently of document prefixes');
+        Assert.AreEqual(ExpectedLineItemCount, Integer(LoadedInvoice.TradeLineItems.Count), 'Line items must be read independently of document prefixes');
         Assert.AreEqual<Currency>(Desc.TaxTotalAmount.Value, LoadedInvoice.TaxTotalAmount.Value,
           'Tax total must be read independently of document prefixes');
       finally
@@ -2515,7 +2515,7 @@ begin
     try
       LoadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ModifiedStream);
       try
-        Assert.AreEqual(0, LoadedInvoice.TradeLineItems.Count,
+        Assert.AreEqual(0, Integer(LoadedInvoice.TradeLineItems.Count),
           'Elements from a different namespace URI must not be treated as ram elements');
         Assert.IsFalse(LoadedInvoice.TaxTotalAmount.HasValue,
           'Amounts from a different namespace URI must not be treated as ram amounts');
