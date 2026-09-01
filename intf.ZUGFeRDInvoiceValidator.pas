@@ -93,6 +93,7 @@ var
   lineTotal, allowanceTotal, chargeTotal, taxTotal, grandTotal, prepaid,
     rounding, duePayable, expectedDuePayable, expectedTaxAmount: Currency;
   declaredAllowanceTotal, declaredChargeTotal, expectedTaxBasis: Currency;
+  taxDeviation: Currency;
   item: TZUGFeRDTradeLineItem;
   tax: TZUGFeRDTax;
 begin
@@ -197,19 +198,44 @@ begin
       if tax.TypeCode.Value <> TZUGFeRDTaxTypes.VAT then
         Continue;
 
-      // BR-CO-17 verlangt die Rundung jeder Steuergruppe vor der Summierung zu BT-110.
       expectedTaxAmount := SimpleRoundTo(tax.BasisAmount * tax.Percent / 100, -2);
-      taxTotal := taxTotal + expectedTaxAmount;
+
+      // BR-CO-14 bildet BT-110 aus den angegebenen BT-117, nicht aus den
+      // nachgerechneten Sollwerten. Beides faellt nur zusammen, solange BR-CO-17
+      // exakt erzwungen wird - die Regel laesst aber eine Abweichung zu.
+      taxTotal := taxTotal + tax.TaxAmount;
+
       Result.Messages.Add(Format('===> %f x %f%% = %f', [tax.BasisAmount, tax.Percent, expectedTaxAmount]));
 
-      if tax.TaxAmount <> expectedTaxAmount then
+      // BR-DEC-20: BT-117 darf hoechstens zwei Nachkommastellen haben.
+      if tax.TaxAmount <> SimpleRoundTo(tax.TaxAmount, -2) then
+      begin
+        Result.Messages.Add(Format(
+          'BR-DEC-20: Der Steuerbetrag[%4f] hat mehr als zwei Nachkommastellen', [tax.TaxAmount]));
+        Result.IsValid := false;
+      end;
+
+      // BR-CO-17 laesst laut EN-16931-Schematron eine Abweichung von einer
+      // Waehrungseinheit je Steueraufschluesselung zu. Was darueber liegt, ist ein
+      // Verstoss; was darunter liegt, wird protokolliert, damit es nicht untergeht.
+      taxDeviation := tax.TaxAmount - expectedTaxAmount;
+      if Abs(taxDeviation) > 1 then
       begin
         Result.Messages.Add(Format(
           'BR-CO-17: Berechneter Steuerbetrag ist[%4f] aber vorhandener Steuerbetrag ist[%4f] bei Bemessungsgrundlage[%4f] und Steuersatz[%4f]',
           [expectedTaxAmount, tax.TaxAmount, tax.BasisAmount, tax.Percent]));
         Result.IsValid := false;
+      end
+      else if taxDeviation <> 0 then
+      begin
+        Result.Messages.Add(Format(
+          'Hinweis: Der Steuerbetrag[%4f] weicht um [%4f] vom berechneten Wert[%4f] ab, bleibt aber innerhalb der BR-CO-17-Toleranz von einer Waehrungseinheit',
+          [tax.TaxAmount, taxDeviation, expectedTaxAmount]));
       end;
     end;
+
+    // BR-CO-14 rundet die Summe der BT-117 auf zwei Nachkommastellen.
+    taxTotal := SimpleRoundTo(taxTotal, -2);
 
     grandTotal := lineTotal - allowanceTotal + taxTotal + chargeTotal;
     prepaid := descriptor.TotalPrepaidAmount.GetValueOrDefault;

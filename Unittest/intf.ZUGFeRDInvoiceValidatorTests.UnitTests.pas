@@ -85,6 +85,10 @@ type
     [Test]
     procedure TestUnroundedTaxAmountIsReported;
     [Test]
+    procedure TestTaxAmountWithinBRCO17ToleranceIsAccepted;
+    [Test]
+    procedure TestTaxAmountBeyondBRCO17ToleranceIsReported;
+    [Test]
     procedure TestTaxAmountDeviationsWithinSameRateAreReported;
     [Test]
     procedure TestNegativeMidpointTaxAmountIsRoundedAwayFromZero;
@@ -517,8 +521,10 @@ begin
     ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
     try
       Assert.IsFalse(ValidationResult.IsValid, 'Unrounded tax amount was not reported');
-      Assert.IsTrue(ValidationResult.Messages.Text.Contains('BR-CO-17'),
-        'Validation messages do not identify BR-CO-17');
+      // 0,0057 liegt innerhalb der BR-CO-17-Toleranz; beanstandet wird die
+      // unzulaessige Zahl der Nachkommastellen.
+      Assert.IsTrue(ValidationResult.Messages.Text.Contains('BR-DEC-20'),
+        'Validation messages do not identify BR-DEC-20');
     finally
       FreeAndNil(ValidationResult);
     end;
@@ -536,10 +542,12 @@ var
 begin
   Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-ROUND-CATEGORY', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
   try
-    // Gegensätzliche Abweichungen dürfen sich bei gleichem Steuersatz nicht gegenseitig aufheben.
-    AddTaxGroup(Descriptor, 'Standard rate', 1, 7, 0.08, TZUGFeRDTaxCategoryCodes.S);
-    AddTaxGroup(Descriptor, 'Lower rate', 1, 7, 0.06, TZUGFeRDTaxCategoryCodes.AA);
-    Descriptor.SetTotals(2, 0, 0, 2, 0.14, 2.14, 0, 2.14);
+    // Gegensätzliche Abweichungen dürfen sich bei gleichem Steuersatz nicht gegenseitig
+    // aufheben. Beide liegen ausserhalb der BR-CO-17-Toleranz, ihre Summe ergibt aber
+    // exakt den korrekten Gesamtbetrag von 14,00.
+    AddTaxGroup(Descriptor, 'Standard rate', 100, 7, 9.00, TZUGFeRDTaxCategoryCodes.S);
+    AddTaxGroup(Descriptor, 'Lower rate', 100, 7, 5.00, TZUGFeRDTaxCategoryCodes.AA);
+    Descriptor.SetTotals(200, 0, 0, 200, 14, 214, 0, 214);
 
     ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
     try
@@ -931,6 +939,68 @@ begin
     end;
   finally
     desc.Free;
+  end;
+end;
+
+/// <summary>
+/// BR-CO-17 laesst laut EN-16931-Schematron eine Abweichung von einer
+/// Waehrungseinheit je Steueraufschluesselung zu. BT-110 ist dabei nach BR-CO-14
+/// die Summe der angegebenen BT-117, nicht die der nachgerechneten Sollwerte -
+/// sonst waere eine normkonforme Rechnung allein an der Steuersumme ungueltig.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestTaxAmountWithinBRCO17ToleranceIsAccepted;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-TOLERANCE-OK', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
+  try
+    // Sollwert 19,00, angegeben 19,50: Abweichung 0,50 und damit zulaessig.
+    AddTaxGroup(Descriptor, 'Standard rate', 100, 19, 19.50, TZUGFeRDTaxCategoryCodes.S);
+    Descriptor.SetTotals(100, 0, 0, 100, 19.50, 119.50, 0, 119.50);
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsTrue(ValidationResult.IsValid,
+        'Eine Abweichung innerhalb der BR-CO-17-Toleranz wurde als Fehler gemeldet:'#13#10 +
+        ValidationResult.Messages.Text);
+      Assert.IsTrue(ValidationResult.Messages.Text.Contains('BR-CO-17-Toleranz'),
+        'Die zulaessige Abweichung wurde nicht protokolliert:'#13#10 +
+        ValidationResult.Messages.Text);
+    finally
+      FreeAndNil(ValidationResult);
+    end;
+  finally
+    FreeAndNil(Descriptor);
+  end;
+end;
+
+/// <summary>
+/// Jenseits einer Waehrungseinheit ist BR-CO-17 verletzt.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestTaxAmountBeyondBRCO17ToleranceIsReported;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-TOLERANCE-FAIL', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
+  try
+    // Sollwert 19,00, angegeben 20,50: Abweichung 1,50 und damit unzulaessig.
+    AddTaxGroup(Descriptor, 'Standard rate', 100, 19, 20.50, TZUGFeRDTaxCategoryCodes.S);
+    Descriptor.SetTotals(100, 0, 0, 100, 20.50, 120.50, 0, 120.50);
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(ValidationResult.IsValid,
+        'Eine Abweichung jenseits der BR-CO-17-Toleranz wurde nicht beanstandet:'#13#10 +
+        ValidationResult.Messages.Text);
+      Assert.IsTrue(ValidationResult.Messages.Text.Contains('BR-CO-17:'),
+        'Es fehlt die Meldung zu BR-CO-17:'#13#10 + ValidationResult.Messages.Text);
+    finally
+      FreeAndNil(ValidationResult);
+    end;
+  finally
+    FreeAndNil(Descriptor);
   end;
 end;
 
