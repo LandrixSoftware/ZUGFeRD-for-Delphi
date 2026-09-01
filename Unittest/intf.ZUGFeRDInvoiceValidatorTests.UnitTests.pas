@@ -92,6 +92,14 @@ type
     [Test]
     procedure TestInvalidTaxBasisAmountIsReported;
     [Test]
+    procedure TestConsistentlyWrongTaxBasisIsReported;
+    [Test]
+    procedure TestDeclaredAllowanceTotalDeviationIsReported;
+    [Test]
+    procedure TestDeclaredChargeTotalDeviationIsReported;
+    [Test]
+    procedure TestMissingLineTotalAmountIsReported;
+    [Test]
     procedure TestValidationDoesNotRaiseOnDeviation;
   end;
 
@@ -679,6 +687,148 @@ begin
       'Der Validator wirft eine Exception, statt die Abweichung zu melden');
     try
       Assert.IsFalse(validationResult.IsValid);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// BR-CO-13: BT-109 muss sich aus BT-106 - BT-107 + BT-108 ergeben. Stimmen BT-109
+/// und die Steueraufschluesselung (BT-116) untereinander ueberein, weichen aber
+/// gemeinsam vom Positionsnetto ab, greift keine der uebrigen Pruefungen: die
+/// Bruttosumme wird aus dem nachgerechneten Positionsnetto gebildet und passt
+/// dann ebenfalls.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestConsistentlyWrongTaxBasisIsReported;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-4711', EncodeDate(2026, 1, 15),
+    TZUGFeRDCurrencyCodes.EUR);
+  try
+    desc.AddTradeLineItem(
+      {name=}            'Testartikel',
+      {netUnitPrice=}    TZUGFeRDNullableParam<Currency>.Create(100),
+      {description=}     '',
+      {unitCode=}        TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+      {unitQuantity=}    nil,
+      {grossUnitPrice=}  nil,
+      {billedQuantity=}  2,
+      {lineTotalAmount=} 200,
+      {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+      {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+      {taxPercent=}      19.0);
+
+    // BT-116 und BT-109 sind zueinander konsistent, aber um 10,00 zu niedrig.
+    desc.AddApplicableTradeTax({calculatedAmount=} 36.10, {basisAmount=} 190,
+      {percent=} 19.0, TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S);
+
+    // BT-112 passt zur Nachrechnung aus BT-106 und BT-110, nicht zu BT-109.
+    desc.SetTotals(
+      {aLineTotalAmount=}      200,
+      {aChargeTotalAmount=}    0,
+      {aAllowanceTotalAmount=} 0,
+      {aTaxBasisAmount=}       190,
+      {aTaxTotalAmount=}       36.10,
+      {aGrandTotalAmount=}     236.10,
+      {aTotalPrepaidAmount=}   0,
+      {aDuePayableAmount=}     236.10);
+
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(validationResult.IsValid,
+        'Ein von BT-106 abweichendes BT-109 wurde nicht beanstandet:'#13#10 +
+        validationResult.Messages.Text);
+      Assert.IsTrue(Pos('BR-CO-13', validationResult.Messages.Text) > 0,
+        'Es fehlt die Meldung zu BR-CO-13:'#13#10 + validationResult.Messages.Text);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// BR-CO-11: BT-107 muss der Summe der einzelnen Kopfabschlaege (BT-92) entsprechen.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestDeclaredAllowanceTotalDeviationIsReported;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateBalancedInvoice(False);
+  try
+    // Kopfabschlaege gibt es keine, BT-107 behauptet aber 15,00.
+    desc.AllowanceTotalAmount := 15;
+
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(validationResult.IsValid,
+        'Ein BT-107 ohne zugehoerige Kopfabschlaege wurde nicht beanstandet:'#13#10 +
+        validationResult.Messages.Text);
+      Assert.IsTrue(Pos('BR-CO-11', validationResult.Messages.Text) > 0,
+        'Es fehlt die Meldung zu BR-CO-11:'#13#10 + validationResult.Messages.Text);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// BR-CO-12: BT-108 muss der Summe der einzelnen Kopfzuschlaege (BT-99) entsprechen.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestDeclaredChargeTotalDeviationIsReported;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateBalancedInvoice(True);
+  try
+    // Der einzige Kopfzuschlag betraegt 10,00, BT-108 behauptet 20,00.
+    desc.ChargeTotalAmount := 20;
+
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(validationResult.IsValid,
+        'Ein von den Kopfzuschlaegen abweichendes BT-108 wurde nicht beanstandet:'#13#10 +
+        validationResult.Messages.Text);
+      Assert.IsTrue(Pos('BR-CO-12', validationResult.Messages.Text) > 0,
+        'Es fehlt die Meldung zu BR-CO-12:'#13#10 + validationResult.Messages.Text);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// Ein fehlendes BT-106 darf nicht stillschweigend als 0 gegen die Nachrechnung
+/// gestellt werden, sondern muss als fehlende Pflichtangabe gemeldet werden.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestMissingLineTotalAmountIsReported;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateBalancedInvoice(False);
+  try
+    desc.LineTotalAmount := nil;
+
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(validationResult.IsValid,
+        'Ein fehlendes BT-106 wurde nicht beanstandet:'#13#10 +
+        validationResult.Messages.Text);
+      Assert.IsTrue(Pos('Kein LineTotalAmount vorhanden', validationResult.Messages.Text) > 0,
+        'Es fehlt die Meldung zum fehlenden BT-106:'#13#10 + validationResult.Messages.Text);
     finally
       validationResult.Free;
     end;

@@ -92,6 +92,7 @@ var
   lineCounter: Integer;
   lineTotal, allowanceTotal, chargeTotal, taxTotal, grandTotal, prepaid,
     rounding, duePayable, expectedDuePayable, expectedTaxAmount: Currency;
+  declaredAllowanceTotal, declaredChargeTotal, expectedTaxBasis: Currency;
   item: TZUGFeRDTradeLineItem;
   tax: TZUGFeRDTax;
 begin
@@ -226,12 +227,8 @@ begin
           _taxBasisTotal := _taxBasisTotal + tax.BasisAmount;
     end;
 
-    var _allowanceTotal : Currency := 0;
-    var _chargeTotal : Currency := 0;
-    for var allowance in descriptor.GetTradeAllowances do
-      _allowanceTotal := _allowanceTotal + allowance.ActualAmount;
-    for var charge in descriptor.GetTradeCharges do
-        _chargeTotal := _chargeTotal + charge.ActualAmount;
+    declaredAllowanceTotal := descriptor.AllowanceTotalAmount.GetValueOrDefault;
+    declaredChargeTotal := descriptor.ChargeTotalAmount.GetValueOrDefault;
 
     if not descriptor.TaxTotalAmount.HasValue then
     begin
@@ -248,7 +245,12 @@ begin
       Result.IsValid := false;
     end;
 
-    if Abs(lineTotal - descriptor.LineTotalAmount.Value) < 0.01 then
+    if not descriptor.LineTotalAmount.HasValue then
+    begin
+      Result.Messages.Add('trade.settlement.monetarySummation.lineTotal Message: Kein LineTotalAmount vorhanden');
+      Result.IsValid := false;
+    end
+    else if Abs(lineTotal - descriptor.LineTotalAmount.Value) < 0.01 then
     begin
       Result.Messages.Add(Format('trade.settlement.monetarySummation.lineTotal Message: Berechneter Wert ist wie vorhanden:[%4f]', [lineTotal]));
     end
@@ -318,24 +320,47 @@ begin
       Result.IsValid := false;
     end;
 
-    if Abs(allowanceTotal - _allowanceTotal) < 0.01 then
+    // BR-CO-11: Die Summe der Abschlaege auf Dokumentenebene (BT-107) muss der
+    // Summe der einzelnen Kopfabschlaege (BT-92) entsprechen. BR-CO-12 verlangt
+    // dasselbe fuer die Zuschlaege (BT-108 gegen BT-99). Beide Kopfsummen sind
+    // optional; fehlen sie, gelten sie als 0.
+    if Abs(allowanceTotal - declaredAllowanceTotal) < 0.01 then
     begin
-      Result.Messages.Add(Format('trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist wie vorhanden:[%4f]', [_allowanceTotal]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist wie vorhanden:[%4f]', [declaredAllowanceTotal]));
     end
     else
     begin
-      Result.Messages.Add(Format('trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f]', [allowanceTotal, _allowanceTotal]));
+      Result.Messages.Add(Format('BR-CO-11: trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist[%4f] aber tatsächlich vorhandener Wert ist[%4f]', [allowanceTotal, declaredAllowanceTotal]));
       Result.IsValid := false;
     end;
 
-    if Abs(chargeTotal - _chargeTotal) < 0.01 then
+    if Abs(chargeTotal - declaredChargeTotal) < 0.01 then
     begin
-      Result.Messages.Add(Format('trade.settlement.monetarySummation.chargeTotal  Message: Berechneter Wert ist wie vorhanden:[%4f]', [_chargeTotal]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.chargeTotal  Message: Berechneter Wert ist wie vorhanden:[%4f]', [declaredChargeTotal]));
     end
     else
     begin
-      Result.Messages.Add(Format('trade.settlement.monetarySummation.chargeTotal  Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f]', [chargeTotal, _chargeTotal]));
+      Result.Messages.Add(Format('BR-CO-12: trade.settlement.monetarySummation.chargeTotal  Message: Berechneter Wert ist[%4f] aber tatsächlich vorhandener Wert ist[%4f]', [chargeTotal, declaredChargeTotal]));
       Result.IsValid := false;
+    end;
+
+    // BR-CO-13: BT-109 ergibt sich aus BT-106 abzueglich BT-107 zuzueglich BT-108.
+    // Ohne diese Pruefung koennen sich BT-109 und die Steueraufschluesselung
+    // gemeinsam vom Positionsnetto entfernen, ohne beanstandet zu werden: der
+    // Abgleich weiter oben vergleicht BT-109 nur gegen die Summe der BT-116.
+    if descriptor.LineTotalAmount.HasValue and descriptor.TaxBasisAmount.HasValue then
+    begin
+      expectedTaxBasis := descriptor.LineTotalAmount.Value - declaredAllowanceTotal + declaredChargeTotal;
+      if Abs(expectedTaxBasis - descriptor.TaxBasisAmount.Value) < 0.01 then
+      begin
+        Result.Messages.Add(Format('BR-CO-13: Steuerbemessungsgrundlage aus BT-106 - BT-107 + BT-108 ist wie vorhanden:[%4f]', [expectedTaxBasis]));
+      end
+      else
+      begin
+        Result.Messages.Add(Format('BR-CO-13: Steuerbemessungsgrundlage aus BT-106 - BT-107 + BT-108 ist[%4f] aber tatsächlich vorhandener Wert ist[%4f]',
+          [expectedTaxBasis, descriptor.TaxBasisAmount.Value]));
+        Result.IsValid := false;
+      end;
     end;
 
     // version-specific validation
