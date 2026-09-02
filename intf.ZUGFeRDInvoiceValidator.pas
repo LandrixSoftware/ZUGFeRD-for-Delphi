@@ -46,6 +46,10 @@ type
   ///
   /// Currently limited to summarizing line totals
   ///
+  /// Die Validierung ist derzeit unabhängig von Profil und Ausgabeformat. Regeln,
+  /// die sich zwischen Factur-X und XRechnung unterscheiden, können deshalb nicht
+  /// profilspezifisch ausgewählt werden.
+  ///
   /// Output syntax copied from Konik library (https://konik.io/)
   /// </summary>
   TZUGFeRDInvoiceValidator = class
@@ -215,9 +219,12 @@ begin
         Result.IsValid := false;
       end;
 
-      // BR-CO-17 lässt laut EN-16931-Schematron eine Abweichung von einer
-      // Währungseinheit je Steueraufschlüsselung zu. Was darüber liegt, ist ein
-      // Verstoß; was darunter liegt, wird protokolliert, damit es nicht untergeht.
+      // Der Validator ist insgesamt nicht profil- oder formatspezifisch. Factur-X
+      // 1.08/1.09 setzt BR-CO-17 in FX-SCH-A-000052 mit einer inklusiven Abweichung
+      // von einer Währungseinheit um, während die aktuellen CEN- und Peppol-
+      // Artefakte eine strikt kleinere Abweichung verlangen. Bis der Validator das
+      // konkrete Regelwerk kennt, bleibt die Factur-X-Grenze für alle Profile
+      // erhalten. Abweichungen werden protokolliert, damit sie nicht untergehen.
       taxDeviation := tax.TaxAmount - expectedTaxAmount;
       if Abs(taxDeviation) > 1 then
       begin
