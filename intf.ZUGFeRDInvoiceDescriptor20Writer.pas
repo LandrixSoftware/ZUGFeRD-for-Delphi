@@ -673,8 +673,8 @@ if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
 
   //   3. TaxCurrencyCode (optional)
   //   BT-6
-  // BT-6 nur bei abweichender Abrechnungswaehrung, siehe BR-53: ohne BT-111 darf
-  // kein Steuerwaehrungscode stehen.
+  // BT-6 nur bei abweichender Abrechnungswährung, siehe BR-53: ohne BT-111 darf
+  // kein Steuerwährungscode stehen.
 	if Descriptor.TaxCurrency.HasValue and (Descriptor.TaxCurrency.Value <> Descriptor.Currency) then
   	Writer.WriteElementString('ram:TaxCurrencyCode', TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Descriptor.TaxCurrency), [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
 

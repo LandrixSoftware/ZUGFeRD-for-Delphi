@@ -2364,7 +2364,7 @@ begin
 
       Assert.AreEqual(1, XmlDoc.selectNodes('/*/cac:TaxTotal').length,
         'Only BT-110 expected when accounting currency equals invoice currency');
-      // BR-53: ein BT-6 ohne zugehoeriges BT-111 waere ungueltig.
+      // BR-53: ein BT-6 ohne zugehöriges BT-111 wäre ungültig.
       Assert.AreEqual(0, XmlDoc.selectNodes('/*/cbc:TaxCurrencyCode').length,
         'No BT-6 expected when accounting currency equals invoice currency');
     finally

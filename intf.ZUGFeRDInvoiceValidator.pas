@@ -133,7 +133,7 @@ begin
             _total := _total / item.NetQuantity.Value
           else
           begin
-            Result.Messages.Add(Format('BT-149: Die Preisbasismenge der Position [%s] muss groesser als 0 sein', [item.Name]));
+            Result.Messages.Add(Format('BT-149: Die Preisbasismenge der Position [%s] muss größer als 0 sein', [item.Name]));
             Result.IsValid := false;
           end;
         end;
@@ -201,13 +201,13 @@ begin
       expectedTaxAmount := SimpleRoundTo(tax.BasisAmount * tax.Percent / 100, -2);
 
       // BR-CO-14 bildet BT-110 aus den angegebenen BT-117, nicht aus den
-      // nachgerechneten Sollwerten. Beides faellt nur zusammen, solange BR-CO-17
-      // exakt erzwungen wird - die Regel laesst aber eine Abweichung zu.
+      // nachgerechneten Sollwerten. Beides fällt nur zusammen, solange BR-CO-17
+      // exakt erzwungen wird - die Regel lässt aber eine Abweichung zu.
       taxTotal := taxTotal + tax.TaxAmount;
 
       Result.Messages.Add(Format('===> %f x %f%% = %f', [tax.BasisAmount, tax.Percent, expectedTaxAmount]));
 
-      // BR-DEC-20: BT-117 darf hoechstens zwei Nachkommastellen haben.
+      // BR-DEC-20: BT-117 darf höchstens zwei Nachkommastellen haben.
       if tax.TaxAmount <> SimpleRoundTo(tax.TaxAmount, -2) then
       begin
         Result.Messages.Add(Format(
@@ -215,9 +215,9 @@ begin
         Result.IsValid := false;
       end;
 
-      // BR-CO-17 laesst laut EN-16931-Schematron eine Abweichung von einer
-      // Waehrungseinheit je Steueraufschluesselung zu. Was darueber liegt, ist ein
-      // Verstoss; was darunter liegt, wird protokolliert, damit es nicht untergeht.
+      // BR-CO-17 lässt laut EN-16931-Schematron eine Abweichung von einer
+      // Währungseinheit je Steueraufschlüsselung zu. Was darüber liegt, ist ein
+      // Verstoß; was darunter liegt, wird protokolliert, damit es nicht untergeht.
       taxDeviation := tax.TaxAmount - expectedTaxAmount;
       if Abs(taxDeviation) > 1 then
       begin
@@ -229,7 +229,7 @@ begin
       else if taxDeviation <> 0 then
       begin
         Result.Messages.Add(Format(
-          'Hinweis: Der Steuerbetrag[%4f] weicht um [%4f] vom berechneten Wert[%4f] ab, bleibt aber innerhalb der BR-CO-17-Toleranz von einer Waehrungseinheit',
+          'Hinweis: Der Steuerbetrag[%4f] weicht um [%4f] vom berechneten Wert[%4f] ab, bleibt aber innerhalb der BR-CO-17-Toleranz von einer Währungseinheit',
           [tax.TaxAmount, taxDeviation, expectedTaxAmount]));
       end;
     end;
@@ -359,9 +359,9 @@ begin
       Result.IsValid := false;
     end;
 
-    // BR-CO-11: Die Summe der Abschlaege auf Dokumentenebene (BT-107) muss der
-    // Summe der einzelnen Kopfabschlaege (BT-92) entsprechen. BR-CO-12 verlangt
-    // dasselbe fuer die Zuschlaege (BT-108 gegen BT-99). Beide Kopfsummen sind
+    // BR-CO-11: Die Summe der Abschläge auf Dokumentenebene (BT-107) muss der
+    // Summe der einzelnen Kopfabschläge (BT-92) entsprechen. BR-CO-12 verlangt
+    // dasselbe für die Zuschläge (BT-108 gegen BT-99). Beide Kopfsummen sind
     // optional; fehlen sie, gelten sie als 0.
     if Abs(allowanceTotal - declaredAllowanceTotal) < 0.01 then
     begin
@@ -383,8 +383,8 @@ begin
       Result.IsValid := false;
     end;
 
-    // BR-CO-13: BT-109 ergibt sich aus BT-106 abzueglich BT-107 zuzueglich BT-108.
-    // Ohne diese Pruefung koennen sich BT-109 und die Steueraufschluesselung
+    // BR-CO-13: BT-109 ergibt sich aus BT-106 abzüglich BT-107 zuzüglich BT-108.
+    // Ohne diese Prüfung können sich BT-109 und die Steueraufschlüsselung
     // gemeinsam vom Positionsnetto entfernen, ohne beanstandet zu werden: der
     // Abgleich weiter oben vergleicht BT-109 nur gegen die Summe der BT-116.
     if descriptor.LineTotalAmount.HasValue and descriptor.TaxBasisAmount.HasValue then

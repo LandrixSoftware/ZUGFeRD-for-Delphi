@@ -213,9 +213,9 @@ begin
 
   Writer.WriteElementString('cbc:DocumentCurrencyCode', TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Descriptor.Currency));
 
-  // BT-6 nur bei einer von der Rechnungswaehrung abweichenden Abrechnungswaehrung:
+  // BT-6 nur bei einer von der Rechnungswährung abweichenden Abrechnungswährung:
   // BR-53 verlangt zu einem vorhandenen BT-6 zwingend ein BT-111, und das wird weiter
-  // unten ebenfalls nur bei abweichender Waehrung geschrieben.
+  // unten ebenfalls nur bei abweichender Währung geschrieben.
   if Descriptor.TaxCurrency.HasValue and (Descriptor.TaxCurrency.Value <> Descriptor.Currency) then
     Writer.WriteElementString('cbc:TaxCurrencyCode', TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Descriptor.TaxCurrency.Value));
 

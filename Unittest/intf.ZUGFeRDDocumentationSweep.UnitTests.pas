@@ -171,7 +171,7 @@ begin
           Continue;
         end;
 
-        // MINIMUM und BASIC-WL fuehren keine Positionen, alle uebrigen Profile schon.
+        // MINIMUM und BASIC-WL führen keine Positionen, alle übrigen Profile schon.
         if not (desc.Profile in [TZUGFeRDProfile.Minimum, TZUGFeRDProfile.BasicWL]) and
            (desc.TradeLineItems.Count = 0) then
         begin
@@ -221,7 +221,7 @@ begin
                 [rel, reloaded.TradeLineItems.Count, desc.TradeLineItems.Count]));
 
             if reloaded.Currency <> desc.Currency then
-              errors.Add(Format('%s: Waehrung nach Roundtrip [%s] statt [%s]',
+              errors.Add(Format('%s: Währung nach Roundtrip [%s] statt [%s]',
                 [rel,
                  TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(reloaded.Currency),
                  TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(desc.Currency)]));
