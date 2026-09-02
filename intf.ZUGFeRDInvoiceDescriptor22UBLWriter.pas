@@ -279,6 +279,14 @@ begin
     Writer.WriteEndElement; // !DespatchDocumentReference
   end;
 
+  // ReceiptDocumentReference (BT-15)
+  if Descriptor.ReceivingAdviceReferencedDocument <> nil then
+  begin
+    Writer.WriteStartElement('cac:ReceiptDocumentReference');
+    Writer.WriteOptionalElementString('cbc:ID', Descriptor.ReceivingAdviceReferencedDocument.ID);
+    Writer.WriteEndElement; // !ReceiptDocumentReference
+  end;
+
   // ContractDocumentReference
   if Descriptor.ContractReferencedDocument <> nil then
   begin

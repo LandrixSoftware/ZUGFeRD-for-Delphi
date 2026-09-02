@@ -46,6 +46,7 @@ uses
   ,intf.ZUGFeRDReferenceTypeCodes
   ,intf.ZUGFeRDDeliveryNoteReferencedDocument
   ,intf.ZUGFeRDDespatchAdviceReferencedDocument
+  ,intf.ZUGFeRDReceivingAdviceReferencedDocument
   ,intf.ZUGFeRDCurrencyCodes
   ,intf.ZUGFeRDPaymentMeans
   ,intf.ZUGFeRDPaymentMeansTypeCodes
@@ -476,6 +477,11 @@ begin
   node := baseNode.selectSingleNode('cac:DespatchDocumentReference/cbc:ID');
   if node <> nil then
     Result.SetDespatchAdviceReferencedDocument(node.text);
+
+  // Receiving Advice Reference (BT-15)
+  node := baseNode.selectSingleNode('cac:ReceiptDocumentReference/cbc:ID');
+  if node <> nil then
+    Result.SetReceivingAdviceReferencedDocument(node.text);
 
   // Payment Terms
   Result.AddTradePaymentTerms(

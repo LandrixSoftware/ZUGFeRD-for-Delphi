@@ -66,6 +66,7 @@ uses
   ,intf.ZUGFeRDNote
   ,intf.ZUGFeRDContentCodes
   ,intf.ZUGFeRDDespatchAdviceReferencedDocument
+  ,intf.ZUGFeRDReceivingAdviceReferencedDocument
   ,intf.ZUGFeRDDesignatedProductClassificationClassCodes
   ,intf.ZUGFeRDXmlUtils
   ,intf.ZUGFeRDIncludedReferencedProduct
@@ -388,6 +389,15 @@ begin
     Result.DespatchAdviceReferencedDocument.ID := _despatchAdviceNo;
     Result.DespatchAdviceReferencedDocument.IssueDateTime := _despatchAdviceDate
   end;
+
+  var _receivingAdviceNo : String := TZUGFeRDXmlUtils.NodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:ReceivingAdviceReferencedDocument/ram:IssuerAssignedID');
+  var _receivingAdviceDate : ZUGFeRDNullable<TDateTime> := TZUGFeRDXmlUtils.NodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:ReceivingAdviceReferencedDocument/ram:FormattedIssueDateTime/qdt:DateTimeString');
+
+  if Not(_receivingAdviceDate.HasValue) then
+    _receivingAdviceDate := TZUGFeRDXmlUtils.NodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:ReceivingAdviceReferencedDocument/ram:FormattedIssueDateTime');
+
+  if _receivingAdviceDate.HasValue or (_receivingAdviceNo <> '') then
+    Result.SetReceivingAdviceReferencedDocument(_receivingAdviceNo, _receivingAdviceDate);
 
   var _deliveryNoteNo : String := TZUGFeRDXmlUtils.NodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:IssuerAssignedID');
   var _deliveryNoteDate : ZUGFeRDNullable<TDateTime> := TZUGFeRDXmlUtils.NodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:FormattedIssueDateTime/udt:DateTimeString');

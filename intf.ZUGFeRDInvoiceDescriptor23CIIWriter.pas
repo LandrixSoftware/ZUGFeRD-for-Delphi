@@ -860,7 +860,25 @@ begin
   end;
   //#endregion
 
-  // TODO: ReceivingAdviceReferencedDocument+IssuerAssignedID for [TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung1, TZUGFeRDProfile.XRechnung]
+  //#region ReceivingAdviceReferencedDocument
+  if Descriptor.ReceivingAdviceReferencedDocument <> nil then
+  begin
+    Writer.WriteStartElement('ram:ReceivingAdviceReferencedDocument', PROFILE_COMFORT_EXTENDED_XRECHNUNG);
+    Writer.WriteElementString('ram:IssuerAssignedID', Descriptor.ReceivingAdviceReferencedDocument.ID);
+
+    if Descriptor.ReceivingAdviceReferencedDocument.IssueDateTime.HasValue then
+    begin
+      Writer.WriteStartElement('ram:FormattedIssueDateTime', [TZUGFeRDProfile.Extended]);
+      Writer.WriteStartElement('qdt:DateTimeString');
+      Writer.WriteAttributeString('format', '102');
+      Writer.WriteValue(_formatDate(Descriptor.ReceivingAdviceReferencedDocument.IssueDateTime.Value));
+      Writer.WriteEndElement(); // !qdt:DateTimeString
+      Writer.WriteEndElement(); // !ram:FormattedIssueDateTime
+    end;
+
+    Writer.WriteEndElement(); // !ReceivingAdviceReferencedDocument
+  end;
+  //#endregion
 
   //#region DeliveryNoteReferencedDocument
   if Descriptor.DeliveryNoteReferencedDocument <> nil then

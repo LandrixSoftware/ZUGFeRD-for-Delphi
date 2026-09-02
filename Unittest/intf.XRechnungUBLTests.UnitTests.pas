@@ -82,6 +82,8 @@ type
     [Test]
     procedure TestDespatchDocumentReference;
     [Test]
+    procedure TestReceivingAdviceDocumentReference;
+    [Test]
     procedure TestSampleCreditNote326;
     [Test]
     procedure TestSampleCreditNote384;
@@ -1675,6 +1677,53 @@ begin
         Assert.IsNotNull(loadedInvoice.DespatchAdviceReferencedDocument);
         Assert.AreEqual(reference, loadedInvoice.DespatchAdviceReferencedDocument.ID);
         Assert.IsFalse(loadedInvoice.DespatchAdviceReferencedDocument.IssueDateTime.HasValue); // not defined in Peppol standard!
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TXRechnungUBLTests.TestReceivingAdviceDocumentReference;
+var
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+  reference: string;
+  adviceDate: TDateTime;
+  bytes: TBytes;
+  xmlContent: string;
+begin
+  reference := 'RAR123456789';
+  adviceDate := EncodeDate(2024, 5, 14);
+
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.SetReceivingAdviceReferencedDocument(reference,
+      TZUGFeRDNullableParam<TDateTime>.Create(adviceDate));
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+      ms.Position := 0;
+      SetLength(bytes, ms.Size);
+      ms.ReadBuffer(bytes[0], ms.Size);
+      xmlContent := TEncoding.UTF8.GetString(bytes);
+
+      Assert.IsTrue(TRegEx.IsMatch(xmlContent,
+        '<cac:ReceiptDocumentReference>\s*<cbc:ID>' + reference + '</cbc:ID>\s*</cac:ReceiptDocumentReference>'));
+      Assert.IsFalse(TRegEx.IsMatch(xmlContent,
+        '<cac:ReceiptDocumentReference>.*<cbc:IssueDate>', [roSingleLine]));
+
+      ms.Position := 0;
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+      try
+        Assert.IsNotNull(loadedInvoice.ReceivingAdviceReferencedDocument);
+        Assert.AreEqual(reference, loadedInvoice.ReceivingAdviceReferencedDocument.ID);
+        Assert.IsFalse(loadedInvoice.ReceivingAdviceReferencedDocument.IssueDateTime.HasValue); // not defined in Peppol standard!
       finally
         loadedInvoice.Free;
       end;
