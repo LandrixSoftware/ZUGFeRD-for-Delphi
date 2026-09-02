@@ -87,6 +87,8 @@ type
     [Test]
     procedure TestTaxAmountWithinBRCO17ToleranceIsAccepted;
     [Test]
+    procedure TestTaxAmountAtFacturXBRCO17ToleranceBoundaryIsAccepted;
+    [Test]
     procedure TestTaxAmountBeyondBRCO17ToleranceIsReported;
     [Test]
     procedure TestTaxAmountDeviationsWithinSameRateAreReported;
@@ -943,10 +945,10 @@ begin
 end;
 
 /// <summary>
-/// BR-CO-17 lässt laut EN-16931-Schematron eine Abweichung von einer
-/// Währungseinheit je Steueraufschlüsselung zu. BT-110 ist dabei nach BR-CO-14
-/// die Summe der angegebenen BT-117, nicht die der nachgerechneten Sollwerte -
-/// sonst wäre eine normkonforme Rechnung allein an der Steuersumme ungültig.
+/// Die Factur-X-Schematrons 1.08 und 1.09 setzen BR-CO-17 mit einer Toleranz von
+/// einer Währungseinheit je Steueraufschlüsselung um. BT-110 ist dabei nach
+/// BR-CO-14 die Summe der angegebenen BT-117, nicht die der nachgerechneten
+/// Sollwerte, sonst wäre eine zulässige Rechnung allein an der Steuersumme ungültig.
 /// </summary>
 procedure TZUGFeRDInvoiceValidatorTests.TestTaxAmountWithinBRCO17ToleranceIsAccepted;
 var
@@ -966,6 +968,39 @@ begin
         ValidationResult.Messages.Text);
       Assert.IsTrue(ValidationResult.Messages.Text.Contains('BR-CO-17-Toleranz'),
         'Die zulässige Abweichung wurde nicht protokolliert:'#13#10 +
+        ValidationResult.Messages.Text);
+    finally
+      ValidationResult.Free;
+    end;
+  finally
+    Descriptor.Free;
+  end;
+end;
+
+/// <summary>
+/// Factur-X verwendet in FX-SCH-A-000052 inklusive Grenzen und akzeptiert deshalb
+/// genau eine Währungseinheit Abweichung. Aktuelle CEN- und Peppol-Artefakte
+/// verlangen dagegen eine strikt kleinere Abweichung. Da der Validator insgesamt
+/// kein Profil oder Ausgabeformat berücksichtigt, dokumentiert dieser Test bewusst
+/// die derzeit für alle Profile verwendete Factur-X-Grenze.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestTaxAmountAtFacturXBRCO17ToleranceBoundaryIsAccepted;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-TOLERANCE-BOUNDARY', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
+  try
+    AddTaxGroup(Descriptor, 'Standard rate', 100, 19, 20, TZUGFeRDTaxCategoryCodes.S);
+    Descriptor.SetTotals(100, 0, 0, 100, 20, 120, 0, 120);
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsTrue(ValidationResult.IsValid,
+        'Die inklusive Factur-X-Grenze von einer Währungseinheit wurde als Fehler gemeldet:'#13#10 +
+        ValidationResult.Messages.Text);
+      Assert.IsTrue(ValidationResult.Messages.Text.Contains('BR-CO-17-Toleranz'),
+        'Die Abweichung an der Factur-X-Grenze wurde nicht protokolliert:'#13#10 +
         ValidationResult.Messages.Text);
     finally
       ValidationResult.Free;
