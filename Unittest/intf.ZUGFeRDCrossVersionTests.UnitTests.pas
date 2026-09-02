@@ -2201,6 +2201,8 @@ begin
         'Two TaxTotalAmount elements expected when TaxCurrency differs from Currency');
       Assert.IsTrue(Pos('currencyID="CHF"', xmlContent) > 0,
         'BT-111 element with accounting currencyID="CHF" must be present');
+      Assert.AreEqual(1, _CountSubstring(xmlContent, '<ram:TaxCurrencyCode'),
+        'BT-6 must be written when TaxCurrency differs from Currency');
 
       // Verify round-trip
       ms.Position := 0;
@@ -2248,6 +2250,9 @@ begin
 
       Assert.AreEqual(1, _CountSubstring(xmlContent, '<ram:TaxTotalAmount'),
         'Only BT-110 expected when TaxCurrency equals Currency');
+      // BR-53: ohne BT-111 darf auch kein BT-6 geschrieben werden.
+      Assert.AreEqual(0, _CountSubstring(xmlContent, '<ram:TaxCurrencyCode'),
+        'No BT-6 expected when TaxCurrency equals Currency');
     finally
       ms.Free;
     end;
@@ -2289,6 +2294,9 @@ begin
 
       TaxTotalNodes := XmlDoc.selectNodes('/*/cac:TaxTotal');
       Assert.AreEqual(2, TaxTotalNodes.length, 'Two TaxTotal groups expected for BT-110 and BT-111');
+
+      Assert.AreEqual(1, XmlDoc.selectNodes('/*/cbc:TaxCurrencyCode').length,
+        'BT-6 must be written when accounting currency differs from invoice currency');
 
       Bt110Node := XmlDoc.selectSingleNode('/*/cac:TaxTotal[cbc:TaxAmount/@currencyID="EUR"]');
       Assert.IsNotNull(Bt110Node, 'BT-110 TaxTotal in invoice currency must be present');
@@ -2351,10 +2359,14 @@ begin
       Assert.IsTrue(XmlDoc.loadXML(XmlContent), 'The generated UBL invoice must be valid XML');
       XmlDoc.setProperty('SelectionLanguage', 'XPath');
       XmlDoc.setProperty('SelectionNamespaces',
-        'xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"');
+        'xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" ' +
+        'xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"');
 
       Assert.AreEqual(1, XmlDoc.selectNodes('/*/cac:TaxTotal').length,
         'Only BT-110 expected when accounting currency equals invoice currency');
+      // BR-53: ein BT-6 ohne zugehöriges BT-111 wäre ungültig.
+      Assert.AreEqual(0, XmlDoc.selectNodes('/*/cbc:TaxCurrencyCode').length,
+        'No BT-6 expected when accounting currency equals invoice currency');
     finally
       InvoiceStream.Free;
     end;
@@ -2417,7 +2429,7 @@ begin
       LoadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ModifiedStream);
       try
         Assert.AreEqual(ExpectedInvoiceNo, LoadedInvoice.InvoiceNo, 'Invoice number must be read independently of document prefixes');
-        Assert.AreEqual(ExpectedLineItemCount, LoadedInvoice.TradeLineItems.Count, 'Line items must be read independently of document prefixes');
+        Assert.AreEqual(ExpectedLineItemCount, Integer(LoadedInvoice.TradeLineItems.Count), 'Line items must be read independently of document prefixes');
         Assert.AreEqual<Currency>(Desc.TaxTotalAmount.Value, LoadedInvoice.TaxTotalAmount.Value,
           'Tax total must be read independently of document prefixes');
       finally
@@ -2515,7 +2527,7 @@ begin
     try
       LoadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ModifiedStream);
       try
-        Assert.AreEqual(0, LoadedInvoice.TradeLineItems.Count,
+        Assert.AreEqual(0, Integer(LoadedInvoice.TradeLineItems.Count),
           'Elements from a different namespace URI must not be treated as ram elements');
         Assert.IsFalse(LoadedInvoice.TaxTotalAmount.HasValue,
           'Amounts from a different namespace URI must not be treated as ram amounts');

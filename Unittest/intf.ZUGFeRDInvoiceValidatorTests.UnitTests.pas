@@ -42,6 +42,11 @@ type
     /// Zu- und Abschlägen, Vorauszahlung und Rundung. Die Summen im Descriptor
     /// sind passend gesetzt, der Validator muss die Rechnung also als gueltig ansehen.
     /// </summary>
+    /// <summary>
+    /// Baut eine Rechnung, deren Nettoeinzelpreis sich auf eine Preisbasismenge
+    /// bezieht (BT-149).
+    /// </summary>
+    function CreateInvoiceWithPriceBaseQuantity(const unitQuantity: Currency): TZUGFeRDInvoiceDescriptor;
     function CreateBalancedInvoice(const withCharge: Boolean;
       const lineAllowance: Currency = 0; const lineCharge: Currency = 0;
       const prepaidAmount: Currency = 0; const roundingAmount: Currency = 0): TZUGFeRDInvoiceDescriptor;
@@ -80,6 +85,10 @@ type
     [Test]
     procedure TestUnroundedTaxAmountIsReported;
     [Test]
+    procedure TestTaxAmountWithinBRCO17ToleranceIsAccepted;
+    [Test]
+    procedure TestTaxAmountBeyondBRCO17ToleranceIsReported;
+    [Test]
     procedure TestTaxAmountDeviationsWithinSameRateAreReported;
     [Test]
     procedure TestNegativeMidpointTaxAmountIsRoundedAwayFromZero;
@@ -91,6 +100,18 @@ type
     procedure TestMissingTaxBasisAmountIsReported;
     [Test]
     procedure TestInvalidTaxBasisAmountIsReported;
+    [Test]
+    procedure TestPriceBaseQuantityIsApplied;
+    [Test]
+    procedure TestZeroPriceBaseQuantityIsReported;
+    [Test]
+    procedure TestConsistentlyWrongTaxBasisIsReported;
+    [Test]
+    procedure TestDeclaredAllowanceTotalDeviationIsReported;
+    [Test]
+    procedure TestDeclaredChargeTotalDeviationIsReported;
+    [Test]
+    procedure TestMissingLineTotalAmountIsReported;
     [Test]
     procedure TestValidationDoesNotRaiseOnDeviation;
   end;
@@ -500,8 +521,10 @@ begin
     ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
     try
       Assert.IsFalse(ValidationResult.IsValid, 'Unrounded tax amount was not reported');
-      Assert.IsTrue(ValidationResult.Messages.Text.Contains('BR-CO-17'),
-        'Validation messages do not identify BR-CO-17');
+      // 0,0057 liegt innerhalb der BR-CO-17-Toleranz; beanstandet wird die
+      // unzulässige Zahl der Nachkommastellen.
+      Assert.IsTrue(ValidationResult.Messages.Text.Contains('BR-DEC-20'),
+        'Validation messages do not identify BR-DEC-20');
     finally
       FreeAndNil(ValidationResult);
     end;
@@ -519,10 +542,12 @@ var
 begin
   Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-ROUND-CATEGORY', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
   try
-    // Gegensätzliche Abweichungen dürfen sich bei gleichem Steuersatz nicht gegenseitig aufheben.
-    AddTaxGroup(Descriptor, 'Standard rate', 1, 7, 0.08, TZUGFeRDTaxCategoryCodes.S);
-    AddTaxGroup(Descriptor, 'Lower rate', 1, 7, 0.06, TZUGFeRDTaxCategoryCodes.AA);
-    Descriptor.SetTotals(2, 0, 0, 2, 0.14, 2.14, 0, 2.14);
+    // Gegensätzliche Abweichungen dürfen sich bei gleichem Steuersatz nicht gegenseitig
+    // aufheben. Beide liegen außerhalb der BR-CO-17-Toleranz, ihre Summe ergibt aber
+    // exakt den korrekten Gesamtbetrag von 14,00.
+    AddTaxGroup(Descriptor, 'Standard rate', 100, 7, 9.00, TZUGFeRDTaxCategoryCodes.S);
+    AddTaxGroup(Descriptor, 'Lower rate', 100, 7, 5.00, TZUGFeRDTaxCategoryCodes.AA);
+    Descriptor.SetTotals(200, 0, 0, 200, 14, 214, 0, 214);
 
     ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
     try
@@ -684,6 +709,298 @@ begin
     end;
   finally
     desc.Free;
+  end;
+end;
+
+/// <summary>
+/// BR-CO-13: BT-109 muss sich aus BT-106 - BT-107 + BT-108 ergeben. Stimmen BT-109
+/// und die Steueraufschlüsselung (BT-116) untereinander überein, weichen aber
+/// gemeinsam vom Positionsnetto ab, greift keine der übrigen Prüfungen: die
+/// Bruttosumme wird aus dem nachgerechneten Positionsnetto gebildet und passt
+/// dann ebenfalls.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestConsistentlyWrongTaxBasisIsReported;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-4711', EncodeDate(2026, 1, 15),
+    TZUGFeRDCurrencyCodes.EUR);
+  try
+    desc.AddTradeLineItem(
+      {name=}            'Testartikel',
+      {netUnitPrice=}    TZUGFeRDNullableParam<Currency>.Create(100),
+      {description=}     '',
+      {unitCode=}        TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+      {unitQuantity=}    nil,
+      {grossUnitPrice=}  nil,
+      {billedQuantity=}  2,
+      {lineTotalAmount=} 200,
+      {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+      {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+      {taxPercent=}      19.0);
+
+    // BT-116 und BT-109 sind zueinander konsistent, aber um 10,00 zu niedrig.
+    desc.AddApplicableTradeTax({calculatedAmount=} 36.10, {basisAmount=} 190,
+      {percent=} 19.0, TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S);
+
+    // BT-112 passt zur Nachrechnung aus BT-106 und BT-110, nicht zu BT-109.
+    desc.SetTotals(
+      {aLineTotalAmount=}      200,
+      {aChargeTotalAmount=}    0,
+      {aAllowanceTotalAmount=} 0,
+      {aTaxBasisAmount=}       190,
+      {aTaxTotalAmount=}       36.10,
+      {aGrandTotalAmount=}     236.10,
+      {aTotalPrepaidAmount=}   0,
+      {aDuePayableAmount=}     236.10);
+
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(validationResult.IsValid,
+        'Ein von BT-106 abweichendes BT-109 wurde nicht beanstandet:'#13#10 +
+        validationResult.Messages.Text);
+      Assert.IsTrue(Pos('BR-CO-13', validationResult.Messages.Text) > 0,
+        'Es fehlt die Meldung zu BR-CO-13:'#13#10 + validationResult.Messages.Text);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// BR-CO-11: BT-107 muss der Summe der einzelnen Kopfabschläge (BT-92) entsprechen.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestDeclaredAllowanceTotalDeviationIsReported;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateBalancedInvoice(False);
+  try
+    // Kopfabschläge gibt es keine, BT-107 behauptet aber 15,00.
+    desc.AllowanceTotalAmount := 15;
+
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(validationResult.IsValid,
+        'Ein BT-107 ohne zugehörige Kopfabschläge wurde nicht beanstandet:'#13#10 +
+        validationResult.Messages.Text);
+      Assert.IsTrue(Pos('BR-CO-11', validationResult.Messages.Text) > 0,
+        'Es fehlt die Meldung zu BR-CO-11:'#13#10 + validationResult.Messages.Text);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// BR-CO-12: BT-108 muss der Summe der einzelnen Kopfzuschläge (BT-99) entsprechen.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestDeclaredChargeTotalDeviationIsReported;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateBalancedInvoice(True);
+  try
+    // Der einzige Kopfzuschlag beträgt 10,00, BT-108 behauptet 20,00.
+    desc.ChargeTotalAmount := 20;
+
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(validationResult.IsValid,
+        'Ein von den Kopfzuschlägen abweichendes BT-108 wurde nicht beanstandet:'#13#10 +
+        validationResult.Messages.Text);
+      Assert.IsTrue(Pos('BR-CO-12', validationResult.Messages.Text) > 0,
+        'Es fehlt die Meldung zu BR-CO-12:'#13#10 + validationResult.Messages.Text);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// Ein fehlendes BT-106 darf nicht stillschweigend als 0 gegen die Nachrechnung
+/// gestellt werden, sondern muss als fehlende Pflichtangabe gemeldet werden.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestMissingLineTotalAmountIsReported;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateBalancedInvoice(False);
+  try
+    desc.LineTotalAmount := nil;
+
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(validationResult.IsValid,
+        'Ein fehlendes BT-106 wurde nicht beanstandet:'#13#10 +
+        validationResult.Messages.Text);
+      Assert.IsTrue(Pos('Kein LineTotalAmount vorhanden', validationResult.Messages.Text) > 0,
+        'Es fehlt die Meldung zum fehlenden BT-106:'#13#10 + validationResult.Messages.Text);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// Baut eine ausgeglichene Rechnung, deren Nettoeinzelpreis BT-146 sich auf eine
+/// Preisbasismenge BT-149 bezieht: 100,00 je 10 Stück bei 2 berechneten Stück
+/// ergibt einen Positionsnettobetrag BT-131 von 20,00.
+/// </summary>
+function TZUGFeRDInvoiceValidatorTests.CreateInvoiceWithPriceBaseQuantity(
+  const unitQuantity: Currency): TZUGFeRDInvoiceDescriptor;
+begin
+  Result := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-4711', EncodeDate(2026, 1, 15),
+    TZUGFeRDCurrencyCodes.EUR);
+
+  Result.AddTradeLineItem(
+    {name=}            'Testartikel',
+    {netUnitPrice=}    TZUGFeRDNullableParam<Currency>.Create(100),
+    {description=}     '',
+    {unitCode=}        TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+    {unitQuantity=}    TZUGFeRDNullableParam<Currency>.Create(unitQuantity),
+    {grossUnitPrice=}  nil,
+    {billedQuantity=}  2,
+    {lineTotalAmount=} 20,
+    {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+    {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+    {taxPercent=}      19.0);
+
+  Result.AddApplicableTradeTax({calculatedAmount=} 3.80, {basisAmount=} 20,
+    {percent=} 19.0, TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S);
+
+  Result.SetTotals(
+    {aLineTotalAmount=}      20,
+    {aChargeTotalAmount=}    0,
+    {aAllowanceTotalAmount=} 0,
+    {aTaxBasisAmount=}       20,
+    {aTaxTotalAmount=}       3.80,
+    {aGrandTotalAmount=}     23.80,
+    {aTotalPrepaidAmount=}   0,
+    {aDuePayableAmount=}     23.80);
+end;
+
+/// <summary>
+/// BT-146 gilt je Preisbasismenge BT-149. Wird BT-149 ignoriert, rechnet der
+/// Validator das Zehnfache und verwirft eine gültige Rechnung.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestPriceBaseQuantityIsApplied;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateInvoiceWithPriceBaseQuantity(10);
+  try
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsTrue(validationResult.IsValid,
+        'Rechnung mit Preisbasismenge wurde als ungültig gemeldet:'#13#10 +
+        validationResult.Messages.Text);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// Eine Preisbasismenge von 0 ist fachlich unzulässig und darf nicht still
+/// übergangen werden.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestZeroPriceBaseQuantityIsReported;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  desc := CreateInvoiceWithPriceBaseQuantity(0);
+  try
+    validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(validationResult.IsValid,
+        'Eine Preisbasismenge von 0 wurde nicht beanstandet:'#13#10 +
+        validationResult.Messages.Text);
+      Assert.IsTrue(Pos('BT-149', validationResult.Messages.Text) > 0,
+        'Es fehlt die Meldung zu BT-149:'#13#10 + validationResult.Messages.Text);
+    finally
+      validationResult.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// BR-CO-17 lässt laut EN-16931-Schematron eine Abweichung von einer
+/// Währungseinheit je Steueraufschlüsselung zu. BT-110 ist dabei nach BR-CO-14
+/// die Summe der angegebenen BT-117, nicht die der nachgerechneten Sollwerte -
+/// sonst wäre eine normkonforme Rechnung allein an der Steuersumme ungültig.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestTaxAmountWithinBRCO17ToleranceIsAccepted;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-TOLERANCE-OK', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
+  try
+    // Sollwert 19,00, angegeben 19,50: Abweichung 0,50 und damit zulässig.
+    AddTaxGroup(Descriptor, 'Standard rate', 100, 19, 19.50, TZUGFeRDTaxCategoryCodes.S);
+    Descriptor.SetTotals(100, 0, 0, 100, 19.50, 119.50, 0, 119.50);
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsTrue(ValidationResult.IsValid,
+        'Eine Abweichung innerhalb der BR-CO-17-Toleranz wurde als Fehler gemeldet:'#13#10 +
+        ValidationResult.Messages.Text);
+      Assert.IsTrue(ValidationResult.Messages.Text.Contains('BR-CO-17-Toleranz'),
+        'Die zulässige Abweichung wurde nicht protokolliert:'#13#10 +
+        ValidationResult.Messages.Text);
+    finally
+      ValidationResult.Free;
+    end;
+  finally
+    Descriptor.Free;
+  end;
+end;
+
+/// <summary>
+/// Jenseits einer Währungseinheit ist BR-CO-17 verletzt.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestTaxAmountBeyondBRCO17ToleranceIsReported;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-TOLERANCE-FAIL', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
+  try
+    // Sollwert 19,00, angegeben 20,50: Abweichung 1,50 und damit unzulässig.
+    AddTaxGroup(Descriptor, 'Standard rate', 100, 19, 20.50, TZUGFeRDTaxCategoryCodes.S);
+    Descriptor.SetTotals(100, 0, 0, 100, 20.50, 120.50, 0, 120.50);
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(ValidationResult.IsValid,
+        'Eine Abweichung jenseits der BR-CO-17-Toleranz wurde nicht beanstandet:'#13#10 +
+        ValidationResult.Messages.Text);
+      Assert.IsTrue(ValidationResult.Messages.Text.Contains('BR-CO-17:'),
+        'Es fehlt die Meldung zu BR-CO-17:'#13#10 + ValidationResult.Messages.Text);
+    finally
+      ValidationResult.Free;
+    end;
+  finally
+    Descriptor.Free;
   end;
 end;
 

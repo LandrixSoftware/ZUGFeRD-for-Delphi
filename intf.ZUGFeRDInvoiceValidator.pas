@@ -92,6 +92,8 @@ var
   lineCounter: Integer;
   lineTotal, allowanceTotal, chargeTotal, taxTotal, grandTotal, prepaid,
     rounding, duePayable, expectedDuePayable, expectedTaxAmount: Currency;
+  declaredAllowanceTotal, declaredChargeTotal, expectedTaxBasis: Currency;
+  taxDeviation: Currency;
   item: TZUGFeRDTradeLineItem;
   tax: TZUGFeRDTax;
 begin
@@ -122,6 +124,19 @@ begin
       if item.NetUnitPrice.HasValue then
       begin
         _total := (item.NetUnitPrice.Value * item.BilledQuantity);
+
+        // BT-146 gilt je Preisbasismenge BT-149, nicht je Einheit. Fehlt BT-149,
+        // ist die Basismenge 1. Der CII-Writer rechnet bei fehlendem BT-131 genauso.
+        if item.NetQuantity.HasValue then
+        begin
+          if item.NetQuantity.Value > 0 then
+            _total := _total / item.NetQuantity.Value
+          else
+          begin
+            Result.Messages.Add(Format('BT-149: Die Preisbasismenge der Position [%s] muss größer als 0 sein', [item.Name]));
+            Result.IsValid := false;
+          end;
+        end;
 
         // BT-131 enthält BG-28-Positionszuschläge und vermindert sich um BG-27-Positionsabschläge.
         for var lineAllowance in item.GetSpecifiedTradeAllowances do
@@ -183,19 +198,44 @@ begin
       if tax.TypeCode.Value <> TZUGFeRDTaxTypes.VAT then
         Continue;
 
-      // BR-CO-17 verlangt die Rundung jeder Steuergruppe vor der Summierung zu BT-110.
       expectedTaxAmount := SimpleRoundTo(tax.BasisAmount * tax.Percent / 100, -2);
-      taxTotal := taxTotal + expectedTaxAmount;
+
+      // BR-CO-14 bildet BT-110 aus den angegebenen BT-117, nicht aus den
+      // nachgerechneten Sollwerten. Beides fällt nur zusammen, solange BR-CO-17
+      // exakt erzwungen wird - die Regel lässt aber eine Abweichung zu.
+      taxTotal := taxTotal + tax.TaxAmount;
+
       Result.Messages.Add(Format('===> %f x %f%% = %f', [tax.BasisAmount, tax.Percent, expectedTaxAmount]));
 
-      if tax.TaxAmount <> expectedTaxAmount then
+      // BR-DEC-20: BT-117 darf höchstens zwei Nachkommastellen haben.
+      if tax.TaxAmount <> SimpleRoundTo(tax.TaxAmount, -2) then
+      begin
+        Result.Messages.Add(Format(
+          'BR-DEC-20: Der Steuerbetrag[%4f] hat mehr als zwei Nachkommastellen', [tax.TaxAmount]));
+        Result.IsValid := false;
+      end;
+
+      // BR-CO-17 lässt laut EN-16931-Schematron eine Abweichung von einer
+      // Währungseinheit je Steueraufschlüsselung zu. Was darüber liegt, ist ein
+      // Verstoß; was darunter liegt, wird protokolliert, damit es nicht untergeht.
+      taxDeviation := tax.TaxAmount - expectedTaxAmount;
+      if Abs(taxDeviation) > 1 then
       begin
         Result.Messages.Add(Format(
           'BR-CO-17: Berechneter Steuerbetrag ist[%4f] aber vorhandener Steuerbetrag ist[%4f] bei Bemessungsgrundlage[%4f] und Steuersatz[%4f]',
           [expectedTaxAmount, tax.TaxAmount, tax.BasisAmount, tax.Percent]));
         Result.IsValid := false;
+      end
+      else if taxDeviation <> 0 then
+      begin
+        Result.Messages.Add(Format(
+          'Hinweis: Der Steuerbetrag[%4f] weicht um [%4f] vom berechneten Wert[%4f] ab, bleibt aber innerhalb der BR-CO-17-Toleranz von einer Währungseinheit',
+          [tax.TaxAmount, taxDeviation, expectedTaxAmount]));
       end;
     end;
+
+    // BR-CO-14 rundet die Summe der BT-117 auf zwei Nachkommastellen.
+    taxTotal := SimpleRoundTo(taxTotal, -2);
 
     grandTotal := lineTotal - allowanceTotal + taxTotal + chargeTotal;
     prepaid := descriptor.TotalPrepaidAmount.GetValueOrDefault;
@@ -226,12 +266,8 @@ begin
           _taxBasisTotal := _taxBasisTotal + tax.BasisAmount;
     end;
 
-    var _allowanceTotal : Currency := 0;
-    var _chargeTotal : Currency := 0;
-    for var allowance in descriptor.GetTradeAllowances do
-      _allowanceTotal := _allowanceTotal + allowance.ActualAmount;
-    for var charge in descriptor.GetTradeCharges do
-        _chargeTotal := _chargeTotal + charge.ActualAmount;
+    declaredAllowanceTotal := descriptor.AllowanceTotalAmount.GetValueOrDefault;
+    declaredChargeTotal := descriptor.ChargeTotalAmount.GetValueOrDefault;
 
     if not descriptor.TaxTotalAmount.HasValue then
     begin
@@ -248,7 +284,12 @@ begin
       Result.IsValid := false;
     end;
 
-    if Abs(lineTotal - descriptor.LineTotalAmount.Value) < 0.01 then
+    if not descriptor.LineTotalAmount.HasValue then
+    begin
+      Result.Messages.Add('trade.settlement.monetarySummation.lineTotal Message: Kein LineTotalAmount vorhanden');
+      Result.IsValid := false;
+    end
+    else if Abs(lineTotal - descriptor.LineTotalAmount.Value) < 0.01 then
     begin
       Result.Messages.Add(Format('trade.settlement.monetarySummation.lineTotal Message: Berechneter Wert ist wie vorhanden:[%4f]', [lineTotal]));
     end
@@ -318,24 +359,47 @@ begin
       Result.IsValid := false;
     end;
 
-    if Abs(allowanceTotal - _allowanceTotal) < 0.01 then
+    // BR-CO-11: Die Summe der Abschläge auf Dokumentenebene (BT-107) muss der
+    // Summe der einzelnen Kopfabschläge (BT-92) entsprechen. BR-CO-12 verlangt
+    // dasselbe für die Zuschläge (BT-108 gegen BT-99). Beide Kopfsummen sind
+    // optional; fehlen sie, gelten sie als 0.
+    if Abs(allowanceTotal - declaredAllowanceTotal) < 0.01 then
     begin
-      Result.Messages.Add(Format('trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist wie vorhanden:[%4f]', [_allowanceTotal]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist wie vorhanden:[%4f]', [declaredAllowanceTotal]));
     end
     else
     begin
-      Result.Messages.Add(Format('trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f]', [allowanceTotal, _allowanceTotal]));
+      Result.Messages.Add(Format('BR-CO-11: trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist[%4f] aber tatsächlich vorhandener Wert ist[%4f]', [allowanceTotal, declaredAllowanceTotal]));
       Result.IsValid := false;
     end;
 
-    if Abs(chargeTotal - _chargeTotal) < 0.01 then
+    if Abs(chargeTotal - declaredChargeTotal) < 0.01 then
     begin
-      Result.Messages.Add(Format('trade.settlement.monetarySummation.chargeTotal  Message: Berechneter Wert ist wie vorhanden:[%4f]', [_chargeTotal]));
+      Result.Messages.Add(Format('trade.settlement.monetarySummation.chargeTotal  Message: Berechneter Wert ist wie vorhanden:[%4f]', [declaredChargeTotal]));
     end
     else
     begin
-      Result.Messages.Add(Format('trade.settlement.monetarySummation.chargeTotal  Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f]', [chargeTotal, _chargeTotal]));
+      Result.Messages.Add(Format('BR-CO-12: trade.settlement.monetarySummation.chargeTotal  Message: Berechneter Wert ist[%4f] aber tatsächlich vorhandener Wert ist[%4f]', [chargeTotal, declaredChargeTotal]));
       Result.IsValid := false;
+    end;
+
+    // BR-CO-13: BT-109 ergibt sich aus BT-106 abzüglich BT-107 zuzüglich BT-108.
+    // Ohne diese Prüfung können sich BT-109 und die Steueraufschlüsselung
+    // gemeinsam vom Positionsnetto entfernen, ohne beanstandet zu werden: der
+    // Abgleich weiter oben vergleicht BT-109 nur gegen die Summe der BT-116.
+    if descriptor.LineTotalAmount.HasValue and descriptor.TaxBasisAmount.HasValue then
+    begin
+      expectedTaxBasis := descriptor.LineTotalAmount.Value - declaredAllowanceTotal + declaredChargeTotal;
+      if Abs(expectedTaxBasis - descriptor.TaxBasisAmount.Value) < 0.01 then
+      begin
+        Result.Messages.Add(Format('BR-CO-13: Steuerbemessungsgrundlage aus BT-106 - BT-107 + BT-108 ist wie vorhanden:[%4f]', [expectedTaxBasis]));
+      end
+      else
+      begin
+        Result.Messages.Add(Format('BR-CO-13: Steuerbemessungsgrundlage aus BT-106 - BT-107 + BT-108 ist[%4f] aber tatsächlich vorhandener Wert ist[%4f]',
+          [expectedTaxBasis, descriptor.TaxBasisAmount.Value]));
+        Result.IsValid := false;
+      end;
     end;
 
     // version-specific validation
