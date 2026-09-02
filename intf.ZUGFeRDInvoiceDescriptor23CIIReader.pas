@@ -690,7 +690,6 @@ begin
     end;
   except
     Result.Free;
-    Result := nil;
     raise;
   end;
 
