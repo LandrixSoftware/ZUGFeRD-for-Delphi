@@ -85,6 +85,8 @@ type
     [Test]
     procedure TestUnroundedTaxAmountIsReported;
     [Test]
+    procedure TestTwoDecimalTaxAmountsAreNotReportedAsUnrounded;
+    [Test]
     procedure TestTaxAmountWithinBRCO17ToleranceIsAccepted;
     [Test]
     procedure TestTaxAmountAtFacturXBRCO17ToleranceBoundaryIsAccepted;
@@ -1036,6 +1038,40 @@ begin
     end;
   finally
     Descriptor.Free;
+  end;
+end;
+
+/// <summary>
+/// Betraege wie 0,07 oder 20,90 sind sauber zweistellig und duerfen BR-DEC-20
+/// nicht ausloesen. Sie sind binaer nicht exakt darstellbar, weshalb ein Vergleich
+/// der Currency-Groesse gegen ein Gleitkommaergebnis hier fehlschlaegt: von allen
+/// zweistelligen Betraegen zwischen 0,01 und 100,00 waeren rund 15 Prozent
+/// betroffen.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestTwoDecimalTaxAmountsAreNotReportedAsUnrounded;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-DEC20-OK', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
+  try
+    AddTaxGroup(Descriptor, 'Lower rate', 1, 7, 0.07, TZUGFeRDTaxCategoryCodes.S);
+    AddTaxGroup(Descriptor, 'Standard rate', 110, 19, 20.90, TZUGFeRDTaxCategoryCodes.AA);
+    Descriptor.SetTotals(111, 0, 0, 111, 20.97, 131.97, 0, 131.97);
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsTrue(ValidationResult.IsValid,
+        'Zweistellige Steuerbetraege wurden als ungueltig gemeldet:'#13#10 +
+        ValidationResult.Messages.Text);
+      Assert.IsFalse(ValidationResult.Messages.Text.Contains('BR-DEC-20'),
+        'Zweistellige Steuerbetraege wurden faelschlich als BR-DEC-20-Verstoss gemeldet:'#13#10 +
+        ValidationResult.Messages.Text);
+    finally
+      FreeAndNil(ValidationResult);
+    end;
+  finally
+    FreeAndNil(Descriptor);
   end;
 end;
 

@@ -212,7 +212,12 @@ begin
       Result.Messages.Add(Format('===> %f x %f%% = %f', [tax.BasisAmount, tax.Percent, expectedTaxAmount]));
 
       // BR-DEC-20: BT-117 darf höchstens zwei Nachkommastellen haben.
-      if tax.TaxAmount <> SimpleRoundTo(tax.TaxAmount, -2) then
+      // SimpleRoundTo hat keine Currency-Überladung und liefert einen
+      // Gleitkommawert. Ein direkter Vergleich gegen die Currency-Größe meldete
+      // deshalb für jeden sechsten sauber zweistelligen Betrag einen Verstoß,
+      // etwa für 0,07 oder 20,90. Currency rechnet in Hundertsteln exakt, also
+      // beantwortet der Nachkommaanteil nach Multiplikation mit 100 die Frage genau.
+      if Frac(tax.TaxAmount * 100) <> 0 then
       begin
         Result.Messages.Add(Format(
           'BR-DEC-20: Der Steuerbetrag[%4f] hat mehr als zwei Nachkommastellen', [tax.TaxAmount]));
