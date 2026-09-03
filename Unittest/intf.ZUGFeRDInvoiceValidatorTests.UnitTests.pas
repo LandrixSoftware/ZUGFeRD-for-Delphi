@@ -121,6 +121,12 @@ type
     [Test]
     procedure TestDeclaredChargeTotalDeviationIsReported;
     [Test]
+    procedure TestLogisticsServiceChargeCountsTowardsChargeTotal;
+    [Test]
+    procedure TestMissingAllowanceTotalWithAllowanceIsReported;
+    [Test]
+    procedure TestMissingChargeTotalWithChargeIsReported;
+    [Test]
     procedure TestMissingLineTotalAmountIsReported;
     [Test]
     procedure TestValidationDoesNotRaiseOnDeviation;
@@ -1189,6 +1195,126 @@ begin
       Assert.IsTrue(ValidationResult.IsValid,
         'Eine steuerfreie Rechnung wurde als ungueltig gemeldet:'#13#10 +
         ValidationResult.Messages.Text);
+    finally
+      FreeAndNil(ValidationResult);
+    end;
+  finally
+    FreeAndNil(Descriptor);
+  end;
+end;
+
+/// <summary>
+/// BT-108 umfasst nach FX-SCH-A-000119 neben den Kopfzuschlaegen auch die
+/// Logistik-Servicekosten. Ohne sie waeren Zuschlagssumme, Steuerbasis und
+/// Bruttosumme zu niedrig und eine gueltige Rechnung wuerde verworfen.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestLogisticsServiceChargeCountsTowardsChargeTotal;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-LOGISTIK', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
+  try
+    AddTaxGroup(Descriptor, 'Testartikel', 100, 19, 20.90, TZUGFeRDTaxCategoryCodes.S);
+
+    // 10,00 Logistik-Servicekosten erhoehen die Bemessungsgrundlage auf 110,00
+    Descriptor.AddLogisticsServiceCharge(10, 'Versandkosten',
+      TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S, 19.0);
+
+    // Die Steueraufschluesselung aus AddTaxGroup deckt nur 100,00 ab, deshalb hier
+    // die Bemessungsgrundlage auf den Gesamtbetrag setzen.
+    Descriptor.Taxes[0].BasisAmount := 110;
+
+    Descriptor.SetTotals(
+      {aLineTotalAmount=}      100,
+      {aChargeTotalAmount=}    10,
+      {aAllowanceTotalAmount=} 0,
+      {aTaxBasisAmount=}       110,
+      {aTaxTotalAmount=}       20.90,
+      {aGrandTotalAmount=}     130.90,
+      {aTotalPrepaidAmount=}   0,
+      {aDuePayableAmount=}     130.90);
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsTrue(ValidationResult.IsValid,
+        'Eine Rechnung mit Logistik-Servicekosten wurde verworfen:'#13#10 +
+        ValidationResult.Messages.Text);
+    finally
+      FreeAndNil(ValidationResult);
+    end;
+  finally
+    FreeAndNil(Descriptor);
+  end;
+end;
+
+/// <summary>
+/// FX-SCH-A-000118 verlangt BT-107, sobald ein Kopfabschlag existiert - auch dann,
+/// wenn dessen Betrag null ist. Ein Vergleich allein ueber die Summe wuerde den
+/// fehlenden Wert gegen den Standardwert null halten und nichts beanstanden.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestMissingAllowanceTotalWithAllowanceIsReported;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := CreateBalancedInvoice(False);
+  try
+    Descriptor.AddTradeAllowance(
+      {basisAmount=}     TZUGFeRDNullableParam<Currency>.Create(200),
+      {currency=}        TZUGFeRDCurrencyCodes.EUR,
+      {actualAmount=}    0,
+      {reason=}          'Abschlag ohne Betrag',
+      {taxTypeCode=}     TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+      {taxCategoryCode=} TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+      {taxPercent=}      19.0);
+    Descriptor.AllowanceTotalAmount := nil;
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(ValidationResult.IsValid,
+        'Ein fehlendes BT-107 bei vorhandenem Kopfabschlag wurde nicht beanstandet:'#13#10 +
+        ValidationResult.Messages.Text);
+      Assert.IsTrue(ValidationResult.Messages.Text.Contains('BR-CO-11'),
+        'Es fehlt die Meldung zu BR-CO-11:'#13#10 + ValidationResult.Messages.Text);
+    finally
+      FreeAndNil(ValidationResult);
+    end;
+  finally
+    FreeAndNil(Descriptor);
+  end;
+end;
+
+/// <summary>
+/// FX-SCH-A-000119 entsprechend fuer BT-108 und die Kopfzuschlaege.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestMissingChargeTotalWithChargeIsReported;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := CreateBalancedInvoice(False);
+  try
+    // Ein Zuschlag ueber 0,00 faellt beim reinen Wertvergleich nicht auf, weil das
+    // fehlende BT-108 als 0 gelesen wuerde. Beanstandet wird er nur ueber die
+    // Existenz des Eintrags.
+    Descriptor.AddTradeCharge(
+      {basisAmount=}     TZUGFeRDNullableParam<Currency>.Create(200),
+      {currency=}        TZUGFeRDCurrencyCodes.EUR,
+      {actualAmount=}    0,
+      {reason=}          'Zuschlag ohne Betrag',
+      {taxTypeCode=}     TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+      {taxCategoryCode=} TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+      {taxPercent=}      19.0);
+    Descriptor.ChargeTotalAmount := nil;
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(ValidationResult.IsValid,
+        'Ein fehlendes BT-108 bei vorhandenem Kopfzuschlag wurde nicht beanstandet:'#13#10 +
+        ValidationResult.Messages.Text);
+      Assert.IsTrue(ValidationResult.Messages.Text.Contains('BR-CO-12'),
+        'Es fehlt die Meldung zu BR-CO-12:'#13#10 + ValidationResult.Messages.Text);
     finally
       FreeAndNil(ValidationResult);
     end;

@@ -192,7 +192,17 @@ begin
     end;
 
     Result.Messages.Add('Adding tax amounts from invoice service charge...');
-    // TODO
+
+    // BT-108 umfasst nach FX-SCH-A-000119 nicht nur die Kopfzuschläge, sondern auch
+    // die Logistik-Servicekosten. Der CII-Writer gibt sie als AppliedAmount einer
+    // SpecifiedLogisticsServiceCharge aus, der Reader liest sie zurück; ohne sie
+    // waren Zuschlagssumme, Steuerbasis und Bruttosumme zu niedrig.
+    for var serviceCharge in descriptor.ServiceCharges do
+    begin
+      Result.Messages.Add(Format('==> added %f as logistics service charge', [serviceCharge.Amount]));
+
+      chargeTotal := chargeTotal + serviceCharge.Amount;
+    end;
 
     // TODO ausgeben: Recalculating tax basis for tax percentages: [Key{percentage=7.00, code=[VAT] Value added tax, category=[S] Standard rate}, Key{percentage=19.00, code=[VAT] Value added tax, category=[S] Standard rate}]
 
@@ -405,7 +415,15 @@ begin
     // Summe der einzelnen Kopfabschläge (BT-92) entsprechen. BR-CO-12 verlangt
     // dasselbe für die Zuschläge (BT-108 gegen BT-99). Beide Kopfsummen sind
     // optional; fehlen sie, gelten sie als 0.
-    if Abs(allowanceTotal - declaredAllowanceTotal) < 0.01 then
+    // FX-SCH-A-000118 ist ein Entweder-oder: entweder es gibt keinen Kopfabschlag
+    // und kein BT-107, oder BT-107 entspricht der Summe. Massgeblich ist also, ob ein
+    // Eintrag existiert, nicht welchen Betrag er hat.
+    if (Length(descriptor.GetTradeAllowances) > 0) and not descriptor.AllowanceTotalAmount.HasValue then
+    begin
+      Result.Messages.Add('BR-CO-11: Zu den vorhandenen Kopfabschlägen fehlt die Summe BT-107');
+      Result.IsValid := false;
+    end
+    else if Abs(allowanceTotal - declaredAllowanceTotal) < 0.01 then
     begin
       Result.Messages.Add(Format('trade.settlement.monetarySummation.allowanceTotal  Message: Berechneter Wert ist wie vorhanden:[%4f]', [declaredAllowanceTotal]));
     end
@@ -415,7 +433,15 @@ begin
       Result.IsValid := false;
     end;
 
-    if Abs(chargeTotal - declaredChargeTotal) < 0.01 then
+    // FX-SCH-A-000119 entsprechend für die Zuschläge, hier einschließlich der
+    // Logistik-Servicekosten.
+    if ((Length(descriptor.GetTradeCharges) > 0) or (descriptor.ServiceCharges.Count > 0)) and
+       not descriptor.ChargeTotalAmount.HasValue then
+    begin
+      Result.Messages.Add('BR-CO-12: Zu den vorhandenen Kopfzuschlägen fehlt die Summe BT-108');
+      Result.IsValid := false;
+    end
+    else if Abs(chargeTotal - declaredChargeTotal) < 0.01 then
     begin
       Result.Messages.Add(Format('trade.settlement.monetarySummation.chargeTotal  Message: Berechneter Wert ist wie vorhanden:[%4f]', [declaredChargeTotal]));
     end
