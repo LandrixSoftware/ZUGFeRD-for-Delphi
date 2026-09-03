@@ -239,7 +239,29 @@ begin
       // konkrete Regelwerk kennt, bleibt die Factur-X-Grenze für alle Profile
       // erhalten. Abweichungen werden protokolliert, damit sie nicht untergehen.
       taxDeviation := tax.TaxAmount - expectedTaxAmount;
-      if Abs(taxDeviation) > 1 then
+      if Abs(tax.Percent) < 0.5 then
+      begin
+        // Erster Zweig von FX-SCH-A-000052: rundet der Steuersatz auf null, muss
+        // auch der Steuerbetrag auf null runden. Die Toleranz einer ganzen
+        // Währungseinheit gilt hier nicht, sonst bliebe bei einem Nullsatz ein
+        // Steuerbetrag von bis zu einer Einheit unbeanstandet. Die Kategorien mit
+        // Nullsatz verlangen über BR-Z-09, BR-E-09, BR-AE-09, BR-G-09 und
+        // BR-O-09 ohnehin genau null.
+        if Abs(tax.TaxAmount) >= 0.5 then
+        begin
+          Result.Messages.Add(Format(
+            'BR-CO-17: Bei Steuersatz[%4f] muss der Steuerbetrag null sein, angegeben ist[%4f] bei Bemessungsgrundlage[%4f]',
+            [tax.Percent, tax.TaxAmount, tax.BasisAmount]));
+          Result.IsValid := false;
+        end
+        else if tax.TaxAmount <> 0 then
+        begin
+          Result.Messages.Add(Format(
+            'Hinweis: Bei Steuersatz[%4f] ist ein Steuerbetrag von[%4f] angegeben, der auf null rundet',
+            [tax.Percent, tax.TaxAmount]));
+        end;
+      end
+      else if Abs(taxDeviation) > 1 then
       begin
         Result.Messages.Add(Format(
           'BR-CO-17: Berechneter Steuerbetrag ist[%4f] aber vorhandener Steuerbetrag ist[%4f] bei Bemessungsgrundlage[%4f] und Steuersatz[%4f]',

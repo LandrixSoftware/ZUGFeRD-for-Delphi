@@ -93,6 +93,10 @@ type
     [Test]
     procedure TestTaxAmountBeyondBRCO17ToleranceIsReported;
     [Test]
+    procedure TestZeroRateWithTaxAmountIsReported;
+    [Test]
+    procedure TestZeroRateWithoutTaxAmountIsAccepted;
+    [Test]
     procedure TestTaxAmountDeviationsWithinSameRateAreReported;
     [Test]
     procedure TestNegativeMidpointTaxAmountIsRoundedAwayFromZero;
@@ -1125,6 +1129,65 @@ begin
     try
       Assert.IsTrue(ValidationResult.IsValid,
         'Eine gueltige Rechnung mit nicht aufgehender Preisbasismenge wurde verworfen:'#13#10 +
+        ValidationResult.Messages.Text);
+    finally
+      FreeAndNil(ValidationResult);
+    end;
+  finally
+    FreeAndNil(Descriptor);
+  end;
+end;
+
+/// <summary>
+/// FX-SCH-A-000052 hat fuer einen auf null rundenden Steuersatz einen eigenen
+/// Zweig: dort muss der Steuerbetrag auf null runden, die Toleranz von einer
+/// Waehrungseinheit gilt nicht. Andernfalls bliebe bei einer steuerfreien
+/// Rechnung ein Steuerbetrag von bis zu einer Einheit unbeanstandet, den auch
+/// BR-E-09 verbietet.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestZeroRateWithTaxAmountIsReported;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-ZERORATE-FAIL', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
+  try
+    AddTaxGroup(Descriptor, 'Steuerbefreit', 100, 0, 0.80, TZUGFeRDTaxCategoryCodes.E);
+    Descriptor.SetTotals(100, 0, 0, 100, 0.80, 100.80, 0, 100.80);
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(ValidationResult.IsValid,
+        'Ein Steuerbetrag bei Steuersatz null wurde nicht beanstandet:'#13#10 +
+        ValidationResult.Messages.Text);
+      Assert.IsTrue(ValidationResult.Messages.Text.Contains('BR-CO-17:'),
+        'Es fehlt die Meldung zu BR-CO-17:'#13#10 + ValidationResult.Messages.Text);
+    finally
+      FreeAndNil(ValidationResult);
+    end;
+  finally
+    FreeAndNil(Descriptor);
+  end;
+end;
+
+/// <summary>
+/// Die uebliche steuerfreie Rechnung mit Steuersatz und Steuerbetrag null bleibt
+/// selbstverstaendlich gueltig.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestZeroRateWithoutTaxAmountIsAccepted;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-ZERORATE-OK', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
+  try
+    AddTaxGroup(Descriptor, 'Steuerbefreit', 100, 0, 0, TZUGFeRDTaxCategoryCodes.E);
+    Descriptor.SetTotals(100, 0, 0, 100, 0, 100, 0, 100);
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsTrue(ValidationResult.IsValid,
+        'Eine steuerfreie Rechnung wurde als ungueltig gemeldet:'#13#10 +
         ValidationResult.Messages.Text);
     finally
       FreeAndNil(ValidationResult);
