@@ -213,10 +213,18 @@ begin
 
   Writer.WriteElementString('cbc:DocumentCurrencyCode', TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Descriptor.Currency));
 
-  // BT-6 nur bei einer von der Rechnungswährung abweichenden Abrechnungswährung:
-  // BR-53 verlangt zu einem vorhandenen BT-6 zwingend ein BT-111, und das wird weiter
-  // unten ebenfalls nur bei abweichender Währung geschrieben.
-  if Descriptor.TaxCurrency.HasValue and (Descriptor.TaxCurrency.Value <> Descriptor.Currency) then
+  // BT-6 und BT-111 gehören zusammen: BR-53 verlangt zu einem vorhandenen
+  // Steuerwährungscode einen Steuerbetrag in eben dieser Währung. Die Bedingung
+  // wird deshalb einmal gebildet und an beiden Stellen verwendet - sonst entsteht
+  // ein BT-6 ohne BT-111, sobald der Betrag in Abrechnungswährung fehlt.
+  var writeAccountingCurrency: Boolean :=
+    Descriptor.TaxCurrency.HasValue and
+    (Descriptor.TaxCurrency.Value <> Descriptor.Currency) and
+    Descriptor.TaxTotalAmountInAccountingCurrency.HasValue and
+    (Descriptor.Taxes.Count > 0) and
+    Descriptor.TaxTotalAmount.HasValue;
+
+  if writeAccountingCurrency then
     Writer.WriteElementString('cbc:TaxCurrencyCode', TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Descriptor.TaxCurrency.Value));
 
   // BT-19
@@ -576,10 +584,7 @@ begin
     Writer.WriteEndElement; // !TaxTotal
   end;
 
-  if (Descriptor.Taxes.Count > 0) and Descriptor.TaxTotalAmount.HasValue and
-     Descriptor.TaxCurrency.HasValue and
-     (Descriptor.TaxCurrency.Value <> Descriptor.Currency) and
-     Descriptor.TaxTotalAmountInAccountingCurrency.HasValue then
+  if writeAccountingCurrency then
   begin
     // BT-111 wird als eigene TaxTotal-Gruppe ohne TaxSubtotal geschrieben.
     Writer.WriteStartElement('cac:TaxTotal');

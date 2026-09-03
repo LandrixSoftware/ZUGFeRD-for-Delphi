@@ -693,9 +693,16 @@ if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
 
   //   3. TaxCurrencyCode (optional)
   //   BT-6
-  // BT-6 nur bei abweichender Abrechnungswährung, siehe BR-53: ohne BT-111 darf
-  // kein Steuerwährungscode stehen.
-	if Descriptor.TaxCurrency.HasValue and (Descriptor.TaxCurrency.Value <> Descriptor.Currency) then
+  // BT-6 und BT-111 gehören zusammen: BR-53 verlangt zu einem vorhandenen
+  // Steuerwährungscode einen Steuerbetrag in eben dieser Währung. Die Bedingung
+  // wird deshalb einmal gebildet und an beiden Stellen verwendet - sonst entsteht
+  // ein BT-6 ohne BT-111, sobald der Betrag in Abrechnungswährung fehlt.
+  var writeAccountingCurrency: Boolean :=
+    Descriptor.TaxCurrency.HasValue and
+    (Descriptor.TaxCurrency.Value <> Descriptor.Currency) and
+    Descriptor.TaxTotalAmountInAccountingCurrency.HasValue;
+
+	if writeAccountingCurrency then
   	Writer.WriteElementString('ram:TaxCurrencyCode', TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Descriptor.TaxCurrency), [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
 
   //   4. InvoiceCurrencyCode (optional)
@@ -1033,9 +1040,8 @@ if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
   _writeOptionalAmount(Writer, 'ram:TaxBasisTotalAmount', Descriptor.TaxBasisAmount);
   _writeOptionalAmount(Writer, 'ram:TaxTotalAmount', Descriptor.TaxTotalAmount, 2, true);
 
-  // BT-111: TaxTotalAmount in accounting currency — only when BT-6 (TaxCurrency) differs from BT-5 (Currency)
-  if Descriptor.TaxCurrency.HasValue and (Descriptor.TaxCurrency.Value <> Descriptor.Currency) and
-     Descriptor.TaxTotalAmountInAccountingCurrency.HasValue then
+  // BT-111: TaxTotalAmount in accounting currency, an dieselbe Bedingung geknüpft wie BT-6
+  if writeAccountingCurrency then
   begin
     Writer.WriteStartElement('ram:TaxTotalAmount');
     Writer.WriteAttributeString('currencyID', TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Descriptor.TaxCurrency.Value));

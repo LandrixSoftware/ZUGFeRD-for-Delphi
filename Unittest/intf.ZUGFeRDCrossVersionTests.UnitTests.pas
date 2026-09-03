@@ -297,6 +297,8 @@ type
 
     [Test]
     procedure TestTaxTotalAmountBT110OnlyWhenTaxCurrencyEqualsCurrencyUBL;
+    [Test]
+    procedure TestNoBT6WithoutAccountingCurrencyAmount;
 
     [Test]
     [TestCase('V1-CII-Ext',  '100,0,4')]
@@ -2741,6 +2743,58 @@ begin
     desc.Free;
   end;
 end; // !TestSellerOrderReferencedDocumentOnItemLevel()
+
+/// <summary>
+/// BR-53 verlangt zu einem vorhandenen BT-6 einen Steuerbetrag in eben dieser
+/// Waehrung. Ist BT-6 zwar gesetzt, aber kein Betrag in Abrechnungswaehrung
+/// hinterlegt, entsteht sonst ein Steuerwaehrungscode ohne BT-111.
+/// </summary>
+procedure TZUGFeRDCrossVersionTests.TestNoBT6WithoutAccountingCurrencyAmount;
+var
+  Desc: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+  bytes: TBytes;
+  xmlContent: string;
+begin
+  Desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    // BT-6 abweichend gesetzt, BT-111 aber nie befuellt
+    Desc.TaxCurrency := TZUGFeRDCurrencyCodes.CHF;
+
+    ms := TMemoryStream.Create;
+    try
+      Desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
+      ms.Position := 0;
+      SetLength(bytes, ms.Size);
+      ms.ReadBuffer(bytes[0], ms.Size);
+      xmlContent := TEncoding.UTF8.GetString(bytes);
+
+      Assert.AreEqual(0, _CountSubstring(xmlContent, '<ram:TaxCurrencyCode'),
+        'BT-6 must not be written without a tax total in the accounting currency');
+      Assert.AreEqual(1, _CountSubstring(xmlContent, '<ram:TaxTotalAmount'),
+        'Only BT-110 expected when no accounting currency amount is present');
+    finally
+      ms.Free;
+    end;
+
+    ms := TMemoryStream.Create;
+    try
+      Desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+      ms.Position := 0;
+      SetLength(bytes, ms.Size);
+      ms.ReadBuffer(bytes[0], ms.Size);
+      xmlContent := TEncoding.UTF8.GetString(bytes);
+
+      Assert.AreEqual(0, _CountSubstring(xmlContent, '<cbc:TaxCurrencyCode'),
+        'BT-6 must not be written to UBL without a tax total in the accounting currency');
+    finally
+      ms.Free;
+    end;
+  finally
+    Desc.Free;
+  end;
+end; // !TestNoBT6WithoutAccountingCurrencyAmount()
+
 
 initialization
   TDUnitX.RegisterTestFixture(TZUGFeRDCrossVersionTests);
