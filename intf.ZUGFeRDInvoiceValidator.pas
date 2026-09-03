@@ -148,6 +148,14 @@ begin
         for var lineCharge in item.GetSpecifiedTradeCharges do
           _total := _total + lineCharge.ActualAmount;
 
+        // BT-131 hat nach BR-DEC-23 höchstens zwei Nachkommastellen, und BR-CO-10
+        // bildet BT-106 aus der Summe dieser gerundeten Positionsbeträge. Ohne die
+        // Rundung je Position summieren sich die Reste einer Preisbasismenge auf:
+        // vier Positionen zu 100,00 je 3 Stück ergeben 133,3332 statt 133,32 und
+        // sprengen die Toleranz des Vergleichs gegen BT-106. Der CII-Writer schreibt
+        // BT-131 an dieser Stelle ebenfalls zweistellig.
+        _total := SimpleRoundTo(_total, -2);
+
         lineTotal := lineTotal + _total;
       end;
 

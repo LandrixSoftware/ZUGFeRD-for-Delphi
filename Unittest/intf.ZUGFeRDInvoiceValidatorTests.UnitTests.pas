@@ -107,6 +107,8 @@ type
     [Test]
     procedure TestPriceBaseQuantityIsApplied;
     [Test]
+    procedure TestPriceBaseQuantityRemaindersAreRoundedPerLine;
+    [Test]
     procedure TestZeroPriceBaseQuantityIsReported;
     [Test]
     procedure TestConsistentlyWrongTaxBasisIsReported;
@@ -1066,6 +1068,63 @@ begin
         ValidationResult.Messages.Text);
       Assert.IsFalse(ValidationResult.Messages.Text.Contains('BR-DEC-20'),
         'Zweistellige Steuerbetraege wurden faelschlich als BR-DEC-20-Verstoss gemeldet:'#13#10 +
+        ValidationResult.Messages.Text);
+    finally
+      FreeAndNil(ValidationResult);
+    end;
+  finally
+    FreeAndNil(Descriptor);
+  end;
+end;
+
+/// <summary>
+/// Geht die Preisbasismenge nicht glatt auf, muss der Positionsnettobetrag je
+/// Position auf zwei Nachkommastellen gerundet werden, bevor er in BT-106
+/// einfliesst: BR-DEC-23 laesst fuer BT-131 nicht mehr Stellen zu, und BR-CO-10
+/// summiert genau diese gerundeten Werte. Ohne die Rundung summieren sich die
+/// Reste ueber die Positionen auf und sprengen die Toleranz des Vergleichs.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestPriceBaseQuantityRemaindersAreRoundedPerLine;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+  i: Integer;
+begin
+  Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-BASISMENGE-REST', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
+  try
+    // 100,00 je 3 Stueck ergibt 33,3333...; BT-131 ist damit 33,33 je Position.
+    for i := 1 to 4 do
+      Descriptor.AddTradeLineItem(
+        {name=}            Format('Testartikel %d', [i]),
+        {netUnitPrice=}    TZUGFeRDNullableParam<Currency>.Create(100),
+        {description=}     '',
+        {unitCode=}        TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+        {unitQuantity=}    TZUGFeRDNullableParam<Currency>.Create(3),
+        {grossUnitPrice=}  nil,
+        {billedQuantity=}  1,
+        {lineTotalAmount=} 33.33,
+        {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+        {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+        {taxPercent=}      19.0);
+
+    // 4 x 33,33 = 133,32; darauf 19 Prozent sind 25,33.
+    Descriptor.AddApplicableTradeTax({calculatedAmount=} 25.33, {basisAmount=} 133.32,
+      {percent=} 19.0, TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S);
+
+    Descriptor.SetTotals(
+      {aLineTotalAmount=}      133.32,
+      {aChargeTotalAmount=}    0,
+      {aAllowanceTotalAmount=} 0,
+      {aTaxBasisAmount=}       133.32,
+      {aTaxTotalAmount=}       25.33,
+      {aGrandTotalAmount=}     158.65,
+      {aTotalPrepaidAmount=}   0,
+      {aDuePayableAmount=}     158.65);
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsTrue(ValidationResult.IsValid,
+        'Eine gueltige Rechnung mit nicht aufgehender Preisbasismenge wurde verworfen:'#13#10 +
         ValidationResult.Messages.Text);
     finally
       FreeAndNil(ValidationResult);
