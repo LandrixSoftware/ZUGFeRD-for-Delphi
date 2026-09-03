@@ -97,3 +97,11 @@ Unittest/ZfDUnitTest.delphilsp.json
 Unittest/ZfDUnitTestGUI.delphilsp.json
 
 Unittest/ZfDUnitTestGUI.ini
+
+# GNU-Global-Index (lokal)
+GPATH
+GRTAGS
+GTAGS
+
+# Platzhalter für umgeleitetes stdin in run-tests.ps1
+Unittest/nul_stdin.tmp
