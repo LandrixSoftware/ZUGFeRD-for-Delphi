@@ -741,7 +741,24 @@ begin
   Writer.WriteEndElement; // !InvoicedQuantity || CreditedQuantity
 
   WriteComment(Writer, options, TZUGFeRDInvoiceCommentConstants.SpecifiedTradeSettlementLineMonetarySummationComment);
-  _writeOptionalAmount(Writer, 'cbc:LineExtensionAmount', tradeLineItem.LineTotalAmount, 2, true);
+
+  // BT-131 ist in cac:InvoiceLine eine Pflichtangabe. Fehlt der Positionsbetrag im
+  // Descriptor, wird er wie im CII-Writer aus Nettoeinzelpreis, berechneter Menge
+  // und Preisbasismenge gebildet, statt das Element wegzulassen.
+  var lineTotalAmount: Currency := 0;
+  if tradeLineItem.LineTotalAmount.HasValue then
+    lineTotalAmount := tradeLineItem.LineTotalAmount.Value
+  else if tradeLineItem.NetUnitPrice.HasValue then
+  begin
+    lineTotalAmount := tradeLineItem.NetUnitPrice.Value * tradeLineItem.BilledQuantity;
+    if tradeLineItem.NetQuantity.HasValue and (tradeLineItem.NetQuantity.Value <> 0) then
+      lineTotalAmount := lineTotalAmount / tradeLineItem.NetQuantity.Value;
+  end;
+
+  Writer.WriteStartElement('cbc:LineExtensionAmount');
+  Writer.WriteAttributeString('currencyID', TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Descriptor.Currency));
+  Writer.WriteValue(_formatDecimal(lineTotalAmount, 2));
+  Writer.WriteEndElement; // !cbc:LineExtensionAmount
 
   if tradeLineItem.BillingPeriodStart.HasValue or tradeLineItem.BillingPeriodEnd.HasValue then
   begin

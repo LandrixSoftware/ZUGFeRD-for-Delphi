@@ -30,6 +30,8 @@ type
     [Test]
     procedure TestParentLineId;
     [Test]
+    procedure TestLineExtensionAmountIsCalculatedWhenMissing;
+    [Test]
     procedure TestTaxRepresentativePartyNoNestedPartyElement;
     [Test]
     procedure TestInvoiceCreation;
@@ -2107,6 +2109,60 @@ begin
     desc.Free;
   end;
 end;
+
+/// <summary>
+/// BT-131 ist in cac:InvoiceLine eine Pflichtangabe. Fehlt der Positionsbetrag im
+/// Descriptor, muss der Writer ihn aus Nettoeinzelpreis, berechneter Menge und
+/// Preisbasismenge bilden, statt das Element wegzulassen und ein schema-ungueltiges
+/// Dokument zu erzeugen.
+/// </summary>
+procedure TXRechnungUBLTests.TestLineExtensionAmountIsCalculatedWhenMissing;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+  bytes: TBytes;
+  xmlContent: string;
+begin
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.TradeLineItems.Clear;
+
+    // 100,00 je 10 Stueck bei 2 berechneten Stueck ergibt einen Positionsbetrag
+    // von 20,00; LineTotalAmount bleibt bewusst ungesetzt.
+    var lineItem := desc.AddTradeLineItem(
+      {name=}            'Testartikel',
+      {netUnitPrice=}    TZUGFeRDNullableParam<Currency>.Create(100),
+      {description=}     '',
+      {unitCode=}        TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+      {unitQuantity=}    TZUGFeRDNullableParam<Currency>.Create(10),
+      {grossUnitPrice=}  nil,
+      {billedQuantity=}  2,
+      {lineTotalAmount=} 0,
+      {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+      {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+      {taxPercent=}      19.0);
+    // AddTradeLineItem nimmt BT-131 nicht als Nullable entgegen, deshalb hier zurücksetzen
+    lineItem.LineTotalAmount := nil;
+    Assert.IsFalse(lineItem.LineTotalAmount.HasValue, 'Der Test setzt eine Position ohne BT-131 voraus');
+
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+      ms.Position := 0;
+      SetLength(bytes, ms.Size);
+      ms.ReadBuffer(bytes[0], ms.Size);
+      xmlContent := TEncoding.UTF8.GetString(bytes);
+
+      Assert.IsTrue(Pos('<cbc:LineExtensionAmount currencyID="EUR">20.00</cbc:LineExtensionAmount>', xmlContent) > 0,
+        'Der Positionsbetrag wurde nicht aus Preis und Menge gebildet:'#13#10 + xmlContent);
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
 
 initialization
   TDUnitX.RegisterTestFixture(TXRechnungUBLTests);
