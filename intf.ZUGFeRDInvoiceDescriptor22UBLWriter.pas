@@ -94,15 +94,7 @@ type
     function _IsInvoiceAccordingToUBLSpecification(type_: TZUGFeRDInvoiceType): Boolean;
     function _mapTaxRegistrationSchemeID(schemeID: TZUGFeRDTaxRegistrationSchemeID): string;
     function GetNameSpaces(isInvoice: Boolean): TDictionary<string, string>;
-  private const
-    ALL_PROFILES = [TZUGFeRDProfile.Minimum,
-                    TZUGFeRDProfile.BasicWL,
-                    TZUGFeRDProfile.Basic,
-                    TZUGFeRDProfile.Comfort,
-                    TZUGFeRDProfile.Extended,
-                    TZUGFeRDProfile.XRechnung1,
-                    TZUGFeRDProfile.XRechnung,
-                    TZUGFeRDProfile.EReporting];
+    function _validateProfile(_descriptor: TZUGFeRDInvoiceDescriptor; _throwExceptions: Boolean): Boolean;
   public
     function Validate(_descriptor: TZUGFeRDInvoiceDescriptor; _throwExceptions: Boolean = True): Boolean; override;
     procedure Save(_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream; _format : TZUGFeRDFormats = TZUGFeRDFormats.CII; options: TZUGFeRDInvoiceFormatOptions = Nil); override;
@@ -144,6 +136,9 @@ var
 begin
   if (_stream = nil) then
     raise TZUGFeRDIllegalStreamException.Create('Cannot write to stream');
+
+  // Bei direkter Nutzung des Writers gilt dieselbe Profilgrenze wie im Dispatcher
+  _validateProfile(_descriptor, True);
 
   streamPosition := _stream.Position;
 
@@ -1213,7 +1208,26 @@ function TZUGFeRDInvoiceDescriptor22UBLWriter.Validate(
   _descriptor: TZUGFeRDInvoiceDescriptor;
   _throwExceptions: Boolean): Boolean;
 begin
-  raise ENotImplemented.Create('Validate not implemented for UBL writer');
+  // Dieselben Regeln wie über den Dispatcher TZUGFeRDInvoiceDescriptor23Writer;
+  // vorher warf die Methode ENotImplemented und Save(filename) war unbenutzbar.
+  Result := _validateProfile(_descriptor, _throwExceptions) and
+            ValidateVersion23(_descriptor, _throwExceptions);
+end;
+
+function TZUGFeRDInvoiceDescriptor22UBLWriter._validateProfile(
+  _descriptor: TZUGFeRDInvoiceDescriptor;
+  _throwExceptions: Boolean): Boolean;
+begin
+  // Der Dispatcher lässt UBL nur mit dem Profil XRechnung zu (Save in
+  // TZUGFeRDInvoiceDescriptor23Writer); bei direkter Nutzung gilt dieselbe Grenze auch
+  // für Save(stream), sonst entstünde UBL mit fester XRechnung-CustomizationID, aber
+  // fremdem Profilfilter.
+  Result := _descriptor.Profile = TZUGFeRDProfile.XRechnung;
+  if (not Result) and _throwExceptions then
+    raise TZUGFeRDUnsupportedException.Create(
+      'Profile ' + TEnumExtensions<TZUGFeRDProfile>.EnumToString(_descriptor.Profile) +
+      ' and format UBL is not supported for ZUGFeRD version 2.3. ' +
+      'Format UBL is only allowed with profile XRechnung.');
 end;
 
 

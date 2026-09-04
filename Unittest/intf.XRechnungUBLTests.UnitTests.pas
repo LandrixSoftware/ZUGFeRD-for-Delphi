@@ -107,6 +107,8 @@ type
     procedure TestSellerPartyDescription;
     [Test]
     procedure TestBuyerSellerSchemeIds;
+    [Test]
+    procedure TestProfileIsReadFromCustomizationID;
   end;
 
 implementation
@@ -2163,6 +2165,95 @@ begin
   end;
 end;
 
+
+/// <summary>
+/// Der UBL-Reader leitet das Profil aus cbc:CustomizationID (BT-24) ab: XRechnung-URNs
+/// ergeben XRechnung, reines EN 16931 ergibt Comfort, eine fremde CIUS wie Peppol BIS
+/// Billing 3.0 bleibt Unknown und wird nicht stillschweigend zu XRechnung.
+/// </summary>
+procedure TXRechnungUBLTests.TestProfileIsReadFromCustomizationID;
+const
+  XRECHNUNG_30 = 'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0';
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  ms: TMemoryStream;
+  bytes: TBytes;
+  xml: string;
+
+  function LoadWithCustomizationID(const customizationID: string;
+    const nestedExtensionID: string = ''): TZUGFeRDProfile;
+  var
+    replaced: string;
+    ss: TStringStream;
+    loaded: TZUGFeRDInvoiceDescriptor;
+  begin
+    replaced := StringReplace(xml, XRECHNUNG_30, customizationID, []);
+    Assert.IsTrue((customizationID = XRECHNUNG_30) or (replaced <> xml),
+      'CustomizationID wurde im erzeugten UBL nicht gefunden.');
+    if nestedExtensionID <> '' then
+      // ext:UBLExtensions steht vor BT-24 und darf beliebigen Inhalt tragen; eine dort
+      // verschachtelte cbc:CustomizationID darf nicht als BT-24 gelesen werden.
+      replaced := StringReplace(replaced, '<cbc:CustomizationID>',
+        '<ext:UBLExtensions xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">' +
+        '<ext:UBLExtension><ext:ExtensionContent><cbc:CustomizationID>' + nestedExtensionID +
+        '</cbc:CustomizationID></ext:ExtensionContent></ext:UBLExtension></ext:UBLExtensions>' +
+        '<cbc:CustomizationID>', []);
+    ss := TStringStream.Create(replaced, TEncoding.UTF8);
+    try
+      ss.Position := 0;
+      loaded := TZUGFeRDInvoiceDescriptor.Load(ss);
+      try
+        Result := loaded.Profile;
+        Assert.AreEqual(customizationID, loaded.GuideLine, 'BT-24 muss unverändert in GuideLine stehen.');
+      finally
+        loaded.Free;
+      end;
+    finally
+      ss.Free;
+    end;
+  end;
+
+begin
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    ms := TMemoryStream.Create;
+    try
+      desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+      SetLength(bytes, ms.Size);
+      ms.Position := 0;
+      ms.ReadBuffer(bytes[0], ms.Size);
+      xml := TEncoding.UTF8.GetString(bytes);
+    finally
+      ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+
+  Assert.AreEqual(TZUGFeRDProfile.XRechnung, LoadWithCustomizationID(XRECHNUNG_30));
+  Assert.AreEqual(TZUGFeRDProfile.XRechnung, LoadWithCustomizationID(
+    'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3'));
+  Assert.AreEqual(TZUGFeRDProfile.XRechnung, LoadWithCustomizationID(
+    'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0#conformant#urn:xeinkauf.de:kosit:extension:xrechnung_3.0'));
+  Assert.AreEqual(TZUGFeRDProfile.XRechnung, LoadWithCustomizationID(
+    'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3#conformant#urn:xoev-de:kosit:extension:xrechnung_2.3'));
+  // XRechnung 1.2: der UBL-Writer kennt nur XRechnung, deshalb bewusst kein XRechnung1
+  Assert.AreEqual(TZUGFeRDProfile.XRechnung, LoadWithCustomizationID(
+    'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_1.2'));
+  Assert.AreEqual(TZUGFeRDProfile.Comfort, LoadWithCustomizationID('urn:cen.eu:en16931:2017'));
+  Assert.AreEqual(TZUGFeRDProfile.Unknown, LoadWithCustomizationID(
+    'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0'));
+  // Fingierte oder zur Basis nicht passende Extension-Kennungen bleiben Unknown
+  Assert.AreEqual(TZUGFeRDProfile.Unknown, LoadWithCustomizationID(
+    'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.0#conformant#urn:xoev-de:kosit:extension:xrechnung_9.9'));
+  Assert.AreEqual(TZUGFeRDProfile.Unknown, LoadWithCustomizationID(
+    'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0#conformant#urn:example.org:extension:xrechnung_3.0'));
+  // Verschachtelte CustomizationID in ext:UBLExtensions darf BT-24 nicht verdrängen
+  Assert.AreEqual(TZUGFeRDProfile.XRechnung, LoadWithCustomizationID(XRECHNUNG_30,
+    'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0'));
+  Assert.AreEqual(TZUGFeRDProfile.Unknown, LoadWithCustomizationID(
+    'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0', XRECHNUNG_30));
+end;
 
 initialization
   TDUnitX.RegisterTestFixture(TXRechnungUBLTests);

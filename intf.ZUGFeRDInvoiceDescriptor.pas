@@ -1230,49 +1230,70 @@ end;
 class function TZUGFeRDInvoiceDescriptor.GetVersion(const filename: string): TZUGFeRDVersion;
 var
   reader: TZUGFeRDIInvoiceDescriptorReader;
+  ms: TFileStream;
 begin
-  reader := TZUGFeRDInvoiceDescriptor1Reader.Create;
-  try
-    if reader.IsReadableByThisReaderVersion(filename) then
-    begin
-      Result := TZUGFeRDVersion.Version1;
-      Exit;
-    end;
-  finally
-    reader.Free;
-  end;
+  // Die Datei wird nur einmal geöffnet; früher öffnete jede Reader-Prüfung
+  // die Datei erneut (bis zu viermal). Die Fehlerklasse bleibt wie zuvor
+  // (EFileNotFoundException aus IsReadableByThisReaderVersion(filename)).
+  if not FileExists(filename) then
+    raise EFileNotFoundException.Create('File not found: ' + filename);
 
-  reader := TZUGFeRDInvoiceDescriptor22UBLReader.Create;
+  // Ein TFileStream statt einer Kopie im Speicher: IsReadableByThisReaderVersion stellt
+  // die Position wieder her, große eingebettete Anhänge werden nicht doppelt gehalten.
+  ms := TFileStream.Create(filename, fmOpenRead or fmShareDenyWrite);
   try
-    if reader.IsReadableByThisReaderVersion(filename) then
-    begin
-      Result := TZUGFeRDVersion.Version23;
-      Exit;
-    end;
-  finally
-    reader.Free;
-  end;
 
-  reader := TZUGFeRDInvoiceDescriptor23CIIReader.Create;
-  try
-    if reader.IsReadableByThisReaderVersion(filename) then
-    begin
-      Result := TZUGFeRDVersion.Version23;
-      Exit;
+    reader := TZUGFeRDInvoiceDescriptor1Reader.Create;
+    try
+      if reader.IsReadableByThisReaderVersion(ms) then
+      begin
+        Result := TZUGFeRDVersion.Version1;
+        Exit;
+      end;
+    finally
+      reader.Free;
     end;
-  finally
-    reader.Free;
-  end;
 
-  reader := TZUGFeRDInvoiceDescriptor20Reader.Create;
-  try
-    if reader.IsReadableByThisReaderVersion(filename) then
-    begin
-      Result := TZUGFeRDVersion.Version20;
-      Exit;
+    reader := TZUGFeRDInvoiceDescriptor22UBLReader.Create;
+    try
+      if reader.IsReadableByThisReaderVersion(ms) then
+      begin
+        Result := TZUGFeRDVersion.Version23;
+        Exit;
+      end;
+    finally
+      reader.Free;
+    end;
+
+    // Reihenfolge bewusst 23CII vor 20: Der Guideline-URN des Profils COMFORT
+    // (urn:cen.eu:en16931:2017) ist in ZUGFeRD 2.0 und 2.1+ identisch, eine
+    // 2.0-COMFORT-Datei ist also strukturell nicht von 2.1+ zu unterscheiden und wird
+    // als Version23 gemeldet und vom 23CII-Reader gelesen (gleiche Namensräume, daher
+    // folgenlos). BASIC/EXTENDED/MINIMUM/BASIC-WL tragen 2.0-spezifische URNs
+    // (…zugferd.de:2p0:…) und werden korrekt als Version20 erkannt.
+    reader := TZUGFeRDInvoiceDescriptor23CIIReader.Create;
+    try
+      if reader.IsReadableByThisReaderVersion(ms) then
+      begin
+        Result := TZUGFeRDVersion.Version23;
+        Exit;
+      end;
+    finally
+      reader.Free;
+    end;
+
+    reader := TZUGFeRDInvoiceDescriptor20Reader.Create;
+    try
+      if reader.IsReadableByThisReaderVersion(ms) then
+      begin
+        Result := TZUGFeRDVersion.Version20;
+        Exit;
+      end;
+    finally
+      reader.Free;
     end;
   finally
-    reader.Free;
+    ms.Free;
   end;
 
   raise TZUGFeRDUnsupportedException.Create('No ZUGFeRD invoice reader was able to parse this file "' + filename + '"!');
@@ -1440,49 +1461,65 @@ end;
 class function TZUGFeRDInvoiceDescriptor.Load(filename: string): TZUGFeRDInvoiceDescriptor;
 var
   reader: TZUGFeRDIInvoiceDescriptorReader;
+  ms: TFileStream;
 begin
-  reader := TZUGFeRDInvoiceDescriptor1Reader.Create;
-  try
-    if reader.IsReadableByThisReaderVersion(filename) then
-    begin
-      Result := reader.Load(filename);
-      exit;
-    end;
-  finally
-    reader.Free;
-  end;
+  // Die Datei wird nur einmal geöffnet; früher öffnete jede Reader-Prüfung
+  // und das Laden selbst die Datei erneut (bis zu fünfmal). Die Fehlerklasse bleibt wie
+  // zuvor (EFileNotFoundException aus IsReadableByThisReaderVersion(filename)).
+  // Zur Reader-Reihenfolge (2.0 COMFORT wird als Version23 gelesen) siehe GetVersion(filename).
+  if not FileExists(filename) then
+    raise EFileNotFoundException.Create('File not found: ' + filename);
 
-  reader := TZUGFeRDInvoiceDescriptor22UBLReader.Create;
+  // Ein TFileStream statt einer Kopie im Speicher: IsReadableByThisReaderVersion stellt
+  // die Position wieder her, große eingebettete Anhänge werden nicht doppelt gehalten.
+  ms := TFileStream.Create(filename, fmOpenRead or fmShareDenyWrite);
   try
-    if reader.IsReadableByThisReaderVersion(filename) then
-    begin
-      Result := reader.Load(filename);
-      exit;
-    end;
-  finally
-    reader.Free;
-  end;
 
-  reader := TZUGFeRDInvoiceDescriptor23CIIReader.Create;
-  try
-    if reader.IsReadableByThisReaderVersion(filename) then
-    begin
-      Result := reader.Load(filename);
-      exit;
+    reader := TZUGFeRDInvoiceDescriptor1Reader.Create;
+    try
+      if reader.IsReadableByThisReaderVersion(ms) then
+      begin
+        Result := reader.Load(ms);
+        exit;
+      end;
+    finally
+      reader.Free;
     end;
-  finally
-    reader.Free;
-  end;
 
-  reader := TZUGFeRDInvoiceDescriptor20Reader.Create;
-  try
-    if reader.IsReadableByThisReaderVersion(filename) then
-    begin
-      Result := reader.Load(filename);
-      exit;
+    reader := TZUGFeRDInvoiceDescriptor22UBLReader.Create;
+    try
+      if reader.IsReadableByThisReaderVersion(ms) then
+      begin
+        Result := reader.Load(ms);
+        exit;
+      end;
+    finally
+      reader.Free;
+    end;
+
+    reader := TZUGFeRDInvoiceDescriptor23CIIReader.Create;
+    try
+      if reader.IsReadableByThisReaderVersion(ms) then
+      begin
+        Result := reader.Load(ms);
+        exit;
+      end;
+    finally
+      reader.Free;
+    end;
+
+    reader := TZUGFeRDInvoiceDescriptor20Reader.Create;
+    try
+      if reader.IsReadableByThisReaderVersion(ms) then
+      begin
+        Result := reader.Load(ms);
+        exit;
+      end;
+    finally
+      reader.Free;
     end;
   finally
-    reader.Free;
+    ms.Free;
   end;
 
   raise TZUGFeRDUnsupportedException.CreateFmt('No ZUGFeRD invoice reader was able to parse this file ''%s''!', [filename]);

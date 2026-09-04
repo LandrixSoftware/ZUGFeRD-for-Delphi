@@ -64,6 +64,9 @@ type
     procedure TestGetVersion;
 
     [Test]
+    procedure TestGetVersionZugferd20Profiles;
+
+    [Test]
     [TestCase('V1-Ext',       '100,4')]
     [TestCase('V1-XR',        '100,32')]
     [TestCase('V20-Ext',      '200,4')]
@@ -213,6 +216,11 @@ type
     procedure TestValidXml(_version: Integer; _format: Integer; _profile: Integer);
 
     [Test]
+    [TestCase('V23-CII-Ext', '230,0,4')]
+    [TestCase('V23-UBL-XR',  '230,1,32')]
+    procedure TestLoneSurrogateIsCleaned(_version: Integer; _format: Integer; _profile: Integer);
+
+    [Test]
     [TestCase('V1-CII-Ext',  '100,0,4')]
     [TestCase('V20-CII-Ext', '200,0,4')]
     [TestCase('V23-CII-Ext', '230,0,4')]
@@ -349,7 +357,9 @@ uses
   intf.ZUGFeRDContractReferencedDocument,
   intf.ZUGFeRDSellerOrderReferencedDocument,
   intf.ZUGFeRDExceptions,
-  intf.ZUGFeRDInvoiceFormatOptions;
+  intf.ZUGFeRDInvoiceFormatOptions,
+  intf.ZUGFeRDAdditionalReferencedDocument,
+  intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes;
 
 { TZUGFeRDCrossVersionTests }
 
@@ -610,6 +620,54 @@ begin
 
   Assert.AreEqual(TZUGFeRDVersion.Version23,
     TZUGFeRDInvoiceDescriptor.GetVersion(DemodataPath('xRechnung\ubl-cn-br-de-17-test-557-code-326.xml')));
+end;
+
+/// <summary>
+/// ZUGFeRD-2.0-Dateien mit 2.0-spezifischem Guideline-URN (BASIC, EXTENDED) müssen als
+/// Version20 erkannt werden, obwohl der 23CII-Reader in der Kaskade vor dem 20er-Reader steht.
+/// Eine 2.0-COMFORT-Datei trägt denselben URN wie 2.1+ und wird bewusst als Version23
+/// gemeldet (nicht unterscheidbar); das Laden liefert trotzdem das Profil Comfort.
+/// Datei- und Stream-Variante müssen dasselbe Ergebnis liefern.
+/// </summary>
+procedure TZUGFeRDCrossVersionTests.TestGetVersionZugferd20Profiles;
+var
+  fs: TFileStream;
+  desc: TZUGFeRDInvoiceDescriptor;
+begin
+  Assert.AreEqual(TZUGFeRDVersion.Version20,
+    TZUGFeRDInvoiceDescriptor.GetVersion(DemodataPath('zugferd20\zugferd_2p0_EXTENDED_Warenrechnung.xml')));
+  Assert.AreEqual(TZUGFeRDVersion.Version20,
+    TZUGFeRDInvoiceDescriptor.GetVersion(DemodataPath('zugferd20\zugferd_2p0_BASIC_Einfach.xml')));
+
+  fs := TFileStream.Create(DemodataPath('zugferd20\zugferd_2p0_EXTENDED_Warenrechnung.xml'), fmOpenRead or fmShareDenyWrite);
+  try
+    Assert.AreEqual(TZUGFeRDVersion.Version20, TZUGFeRDInvoiceDescriptor.GetVersion(fs));
+  finally
+    fs.Free;
+  end;
+
+  // Bekannte Grenze: COMFORT 2.0 ist vom 2.1+-URN nicht unterscheidbar
+  Assert.AreEqual(TZUGFeRDVersion.Version23,
+    TZUGFeRDInvoiceDescriptor.GetVersion(DemodataPath('zugferd20\zugferd_2p0_EN16931_SEPA_Prenotification.xml')));
+  desc := TZUGFeRDInvoiceDescriptor.Load(DemodataPath('zugferd20\zugferd_2p0_EN16931_SEPA_Prenotification.xml'));
+  try
+    Assert.AreEqual(TZUGFeRDProfile.Comfort, desc.Profile);
+  finally
+    desc.Free;
+  end;
+
+  Assert.WillRaise(
+    procedure
+    begin
+      TZUGFeRDInvoiceDescriptor.GetVersion(DemodataPath('zugferd20\gibt_es_nicht.xml'));
+    end,
+    EFileNotFoundException);
+  Assert.WillRaise(
+    procedure
+    begin
+      TZUGFeRDInvoiceDescriptor.Load(DemodataPath('zugferd20\gibt_es_nicht.xml'));
+    end,
+    EFileNotFoundException);
 end;
 
 procedure TZUGFeRDCrossVersionTests.UBLNonAvailability(_version: Integer; _profile: Integer);
@@ -1746,6 +1804,139 @@ begin
       finally
         invoiceStream.Free;
       end;
+    finally
+      options.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+/// <summary>
+/// Ein einzelnes Surrogate ($D800..$DFFF) ist kein gültiges XML-Zeichen und muss bei
+/// aktivierter Bereinigung entfernt werden; ein gültiges Paar (Emoji) bleibt erhalten,
+/// ohne Bereinigung wird das einzelne Surrogate mit Exception abgelehnt.
+/// </summary>
+procedure TZUGFeRDCrossVersionTests.TestLoneSurrogateIsCleaned(_version: Integer; _format: Integer; _profile: Integer);
+var
+  version: TZUGFeRDVersion;
+  format: TZUGFeRDFormats;
+  profile: TZUGFeRDProfile;
+  desc: TZUGFeRDInvoiceDescriptor;
+  options: TZUGFeRDInvoiceFormatOptions;
+  attachment: TMemoryStream;
+  attachmentData: TBytes;
+  document: TZUGFeRDAdditionalReferencedDocument;
+  raised: Boolean;
+
+  function SaveToString: string;
+  var
+    invoiceStream: TMemoryStream;
+    bytes: TBytes;
+  begin
+    invoiceStream := TMemoryStream.Create;
+    try
+      desc.Save(invoiceStream, version, profile, format, options);
+      SetLength(bytes, invoiceStream.Size);
+      invoiceStream.Position := 0;
+      invoiceStream.ReadBuffer(bytes[0], invoiceStream.Size);
+      Result := TEncoding.UTF8.GetString(bytes);
+    finally
+      invoiceStream.Free;
+    end;
+  end;
+
+  procedure AssertSaveRaisesIllegalCharacters(const invoiceNo: string);
+  var
+    raised: Boolean;
+  begin
+    desc.InvoiceNo := invoiceNo;
+    raised := False;
+    try
+      SaveToString;
+    except
+      on E: Exception do
+      begin
+        raised := True;
+        // die eigene Prüfung muss greifen, nicht erst MSXML
+        Assert.Contains(E.Message, 'contains illegal characters for xml');
+      end;
+    end;
+    Assert.IsTrue(raised, 'Ohne Bereinigung muss ein einzelnes Surrogate abgelehnt werden.');
+  end;
+
+begin
+  version := TZUGFeRDVersion(_version);
+  format := TZUGFeRDFormats(_format);
+  profile := TZUGFeRDProfile(_profile);
+
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    options := TZUGFeRDInvoiceFormatOptions.Create;
+    try
+      options.AutomaticallyCleanInvalidCharacters := True;
+
+      // High-Surrogate ohne Low-Surrogate, Low-Surrogate ohne High-Surrogate, gültiges Paar
+      desc.InvoiceNo := 'AB' + #$D83D + 'CD' + #$DE00 + 'EF' + #$D83D#$DE00 + 'GH';
+      Assert.Contains(SaveToString, 'ABCDEF' + #$D83D#$DE00 + 'GH',
+        'Einzelne Surrogate müssen entfernt, das gültige Paar erhalten bleiben.');
+
+      // Low-Surrogate am Anfang, High-Surrogate am Ende
+      desc.InvoiceNo := #$DE00 + 'AB' + #$D83D;
+      Assert.Contains(SaveToString, '>AB<', 'Surrogate an den Rändern müssen entfernt werden.');
+
+      options.AutomaticallyCleanInvalidCharacters := False;
+
+      // gültiges Paar ohne Bereinigung: keine Exception, Paar bleibt erhalten
+      desc.InvoiceNo := 'AB' + #$D83D#$DE00 + 'CD';
+      Assert.Contains(SaveToString, 'AB' + #$D83D#$DE00 + 'CD');
+
+      AssertSaveRaisesIllegalCharacters('AB' + #$D83D + 'CD');
+      AssertSaveRaisesIllegalCharacters(#$DE00 + 'AB');
+      AssertSaveRaisesIllegalCharacters('AB' + #$D83D);
+
+      // Attributwerte (Dateiname eines Anhangs) durchlaufen dieselbe Prüfung
+      desc.InvoiceNo := '471102';
+      attachmentData := TEncoding.ASCII.GetBytes('attachment');
+      attachment := TMemoryStream.Create;
+      try
+        attachment.WriteBuffer(attachmentData[0], Length(attachmentData));
+        attachment.Position := 0;
+        desc.AddAdditionalReferencedDocument(
+          {id=}       'My-File',
+          {typeCode=} TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument,
+          {issueDateTime=} nil,
+          {name=}     'Anhang',
+          {referenceTypeCode=} nil,
+          {attachmentBinaryObject=} attachment,
+          {filename=} 'AB' + #$D83D + 'CD.bin');
+      finally
+        attachment.Free;
+      end;
+      document := desc.AdditionalReferencedDocuments[desc.AdditionalReferencedDocuments.Count - 1];
+
+      options.AutomaticallyCleanInvalidCharacters := True;
+      Assert.Contains(SaveToString, 'filename="ABCD.bin"',
+        'Einzelnes Surrogate im Attributwert muss bereinigt werden.');
+
+      document.Filename := 'AB' + #$D83D#$DE00 + 'CD.bin';
+      Assert.Contains(SaveToString, 'filename="AB' + #$D83D#$DE00 + 'CD.bin"',
+        'Gültiges Paar im Attributwert muss erhalten bleiben.');
+
+      options.AutomaticallyCleanInvalidCharacters := False;
+      Assert.Contains(SaveToString, 'filename="AB' + #$D83D#$DE00 + 'CD.bin"');
+      document.Filename := 'AB' + #$D83D + 'CD.bin';
+      raised := False;
+      try
+        SaveToString;
+      except
+        on E: Exception do
+        begin
+          raised := True;
+          Assert.Contains(E.Message, 'contains illegal characters for xml');
+        end;
+      end;
+      Assert.IsTrue(raised, 'Ohne Bereinigung muss ein einzelnes Surrogate im Attributwert abgelehnt werden.');
     finally
       options.Free;
     end;

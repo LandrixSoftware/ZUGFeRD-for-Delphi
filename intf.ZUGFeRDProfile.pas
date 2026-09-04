@@ -98,6 +98,23 @@ type
 const
   TZUGFERDPROFILES_DEFAULT = [TZUGFeRDProfile.Unknown];
 
+  /// <summary>
+  /// Profilmengen für die Writer; zentral statt in jedem Writer als private const dupliziert.
+  /// </summary>
+  ALL_PROFILES = [TZUGFeRDProfile.Minimum,
+                  TZUGFeRDProfile.BasicWL,
+                  TZUGFeRDProfile.Basic,
+                  TZUGFeRDProfile.Comfort,
+                  TZUGFeRDProfile.Extended,
+                  TZUGFeRDProfile.XRechnung1,
+                  TZUGFeRDProfile.XRechnung,
+                  TZUGFeRDProfile.EReporting];
+  PROFILE_COMFORT_EXTENDED_XRECHNUNG =
+                 [TZUGFeRDProfile.Comfort,
+                  TZUGFeRDProfile.Extended,
+                  TZUGFeRDProfile.XRechnung1,
+                  TZUGFeRDProfile.XRechnung];
+
 implementation
 
 { TZUGFeRDProfileExtensions }
@@ -217,10 +234,9 @@ begin
         TZUGFeRDProfile.XRechnung1:
           Result := 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_1.2';
         TZUGFeRDProfile.XRechnung:
-          if Now >= EncodeDate(2024, 2, 1) then
-            Result := 'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0'
-          else
-            Result := 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3';
+          // Geschrieben wird immer XRechnung 3.0; die 2.x-URNs bleiben nur lesbar
+          // (StringToEnum). Früher hing die Wahl vom Systemdatum ab.
+          Result := 'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0';
         TZUGFeRDProfile.EReporting :
           Result := 'urn.cpro.gouv.fr:1p0:ereporting';
       else

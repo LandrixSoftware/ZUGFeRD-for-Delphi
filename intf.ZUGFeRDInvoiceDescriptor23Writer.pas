@@ -125,83 +125,9 @@ end;
 function TZUGFeRDInvoiceDescriptor23Writer.Validate(
   _descriptor: TZUGFeRDInvoiceDescriptor; _throwExceptions: Boolean): Boolean;
 begin
-  Result := false;
-
-  //TODO in C# enthalten, aber eigentlich falsch, deswegen auskommentiert
-  //if (descriptor.TZUGFeRDProfile = TZUGFeRDProfile.BasicWL) then
-  //if (throwExceptions) then
-  //  raise TZUGFeRDUnsupportedException.Create('Invalid TZUGFeRDProfile used for ZUGFeRD 2.0 invoice.')
-  //else
-  //  exit;
-
-  if (_descriptor.Profile <> TZUGFeRDProfile.Extended) then // check tax types, only extended TZUGFeRDProfile allows tax types other than vat
-  begin
-    for var l : TZUGFeRDTradeLineItem in _descriptor.TradeLineItems do
-    if l.TaxType.HasValue and (l.TaxType <> TZUGFeRDTaxTypes.VAT) then
-    begin
-      if (_throwExceptions) then
-        raise TZUGFeRDUnsupportedException.Create('Tax types other than VAT only possible with extended TZUGFeRDProfile.')
-      else
-        exit;
-    end;
-  end;
-
-  if (_descriptor.Profile in [TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]) then
-  begin
-    if (_descriptor.Seller <> nil) then
-    begin
-      if (_descriptor.SellerContact = nil) then
-      begin
-          if (_throwExceptions) then
-            raise TZUGFeRDMissingDataException.Create('Seller contact (BG-6) required when seller is set (BR-DE-2).')
-          else
-            exit;
-      end
-      else
-      begin
-          if (_descriptor.SellerContact.EmailAddress = '') then
-          begin
-            if (_throwExceptions) then
-              raise TZUGFeRDMissingDataException.Create('Seller contact email address (BT-43) is required (BR-DE-7).')
-            else
-              exit;
-          end;
-          if (_descriptor.SellerContact.PhoneNo = '') then
-          begin
-            if (_throwExceptions) then
-                raise TZUGFeRDMissingDataException.Create('Seller contact phone no (BT-42) is required (BR-DE-6).')
-            else
-              exit;
-          end;
-          if (_descriptor.SellerContact.Name = '') and
-             (_descriptor.SellerContact.OrgUnit = '') then
-          begin
-            if (_throwExceptions) then
-              raise TZUGFeRDMissingDataException.Create('Seller contact point (name or org unit) no (BT-41) is required (BR-DE-5).')
-            else
-              exit;
-          end;
-      end;
-    end;
-  end;
-
-  // BR-DE-17
-  if not ((_descriptor.Type_ = TZUGFeRDInvoiceType.PartialInvoice) or
-          (_descriptor.Type_ = TZUGFeRDInvoiceType.Invoice) or
-          (_descriptor.Type_ = TZUGFeRDInvoiceType.Correction) or
-          (_descriptor.Type_ = TZUGFeRDInvoiceType.SelfBilledInvoice) or
-          (_descriptor.Type_ = TZUGFeRDInvoiceType.CreditNote) or
-          (_descriptor.Type_ = TZUGFeRDInvoiceType.PartialConstructionInvoice) or
-          (_descriptor.Type_ = TZUGFeRDInvoiceType.PartialFinalConstructionInvoice) or
-          (_descriptor.Type_ = TZUGFeRDInvoiceType.FinalConstructionInvoice)) then
-  begin
-    if (_throwExceptions) then
-      raise TZUGFeRDUnsupportedException.Create('Invoice type (BT-3) does not match requirements of BR-DE-17')
-    else
-      exit;
-  end;
-
-  Result := true;
+  // Die eigentlichen Regeln liegen in der Basisklasse, damit 23CIIWriter und
+  // 22UBLWriter bei direkter Nutzung dieselbe Prüfung durchlaufen.
+  Result := ValidateVersion23(_descriptor, _throwExceptions);
 end;
 
 end.

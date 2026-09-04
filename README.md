@@ -35,7 +35,9 @@ answers that question before you load anything.
 
 ## Platform
 
-Delphi 10.3 Rio or newer, Win32 and Win64 — inline variable declarations are used throughout. XML is
+Delphi 10.4 Sydney or newer, Win32 and Win64 — inline variable declarations are used throughout, and
+`ZUGFeRDNullable<T>` relies on the custom managed record operators (`class operator Initialize`)
+introduced with 10.4. XML is
 handled through MSXML, so the library is Windows-only; apart from the RTL there are no dependencies.
 
 MSXML is a COM component. A VCL application initialises COM for you; a console application has to do
@@ -134,9 +136,17 @@ desc.Save('invoice-ubl.xml', TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnun
 `Save` also takes a `TStream`. Amounts and dates are formatted invariantly, so the output does not
 depend on the machine's locale.
 
-Writing checks the rules that a profile makes mandatory and raises `TZUGFeRDMissingDataException`
-when something required is missing — the seller contact above is there for exactly that reason. Leave
-it out and the CII document is still written, while the XRechnung one is refused.
+Writing to a file checks the rules that a profile makes mandatory and raises
+`TZUGFeRDMissingDataException` when something required is missing — the seller contact above is
+there for exactly that reason. Leave it out and the CII document is still written, while the
+XRechnung one is refused. The document is built in full before the target file is opened, so a
+rejected invoice leaves an existing file untouched (an I/O error while writing, such as a full
+disk, can still truncate it).
+
+The `TStream` overload skips that shared check. Writer-specific checks still apply: UBL rejects any
+profile other than `XRechnung`, and CII validates advance payments in the `Extended` profile. Call
+`Save` with a file name, or use `TZUGFeRDInvoiceDescriptor23Writer.Validate` yourself, if you want
+the full profile rules enforced before writing to a stream.
 
 ## Reading an invoice
 
@@ -158,6 +168,10 @@ end;
 `Load` is also available for a `TStream` and an `IXMLDocument`. Optional fields come back as
 `ZUGFeRDNullable<T>` — check `HasValue` before reading `Value`, because a missing amount and an
 amount of zero are not the same thing.
+
+`Profile` reflects what the document declares. For UBL that is `cbc:CustomizationID`, so a Peppol
+BIS document reads back as `Unknown` rather than `XRechnung`, and cannot be written out again
+unchanged. The raw identifier is always kept in `GuideLine`.
 
 ## Validating totals
 
@@ -212,7 +226,8 @@ attachments in pure Pascal.
 - [Samples/](Samples/) — a VCL demo that builds, writes and reads invoices.
 - [Unittest/](Unittest/) — DUnitX suite, console (`ZfDUnitTest.dpr`) and GUI runner. Beyond the
   per-version tests it sweeps every example invoice shipped under [documentation/](documentation/):
-  each one is read, written back and read again, then compared field by field.
+  each one is read, written back and read again, then the core data is compared (invoice number,
+  number of line items, currency and grand total).
 - [documentation/](documentation/) — the official specifications, schemas and example invoices from
   ZUGFeRD 1.0 up to 2.5.2 / Factur-X 1.09.2.
 

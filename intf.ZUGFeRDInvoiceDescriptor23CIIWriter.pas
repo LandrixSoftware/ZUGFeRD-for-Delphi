@@ -102,20 +102,6 @@ type
     function _translateTaxCategoryCode(taxCategoryCode : TZUGFeRDTaxCategoryCodes) : String;
     function GetNameSpaces: TDictionary<string, string>;
     procedure _validateAdvancePayments;
-  private const
-    ALL_PROFILES = [TZUGFeRDProfile.Minimum,
-                    TZUGFeRDProfile.BasicWL,
-                    TZUGFeRDProfile.Basic,
-                    TZUGFeRDProfile.Comfort,
-                    TZUGFeRDProfile.Extended,
-                    TZUGFeRDProfile.XRechnung1,
-                    TZUGFeRDProfile.XRechnung,
-                    TZUGFeRDProfile.EReporting];
-    PROFILE_COMFORT_EXTENDED_XRECHNUNG =
-                   [TZUGFeRDProfile.Comfort,
-                    TZUGFeRDProfile.Extended,
-                    TZUGFeRDProfile.XRechnung1,
-                    TZUGFeRDProfile.XRechnung];
   public
     /// <summary>
     /// This function is implemented in class InvoiceDescriptor22Writer.
@@ -1989,7 +1975,9 @@ end;
 function TZUGFeRDInvoiceDescriptor23CIIWriter.Validate(
   _descriptor: TZUGFeRDInvoiceDescriptor; _throwExceptions: Boolean): Boolean;
 begin
-  Result := false;
+  // Dieselben Regeln wie über den Dispatcher TZUGFeRDInvoiceDescriptor23Writer;
+  // vorher lieferte die Methode konstant false und Save(filename) schrieb keine Datei.
+  Result := ValidateVersion23(_descriptor, _throwExceptions);
 end;
 
 end.

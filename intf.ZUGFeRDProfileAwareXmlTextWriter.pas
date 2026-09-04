@@ -64,6 +64,7 @@ type
     function _CleanInvalidXmlChars(const input: string): string;
     function _IsValidXmlString(const input: string): Boolean;
     function _IsValidXmlChar(c: Char): Boolean;
+    function _IsSurrogatePairAt(const input: string; index: Integer): Boolean;
   public
     property Formatting: TZUGFeRDXmlFomatting read GetFormatting write SetFormatting;
 
@@ -312,6 +313,7 @@ procedure TZUGFeRDProfileAwareXmlTextWriter.WriteAttributeString(const prefix, l
 var
   currentNode : IXMLNode;
   infoForCurrentNode: TZUGFeRDStackInfo;
+  cleanedValue: string;
 begin
   infoForCurrentNode := XmlStack.Peek;
 
@@ -321,12 +323,22 @@ begin
   if not _DoesProfileFitToCurrentProfile(profile) then
     exit;
 
+  // Attributwerte (z. B. Dateinamen) durchlaufen dieselbe Zeichenprüfung wie Elementwerte
+  cleanedValue := value;
+  if not _IsValidXmlString(cleanedValue) then
+  begin
+    if AutomaticallyCleanInvalidXmlCharacters then
+      cleanedValue := _CleanInvalidXmlChars(cleanedValue)
+    else
+      raise Exception.CreateFmt('''%s'' contains illegal characters for xml.', [cleanedValue]);
+  end;
+
   _FlushPendingStartElements;
 
   currentNode := XmlNodeStack.Peek;
   if currentNode = nil then
     exit;
-  currentNode.SetAttributeNS(IfThen(prefix<>'',prefix+':','')+ localName,'',value);
+  currentNode.SetAttributeNS(IfThen(prefix<>'',prefix+':','')+ localName,'',cleanedValue);
 end;
 
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteValue(const value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
@@ -564,14 +576,25 @@ end;
 function TZUGFeRDProfileAwareXmlTextWriter._CleanInvalidXmlChars(const input: string): string;
 var
   output: TStringBuilder;
-  c: Char;
+  i: Integer;
 begin
   output := TStringBuilder.Create(Length(input));
   try
-    for c in input do
+    i := 1;
+    while i <= Length(input) do
     begin
-      if _IsValidXmlChar(c) then
-        output.Append(c);
+      if _IsValidXmlChar(input[i]) then
+        output.Append(input[i])
+      else
+      if _IsSurrogatePairAt(input, i) then
+      begin
+        // gültiges Paar High + Low (Zeichen >= U+10000, z. B. Emoji) komplett übernehmen
+        output.Append(input[i]);
+        output.Append(input[i + 1]);
+        Inc(i);
+      end;
+      // einzelne Surrogate und andere ungültige Zeichen entfallen
+      Inc(i);
     end;
     Result := output.ToString;
   finally
@@ -581,17 +604,33 @@ end;
 
 function TZUGFeRDProfileAwareXmlTextWriter._IsValidXmlString(const input: string): Boolean;
 var
-  c: Char;
+  i: Integer;
 begin
   if input = '' then
     Exit(True); // empty strings are valid
 
-  for c in input do
+  i := 1;
+  while i <= Length(input) do
   begin
-    if not _IsValidXmlChar(c) then
+    if _IsSurrogatePairAt(input, i) then
+      Inc(i)
+    else
+    if not _IsValidXmlChar(input[i]) then
       Exit(False);
+    Inc(i);
   end;
   Result := True;
+end;
+
+function TZUGFeRDProfileAwareXmlTextWriter._IsSurrogatePairAt(const input: string; index: Integer): Boolean;
+begin
+  // Nur ein High-Surrogate ($D800..$DBFF) direkt gefolgt von einem Low-Surrogate
+  // ($DC00..$DFFF) ist ein gültiges Zeichen (U+10000..U+10FFFF).
+  // Vorab prüfen, damit input[index + 1] auch bei {$B+} nie außerhalb liegt.
+  if (index < 1) or (index >= Length(input)) then
+    Exit(False);
+  Result := (Ord(input[index]) >= $D800) and (Ord(input[index]) <= $DBFF) and
+            (Ord(input[index + 1]) >= $DC00) and (Ord(input[index + 1]) <= $DFFF);
 end;
 
 function TZUGFeRDProfileAwareXmlTextWriter._IsValidXmlChar(c: Char): Boolean;
@@ -604,14 +643,10 @@ begin
     // XML 1.0 erlaubte Steuerzeichen
     (Code = $09) or (Code = $0A) or (Code = $0D) or
 
-    // BMP ohne Surrogates
+    // BMP ohne Surrogates; einzelne Surrogate ($D800..$DFFF) sind kein gültiges
+    // XML-Zeichen, Paare behandeln _IsValidXmlString und _CleanInvalidXmlChars
     ((Code >= $20) and (Code <= $D7FF)) or
-    ((Code >= $E000) and (Code <= $FFFD)) or
-
-    //Surrogates zulassen (Teil eines gültigen Paares)
-    ((Code >= $D800) and (Code <= $DFFF));
-
-  // Note: Characters >= $10000 would require surrogate pair handling in Delphi
+    ((Code >= $E000) and (Code <= $FFFD));
 end;
 
 end.

@@ -226,7 +226,29 @@ begin
 
   Result.IsTest := TZUGFeRDXmlUtils.NodeAsBool(doc.documentElement, '//cbc:TestIndicator', false);
   Result.BusinessProcess := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cbc:ProfileID');
-  Result.Profile := TZUGFeRDProfile.XRechnung; // UBL is always XRechnung profile
+  // Profil aus BT-24 (cbc:CustomizationID) ableiten statt hart XRechnung zu setzen.
+  // Relativer XPath, weil ext:UBLExtensions vor BT-24 beliebigen Fremdinhalt (auch eine
+  // cbc:CustomizationID) enthalten darf. Die Rohkennung bleibt wie beim CII-Reader in GuideLine.
+  Result.GuideLine := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, 'cbc:CustomizationID');
+  begin
+    var customizationID: string := Result.GuideLine;
+    // XRechnung mit Extension (BG-DEX): dieselbe Spezifikation, nur erweitert; die Bibliothek
+    // kennt kein eigenes Extension-Profil. Nur die bekannten Extension-URNs werden auf die
+    // jeweilige Basis-URN zurückgeführt, fremde oder fingierte Kennungen bleiben Unknown.
+    if SameText(customizationID, 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3#conformant#urn:xoev-de:kosit:extension:xrechnung_2.3') then
+      customizationID := 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3'
+    else
+    if SameText(customizationID, 'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0#conformant#urn:xeinkauf.de:kosit:extension:xrechnung_3.0') then
+      customizationID := 'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0';
+    Result.Profile := TZUGFeRDProfileExtensions.StringToEnum(customizationID);
+  end;
+  // XRechnung-URNs (1.2 bis 3.0) ergeben XRechnung: der UBL-Writer kennt nur dieses Profil,
+  // XRechnung1 wäre beim Zurückschreiben nicht nutzbar (Dispatcher lässt UBL nur mit
+  // XRechnung zu). Fremde CIUS wie Peppol BIS Billing 3.0 haben kein Enum-Profil und bleiben
+  // bewusst Unknown, statt stillschweigend als XRechnung zu gelten; die Kennung steht in
+  // GuideLine. Reines EN 16931 (urn:cen.eu:en16931:2017) ergibt Comfort.
+  if Result.Profile = TZUGFeRDProfile.XRechnung1 then
+    Result.Profile := TZUGFeRDProfile.XRechnung;
   Result.InvoiceNo := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cbc:ID');
   Result.InvoiceDate := TZUGFeRDXmlUtils.NodeAsDateTime(doc.documentElement, '//cbc:IssueDate');
   Result.Type_ := TEnumExtensions<TZUGFeRDInvoiceType>.StringToEnum(

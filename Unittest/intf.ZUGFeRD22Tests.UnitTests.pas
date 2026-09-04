@@ -254,6 +254,22 @@ type
     procedure TestBasisQuantityMultiple;
     [Test]
     procedure TestAccountingCost;
+    [Test]
+    procedure TestCIIWriterDirectSaveToFileWritesFile;
+    [Test]
+    procedure TestUBLWriterDirectSaveToFileWritesFile;
+    [Test]
+    procedure TestUBLWriterDirectRejectsNonXRechnungProfile;
+    [Test]
+    procedure TestDirectWritersValidateLikeDispatcher;
+    [Test]
+    procedure TestWriterSaveToFileRaisesWhenValidateReturnsFalse;
+    [Test]
+    procedure TestFailedSaveKeepsExistingFileUntouched;
+    [Test]
+    procedure TestXRechnungGuidelineUrnIsXRechnung30;
+    [Test]
+    procedure TestPrepaymentInvoiceAllowedOutsideXRechnung;
   end;
 
 implementation
@@ -315,7 +331,38 @@ uses
   intf.ZUGFeRDDeliveryNoteReferencedDocument,
   intf.ZUGFeRDBuyerOrderReferencedDocument,
   intf.ZUGFeRDFormats,
-  intf.ZUGFeRDExceptions;
+  intf.ZUGFeRDExceptions,
+  intf.ZUGFeRDInvoiceFormatOptions,
+  intf.ZUGFeRDIInvoiceDescriptorWriter,
+  intf.ZUGFeRDInvoiceDescriptor23Writer,
+  intf.ZUGFeRDInvoiceDescriptor23CIIWriter,
+  intf.ZUGFeRDInvoiceDescriptor22UBLWriter;
+
+type
+  /// <summary>
+  /// Writer-Attrappe, deren Validate ohne Exception false liefert; damit wird der
+  /// Schutzpfad in TZUGFeRDIInvoiceDescriptorWriter.Save(filename) geprüft.
+  /// </summary>
+  TValidateFalseWriter = class(TZUGFeRDIInvoiceDescriptorWriter)
+  public
+    procedure Save(descriptor: TZUGFeRDInvoiceDescriptor; stream: TStream; format: TZUGFeRDFormats = TZUGFeRDFormats.CII; options: TZUGFeRDInvoiceFormatOptions = Nil); override;
+    function Validate(descriptor: TZUGFeRDInvoiceDescriptor; throwExceptions: Boolean = True): Boolean; override;
+  end;
+
+procedure TValidateFalseWriter.Save(descriptor: TZUGFeRDInvoiceDescriptor; stream: TStream; format: TZUGFeRDFormats; options: TZUGFeRDInvoiceFormatOptions);
+begin
+  // absichtlich leer
+end;
+
+function TValidateFalseWriter.Validate(descriptor: TZUGFeRDInvoiceDescriptor; throwExceptions: Boolean): Boolean;
+begin
+  Result := False;
+end;
+
+function TempInvoiceFileName: string;
+begin
+  Result := TPath.Combine(TPath.GetTempPath, 'ZfD_' + TPath.GetGUIDFileName + '.xml');
+end;
 
 { TZUGFeRD22Tests }
 
@@ -5330,5 +5377,327 @@ begin
     d.Free;
   end;
 end; // !TestAccountingCost()
+
+/// <summary>
+/// Der direkt genutzte CII-Writer muss mit Save(filename) eine lesbare Datei schreiben.
+/// Vorher lieferte sein Validate konstant false, und es entstand weder Datei noch Fehler.
+/// </summary>
+procedure TZUGFeRD22Tests.TestCIIWriterDirectSaveToFileWritesFile;
+var
+  desc, loaded: TZUGFeRDInvoiceDescriptor;
+  writer: TZUGFeRDInvoiceDescriptor23CIIWriter; // bewusst konkret typisiert
+  fileName: string;
+begin
+  fileName := TempInvoiceFileName;
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.Profile := TZUGFeRDProfile.Extended;
+    writer := TZUGFeRDInvoiceDescriptor23CIIWriter.Create;
+    try
+      writer.Save(desc, fileName);
+    finally
+      writer.Free;
+    end;
+
+    Assert.IsTrue(TFile.Exists(fileName), 'CII-Writer hat keine Datei geschrieben.');
+    loaded := TZUGFeRDInvoiceDescriptor.Load(fileName);
+    try
+      Assert.AreEqual(desc.InvoiceNo, loaded.InvoiceNo);
+      Assert.AreEqual(TZUGFeRDProfile.Extended, loaded.Profile);
+    finally
+      loaded.Free;
+    end;
+  finally
+    desc.Free;
+    if TFile.Exists(fileName) then
+      TFile.Delete(fileName);
+  end;
+end;
+
+/// <summary>
+/// Der direkt genutzte UBL-Writer muss mit Save(filename) eine lesbare Datei schreiben.
+/// Vorher warf sein Validate ENotImplemented.
+/// </summary>
+procedure TZUGFeRD22Tests.TestUBLWriterDirectSaveToFileWritesFile;
+var
+  desc, loaded: TZUGFeRDInvoiceDescriptor;
+  writer: TZUGFeRDInvoiceDescriptor22UBLWriter; // bewusst konkret typisiert
+  fileName: string;
+begin
+  fileName := TempInvoiceFileName;
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.Profile := TZUGFeRDProfile.XRechnung;
+    writer := TZUGFeRDInvoiceDescriptor22UBLWriter.Create;
+    try
+      writer.Save(desc, fileName, TZUGFeRDFormats.UBL);
+    finally
+      writer.Free;
+    end;
+
+    Assert.IsTrue(TFile.Exists(fileName), 'UBL-Writer hat keine Datei geschrieben.');
+    loaded := TZUGFeRDInvoiceDescriptor.Load(fileName);
+    try
+      Assert.AreEqual(desc.InvoiceNo, loaded.InvoiceNo);
+      Assert.AreEqual(TZUGFeRDProfile.XRechnung, loaded.Profile);
+    finally
+      loaded.Free;
+    end;
+  finally
+    desc.Free;
+    if TFile.Exists(fileName) then
+      TFile.Delete(fileName);
+  end;
+end;
+
+/// <summary>
+/// Der Dispatcher lässt UBL nur mit dem Profil XRechnung zu; der direkt genutzte
+/// UBL-Writer muss dieselbe Grenze ziehen.
+/// </summary>
+procedure TZUGFeRD22Tests.TestUBLWriterDirectRejectsNonXRechnungProfile;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  writer: TZUGFeRDInvoiceDescriptor22UBLWriter;
+  fileName: string;
+begin
+  fileName := TempInvoiceFileName;
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.Profile := TZUGFeRDProfile.Extended;
+    writer := TZUGFeRDInvoiceDescriptor22UBLWriter.Create;
+    try
+      Assert.IsFalse(writer.Validate(desc, False), 'UBL-Writer: Validate muss Extended ablehnen.');
+      Assert.WillRaise(
+        procedure
+        begin
+          writer.Save(desc, fileName, TZUGFeRDFormats.UBL);
+        end,
+        TZUGFeRDUnsupportedException);
+      Assert.IsFalse(TFile.Exists(fileName), 'UBL-Writer darf für Extended keine Datei anlegen.');
+
+      // Auch der Stream-Überlade darf das Profil nicht durchlassen
+      Assert.WillRaise(
+        procedure
+        var
+          ms: TMemoryStream;
+        begin
+          ms := TMemoryStream.Create;
+          try
+            writer.Save(desc, ms, TZUGFeRDFormats.UBL);
+          finally
+            ms.Free;
+          end;
+        end,
+        TZUGFeRDUnsupportedException);
+    finally
+      writer.Free;
+    end;
+  finally
+    desc.Free;
+    if TFile.Exists(fileName) then
+      TFile.Delete(fileName);
+  end;
+end;
+
+/// <summary>
+/// CII- und UBL-Writer müssen bei direkter Nutzung dieselben Regeln anwenden wie der
+/// Dispatcher TZUGFeRDInvoiceDescriptor23Writer: hier Steuerart ungleich VAT im Profil Comfort.
+/// </summary>
+procedure TZUGFeRD22Tests.TestDirectWritersValidateLikeDispatcher;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  writer: TZUGFeRDIInvoiceDescriptorWriter;
+  fileName: string;
+begin
+  fileName := TempInvoiceFileName;
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.Profile := TZUGFeRDProfile.Comfort;
+    desc.TradeLineItems[0].TaxType := TZUGFeRDTaxTypes.AAA;
+
+    writer := TZUGFeRDInvoiceDescriptor23Writer.Create;
+    try
+      Assert.IsFalse(writer.Validate(desc, False), 'Dispatcher: Validate muss false liefern.');
+    finally
+      writer.Free;
+    end;
+
+    writer := TZUGFeRDInvoiceDescriptor23CIIWriter.Create;
+    try
+      Assert.IsFalse(writer.Validate(desc, False), 'CII-Writer: Validate muss false liefern.');
+      Assert.WillRaise(
+        procedure
+        begin
+          writer.Save(desc, fileName);
+        end,
+        TZUGFeRDUnsupportedException);
+      Assert.IsFalse(TFile.Exists(fileName), 'CII-Writer darf bei ungültigem Descriptor keine Datei anlegen.');
+    finally
+      writer.Free;
+    end;
+
+    // Fuer den UBL-Writer ein Profil waehlen, das seine eigene Profilgrenze passiert
+    // (nur XRechnung ist erlaubt). Scheitern darf der Aufruf dann ausschliesslich an der
+    // gemeinsamen Pruefung ValidateVersion23 - sonst wuerde der Test auch dann bestehen,
+    // wenn der Writer nur sein Profil prueft und die gemeinsame Pruefung auslaesst.
+    desc.Profile := TZUGFeRDProfile.XRechnung;
+
+    writer := TZUGFeRDInvoiceDescriptor22UBLWriter.Create;
+    try
+      Assert.IsFalse(writer.Validate(desc, False), 'UBL-Writer: Validate muss false liefern.');
+      Assert.WillRaise(
+        procedure
+        begin
+          writer.Save(desc, fileName, TZUGFeRDFormats.UBL);
+        end,
+        TZUGFeRDUnsupportedException);
+      Assert.IsFalse(TFile.Exists(fileName), 'UBL-Writer darf bei ungültigem Descriptor keine Datei anlegen.');
+    finally
+      writer.Free;
+    end;
+  finally
+    desc.Free;
+    if TFile.Exists(fileName) then
+      TFile.Delete(fileName);
+  end;
+end;
+
+/// <summary>
+/// Liefert Validate false ohne Exception, darf Save(filename) nicht stillschweigend nichts tun.
+/// </summary>
+procedure TZUGFeRD22Tests.TestWriterSaveToFileRaisesWhenValidateReturnsFalse;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  writer: TZUGFeRDIInvoiceDescriptorWriter;
+  fileName: string;
+begin
+  fileName := TempInvoiceFileName;
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    writer := TValidateFalseWriter.Create;
+    try
+      Assert.WillRaise(
+        procedure
+        begin
+          writer.Save(desc, fileName);
+        end,
+        TZUGFeRDUnsupportedException);
+    finally
+      writer.Free;
+    end;
+    Assert.IsFalse(TFile.Exists(fileName), 'Bei fehlgeschlagener Validierung darf keine Datei entstehen.');
+  finally
+    desc.Free;
+    if TFile.Exists(fileName) then
+      TFile.Delete(fileName);
+  end;
+end;
+
+/// <summary>
+/// Scheitert das Schreiben erst am Zielformat (Validate kennt das Format nicht), darf eine
+/// bereits vorhandene Datei nicht geleert werden. Geprüft über den öffentlichen Weg
+/// TZUGFeRDInvoiceDescriptor.Save mit der unzulässigen Kombination Extended + UBL.
+/// </summary>
+procedure TZUGFeRD22Tests.TestFailedSaveKeepsExistingFileUntouched;
+const
+  ExistingContent = '<vorhandene-datei/>';
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  fileName: string;
+begin
+  fileName := TempInvoiceFileName;
+  TFile.WriteAllText(fileName, ExistingContent);
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    Assert.WillRaise(
+      procedure
+      begin
+        desc.Save(fileName, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended,
+                  TZUGFeRDFormats.UBL);
+      end,
+      TZUGFeRDUnsupportedException);
+
+    Assert.IsTrue(TFile.Exists(fileName), 'Die vorhandene Datei darf nicht verschwinden.');
+    Assert.AreEqual(ExistingContent, TFile.ReadAllText(fileName),
+      'Die vorhandene Datei darf durch den gescheiterten Schreibversuch nicht verändert werden.');
+  finally
+    desc.Free;
+    if TFile.Exists(fileName) then
+      TFile.Delete(fileName);
+  end;
+end;
+
+/// <summary>
+/// Der Guideline-URN für XRechnung darf nicht vom Systemdatum abhängen: geschrieben wird
+/// immer XRechnung 3.0, die älteren 2.x-URNs bleiben lesbar.
+/// </summary>
+procedure TZUGFeRD22Tests.TestXRechnungGuidelineUrnIsXRechnung30;
+begin
+  Assert.AreEqual('urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0',
+    TZUGFeRDProfileExtensions.EnumToString(TZUGFeRDProfile.XRechnung, TZUGFeRDVersion.Version23));
+
+  Assert.AreEqual(TZUGFeRDProfile.XRechnung,
+    TZUGFeRDProfileExtensions.StringToEnum('urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0'));
+  Assert.AreEqual(TZUGFeRDProfile.XRechnung,
+    TZUGFeRDProfileExtensions.StringToEnum('urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3'));
+  Assert.AreEqual(TZUGFeRDProfile.XRechnung,
+    TZUGFeRDProfileExtensions.StringToEnum('urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.2'));
+  Assert.AreEqual(TZUGFeRDProfile.XRechnung,
+    TZUGFeRDProfileExtensions.StringToEnum('urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.1'));
+  Assert.AreEqual(TZUGFeRDProfile.XRechnung,
+    TZUGFeRDProfileExtensions.StringToEnum('urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.0'));
+end;
+
+/// <summary>
+/// BR-DE-17 ist eine XRechnung-Regel. Eine Vorauszahlungsrechnung (386) ist in Factur-X
+/// EXTENDED zulässig und darf nur im Profil XRechnung abgelehnt werden.
+/// </summary>
+procedure TZUGFeRD22Tests.TestPrepaymentInvoiceAllowedOutsideXRechnung;
+var
+  desc, loaded: TZUGFeRDInvoiceDescriptor;
+  writer: TZUGFeRDIInvoiceDescriptorWriter;
+  fileName: string;
+begin
+  fileName := TempInvoiceFileName;
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.Type_ := TZUGFeRDInvoiceType.PrepaymentInvoice;
+
+    writer := TZUGFeRDInvoiceDescriptor23Writer.Create;
+    try
+      desc.Profile := TZUGFeRDProfile.Extended;
+      Assert.IsTrue(writer.Validate(desc, False), 'Extended: Vorauszahlungsrechnung muss zulässig sein.');
+      writer.Save(desc, fileName);
+      Assert.IsTrue(TFile.Exists(fileName), 'Extended: Datei muss geschrieben werden.');
+
+      loaded := TZUGFeRDInvoiceDescriptor.Load(fileName);
+      try
+        Assert.AreEqual(TZUGFeRDInvoiceType.PrepaymentInvoice, loaded.Type_);
+      finally
+        loaded.Free;
+      end;
+      TFile.Delete(fileName);
+
+      desc.Profile := TZUGFeRDProfile.XRechnung;
+      Assert.IsFalse(writer.Validate(desc, False), 'XRechnung: BR-DE-17 muss weiterhin greifen.');
+      Assert.WillRaise(
+        procedure
+        begin
+          writer.Save(desc, fileName);
+        end,
+        TZUGFeRDUnsupportedException);
+      Assert.IsFalse(TFile.Exists(fileName), 'XRechnung: keine Datei bei BR-DE-17-Verstoß.');
+
+      desc.Profile := TZUGFeRDProfile.XRechnung1;
+      Assert.IsFalse(writer.Validate(desc, False), 'XRechnung1: BR-DE-17 muss ebenfalls greifen.');
+    finally
+      writer.Free;
+    end;
+  finally
+    desc.Free;
+    if TFile.Exists(fileName) then
+      TFile.Delete(fileName);
+  end;
+end;
 
 end.
