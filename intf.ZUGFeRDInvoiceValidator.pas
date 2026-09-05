@@ -238,7 +238,7 @@ begin
       if Frac(tax.TaxAmount * 100) <> 0 then
       begin
         Result.Messages.Add(Format(
-          'BR-DEC-20: Der Steuerbetrag[%4f] hat mehr als zwei Nachkommastellen', [tax.TaxAmount]));
+          'BR-DEC-20: Der Steuerbetrag[%.4f] hat mehr als zwei Nachkommastellen', [tax.TaxAmount]));
         Result.IsValid := false;
       end;
 
