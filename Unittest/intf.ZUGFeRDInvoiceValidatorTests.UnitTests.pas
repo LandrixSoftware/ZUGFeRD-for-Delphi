@@ -38,15 +38,15 @@ type
   TZUGFeRDInvoiceValidatorTests = class(TZUGFeRDTestBase)
   private
     /// <summary>
-    /// Baut eine Rechnung mit einer Position (2 x 100,00 zu 19%) und optionalen
-    /// Zu- und Abschlägen, Vorauszahlung und Rundung. Die Summen im Descriptor
-    /// sind passend gesetzt, der Validator muss die Rechnung also als gueltig ansehen.
-    /// </summary>
-    /// <summary>
     /// Baut eine Rechnung, deren Nettoeinzelpreis sich auf eine Preisbasismenge
     /// bezieht (BT-149).
     /// </summary>
     function CreateInvoiceWithPriceBaseQuantity(const unitQuantity: Currency): TZUGFeRDInvoiceDescriptor;
+    /// <summary>
+    /// Baut eine Rechnung mit einer Position (2 x 100,00 zu 19%) und optionalen
+    /// Zu- und Abschlägen, Vorauszahlung und Rundung. Die Summen im Descriptor
+    /// sind passend gesetzt, der Validator muss die Rechnung also als gültig ansehen.
+    /// </summary>
     function CreateBalancedInvoice(const withCharge: Boolean;
       const lineAllowance: Currency = 0; const lineCharge: Currency = 0;
       const prepaidAmount: Currency = 0; const roundingAmount: Currency = 0): TZUGFeRDInvoiceDescriptor;
@@ -216,7 +216,7 @@ begin
       {taxPercent=}      19.0);
   end;
 
-  // Ein Zuschlag erhoeht die Bemessungsgrundlage
+  // Ein Zuschlag erhöht die Bemessungsgrundlage
   taxBasis := lineTotal + chargeTotal;
   taxTotal := taxBasis * 19 / 100;
   grandTotal := taxBasis + taxTotal;
@@ -246,7 +246,7 @@ begin
     validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
     try
       Assert.IsTrue(validationResult.IsValid,
-        'Rechnung mit Positionsabschlag wurde als ungueltig gemeldet:'#13#10 + validationResult.Messages.Text);
+        'Rechnung mit Positionsabschlag wurde als ungültig gemeldet:'#13#10 + validationResult.Messages.Text);
     finally
       validationResult.Free;
     end;
@@ -265,7 +265,7 @@ begin
     validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
     try
       Assert.IsTrue(validationResult.IsValid,
-        'Rechnung mit Positionszuschlag wurde als ungueltig gemeldet:'#13#10 + validationResult.Messages.Text);
+        'Rechnung mit Positionszuschlag wurde als ungültig gemeldet:'#13#10 + validationResult.Messages.Text);
     finally
       validationResult.Free;
     end;
@@ -308,7 +308,7 @@ begin
     validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
     try
       Assert.IsTrue(validationResult.IsValid,
-        'Rechnung mit Vorauszahlung wurde als ungueltig gemeldet:'#13#10 + validationResult.Messages.Text);
+        'Rechnung mit Vorauszahlung wurde als ungültig gemeldet:'#13#10 + validationResult.Messages.Text);
     finally
       validationResult.Free;
     end;
@@ -328,7 +328,7 @@ begin
     validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
     try
       Assert.IsTrue(validationResult.IsValid,
-        'Rechnung mit Rundungsbetrag wurde als ungueltig gemeldet:'#13#10 + validationResult.Messages.Text);
+        'Rechnung mit Rundungsbetrag wurde als ungültig gemeldet:'#13#10 + validationResult.Messages.Text);
     finally
       validationResult.Free;
     end;
@@ -398,7 +398,7 @@ begin
       Assert.IsFalse(validationResult.IsValid, 'Abweichende Summen wurden nicht beanstandet');
       Assert.IsTrue(validationResult.Messages.Text.Contains(
         'monetarySummation.duePayable Message: Berechneter Wert ist['),
-        'BT-115 wurde nicht gegen den deklarierten BT-112 geprueft');
+        'BT-115 wurde nicht gegen den deklarierten BT-112 geprüft');
     finally
       validationResult.Free;
     end;
@@ -417,7 +417,7 @@ begin
     validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
     try
       Assert.IsTrue(validationResult.IsValid,
-        'Rechnung mit stimmigen Summen wurde als ungueltig gemeldet:'#13#10 + validationResult.Messages.Text);
+        'Rechnung mit stimmigen Summen wurde als ungültig gemeldet:'#13#10 + validationResult.Messages.Text);
     finally
       validationResult.Free;
     end;
@@ -428,8 +428,8 @@ end;
 
 /// <summary>
 /// Sichert zwei Fehler ab, die der Validator hatte: der Zuschlag wurde von der
-/// Bemessungsgrundlage abgezogen statt addiert, und er wurde ueber die nie befuellte
-/// Property Amount statt ueber ActualAmount gelesen (also immer als 0 gewertet).
+/// Bemessungsgrundlage abgezogen statt addiert, und er wurde über die nie befüllte
+/// Property Amount statt über ActualAmount gelesen (also immer als 0 gewertet).
 /// </summary>
 procedure TZUGFeRDInvoiceValidatorTests.TestValidInvoiceWithCharge;
 var
@@ -441,7 +441,7 @@ begin
     validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
     try
       Assert.IsTrue(validationResult.IsValid,
-        'Rechnung mit Zuschlag wurde als ungueltig gemeldet:'#13#10 + validationResult.Messages.Text);
+        'Rechnung mit Zuschlag wurde als ungültig gemeldet:'#13#10 + validationResult.Messages.Text);
     finally
       validationResult.Free;
     end;
@@ -483,12 +483,12 @@ var
 begin
   desc := CreateBalancedInvoice(False);
   try
-    // Steuerbetrag verfaelschen - der Validator muss das melden
+    // Steuerbetrag verfälschen - der Validator muss das melden
     desc.TaxTotalAmount := 1;
 
     validationResult := TZUGFeRDInvoiceValidator.Validate(desc, TZUGFeRDVersion.Version23);
     try
-      Assert.IsFalse(validationResult.IsValid, 'Falscher Steuerbetrag wurde nicht bemaengelt');
+      Assert.IsFalse(validationResult.IsValid, 'Falscher Steuerbetrag wurde nicht bemängelt');
       Assert.IsTrue(validationResult.Messages.Text.Contains('taxTotal'),
         'Die Meldungen benennen den beanstandeten Wert nicht');
     finally
@@ -695,7 +695,7 @@ end;
 
 /// <summary>
 /// Der Meldungspfad hatte Format-Strings mit mehr Platzhaltern als Argumenten, jede
-/// Abweichung fuehrte deshalb zu einer EConvertError statt zu IsValid = false.
+/// Abweichung führte deshalb zu einer EConvertError statt zu IsValid = false.
 /// </summary>
 procedure TZUGFeRDInvoiceValidatorTests.TestValidationDoesNotRaiseOnDeviation;
 var
@@ -704,7 +704,7 @@ var
 begin
   desc := CreateBalancedInvoice(False);
   try
-    // saemtliche Summen verfaelschen, damit jeder Meldungszweig durchlaufen wird
+    // sämtliche Summen verfälschen, damit jeder Meldungszweig durchlaufen wird
     desc.TaxTotalAmount := 1;
     desc.LineTotalAmount := 2;
     desc.GrandTotalAmount := 3;
@@ -1054,10 +1054,10 @@ begin
 end;
 
 /// <summary>
-/// Betraege wie 0,07 oder 20,90 sind sauber zweistellig und duerfen BR-DEC-20
-/// nicht ausloesen. Sie sind binaer nicht exakt darstellbar, weshalb ein Vergleich
-/// der Currency-Groesse gegen ein Gleitkommaergebnis hier fehlschlaegt: von allen
-/// zweistelligen Betraegen zwischen 0,01 und 100,00 waeren rund 15 Prozent
+/// Beträge wie 0,07 oder 20,90 sind sauber zweistellig und dürfen BR-DEC-20
+/// nicht auslösen. Sie sind binär nicht exakt darstellbar, weshalb ein Vergleich
+/// der Currency-Größe gegen ein Gleitkommaergebnis hier fehlschlägt: von allen
+/// zweistelligen Beträgen zwischen 0,01 und 100,00 wären rund 15 Prozent
 /// betroffen.
 /// </summary>
 procedure TZUGFeRDInvoiceValidatorTests.TestTwoDecimalTaxAmountsAreNotReportedAsUnrounded;
@@ -1074,10 +1074,10 @@ begin
     ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
     try
       Assert.IsTrue(ValidationResult.IsValid,
-        'Zweistellige Steuerbetraege wurden als ungueltig gemeldet:'#13#10 +
+        'Zweistellige Steuerbeträge wurden als ungültig gemeldet:'#13#10 +
         ValidationResult.Messages.Text);
       Assert.IsFalse(ValidationResult.Messages.Text.Contains('BR-DEC-20'),
-        'Zweistellige Steuerbetraege wurden faelschlich als BR-DEC-20-Verstoss gemeldet:'#13#10 +
+        'Zweistellige Steuerbeträge wurden fälschlich als BR-DEC-20-Verstoß gemeldet:'#13#10 +
         ValidationResult.Messages.Text);
     finally
       FreeAndNil(ValidationResult);
@@ -1090,9 +1090,9 @@ end;
 /// <summary>
 /// Geht die Preisbasismenge nicht glatt auf, muss der Positionsnettobetrag je
 /// Position auf zwei Nachkommastellen gerundet werden, bevor er in BT-106
-/// einfliesst: BR-DEC-23 laesst fuer BT-131 nicht mehr Stellen zu, und BR-CO-10
+/// einfließt: BR-DEC-23 lässt für BT-131 nicht mehr Stellen zu, und BR-CO-10
 /// summiert genau diese gerundeten Werte. Ohne die Rundung summieren sich die
-/// Reste ueber die Positionen auf und sprengen die Toleranz des Vergleichs.
+/// Reste über die Positionen auf und sprengen die Toleranz des Vergleichs.
 /// </summary>
 procedure TZUGFeRDInvoiceValidatorTests.TestPriceBaseQuantityRemaindersAreRoundedPerLine;
 var
@@ -1102,7 +1102,7 @@ var
 begin
   Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-BASISMENGE-REST', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
   try
-    // 100,00 je 3 Stueck ergibt 33,3333...; BT-131 ist damit 33,33 je Position.
+    // 100,00 je 3 Stück ergibt 33,3333...; BT-131 ist damit 33,33 je Position.
     for i := 1 to 4 do
       Descriptor.AddTradeLineItem(
         {name=}            Format('Testartikel %d', [i]),
@@ -1134,7 +1134,7 @@ begin
     ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
     try
       Assert.IsTrue(ValidationResult.IsValid,
-        'Eine gueltige Rechnung mit nicht aufgehender Preisbasismenge wurde verworfen:'#13#10 +
+        'Eine gültige Rechnung mit nicht aufgehender Preisbasismenge wurde verworfen:'#13#10 +
         ValidationResult.Messages.Text);
     finally
       FreeAndNil(ValidationResult);
@@ -1145,9 +1145,9 @@ begin
 end;
 
 /// <summary>
-/// FX-SCH-A-000052 hat fuer einen auf null rundenden Steuersatz einen eigenen
+/// FX-SCH-A-000052 hat für einen auf null rundenden Steuersatz einen eigenen
 /// Zweig: dort muss der Steuerbetrag auf null runden, die Toleranz von einer
-/// Waehrungseinheit gilt nicht. Andernfalls bliebe bei einer steuerfreien
+/// Währungseinheit gilt nicht. Andernfalls bliebe bei einer steuerfreien
 /// Rechnung ein Steuerbetrag von bis zu einer Einheit unbeanstandet, den auch
 /// BR-E-09 verbietet.
 /// </summary>
@@ -1177,8 +1177,8 @@ begin
 end;
 
 /// <summary>
-/// Die uebliche steuerfreie Rechnung mit Steuersatz und Steuerbetrag null bleibt
-/// selbstverstaendlich gueltig.
+/// Die übliche steuerfreie Rechnung mit Steuersatz und Steuerbetrag null bleibt
+/// selbstverständlich gültig.
 /// </summary>
 procedure TZUGFeRDInvoiceValidatorTests.TestZeroRateWithoutTaxAmountIsAccepted;
 var
@@ -1193,7 +1193,7 @@ begin
     ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
     try
       Assert.IsTrue(ValidationResult.IsValid,
-        'Eine steuerfreie Rechnung wurde als ungueltig gemeldet:'#13#10 +
+        'Eine steuerfreie Rechnung wurde als ungültig gemeldet:'#13#10 +
         ValidationResult.Messages.Text);
     finally
       FreeAndNil(ValidationResult);
@@ -1204,9 +1204,9 @@ begin
 end;
 
 /// <summary>
-/// BT-108 umfasst nach FX-SCH-A-000119 neben den Kopfzuschlaegen auch die
-/// Logistik-Servicekosten. Ohne sie waeren Zuschlagssumme, Steuerbasis und
-/// Bruttosumme zu niedrig und eine gueltige Rechnung wuerde verworfen.
+/// BT-108 umfasst nach FX-SCH-A-000119 neben den Kopfzuschlägen auch die
+/// Logistik-Servicekosten. Ohne sie wären Zuschlagssumme, Steuerbasis und
+/// Bruttosumme zu niedrig und eine gültige Rechnung würde verworfen.
 /// </summary>
 procedure TZUGFeRDInvoiceValidatorTests.TestLogisticsServiceChargeCountsTowardsChargeTotal;
 var
@@ -1221,7 +1221,7 @@ begin
     Descriptor.AddLogisticsServiceCharge(10, 'Versandkosten',
       TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S, 19.0);
 
-    // Die Steueraufschluesselung aus AddTaxGroup deckt nur 100,00 ab, deshalb hier
+    // Die Steueraufschlüsselung aus AddTaxGroup deckt nur 100,00 ab, deshalb hier
     // die Bemessungsgrundlage auf den Gesamtbetrag setzen.
     Descriptor.Taxes[0].BasisAmount := 110;
 
@@ -1250,7 +1250,7 @@ end;
 
 /// <summary>
 /// FX-SCH-A-000118 verlangt BT-107, sobald ein Kopfabschlag existiert - auch dann,
-/// wenn dessen Betrag null ist. Ein Vergleich allein ueber die Summe wuerde den
+/// wenn dessen Betrag null ist. Ein Vergleich allein über die Summe würde den
 /// fehlenden Wert gegen den Standardwert null halten und nichts beanstanden.
 /// </summary>
 procedure TZUGFeRDInvoiceValidatorTests.TestMissingAllowanceTotalWithAllowanceIsReported;
@@ -1286,7 +1286,7 @@ begin
 end;
 
 /// <summary>
-/// FX-SCH-A-000119 entsprechend fuer BT-108 und die Kopfzuschlaege.
+/// FX-SCH-A-000119 entsprechend für BT-108 und die Kopfzuschläge.
 /// </summary>
 procedure TZUGFeRDInvoiceValidatorTests.TestMissingChargeTotalWithChargeIsReported;
 var
@@ -1295,8 +1295,8 @@ var
 begin
   Descriptor := CreateBalancedInvoice(False);
   try
-    // Ein Zuschlag ueber 0,00 faellt beim reinen Wertvergleich nicht auf, weil das
-    // fehlende BT-108 als 0 gelesen wuerde. Beanstandet wird er nur ueber die
+    // Ein Zuschlag über 0,00 fällt beim reinen Wertvergleich nicht auf, weil das
+    // fehlende BT-108 als 0 gelesen würde. Beanstandet wird er nur über die
     // Existenz des Eintrags.
     Descriptor.AddTradeCharge(
       {basisAmount=}     TZUGFeRDNullableParam<Currency>.Create(200),
