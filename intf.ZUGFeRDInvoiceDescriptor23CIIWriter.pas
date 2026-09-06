@@ -924,10 +924,9 @@ begin
 
   //   3. TaxCurrencyCode (optional)
   //   BT-6
-  // BT-6 und BT-111 gehören zusammen: BR-53 verlangt zu einem vorhandenen
-  // Steuerwährungscode einen Steuerbetrag in eben dieser Währung. Die Bedingung
-  // wird deshalb einmal gebildet und an beiden Stellen verwendet - sonst entsteht
-  // ein BT-6 ohne BT-111, sobald der Betrag in Abrechnungswährung fehlt.
+  // BT-6 and BT-111 belong together: BR-53 requires a tax amount in the same
+  // currency whenever a VAT accounting currency code is present. Reuse this
+  // condition for both values to avoid emitting BT-6 without BT-111.
   var writeAccountingCurrency: Boolean :=
     Descriptor.TaxCurrency.HasValue and
     (Descriptor.TaxCurrency.Value <> Descriptor.Currency) and
@@ -1228,7 +1227,7 @@ begin
     _writeOptionalAmount(Writer, 'ram:TaxBasisTotalAmount', Descriptor.TaxBasisAmount);   // Rechnungsgesamtbetrag ohne Umsatzsteuer
   _writeOptionalAmount(Writer, 'ram:TaxTotalAmount', Descriptor.TaxTotalAmount, 2, true);               // BT-110: Gesamtbetrag der Rechnungsumsatzsteuer in Rechnungswährung
 
-  // BT-111: TaxTotalAmount in accounting currency, an dieselbe Bedingung geknüpft wie BT-6
+  // BT-111: TaxTotalAmount in accounting currency, governed by the same condition as BT-6
   if writeAccountingCurrency then
   begin
     Writer.WriteStartElement('ram:TaxTotalAmount');
@@ -1673,7 +1672,7 @@ begin
 
     _writer.WriteElementString('ram:TypeCode', TEnumExtensions<TZUGFeRDTaxTypes>.EnumToString(tax.TypeCode));
 
-    // BR-Z-10: bei Steuerkategorie Z (Nullsatz) darf kein Befreiungsgrund stehen
+    // BR-Z-10: Tax category Z (zero rated) must not contain an exemption reason
     if (not tax.CategoryCode.HasValue) or (tax.CategoryCode.Value <> TZUGFeRDTaxCategoryCodes.Z) then
       _writer.WriteOptionalElementString('ram:ExemptionReason', tax.ExemptionReason);
 
@@ -1697,7 +1696,7 @@ begin
 
     if tax.CategoryCode.HasValue then
       _writer.WriteElementString('ram:CategoryCode', TEnumExtensions<TZUGFeRDTaxCategoryCodes>.EnumToString(tax.CategoryCode));
-    // BR-Z-10: bei Steuerkategorie Z (Nullsatz) darf kein Befreiungsgrund stehen
+    // BR-Z-10: Tax category Z (zero rated) must not contain an exemption reason
     if tax.ExemptionReasonCode.HasValue and
        ((not tax.CategoryCode.HasValue) or (tax.CategoryCode.Value <> TZUGFeRDTaxCategoryCodes.Z)) then
       _writer.WriteElementString('ram:ExemptionReasonCode', TEnumExtensions<TZUGFeRDTaxExemptionReasonCodes>.EnumToString(tax.ExemptionReasonCode));

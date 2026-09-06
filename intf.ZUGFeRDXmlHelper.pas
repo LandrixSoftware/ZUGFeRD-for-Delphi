@@ -105,7 +105,7 @@ begin
   if not _Xml.Active then
     exit;
 
-  // XPath-Präfixe sind interne Bezeichner. Die Namespace-URI bestimmt die fachliche Identität eines XML-Elements.
+  // XPath prefixes are internal identifiers. The namespace URI determines the semantic identity of an XML element.
   if IsZUGFeRD1 then
   begin
     LRamNamespace := 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:12';
