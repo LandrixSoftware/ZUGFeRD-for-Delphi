@@ -81,6 +81,10 @@ type
     [Test]
     procedure TestInvalidTaxTotalIsReported;
     [Test]
+    procedure TestDeclaredLineAmountsAreUsedForBRCO10;
+    [Test]
+    procedure TestDeclaredLineAmountDeviationIsReportedByBRCO10;
+    [Test]
     procedure TestTaxAmountsAreRoundedPerTaxGroup;
     [Test]
     procedure TestUnroundedTaxAmountIsReported;
@@ -90,6 +94,8 @@ type
     procedure TestTaxAmountWithinBRCO17ToleranceIsAccepted;
     [Test]
     procedure TestTaxAmountAtFacturXBRCO17ToleranceBoundaryIsAccepted;
+    [Test]
+    procedure TestTaxAmountJustBeyondBRCO17ToleranceIsReported;
     [Test]
     procedure TestTaxAmountBeyondBRCO17ToleranceIsReported;
     [Test]
@@ -128,6 +134,8 @@ type
     procedure TestMissingChargeTotalWithChargeIsReported;
     [Test]
     procedure TestMissingLineTotalAmountIsReported;
+    [Test]
+    procedure TestMissingLineItemLineTotalAmountIsReported;
     [Test]
     procedure TestValidationDoesNotRaiseOnDeviation;
   end;
@@ -499,6 +507,64 @@ begin
   end;
 end;
 
+/// <summary>
+/// BR-CO-10 bildet BT-106 aus den deklarierten Positionsnettobeträgen BT-131.
+/// Eine davon abweichende Nachrechnung aus Preis und Menge darf eine nach
+/// BR-CO-10 konsistente Rechnung nicht verwerfen.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestDeclaredLineAmountsAreUsedForBRCO10;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := CreateBalancedInvoice(False);
+  try
+    Descriptor.TradeLineItems[0].LineTotalAmount := 199;
+    Descriptor.Taxes[0].BasisAmount := 199;
+    Descriptor.Taxes[0].TaxAmount := 37.81;
+    Descriptor.SetTotals(199, 0, 0, 199, 37.81, 236.81, 0, 236.81);
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsTrue(ValidationResult.IsValid,
+        'Eine nach BR-CO-10 konsistente Rechnung wurde anhand von Preis und Menge verworfen:'#13#10 +
+        ValidationResult.Messages.Text);
+    finally
+      ValidationResult.Free;
+    end;
+  finally
+    Descriptor.Free;
+  end;
+end;
+
+/// <summary>
+/// Stimmen die deklarierten BT-131 nicht mit BT-106 überein, muss BR-CO-10
+/// auch dann anschlagen, wenn die Nachrechnung aus Preis und Menge BT-106 ergibt.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestDeclaredLineAmountDeviationIsReportedByBRCO10;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := CreateBalancedInvoice(False);
+  try
+    Descriptor.TradeLineItems[0].LineTotalAmount := 199.99;
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(ValidationResult.IsValid,
+        'Eine Abweichung zwischen der Summe der BT-131 und BT-106 wurde nicht beanstandet:'#13#10 +
+        ValidationResult.Messages.Text);
+      Assert.IsTrue(ValidationResult.Messages.Text.Contains('BR-CO-10'),
+        'Es fehlt die Meldung zu BR-CO-10:'#13#10 + ValidationResult.Messages.Text);
+    finally
+      ValidationResult.Free;
+    end;
+  finally
+    Descriptor.Free;
+  end;
+end;
+
 procedure TZUGFeRDInvoiceValidatorTests.TestTaxAmountsAreRoundedPerTaxGroup;
 var
   Descriptor: TZUGFeRDInvoiceDescriptor;
@@ -516,11 +582,14 @@ begin
     try
       Assert.IsTrue(ValidationResult.IsValid,
         'Tax amounts rounded per group were rejected:'#13#10 + ValidationResult.Messages.Text);
+      Assert.IsFalse(ValidationResult.Messages.Text.Contains('BR-CO-17-Toleranz'),
+        'Die korrekt gerundeten Steuerbeträge wurden nur durch die BR-CO-17-Toleranz akzeptiert:'#13#10 +
+        ValidationResult.Messages.Text);
     finally
-      FreeAndNil(ValidationResult);
+      ValidationResult.Free;
     end;
   finally
-    FreeAndNil(Descriptor);
+    Descriptor.Free;
   end;
 end;
 
@@ -589,18 +658,21 @@ begin
   Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-ROUND-NEGATIVE', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
   try
     // Der Rundungsmodus entspricht der Betragsformatierung der Writer und rundet Mittelpunkte von null weg.
-    AddTaxGroup(Descriptor, 'Negative midpoint', -0.025, 20, -0.01, TZUGFeRDTaxCategoryCodes.S);
-    Descriptor.SetTotals(-0.025, 0, 0, -0.025, -0.01, -0.035, 0, -0.035);
+    AddTaxGroup(Descriptor, 'Negative midpoint', -0.05, 10, -0.01, TZUGFeRDTaxCategoryCodes.S);
+    Descriptor.SetTotals(-0.05, 0, 0, -0.05, -0.01, -0.06, 0, -0.06);
 
     ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
     try
       Assert.IsTrue(ValidationResult.IsValid,
         'Negative midpoint tax amount was not rounded away from zero:'#13#10 + ValidationResult.Messages.Text);
+      Assert.IsFalse(ValidationResult.Messages.Text.Contains('BR-CO-17-Toleranz'),
+        'Der negative Mittelpunkt wurde nur durch die BR-CO-17-Toleranz akzeptiert:'#13#10 +
+        ValidationResult.Messages.Text);
     finally
-      FreeAndNil(ValidationResult);
+      ValidationResult.Free;
     end;
   finally
-    FreeAndNil(Descriptor);
+    Descriptor.Free;
   end;
 end;
 
@@ -871,6 +943,33 @@ begin
 end;
 
 /// <summary>
+/// BR-24 verlangt für jede Rechnungsposition einen Positionsnettobetrag BT-131.
+/// Ohne diesen Wert darf BR-CO-10 die Position nicht still als null summieren.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestMissingLineItemLineTotalAmountIsReported;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := CreateBalancedInvoice(False);
+  try
+    Descriptor.TradeLineItems[0].LineTotalAmount := nil;
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(ValidationResult.IsValid,
+        'Ein fehlendes BT-131 wurde nicht beanstandet:'#13#10 + ValidationResult.Messages.Text);
+      Assert.IsTrue(ValidationResult.Messages.Text.Contains('BR-24'),
+        'Es fehlt die Meldung zu BR-24:'#13#10 + ValidationResult.Messages.Text);
+    finally
+      ValidationResult.Free;
+    end;
+  finally
+    Descriptor.Free;
+  end;
+end;
+
+/// <summary>
 /// Baut eine ausgeglichene Rechnung, deren Nettoeinzelpreis BT-146 sich auf eine
 /// Preisbasismenge BT-149 bezieht: 100,00 je 10 Stück bei 2 berechneten Stück
 /// ergibt einen Positionsnettobetrag BT-131 von 20,00.
@@ -1025,6 +1124,35 @@ begin
 end;
 
 /// <summary>
+/// Bereits 1,01 Währungseinheiten Abweichung liegen jenseits der in Factur-X
+/// einschließlich verwendeten BR-CO-17-Grenze von einer Währungseinheit.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestTaxAmountJustBeyondBRCO17ToleranceIsReported;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  ValidationResult: TZUGFeRDValidationResult;
+begin
+  Descriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('RE-TOLERANCE-JUST-OVER', EncodeDate(2026, 1, 15), TZUGFeRDCurrencyCodes.EUR);
+  try
+    AddTaxGroup(Descriptor, 'Standard rate', 100, 19, 20.01, TZUGFeRDTaxCategoryCodes.S);
+    Descriptor.SetTotals(100, 0, 0, 100, 20.01, 120.01, 0, 120.01);
+
+    ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.IsFalse(ValidationResult.IsValid,
+        'Eine Abweichung von 1,01 Währungseinheiten wurde nicht beanstandet:'#13#10 +
+        ValidationResult.Messages.Text);
+      Assert.IsTrue(ValidationResult.Messages.Text.Contains('BR-CO-17:'),
+        'Es fehlt die Meldung zu BR-CO-17:'#13#10 + ValidationResult.Messages.Text);
+    finally
+      ValidationResult.Free;
+    end;
+  finally
+    Descriptor.Free;
+  end;
+end;
+
+/// <summary>
 /// Jenseits einer Währungseinheit ist BR-CO-17 verletzt.
 /// </summary>
 procedure TZUGFeRDInvoiceValidatorTests.TestTaxAmountBeyondBRCO17ToleranceIsReported;
@@ -1088,11 +1216,9 @@ begin
 end;
 
 /// <summary>
-/// Geht die Preisbasismenge nicht glatt auf, muss der Positionsnettobetrag je
-/// Position auf zwei Nachkommastellen gerundet werden, bevor er in BT-106
-/// einfliesst: BR-DEC-23 laesst fuer BT-131 nicht mehr Stellen zu, und BR-CO-10
-/// summiert genau diese gerundeten Werte. Ohne die Rundung summieren sich die
-/// Reste ueber die Positionen auf und sprengen die Toleranz des Vergleichs.
+/// Geht die Preisbasismenge nicht glatt auf, bleibt die Nachrechnung aus Preis
+/// und Menge eine gerundete Diagnose. BR-CO-10 summiert dagegen die deklarierten
+/// BT-131, die nach BR-DEC-23 höchstens zwei Nachkommastellen besitzen.
 /// </summary>
 procedure TZUGFeRDInvoiceValidatorTests.TestPriceBaseQuantityRemaindersAreRoundedPerLine;
 var
@@ -1134,13 +1260,16 @@ begin
     ValidationResult := TZUGFeRDInvoiceValidator.Validate(Descriptor, TZUGFeRDVersion.Version23);
     try
       Assert.IsTrue(ValidationResult.IsValid,
-        'Eine gueltige Rechnung mit nicht aufgehender Preisbasismenge wurde verworfen:'#13#10 +
+        'Eine gültige Rechnung mit nicht aufgehender Preisbasismenge wurde verworfen:'#13#10 +
+        ValidationResult.Messages.Text);
+      Assert.IsTrue(ValidationResult.Messages.Text.Contains(Format(';Testartikel 1;%f', [33.33])),
+        'Die Diagnose rundet den nachgerechneten Positionsbetrag nicht auf zwei Stellen:'#13#10 +
         ValidationResult.Messages.Text);
     finally
-      FreeAndNil(ValidationResult);
+      ValidationResult.Free;
     end;
   finally
-    FreeAndNil(Descriptor);
+    Descriptor.Free;
   end;
 end;
 
