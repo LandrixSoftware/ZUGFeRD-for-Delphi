@@ -518,6 +518,14 @@ begin
   Result.TaxTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement,
     Format('/*/cac:TaxTotal/cbc:TaxAmount[@currencyID=''%s'']',
       [TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Result.Currency)]));
+  if not Result.TaxTotalAmount.HasValue then
+  begin
+    // PEPPOL-EN16931-R053 identifies BT-110 as the single TaxTotal group with a
+    // VAT breakdown. Requiring exactly one group avoids confusing reordered BT-111.
+    nodes := doc.documentElement.selectNodes('/*/cac:TaxTotal[cac:TaxSubtotal]/cbc:TaxAmount');
+    if nodes.length = 1 then
+      Result.TaxTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[0], '.');
+  end;
   if Result.TaxCurrency.HasValue and (Result.TaxCurrency.Value <> Result.Currency) then
     Result.TaxTotalAmountInAccountingCurrency := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement,
       Format('/*/cac:TaxTotal/cbc:TaxAmount[@currencyID=''%s'']',
