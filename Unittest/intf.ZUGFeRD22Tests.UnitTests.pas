@@ -44,6 +44,8 @@ type
     [Test]
     procedure TestAdvancePaymentReaderRejectsMissingMandatoryData;
     [Test]
+    procedure TestCIIReaderReleasesDescriptorAfterParsingError;
+    [Test]
     procedure TestReferenceAdvancePaymentFromDocumentation;
     [Test]
     procedure TestExtendedInvoiceWithIncludedItems;
@@ -857,6 +859,86 @@ begin
     AssertRemovalRaisesMissingData('<ram:IssuerAssignedID>R202506-01</ram:IssuerAssignedID>');
   finally
     desc.Free;
+  end;
+end;
+
+/// <summary>
+/// Prüft, dass der CII-2.3-Reader einen teilweise aufgebauten Descriptor bei
+/// einer Ausnahme vor dem Advance-Payment-Block freigibt.
+/// </summary>
+procedure TZUGFeRD22Tests.TestCIIReaderReleasesDescriptorAfterParsingError;
+const
+  validIssueDateXml = '<udt:DateTimeString format="102">20251001</udt:DateTimeString>';
+  invalidIssueDateXml = '<udt:DateTimeString format="102">2025100</udt:DateTimeString>';
+  measuredLoadCount = 10;
+var
+  xmlContent: string;
+  invalidXml: string;
+  invalidStream: TStringStream;
+  firstBatchMemory: NativeUInt;
+  secondBatchMemory: NativeUInt;
+  loadIndex: Integer;
+  allLoadsFailed: Boolean;
+
+  function GetAllocatedMemory: NativeUInt;
+  var
+    memoryManagerState: TMemoryManagerState;
+    smallBlockTypeState: TSmallBlockTypeState;
+  begin
+    {$WARN SYMBOL_PLATFORM OFF}
+    GetMemoryManagerState(memoryManagerState);
+    {$WARN SYMBOL_PLATFORM DEFAULT}
+    Result := memoryManagerState.TotalAllocatedMediumBlockSize +
+      memoryManagerState.TotalAllocatedLargeBlockSize;
+    for smallBlockTypeState in memoryManagerState.SmallBlockTypeStates do
+      Inc(Result, NativeUInt(smallBlockTypeState.UseableBlockSize) *
+        smallBlockTypeState.AllocatedBlockCount);
+  end;
+
+  function LoadRaisesParsingError: Boolean;
+  var
+    loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  begin
+    Result := False;
+    loadedInvoice := nil;
+    try
+      try
+        invalidStream.Position := 0;
+        loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(invalidStream);
+      except
+        Result := True;
+      end;
+    finally
+      loadedInvoice.Free;
+    end;
+  end;
+
+begin
+  xmlContent := TFile.ReadAllText(DocumentationPath(
+    'zugferd24-facturx1008\de\Beispiele\4. EXTENDED\EXTENDED_Warenrechnung\EXTENDED_Warenrechnung.xml'),
+    TEncoding.UTF8);
+  invalidXml := StringReplace(xmlContent, validIssueDateXml, invalidIssueDateXml, []);
+  Assert.AreNotEqual(xmlContent, invalidXml, 'Das zu ersetzende Rechnungsdatum wurde nicht gefunden.');
+
+  invalidStream := TStringStream.Create(invalidXml, TEncoding.UTF8);
+  try
+    Assert.IsTrue(LoadRaisesParsingError, 'Das ungültige Rechnungsdatum wurde nicht abgelehnt.');
+
+    for loadIndex := 1 to measuredLoadCount do
+      LoadRaisesParsingError;
+    firstBatchMemory := GetAllocatedMemory;
+
+    allLoadsFailed := True;
+    for loadIndex := 1 to measuredLoadCount do
+      allLoadsFailed := LoadRaisesParsingError and allLoadsFailed;
+    secondBatchMemory := GetAllocatedMemory;
+
+    Assert.IsTrue(allLoadsFailed, 'Mindestens ein ungültiges Rechnungsdatum wurde nicht abgelehnt.');
+    Assert.IsTrue(secondBatchMemory <= firstBatchMemory,
+      Format('Wiederholte Parser-Ausnahmen erhöhten den belegten Speicher von %s auf %s Bytes.',
+        [UIntToStr(firstBatchMemory), UIntToStr(secondBatchMemory)]));
+  finally
+    invalidStream.Free;
   end;
 end;
 
