@@ -40,6 +40,8 @@ type
     [Test]
     procedure TestAdvancePaymentMandatoryDataValidation;
     [Test]
+    procedure TestNilAdvancePaymentValidation;
+    [Test]
     procedure TestAdvancePaymentReaderRejectsMissingMandatoryData;
     [Test]
     procedure TestReferenceAdvancePaymentFromDocumentation;
@@ -743,6 +745,43 @@ begin
     AssertSaveRaisesMissingData;
   finally
     desc.Free;
+  end;
+end;
+
+/// <summary>
+/// Verifies that a nil BG-X-45 list entry is reported separately from a
+/// missing paid amount.
+/// </summary>
+procedure TZUGFeRD22Tests.TestNilAdvancePaymentValidation;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  Stream: TMemoryStream;
+  Raised: Boolean;
+begin
+  Descriptor := TZUGFeRDInvoiceDescriptor.Load(DemodataPath('zugferd21\zugferd_2p1_EXTENDED_Warenrechnung-factur-x.xml'));
+  try
+    Descriptor.AdvancePayments.Clear;
+    Descriptor.AdvancePayments.Add(nil);
+
+    Stream := TMemoryStream.Create;
+    try
+      Raised := False;
+      try
+        Descriptor.Save(Stream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
+      except
+        on E: TZUGFeRDMissingDataException do
+        begin
+          Raised := True;
+          Assert.IsTrue(E.Message.Contains('entry must not be nil'),
+            'The validation message does not identify the nil advance payment entry: ' + E.Message);
+        end;
+      end;
+      Assert.IsTrue(Raised, 'A nil advance payment entry was not rejected');
+    finally
+      Stream.Free;
+    end;
+  finally
+    Descriptor.Free;
   end;
 end;
 
