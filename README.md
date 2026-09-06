@@ -231,6 +231,45 @@ attachments in pure Pascal.
 - [documentation/](documentation/) — the official specifications, schemas and example invoices from
   ZUGFeRD 1.0 up to 2.5.2 / Factur-X 1.09.2.
 
+### Console test execution
+
+Build `Unittest/ZfDUnitTest.dproj` with Delphi 11, Win64, Debug. The executable is written
+directly to `Unittest/`. From that directory, Windows PowerShell 5.1 can run the suite or
+select a fully qualified DUnitX test/fixture name:
+
+```powershell
+.\run-tests.ps1
+.\run-tests.ps1 -Filter 'intf.ZUGFeRD22Tests.UnitTests.TZUGFeRD22Tests.TestCIIReaderReleasesDescriptorAfterParsingError'
+.\Test-Runner.ps1
+```
+
+The native DUnitX syntax uses colons: `--run:<qualified-name>`, `--xmlfile:<path>` and
+`--exitbehavior:Continue`. `--filter` and `--option=value` are not supported by the
+DUnitX version shipped with Delphi 11. The helper passes `--run` and closes stdin, so
+non-interactive runs do not require a placeholder file or an Enter keypress.
+
+Exit codes: `0` for successful executed tests, `1` for test failures, `2` for runner
+exceptions or invalid command-line options, and `3` if no tests execute. The PowerShell
+helper returns `4` for infrastructure failures, including missing/invalid XML or a timeout.
+It parses a unique report for each invocation before publishing `dunitx-results.xml`;
+an existing report is not reused as evidence for a failed invocation. `-XmlPath` selects
+another report destination and `-TimeoutSeconds` controls the process timeout.
+
+`Test-Runner.ps1` verifies test names, counts and exit codes, including missing fixtures,
+invalid reports and an isolated executable path containing spaces. It requires the compiled
+console runner and retains its logs and generated fixtures in a unique temporary directory,
+or in a new directory specified by `-ResultsDirectory`.
+
+The documentation sweep includes long example paths. On Windows, invoke the executable
+through a short `subst` drive alias when the checkout path would exceed `MAX_PATH`.
+
+The default DUnitX memory monitor always reports zero: **`Tests Leaked: 0` does not prove
+that tests are leak-free**. Ownership regressions use explicit allocated-heap snapshots
+from `TZUGFeRDTestBase` around warmed-up, isolated operations. The infrastructure tests
+prove that the assertion rejects a retained object and accepts a released object, without
+leaving the counterexample allocated. These checks cover only the measured paths, not
+every test or possible reader exception. No replacement memory manager is installed.
+
 ## Relationship to the C# library
 
 Synchronization point:

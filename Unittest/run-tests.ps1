@@ -4,88 +4,117 @@
 #
 # Usage:
 #   .\run-tests.ps1                    # run all tests
-#   .\run-tests.ps1 -Filter "TestName" # run specific test(s)
+#   .\run-tests.ps1 -Filter "intf.ZUGFeRD22Tests.UnitTests.TZUGFeRD22Tests.TestComment"
 #   .\run-tests.ps1 -ShowXml           # also dump the raw XML
 
 param(
     [string]$Filter = '',
     [switch]$ShowXml,
-    [string]$ExePath = "$PSScriptRoot\Win64\Debug\ZfDUnitTest.exe"
+    [string]$ExePath = "$PSScriptRoot\ZfDUnitTest.exe",
+    [string]$XmlPath = "$PSScriptRoot\dunitx-results.xml",
+    [ValidateRange(1, 3600)]
+    [int]$TimeoutSeconds = 120
 )
 
-$xmlPath = "$PSScriptRoot\dunitx-results.xml"
-$exitCode = 0
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+$exitCode = 4
+$process = $null
+$runXmlPath = Join-Path ([IO.Path]::GetTempPath()) ('zfd-results-' + [Guid]::NewGuid().ToString('N') + '.xml')
 
-# Build argument list
-$args = @()
-if ($Filter -ne '') {
-    $args += "--filter=$Filter"
-}
-
-# Run tests (non-interactive: stdin is not a console)
-Write-Host "Running: $ExePath $args" -ForegroundColor Cyan
-$proc = Start-Process -FilePath $ExePath -ArgumentList $args `
-    -Wait -PassThru -NoNewWindow `
-    -RedirectStandardInput "$PSScriptRoot\nul_stdin.tmp"
-
-# Create empty stdin redirect file if it doesn't exist
-if (-not (Test-Path "$PSScriptRoot\nul_stdin.tmp")) {
-    "" | Out-File "$PSScriptRoot\nul_stdin.tmp" -Encoding ASCII
-    $proc = Start-Process -FilePath $ExePath -ArgumentList $args `
-        -Wait -PassThru -NoNewWindow `
-        -RedirectStandardInput "$PSScriptRoot\nul_stdin.tmp"
-}
-
-$exitCode = $proc.ExitCode
-
-# Parse NUnit XML results
-if (Test-Path $xmlPath) {
-    [xml]$xml = Get-Content $xmlPath -Encoding UTF8
-
-    $suite = $xml.'test-results'
-    if ($null -eq $suite) {
-        $suite = $xml.SelectSingleNode('//*[@total]')
+try {
+    $resolvedExe = Get-Item -LiteralPath $ExePath
+    if ($resolvedExe.PSIsContainer) {
+        throw "The executable path is a directory: $ExePath"
+    }
+    $XmlPath = [IO.Path]::GetFullPath($XmlPath)
+    if ($Filter.Contains('"') -or $Filter.Contains("`r") -or $Filter.Contains("`n")) {
+        throw 'The filter must not contain quotes or line breaks.'
     }
 
-    $total   = [int]($suite.total   ?? ($xml.SelectSingleNode('//*[@total]').'total'))
-    $passed  = [int]($suite.passed  ?? 0)
-    $failed  = [int]($suite.failures ?? ($suite.failed ?? 0))
-    $errors  = [int]($suite.errors  ?? 0)
-    $ignored = [int]($suite.ignored ?? ($suite.skipped ?? 0))
+    # DUnitX accepts qualified test/fixture names via --run, not --filter.
+    $runnerArguments = @('--exitbehavior:Continue', ('--xmlfile:"' + $runXmlPath + '"'))
+    if ($Filter -ne '') {
+        $runnerArguments += '--run:"' + $Filter + '"'
+    }
 
-    Write-Host ""
-    Write-Host "=== Test Results ===" -ForegroundColor White
-    Write-Host "Total:   $total" -ForegroundColor White
-    Write-Host "Passed:  $passed" -ForegroundColor Green
-    if ($failed -gt 0)  { Write-Host "Failed:  $failed"  -ForegroundColor Red   }
-    if ($errors -gt 0)  { Write-Host "Errors:  $errors"  -ForegroundColor Red   }
-    if ($ignored -gt 0) { Write-Host "Ignored: $ignored" -ForegroundColor Yellow }
+    # Close redirected stdin before waiting; no pre-existing placeholder file is required.
+    Write-Host "Running: $($resolvedExe.FullName) $($runnerArguments -join ' ')"
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo.FileName = $resolvedExe.FullName
+    $process.StartInfo.WorkingDirectory = $resolvedExe.DirectoryName
+    $process.StartInfo.Arguments = $runnerArguments -join ' '
+    $process.StartInfo.UseShellExecute = $false
+    $process.StartInfo.RedirectStandardInput = $true
+    if (-not $process.Start()) {
+        throw 'The test process did not start.'
+    }
+    $process.StandardInput.Close()
+    if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
+        $process.Kill()
+        $process.WaitForExit()
+        throw "The test process exceeded the timeout of $TimeoutSeconds seconds."
+    }
+    $exitCode = $process.ExitCode
+
+    # A unique path prevents a failed launch from reusing a previous successful result.
+    if (-not (Test-Path -LiteralPath $runXmlPath -PathType Leaf)) {
+        throw "The test process produced no XML results (exit code $exitCode)."
+    }
+    [xml]$xml = Get-Content -LiteralPath $runXmlPath -Raw -Encoding UTF8
+    $suite = $xml.DocumentElement
+    if ($suite.LocalName -ne 'test-results') {
+        throw 'The result file is not a DUnitX NUnit report.'
+    }
+
+    # NUnit 2 does not provide a "passed" attribute on the root element.
+    $testCases = @($suite.SelectNodes('.//test-case'))
+    $executedCases = @($testCases | Where-Object { $_.GetAttribute('executed') -eq 'True' })
+    $passed = @($executedCases | Where-Object { $_.GetAttribute('result') -eq 'Success' }).Count
+    $failedCases = @($executedCases | Where-Object { $_.GetAttribute('result') -ne 'Success' })
+    $ignored = $testCases.Count - $executedCases.Count
+    $reportedTotal = 0
+    if (-not [int]::TryParse($suite.GetAttribute('total'), [ref]$reportedTotal) -or
+        $reportedTotal -ne $executedCases.Count) {
+        throw 'The reported total does not match the executed test cases.'
+    }
+
+    if ($exitCode -eq 0) {
+        if ($executedCases.Count -eq 0) {
+            $exitCode = 3
+        } elseif ($failedCases.Count -gt 0 -or $suite.GetAttribute('failures') -ne '0' -or
+            $suite.GetAttribute('errors') -ne '0') {
+            $exitCode = 1
+        }
+    }
+
+    Copy-Item -LiteralPath $runXmlPath -Destination $XmlPath
+    Write-Host "Executed: $($executedCases.Count); passed: $passed; failed/errors: $($failedCases.Count); ignored: $ignored"
+    Write-Host 'Memory checks: explicit heap assertions only; the default DUnitX leak counter is inactive.'
 
     # Show failing tests
-    $failedTests = $xml.SelectNodes('//*[local-name()="test-case" and (@result="Failure" or @result="Error" or @result="Failed")]')
-    if ($failedTests.Count -gt 0) {
-        Write-Host ""
-        Write-Host "=== Failing Tests ===" -ForegroundColor Red
-        foreach ($t in $failedTests) {
-            $name = $t.name ?? $t.fullname
-            $msg  = $t.SelectSingleNode('*[local-name()="failure"]/*[local-name()="message"]')
-            Write-Host "  FAIL: $name" -ForegroundColor Red
-            if ($null -ne $msg) {
-                Write-Host "        $($msg.InnerText.Trim())" -ForegroundColor Yellow
-            }
+    foreach ($testCase in $failedCases) {
+        Write-Host "FAIL: $($testCase.GetAttribute('name'))"
+        $message = $testCase.SelectSingleNode('failure/message')
+        if ($null -ne $message) {
+            Write-Host $message.InnerText.Trim()
         }
     }
 
     if ($ShowXml) {
-        Write-Host ""
-        Write-Host "=== Raw XML ===" -ForegroundColor Gray
-        Get-Content $xmlPath
+        Get-Content -LiteralPath $XmlPath
     }
-} else {
-    Write-Host "ERROR: XML output not found at $xmlPath" -ForegroundColor Red
-    $exitCode = 3
+    Write-Host "XML results: $XmlPath"
+} catch {
+    [Console]::Error.WriteLine($_.Exception.Message)
+    $exitCode = 4
+} finally {
+    if ($null -ne $process) {
+        $process.Dispose()
+    }
+    if (Test-Path -LiteralPath $runXmlPath -PathType Leaf) {
+        Remove-Item -LiteralPath $runXmlPath
+    }
 }
 
-Write-Host ""
-Write-Host "XML results: $xmlPath" -ForegroundColor Gray
 exit $exitCode

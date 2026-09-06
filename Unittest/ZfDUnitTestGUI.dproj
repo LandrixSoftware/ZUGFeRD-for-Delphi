@@ -96,6 +96,7 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="intf.ZUGFeRDTestBase.pas"/>
+        <DCCReference Include="intf.ZUGFeRDTestInfrastructure.UnitTests.pas"/>
         <DCCReference Include="intf.ZUGFeRDInvoiceProvider.pas"/>
         <DCCReference Include="intf.ZUGFeRD10Tests.UnitTests.pas"/>
         <DCCReference Include="intf.ZUGFeRD20Tests.UnitTests.pas"/>

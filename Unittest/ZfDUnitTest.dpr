@@ -14,6 +14,7 @@ program ZfDUnitTest;
 
 uses
   Winapi.ActiveX,
+  Winapi.Windows,
   SysUtils,
   DUnitX.ConsoleWriter.Base,
   DUnitX.DUnitCompatibility,
@@ -51,6 +52,7 @@ uses
   intf.ZUGFeRDInvoiceProvider in 'intf.ZUGFeRDInvoiceProvider.pas',
 
   // Test units
+  intf.ZUGFeRDTestInfrastructure.UnitTests in 'intf.ZUGFeRDTestInfrastructure.UnitTests.pas',
   intf.ZUGFeRD10Tests.UnitTests in 'intf.ZUGFeRD10Tests.UnitTests.pas',
   intf.ZUGFeRD20Tests.UnitTests in 'intf.ZUGFeRD20Tests.UnitTests.pas',
   intf.ZUGFeRD22Tests.UnitTests in 'intf.ZUGFeRD22Tests.UnitTests.pas',
@@ -67,9 +69,12 @@ var
   logger : ITestLogger;
   nunitLogger : ITestLogger;
   xmlOutputFile : string;
+  inputMode: DWORD;
 begin
   CoInitialize(nil);
   try
+    // Parse before creating the runner so selection and XML output options take effect.
+    TDUnitX.CheckCommandLine;
     // Warn when running under the Delphi debugger
     {$WARN SYMBOL_PLATFORM OFF}
     if DebugHook <> 0 then
@@ -111,11 +116,21 @@ begin
     results := runner.Execute;
 
     ExitCode := 0;
-    if not results.AllPassed then
+    if results.TestCount = results.IgnoredCount then
+    begin
+      System.Writeln('No tests executed. Check the fully qualified test or fixture name.');
+      ExitCode := 3;
+    end
+    else if not results.AllPassed then
       ExitCode := 1;
 
+    // The default DUnitX monitor always returns zero; only explicit heap assertions measure memory.
+    if TDUnitX.Options.ConsoleMode <> TDunitXConsoleMode.Off then
+      System.Writeln('Memory checks: explicit heap assertions only; "Tests Leaked" is not a leak check.');
+
     // Only wait for keypress when running interactively (stdin is a console)
-    if IsConsole then
+    if (TDUnitX.Options.ExitBehavior = TDUnitXExitBehavior.Pause) and
+      GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), inputMode) then
     begin
       System.Write('Done.. press <Enter> key to quit.');
       System.Readln;
