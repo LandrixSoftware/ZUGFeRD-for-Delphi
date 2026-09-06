@@ -512,7 +512,7 @@ end;
 /// <summary>
 /// Die offiziellen ZUGFeRD-Beispiele (z.B. die Abschlagsrechnungen mit SubInvoiceLine)
 /// nutzen LineStatusReasonCode (BT-X-9) ohne LineStatusCode (BT-X-8). Der Reader muss
-/// den Grund daher auch allein uebernehmen und nicht nur im Paar.
+/// den Grund daher auch allein übernehmen und nicht nur im Paar.
 /// </summary>
 procedure TZUGFeRD22Tests.TestLineStatusReasonCodeWithoutStatusCode;
 var
@@ -537,7 +537,7 @@ begin
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      19.0
     );
-    // bewusst ohne LineStatusCode, deshalb nicht ueber SetLineStatus
+    // bewusst ohne LineStatusCode, deshalb nicht über SetLineStatus
     tradeLineItem.AssociatedDocument.LineStatusReasonCode := TZUGFeRDLineStatusReasonCodes.GROUP;
 
     ms := TMemoryStream.Create;
@@ -1085,7 +1085,7 @@ end;
 
 /// <summary>
 /// Liest die Anzahlungen aus dem offiziellen Beispiel der Projektabschlussrechnung.
-/// Wird übersprungen, wenn die Dokumentation lokal nicht ausgepackt ist.
+/// Die Fixture gehört zum Testumfang und ihr Fehlen wird als Testfehler gemeldet.
 /// </summary>
 procedure TZUGFeRD22Tests.TestReferenceAdvancePaymentFromDocumentation;
 var
@@ -1094,11 +1094,7 @@ var
 begin
   fileName := DocumentationPath(
     'zugferd24-facturx1008\de\Beispiele\4. EXTENDED\EXTENDED_Projektabschlussrechnung\EXTENDED_Projektabschlussrechnung.xml');
-  if not TFile.Exists(fileName) then
-  begin
-    Log('Uebersprungen: ' + fileName + ' nicht vorhanden');
-    Exit;
-  end;
+  Assert.IsTrue(TFile.Exists(fileName), 'Dokumentations-Fixture nicht gefunden: ' + fileName);
 
   desc := TZUGFeRDInvoiceDescriptor.Load(fileName);
   try
@@ -5798,10 +5794,10 @@ begin
       writer.Free;
     end;
 
-    // Fuer den UBL-Writer ein Profil waehlen, das seine eigene Profilgrenze passiert
-    // (nur XRechnung ist erlaubt). Scheitern darf der Aufruf dann ausschliesslich an der
-    // gemeinsamen Pruefung ValidateVersion23 - sonst wuerde der Test auch dann bestehen,
-    // wenn der Writer nur sein Profil prueft und die gemeinsame Pruefung auslaesst.
+    // Für den UBL-Writer ein Profil wählen, das seine eigene Profilgrenze passiert
+    // (nur XRechnung ist erlaubt). Scheitern darf der Aufruf dann ausschließlich an der
+    // gemeinsamen Prüfung ValidateVersion23 - sonst würde der Test auch dann bestehen,
+    // wenn der Writer nur sein Profil prüft und die gemeinsame Prüfung auslässt.
     desc.Profile := TZUGFeRDProfile.XRechnung;
 
     writer := TZUGFeRDInvoiceDescriptor22UBLWriter.Create;

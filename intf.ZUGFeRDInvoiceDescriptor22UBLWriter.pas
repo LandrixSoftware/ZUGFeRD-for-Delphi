@@ -209,10 +209,9 @@ begin
 
   Writer.WriteElementString('cbc:DocumentCurrencyCode', TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Descriptor.Currency));
 
-  // BT-6 und BT-111 gehören zusammen: BR-53 verlangt zu einem vorhandenen
-  // Steuerwährungscode einen Steuerbetrag in eben dieser Währung. Die Bedingung
-  // wird deshalb einmal gebildet und an beiden Stellen verwendet - sonst entsteht
-  // ein BT-6 ohne BT-111, sobald der Betrag in Abrechnungswährung fehlt.
+  // BT-6 and BT-111 belong together: BR-53 requires a tax amount in the same
+  // currency whenever a VAT accounting currency code is present. Reuse this
+  // condition for both values to avoid emitting BT-6 without BT-111.
   var writeAccountingCurrency: Boolean :=
     Descriptor.TaxCurrency.HasValue and
     (Descriptor.TaxCurrency.Value <> Descriptor.Currency) and
@@ -561,7 +560,7 @@ begin
       if tax.CategoryCode <> TZUGFeRDTaxCategoryCodes.O then // BR-O-05
         Writer.WriteElementString('cbc:Percent', _formatDecimal(tax.Percent));
 
-      // BR-Z-10: Steuerkategorie Z darf keinen Befreiungsgrund enthalten.
+      // BR-Z-10: Tax category Z must not contain an exemption reason.
       if (not tax.CategoryCode.HasValue) or (tax.CategoryCode.Value <> TZUGFeRDTaxCategoryCodes.Z) then
       begin
         if tax.ExemptionReasonCode.HasValue then
@@ -582,7 +581,7 @@ begin
 
   if writeAccountingCurrency then
   begin
-    // BT-111 wird als eigene TaxTotal-Gruppe ohne TaxSubtotal geschrieben.
+    // BT-111 is written as a separate TaxTotal group without TaxSubtotal.
     Writer.WriteStartElement('cac:TaxTotal');
     Writer.WriteStartElement('cbc:TaxAmount');
     Writer.WriteAttributeString('currencyID', TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Descriptor.TaxCurrency.Value));
