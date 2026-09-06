@@ -610,11 +610,13 @@ begin
       // unzulässige Zahl der Nachkommastellen.
       Assert.IsTrue(ValidationResult.Messages.Text.Contains('BR-DEC-20'),
         'Validation messages do not identify BR-DEC-20');
+      Assert.IsTrue(ValidationResult.Messages.Text.Contains(Format('%.4f', [0.0057])),
+        'Validation messages do not preserve the unrounded tax amount:'#13#10 + ValidationResult.Messages.Text);
     finally
-      FreeAndNil(ValidationResult);
+      ValidationResult.Free;
     end;
   finally
-    FreeAndNil(Descriptor);
+    Descriptor.Free;
   end;
 end;
 
