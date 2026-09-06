@@ -26,6 +26,13 @@ uses
 type
   [TestFixture]
   TZUGFeRDCrossVersionTests = class(TZUGFeRDTestBase)
+  private
+    /// <summary>
+    /// Verifies that the UBL reader identifies BT-110 by its VAT breakdown
+    /// when its currency attribute cannot be used.
+    /// </summary>
+    procedure AssertUBLTaxTotalFallback(const ReplacementCurrencyCode: string;
+      const MakeFallbackAmbiguous: Boolean);
   public
     [Test]
     procedure TestAutomaticLineIds;
@@ -302,6 +309,15 @@ type
 
     [Test]
     procedure TestTaxTotalAmountBT110AndBT111DualCurrencyUBL;
+
+    [Test]
+    procedure TestTaxTotalAmountBT110FallbackWithoutCurrencyIdUBL;
+
+    [Test]
+    procedure TestTaxTotalAmountBT110FallbackWithMismatchedCurrencyIdUBL;
+
+    [Test]
+    procedure TestTaxTotalAmountBT110FallbackDoesNotGuessAmbiguousGroupsUBL;
 
     [Test]
     procedure TestTaxTotalAmountBT110OnlyWhenTaxCurrencyEqualsCurrencyUBL;
@@ -2607,6 +2623,92 @@ begin
   end;
 end; // !TestTaxTotalAmountBT110OnlyWhenTaxCurrencyEqualsCurrency()
 
+/// <summary>
+/// Verifies that the UBL reader does not depend on TaxTotal document order when
+/// the required BT-110 currency attribute is missing or does not match BT-5.
+/// </summary>
+procedure TZUGFeRDCrossVersionTests.AssertUBLTaxTotalFallback(
+  const ReplacementCurrencyCode: string; const MakeFallbackAmbiguous: Boolean);
+const
+  OriginalCurrencyAttribute = ' currencyID="EUR"';
+var
+  Descriptor, LoadedInvoice: TZUGFeRDInvoiceDescriptor;
+  InvoiceStream, ModifiedStream: TMemoryStream;
+  Bytes: TBytes;
+  XmlContent, ModifiedXml, PrimaryTaxTotal, ModifiedPrimaryTaxTotal,
+    AccountingTaxTotal, BetweenTaxTotals, ReplacementCurrencyAttribute: string;
+  PrimaryStart, PrimaryEnd, AccountingStart, AccountingEnd: Integer;
+begin
+  Descriptor := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    Descriptor.SetTaxTotalInAccountingCurrency(62.50, TZUGFeRDCurrencyCodes.CHF);
+
+    InvoiceStream := TMemoryStream.Create;
+    try
+      Descriptor.Save(InvoiceStream, TZUGFeRDVersion.Version23,
+        TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+      SetLength(Bytes, InvoiceStream.Size);
+      InvoiceStream.Position := 0;
+      InvoiceStream.ReadBuffer(Bytes[0], InvoiceStream.Size);
+      XmlContent := TEncoding.UTF8.GetString(Bytes);
+    finally
+      InvoiceStream.Free;
+    end;
+
+    PrimaryStart := Pos('<cac:TaxTotal>', XmlContent);
+    Assert.IsTrue(PrimaryStart > 0, 'The generated UBL invoice has no BT-110 TaxTotal group');
+    PrimaryEnd := PosEx('</cac:TaxTotal>', XmlContent, PrimaryStart) + Length('</cac:TaxTotal>');
+    AccountingStart := PosEx('<cac:TaxTotal>', XmlContent, PrimaryEnd);
+    Assert.IsTrue(AccountingStart > 0, 'The generated UBL invoice has no BT-111 TaxTotal group');
+    AccountingEnd := PosEx('</cac:TaxTotal>', XmlContent, AccountingStart) + Length('</cac:TaxTotal>');
+
+    PrimaryTaxTotal := Copy(XmlContent, PrimaryStart, PrimaryEnd - PrimaryStart);
+    BetweenTaxTotals := Copy(XmlContent, PrimaryEnd, AccountingStart - PrimaryEnd);
+    AccountingTaxTotal := Copy(XmlContent, AccountingStart, AccountingEnd - AccountingStart);
+    if MakeFallbackAmbiguous then
+      AccountingTaxTotal := StringReplace(AccountingTaxTotal, '</cac:TaxTotal>',
+        '<cac:TaxSubtotal/></cac:TaxTotal>', []);
+
+    if ReplacementCurrencyCode = '' then
+      ReplacementCurrencyAttribute := ''
+    else
+      ReplacementCurrencyAttribute := ' currencyID="' + ReplacementCurrencyCode + '"';
+    ModifiedPrimaryTaxTotal := StringReplace(PrimaryTaxTotal, OriginalCurrencyAttribute,
+      ReplacementCurrencyAttribute, []);
+    Assert.AreNotEqual(PrimaryTaxTotal, ModifiedPrimaryTaxTotal,
+      'The test could not replace the BT-110 currency attribute');
+
+    // BT-111 is deliberately moved before BT-110. Falling back to the first
+    // TaxTotal amount would therefore return the accounting-currency amount.
+    ModifiedXml := Copy(XmlContent, 1, PrimaryStart - 1) + AccountingTaxTotal +
+      BetweenTaxTotals + ModifiedPrimaryTaxTotal + Copy(XmlContent, AccountingEnd, MaxInt);
+
+    ModifiedStream := TMemoryStream.Create;
+    try
+      Bytes := TEncoding.UTF8.GetBytes(ModifiedXml);
+      ModifiedStream.WriteBuffer(Bytes[0], Length(Bytes));
+      ModifiedStream.Position := 0;
+      LoadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ModifiedStream);
+      try
+        if MakeFallbackAmbiguous then
+          Assert.IsFalse(LoadedInvoice.TaxTotalAmount.HasValue,
+            'The reader must not guess BT-110 when more than one TaxTotal group contains TaxSubtotal')
+        else
+          Assert.AreEqual<Currency>(56.87, LoadedInvoice.TaxTotalAmount.Value,
+            'BT-110 must be identified by the TaxTotal group containing TaxSubtotal');
+        Assert.AreEqual<Currency>(62.50, LoadedInvoice.TaxTotalAmountInAccountingCurrency.Value,
+          'BT-111 must remain assigned to the accounting currency');
+      finally
+        LoadedInvoice.Free;
+      end;
+    finally
+      ModifiedStream.Free;
+    end;
+  finally
+    Descriptor.Free;
+  end;
+end;
+
 procedure TZUGFeRDCrossVersionTests.TestTaxTotalAmountBT110AndBT111DualCurrencyUBL;
 var
   Desc, LoadedInvoice: TZUGFeRDInvoiceDescriptor;
@@ -2681,6 +2783,35 @@ begin
     Desc.Free;
   end;
 end; // !TestTaxTotalAmountBT110AndBT111DualCurrencyUBL()
+
+/// <summary>
+/// PEPPOL-EN16931-R053 identifies BT-110 as the single TaxTotal group containing
+/// TaxSubtotal even when the required currencyID attribute is missing.
+/// </summary>
+procedure TZUGFeRDCrossVersionTests.TestTaxTotalAmountBT110FallbackWithoutCurrencyIdUBL;
+begin
+  AssertUBLTaxTotalFallback('', False);
+end;
+
+/// <summary>
+/// PEPPOL-EN16931-R051 requires BT-110 to use BT-5. The reader still preserves
+/// the unambiguous value when a non-matching currencyID must be diagnosed by an
+/// external schema or Schematron validator.
+/// </summary>
+procedure TZUGFeRDCrossVersionTests.TestTaxTotalAmountBT110FallbackWithMismatchedCurrencyIdUBL;
+begin
+  AssertUBLTaxTotalFallback('USD', False);
+end;
+
+/// <summary>
+/// PEPPOL-EN16931-R053 requires exactly one TaxTotal group with TaxSubtotal.
+/// The reader must leave BT-110 unset instead of guessing when this identifier
+/// is unavailable and the structural fallback is ambiguous.
+/// </summary>
+procedure TZUGFeRDCrossVersionTests.TestTaxTotalAmountBT110FallbackDoesNotGuessAmbiguousGroupsUBL;
+begin
+  AssertUBLTaxTotalFallback('', True);
+end;
 
 procedure TZUGFeRDCrossVersionTests.TestTaxTotalAmountBT110OnlyWhenTaxCurrencyEqualsCurrencyUBL;
 var

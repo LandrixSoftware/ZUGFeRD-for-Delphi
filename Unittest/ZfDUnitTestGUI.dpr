@@ -20,6 +20,7 @@ uses
   intf.ZUGFeRDInvoiceProvider in 'intf.ZUGFeRDInvoiceProvider.pas',
 
   // Test units
+  intf.ZUGFeRDTestInfrastructure.UnitTests in 'intf.ZUGFeRDTestInfrastructure.UnitTests.pas',
   intf.ZUGFeRD10Tests.UnitTests in 'intf.ZUGFeRD10Tests.UnitTests.pas',
   intf.ZUGFeRD20Tests.UnitTests in 'intf.ZUGFeRD20Tests.UnitTests.pas',
   intf.ZUGFeRD22Tests.UnitTests in 'intf.ZUGFeRD22Tests.UnitTests.pas',

@@ -95,7 +95,8 @@ class function TZUGFeRDInvoiceValidator.Validate(descriptor: TZUGFeRDInvoiceDesc
 var
   lineCounter: Integer;
   lineTotal, allowanceTotal, chargeTotal, taxTotal, grandTotal, prepaid,
-    rounding, duePayable, expectedDuePayable, expectedTaxAmount: Currency;
+    rounding, duePayable, expectedDuePayable, expectedTaxAmount,
+    recalculatedLineAmount: Currency;
   declaredAllowanceTotal, declaredChargeTotal, expectedTaxBasis: Currency;
   taxDeviation: Currency;
   item: TZUGFeRDTradeLineItem;
@@ -120,21 +121,21 @@ begin
   //grandTotal := 0;
   // line item summation
     Result.Messages.Add('Validating invoice monetary summation');
-    Result.Messages.Add(Format('Starting recalculating line total from %d items...', [descriptor.TradeLineItems.Count]));
+    Result.Messages.Add(Format('Starting summing declared line total from %d items...', [descriptor.TradeLineItems.Count]));
 
     for item in descriptor.TradeLineItems do
     begin
-      var _total : Currency := 0;
+      recalculatedLineAmount := 0;
       if item.NetUnitPrice.HasValue then
       begin
-        _total := (item.NetUnitPrice.Value * item.BilledQuantity);
+        recalculatedLineAmount := item.NetUnitPrice.Value * item.BilledQuantity;
 
         // BT-146 gilt je Preisbasismenge BT-149, nicht je Einheit. Fehlt BT-149,
         // ist die Basismenge 1. Der CII-Writer rechnet bei fehlendem BT-131 genauso.
         if item.NetQuantity.HasValue then
         begin
           if item.NetQuantity.Value > 0 then
-            _total := _total / item.NetQuantity.Value
+            recalculatedLineAmount := recalculatedLineAmount / item.NetQuantity.Value
           else
           begin
             Result.Messages.Add(Format('BT-149: Die Preisbasismenge der Position [%s] muss größer als 0 sein', [item.Name]));
@@ -144,35 +145,43 @@ begin
 
         // BT-131 enthält BG-28-Positionszuschläge und vermindert sich um BG-27-Positionsabschläge.
         for var lineAllowance in item.GetSpecifiedTradeAllowances do
-          _total := _total - lineAllowance.ActualAmount;
+          recalculatedLineAmount := recalculatedLineAmount - lineAllowance.ActualAmount;
         for var lineCharge in item.GetSpecifiedTradeCharges do
-          _total := _total + lineCharge.ActualAmount;
+          recalculatedLineAmount := recalculatedLineAmount + lineCharge.ActualAmount;
 
-        // BT-131 hat nach BR-DEC-23 höchstens zwei Nachkommastellen, und BR-CO-10
-        // bildet BT-106 aus der Summe dieser gerundeten Positionsbeträge. Ohne die
-        // Rundung je Position summieren sich die Reste einer Preisbasismenge auf:
-        // vier Positionen zu 100,00 je 3 Stück ergeben 133,3332 statt 133,32 und
-        // sprengen die Toleranz des Vergleichs gegen BT-106. Der CII-Writer schreibt
-        // BT-131 an dieser Stelle ebenfalls zweistellig.
-        _total := SimpleRoundTo(_total, -2);
+        // BR-CO-10 selbst vergleicht BT-131 nicht mit Preis und Menge. Diese
+        // Nachrechnung bleibt daher eine getrennte, auf zwei Stellen gerundete
+        // Diagnose; profilspezifische Regeln sind nicht Aufgabe dieses Validators.
+        recalculatedLineAmount := SimpleRoundTo(recalculatedLineAmount, -2);
+      end;
 
-        lineTotal := lineTotal + _total;
+      // BR-24 verlangt BT-131 je Position. BR-CO-10 bildet BT-106 ausschließlich
+      // aus diesen deklarierten Positionsnettobeträgen, nicht aus Preis und Menge.
+      if item.LineTotalAmount.HasValue then
+        lineTotal := lineTotal + item.LineTotalAmount.Value
+      else
+      begin
+        Result.Messages.Add(Format('BR-24: Kein Positionsnettobetrag BT-131 für Position [%s] vorhanden', [item.Name]));
+        Result.IsValid := false;
       end;
 
       //retval.Add(String.Format("==> {0}:", ++lineCounter));
       //retval.Add(String.Format("Recalculating item: [{0}]", item.Name));
       //retval.Add(String.Format("Line total formula: {0:0.0000} EUR (net price) x {1:0.0000} (quantity)", item.NetUnitPrice, item.BilledQuantity));
 
-      //retval.Add(String.Format("Recalculated item line total = {0:0.0000} EUR", _total));
+      //retval.Add(String.Format("Recalculated item line total = {0:0.0000} EUR", recalculatedLineAmount));
       //retval.Add(String.Format("Recalculated item tax = {0:0.00} %", item.TaxPercent));
       //retval.Add(String.Format("Current monetarySummation.lineTotal = {0:0.0000} EUR(the sum of all line totals)", lineTotal));
 
       Inc(lineCounter);
-      Result.Messages.Add(Format('%d;%s;%f', [lineCounter, item.Name, _total]));
+      Result.Messages.Add(Format('%d;%s;%f', [lineCounter, item.Name, recalculatedLineAmount]));
     end;
 
+    // Das Schematron rundet die Summe der BT-131 für BR-CO-10 auf zwei Stellen.
+    lineTotal := SimpleRoundTo(lineTotal, -2);
+
     Result.Messages.Add('==> DONE!');
-    Result.Messages.Add('Finished recalculating monetarySummation.lineTotal...');
+    Result.Messages.Add('Finished summing declared monetarySummation.lineTotal...');
     Result.Messages.Add('Adding tax amounts from invoice allowance charge...');
 
     for var charge in descriptor.GetTradeCharges do
@@ -238,7 +247,7 @@ begin
       if Frac(tax.TaxAmount * 100) <> 0 then
       begin
         Result.Messages.Add(Format(
-          'BR-DEC-20: Der Steuerbetrag[%4f] hat mehr als zwei Nachkommastellen', [tax.TaxAmount]));
+          'BR-DEC-20: Der Steuerbetrag[%.4f] hat mehr als zwei Nachkommastellen', [tax.TaxAmount]));
         Result.IsValid := false;
       end;
 
@@ -341,13 +350,13 @@ begin
       Result.Messages.Add('trade.settlement.monetarySummation.lineTotal Message: Kein LineTotalAmount vorhanden');
       Result.IsValid := false;
     end
-    else if Abs(lineTotal - descriptor.LineTotalAmount.Value) < 0.01 then
+    else if lineTotal = descriptor.LineTotalAmount.Value then
     begin
-      Result.Messages.Add(Format('trade.settlement.monetarySummation.lineTotal Message: Berechneter Wert ist wie vorhanden:[%4f]', [lineTotal]));
+      Result.Messages.Add(Format('BR-CO-10: Summe der deklarierten BT-131 ist wie BT-106:[%4f]', [lineTotal]));
     end
     else
     begin
-      Result.Messages.Add(Format('trade.settlement.monetarySummation.lineTotal Message: Berechneter Wert ist[%4f] aber tatsächliche vorhander Wert ist[%4f]', [lineTotal, descriptor.LineTotalAmount.GetValueOrDefault]));
+      Result.Messages.Add(Format('BR-CO-10: Summe der deklarierten BT-131 ist[%4f] aber BT-106 ist[%4f]', [lineTotal, descriptor.LineTotalAmount.GetValueOrDefault]));
       Result.IsValid := false;
     end;
 

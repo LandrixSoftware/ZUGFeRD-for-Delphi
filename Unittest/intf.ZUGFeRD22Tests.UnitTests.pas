@@ -40,7 +40,11 @@ type
     [Test]
     procedure TestAdvancePaymentMandatoryDataValidation;
     [Test]
+    procedure TestNilAdvancePaymentValidation;
+    [Test]
     procedure TestAdvancePaymentReaderRejectsMissingMandatoryData;
+    [Test]
+    procedure TestCIIReaderReleasesDescriptorAfterParsingError;
     [Test]
     procedure TestReferenceAdvancePaymentFromDocumentation;
     [Test]
@@ -747,6 +751,43 @@ begin
 end;
 
 /// <summary>
+/// Verifies that a nil BG-X-45 list entry is reported separately from a
+/// missing paid amount.
+/// </summary>
+procedure TZUGFeRD22Tests.TestNilAdvancePaymentValidation;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  Stream: TMemoryStream;
+  Raised: Boolean;
+begin
+  Descriptor := TZUGFeRDInvoiceDescriptor.Load(DemodataPath('zugferd21\zugferd_2p1_EXTENDED_Warenrechnung-factur-x.xml'));
+  try
+    Descriptor.AdvancePayments.Clear;
+    Descriptor.AdvancePayments.Add(nil);
+
+    Stream := TMemoryStream.Create;
+    try
+      Raised := False;
+      try
+        Descriptor.Save(Stream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
+      except
+        on E: TZUGFeRDMissingDataException do
+        begin
+          Raised := True;
+          Assert.IsTrue(E.Message.Contains('entry must not be nil'),
+            'The validation message does not identify the nil advance payment entry: ' + E.Message);
+        end;
+      end;
+      Assert.IsTrue(Raised, 'A nil advance payment entry was not rejected');
+    finally
+      Stream.Free;
+    end;
+  finally
+    Descriptor.Free;
+  end;
+end;
+
+/// <summary>
 /// Prüft, dass fehlende XML-Pflichtwerte nicht als Nullwerte übernommen werden.
 /// </summary>
 procedure TZUGFeRD22Tests.TestAdvancePaymentReaderRejectsMissingMandatoryData;
@@ -818,6 +859,69 @@ begin
     AssertRemovalRaisesMissingData('<ram:IssuerAssignedID>R202506-01</ram:IssuerAssignedID>');
   finally
     desc.Free;
+  end;
+end;
+
+/// <summary>
+/// Prüft, dass der CII-2.3-Reader einen teilweise aufgebauten Descriptor bei
+/// einer Ausnahme vor dem Advance-Payment-Block freigibt.
+/// </summary>
+procedure TZUGFeRD22Tests.TestCIIReaderReleasesDescriptorAfterParsingError;
+const
+  validIssueDateXml = '<udt:DateTimeString format="102">20251001</udt:DateTimeString>';
+  invalidIssueDateXml = '<udt:DateTimeString format="102">2025100</udt:DateTimeString>';
+  measuredLoadCount = 10;
+var
+  xmlContent: string;
+  invalidXml: string;
+  invalidStream: TStringStream;
+  firstBatchMemory: NativeUInt;
+  secondBatchMemory: NativeUInt;
+  loadIndex: Integer;
+  allLoadsFailed: Boolean;
+
+  function LoadRaisesParsingError: Boolean;
+  var
+    loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  begin
+    Result := False;
+    loadedInvoice := nil;
+    try
+      try
+        invalidStream.Position := 0;
+        loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(invalidStream);
+      except
+        Result := True;
+      end;
+    finally
+      loadedInvoice.Free;
+    end;
+  end;
+
+begin
+  xmlContent := TFile.ReadAllText(DocumentationPath(
+    'zugferd24-facturx1008\de\Beispiele\4. EXTENDED\EXTENDED_Warenrechnung\EXTENDED_Warenrechnung.xml'),
+    TEncoding.UTF8);
+  invalidXml := StringReplace(xmlContent, validIssueDateXml, invalidIssueDateXml, []);
+  Assert.AreNotEqual(xmlContent, invalidXml, 'Das zu ersetzende Rechnungsdatum wurde nicht gefunden.');
+
+  invalidStream := TStringStream.Create(invalidXml, TEncoding.UTF8);
+  try
+    Assert.IsTrue(LoadRaisesParsingError, 'Das ungültige Rechnungsdatum wurde nicht abgelehnt.');
+
+    for loadIndex := 1 to measuredLoadCount do
+      LoadRaisesParsingError;
+    firstBatchMemory := GetAllocatedMemory;
+
+    allLoadsFailed := True;
+    for loadIndex := 1 to measuredLoadCount do
+      allLoadsFailed := LoadRaisesParsingError and allLoadsFailed;
+    secondBatchMemory := GetAllocatedMemory;
+
+    Assert.IsTrue(allLoadsFailed, 'Mindestens ein ungültiges Rechnungsdatum wurde nicht abgelehnt.');
+    AssertNoMemoryGrowth(firstBatchMemory, secondBatchMemory);
+  finally
+    invalidStream.Free;
   end;
 end;
 

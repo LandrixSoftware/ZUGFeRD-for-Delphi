@@ -21,16 +21,35 @@ interface
 
 uses
   DUnitX.TestFramework,
-  intf.ZUGFeRDTestBase;
+  intf.ZUGFeRDTestBase,
+  intf.ZUGFeRDInvoiceDescriptor;
 
 type
   [TestFixture]
   TXRechnungUBLTests = class(TZUGFeRDTestBase)
+  private
+    /// <summary>
+    /// Writes an XRechnung invoice to UBL and returns the UTF-8 XML.
+    /// </summary>
+    function SaveAsUBL(Descriptor: TZUGFeRDInvoiceDescriptor): string;
+    /// <summary>
+    /// Verifies that a non-positive BT-149 is rejected before a calculated
+    /// BT-131 can be written.
+    /// </summary>
+    procedure AssertLineExtensionAmountCalculationRejectsBaseQuantity(const UnitQuantity: Currency);
   public
     [Test]
     procedure TestParentLineId;
     [Test]
     procedure TestLineExtensionAmountIsCalculatedWhenMissing;
+    [Test]
+    procedure TestCalculatedLineExtensionAmountIncludesLineLevelAdjustments;
+    [Test]
+    procedure TestLineExtensionAmountCalculationRequiresNetUnitPrice;
+    [Test]
+    procedure TestLineExtensionAmountCalculationRejectsZeroBaseQuantity;
+    [Test]
+    procedure TestLineExtensionAmountCalculationRejectsNegativeBaseQuantity;
     [Test]
     procedure TestTaxRepresentativePartyNoNestedPartyElement;
     [Test]
@@ -116,8 +135,8 @@ implementation
 uses
   System.SysUtils, System.Classes, System.Math, System.RegularExpressions,
   System.Generics.Collections,
-  intf.ZUGFeRDInvoiceDescriptor,
   intf.ZUGFeRDInvoiceProvider,
+  intf.ZUGFeRDExceptions,
   intf.ZUGFeRDProfile,
   intf.ZUGFeRDInvoiceTypes,
   intf.ZUGFeRDVersion,
@@ -156,6 +175,67 @@ uses
   intf.ZUGFeRDApplicableProductCharacteristic;
 
 { TXRechnungUBLTests }
+
+procedure TXRechnungUBLTests.AssertLineExtensionAmountCalculationRejectsBaseQuantity(
+  const UnitQuantity: Currency);
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  LineItem: TZUGFeRDTradeLineItem;
+  Raised: Boolean;
+begin
+  Descriptor := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    Descriptor.TradeLineItems.Clear;
+    LineItem := Descriptor.AddTradeLineItem(
+      {name=}            'Invalid price base quantity',
+      {netUnitPrice=}    TZUGFeRDNullableParam<Currency>.Create(100),
+      {description=}     '',
+      {unitCode=}        TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+      {unitQuantity=}    TZUGFeRDNullableParam<Currency>.Create(UnitQuantity),
+      {grossUnitPrice=}  nil,
+      {billedQuantity=}  2,
+      {lineTotalAmount=} 0,
+      {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+      {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+      {taxPercent=}      19.0);
+    LineItem.LineTotalAmount := nil;
+
+    Raised := False;
+    try
+      SaveAsUBL(Descriptor);
+    except
+      on E: TZUGFeRDArgumentException do
+      begin
+        Raised := True;
+        Assert.IsTrue(E.Message.Contains('BT-149'),
+          'The validation message does not identify BT-149: ' + E.Message);
+        Assert.IsTrue(E.Message.Contains('PEPPOL-EN16931-R121'),
+          'The validation message does not identify PEPPOL-EN16931-R121: ' + E.Message);
+      end;
+    end;
+    Assert.IsTrue(Raised, 'A non-positive price base quantity was not rejected');
+  finally
+    Descriptor.Free;
+  end;
+end;
+
+function TXRechnungUBLTests.SaveAsUBL(Descriptor: TZUGFeRDInvoiceDescriptor): string;
+var
+  Stream: TMemoryStream;
+  Bytes: TBytes;
+begin
+  Stream := TMemoryStream.Create;
+  try
+    Descriptor.Save(Stream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+    Stream.Position := 0;
+    SetLength(Bytes, Stream.Size);
+    if Stream.Size > 0 then
+      Stream.ReadBuffer(Bytes[0], Stream.Size);
+    Result := TEncoding.UTF8.GetString(Bytes);
+  finally
+    Stream.Free;
+  end;
+end;
 
 procedure TXRechnungUBLTests.TestParentLineId;
 var
@@ -2113,10 +2193,9 @@ begin
 end;
 
 /// <summary>
-/// BT-131 ist in cac:InvoiceLine eine Pflichtangabe. Fehlt der Positionsbetrag im
-/// Descriptor, muss der Writer ihn aus Nettoeinzelpreis, berechneter Menge und
-/// Preisbasismenge bilden, statt das Element wegzulassen und ein schema-ungueltiges
-/// Dokument zu erzeugen.
+/// BT-131 is mandatory in cac:InvoiceLine. If it is missing from the descriptor,
+/// the writer calculates it from the net price, invoiced quantity and price base
+/// quantity instead of omitting the element.
 /// </summary>
 procedure TXRechnungUBLTests.TestLineExtensionAmountIsCalculatedWhenMissing;
 var
@@ -2163,6 +2242,109 @@ begin
   finally
     desc.Free;
   end;
+end;
+
+/// <summary>
+/// PEPPOL-EN16931-R120 includes BG-27 allowances and BG-28 charges in BT-131.
+/// A BG-29 price allowance is already reflected in BT-146 and must not be
+/// subtracted a second time.
+/// </summary>
+procedure TXRechnungUBLTests.TestCalculatedLineExtensionAmountIncludesLineLevelAdjustments;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  LineItem: TZUGFeRDTradeLineItem;
+  XmlContent: string;
+begin
+  Descriptor := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    Descriptor.TradeLineItems.Clear;
+    LineItem := Descriptor.AddTradeLineItem(
+      {name=}            'Line adjustments',
+      {netUnitPrice=}    TZUGFeRDNullableParam<Currency>.Create(100),
+      {description=}     '',
+      {unitCode=}        TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+      {unitQuantity=}    TZUGFeRDNullableParam<Currency>.Create(10),
+      {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(110),
+      {billedQuantity=}  2,
+      {lineTotalAmount=} 0,
+      {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+      {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+      {taxPercent=}      19.0);
+    LineItem.LineTotalAmount := nil;
+    LineItem.AddTradeAllowance(TZUGFeRDCurrencyCodes.EUR,
+      TZUGFeRDNullableParam<Currency>.Create(110), 10, 'Price allowance');
+    LineItem.AddSpecifiedTradeAllowance(TZUGFeRDCurrencyCodes.EUR,
+      TZUGFeRDNullableParam<Currency>.Create(20), 3, 'Line allowance');
+    LineItem.AddSpecifiedTradeCharge(TZUGFeRDCurrencyCodes.EUR,
+      TZUGFeRDNullableParam<Currency>.Create(20), 1, 'Line charge');
+
+    XmlContent := SaveAsUBL(Descriptor);
+
+    Assert.IsTrue(XmlContent.Contains('<cbc:LineExtensionAmount currencyID="EUR">18.00</cbc:LineExtensionAmount>'),
+      'BT-131 does not include the BG-27 allowance and BG-28 charge exactly once:'#13#10 + XmlContent);
+  finally
+    Descriptor.Free;
+  end;
+end;
+
+/// <summary>
+/// BT-146 is mandatory and is required to calculate a missing BT-131. Writing
+/// 0.00 would hide the missing source value and change the invoice semantics.
+/// </summary>
+procedure TXRechnungUBLTests.TestLineExtensionAmountCalculationRequiresNetUnitPrice;
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  LineItem: TZUGFeRDTradeLineItem;
+  Raised: Boolean;
+begin
+  Descriptor := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    Descriptor.TradeLineItems.Clear;
+    LineItem := Descriptor.AddTradeLineItem(
+      {name=}            'Missing net price',
+      {netUnitPrice=}    nil,
+      {description=}     '',
+      {unitCode=}        TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+      {unitQuantity=}    nil,
+      {grossUnitPrice=}  nil,
+      {billedQuantity=}  2,
+      {lineTotalAmount=} 0,
+      {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+      {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+      {taxPercent=}      19.0);
+    LineItem.LineTotalAmount := nil;
+
+    Raised := False;
+    try
+      SaveAsUBL(Descriptor);
+    except
+      on E: TZUGFeRDMissingDataException do
+      begin
+        Raised := True;
+        Assert.IsTrue(E.Message.Contains('BT-146'),
+          'The validation message does not identify BT-146: ' + E.Message);
+      end;
+    end;
+    Assert.IsTrue(Raised, 'A missing net unit price was silently written as 0.00');
+  finally
+    Descriptor.Free;
+  end;
+end;
+
+/// <summary>
+/// PEPPOL-EN16931-R121 requires a positive price base quantity.
+/// </summary>
+procedure TXRechnungUBLTests.TestLineExtensionAmountCalculationRejectsZeroBaseQuantity;
+begin
+  AssertLineExtensionAmountCalculationRejectsBaseQuantity(0);
+end;
+
+/// <summary>
+/// PEPPOL-EN16931-R121 also excludes negative price base quantities.
+/// </summary>
+procedure TXRechnungUBLTests.TestLineExtensionAmountCalculationRejectsNegativeBaseQuantity;
+begin
+  AssertLineExtensionAmountCalculationRejectsBaseQuantity(-1);
 end;
 
 

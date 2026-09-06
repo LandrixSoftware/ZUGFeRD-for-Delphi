@@ -134,7 +134,7 @@ begin
 end;
 
 /// <summary>
-/// Validates the mandatory data of advance payments emitted only in the EXTENDED profile.
+/// Validates mandatory data for advance payments written only in the EXTENDED profile.
 /// </summary>
 procedure TZUGFeRDInvoiceDescriptor23CIIWriter._validateAdvancePayments;
 begin
@@ -144,7 +144,7 @@ begin
   for var advancePayment: TZUGFeRDAdvancePayment in Descriptor.AdvancePayments do
   begin
     if not Assigned(advancePayment) then
-      raise TZUGFeRDMissingDataException.Create('Advance payment paid amount is required (BG-X-45).');
+      raise TZUGFeRDMissingDataException.Create('Advance payment entry must not be nil (BG-X-45).');
     if not advancePayment.PaidAmount.HasValue then
       raise TZUGFeRDMissingDataException.Create('Advance payment paid amount is required (BG-X-45).');
 
