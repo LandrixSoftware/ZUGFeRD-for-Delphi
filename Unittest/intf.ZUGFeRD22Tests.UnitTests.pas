@@ -45,6 +45,23 @@ type
     procedure TestAdvancePaymentReaderRejectsMissingMandatoryData;
     [Test]
     procedure TestCIIReaderReleasesDescriptorAfterParsingError;
+    /// <summary>Checks ownership before and after nested CII objects are handed to their parent.</summary>
+    [Test]
+    [TestCase('ValidLinePeriod', 'line-period,False')]
+    [TestCase('InvalidLinePeriod', 'line-period,True')]
+    [TestCase('ValidLineOrder', 'line-order,False')]
+    [TestCase('InvalidLineOrder', 'line-order,True')]
+    [TestCase('ValidHeaderReference', 'header-reference,False')]
+    [TestCase('InvalidHeaderReference', 'header-reference,True')]
+    [TestCase('ValidLineReference', 'line-reference,False')]
+    [TestCase('InvalidLineReference', 'line-reference,True')]
+    [TestCase('ValidHeaderAfterAttachment', 'header-after-attachment,False')]
+    [TestCase('InvalidHeaderAfterAttachment', 'header-after-attachment,True')]
+    [TestCase('ValidLineAfterAttachment', 'line-after-attachment,False')]
+    [TestCase('InvalidLineAfterAttachment', 'line-after-attachment,True')]
+    [TestCase('ValidLineDelivery', 'line-delivery,False')]
+    [TestCase('InvalidLineDelivery', 'line-delivery,True')]
+    procedure TestCIIReaderNestedObjectOwnership(const failurePoint: string; invalidData: Boolean);
     [Test]
     procedure TestReferenceAdvancePaymentFromDocumentation;
     [Test]
@@ -922,6 +939,147 @@ begin
     AssertNoMemoryGrowth(firstBatchMemory, secondBatchMemory);
   finally
     invalidStream.Free;
+  end;
+end;
+
+/// <summary>
+/// Exercises late failures with both unowned children and already attached documents and streams.
+/// </summary>
+procedure TZUGFeRD22Tests.TestCIIReaderNestedObjectOwnership(const failurePoint: string; invalidData: Boolean);
+const
+  measuredLoadCount = 10;
+  validDate = '20251001';
+  invalidDate = '2025100';
+var
+  xmlContent: string;
+  inputStream: TStringStream;
+  expectedError: string;
+  firstBatchMemory, secondBatchMemory: NativeUInt;
+  allLoadsMatched: Boolean;
+
+  /// <summary>Checks that decoded attachments remain usable until their owning invoice is freed.</summary>
+  procedure CheckAttachment(attachment: TMemoryStream);
+  var
+    content: TBytes;
+  begin
+    Assert.IsNotNull(attachment);
+    Assert.AreEqual(Int64(5), attachment.Size);
+    SetLength(content, 5);
+    attachment.Position := 0;
+    attachment.ReadBuffer(content, Length(content));
+    Assert.AreEqual('Hello', TEncoding.UTF8.GetString(content));
+  end;
+
+  /// <summary>Preserves the expected parser exception; successful results are always released.</summary>
+  function LoadAndRelease(checkValues: Boolean): Boolean;
+  var
+    loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  begin
+    loadedInvoice := nil;
+    try
+      try
+        inputStream.Position := 0;
+        loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(inputStream);
+      except
+        on error: Exception do
+        begin
+          if not invalidData then
+            raise;
+          Exit(error.Message = expectedError);
+        end;
+      end;
+      Result := not invalidData and (loadedInvoice <> nil);
+      if checkValues and Result then
+      begin
+        Assert.AreEqual(1, loadedInvoice.TradeLineItems.Count);
+        Assert.AreEqual(2, loadedInvoice.AdditionalReferencedDocuments.Count);
+        Assert.AreEqual('HEADER-DOC', loadedInvoice.AdditionalReferencedDocuments[0].ID);
+        CheckAttachment(loadedInvoice.AdditionalReferencedDocuments[0].AttachmentBinaryObject);
+        Assert.AreEqual('HEADER-LATE', loadedInvoice.AdditionalReferencedDocuments[1].ID);
+        Assert.IsNull(loadedInvoice.AdditionalReferencedDocuments[1].AttachmentBinaryObject);
+        var lineItem := loadedInvoice.TradeLineItems[0];
+        Assert.AreEqual('1', lineItem.AssociatedDocument.LineID);
+        Assert.AreEqual(EncodeDate(2025, 10, 1), lineItem.BillingPeriodStart.Value);
+        Assert.AreEqual('ORDER', lineItem.BuyerOrderReferencedDocument.ID);
+        Assert.AreEqual(1, lineItem.ApplicableProductCharacteristics.Count);
+        Assert.AreEqual('blue', lineItem.ApplicableProductCharacteristics[0].Value);
+        Assert.AreEqual(1, lineItem.IncludedReferencedProducts.Count);
+        Assert.AreEqual('PART', lineItem.IncludedReferencedProducts[0].SellerAssignedID);
+        Assert.AreEqual(1, lineItem.ReceivableSpecifiedTradeAccountingAccounts.Count);
+        Assert.AreEqual('ACCOUNT', lineItem.ReceivableSpecifiedTradeAccountingAccounts[0].TradeAccountID);
+        Assert.AreEqual(2, lineItem.AdditionalReferencedDocuments.Count);
+        Assert.AreEqual('LINE-DOC', lineItem.AdditionalReferencedDocuments[0].ID);
+        CheckAttachment(lineItem.AdditionalReferencedDocuments[0].AttachmentBinaryObject);
+        Assert.AreEqual('LINE-LATE', lineItem.AdditionalReferencedDocuments[1].ID);
+        Assert.IsNull(lineItem.AdditionalReferencedDocuments[1].AttachmentBinaryObject);
+        Assert.AreEqual(EncodeDate(2025, 10, 1), lineItem.ActualDeliveryDate.Value);
+      end;
+    finally
+      loadedInvoice.Free;
+    end;
+  end;
+
+begin
+  // Self-contained parser fixture, not a schema-conformance test. Each token has one failure site.
+  xmlContent := '<rsm:CrossIndustryInvoice xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100"' +
+    ' xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100"' +
+    ' xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100"' +
+    ' xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100">' +
+    '<rsm:ExchangedDocumentContext><ram:GuidelineSpecifiedDocumentContextParameter>' +
+    '<ram:ID>urn:cen.eu:en16931:2017#conformant#urn:factur-x.eu:1p0:extended</ram:ID>' +
+    '</ram:GuidelineSpecifiedDocumentContextParameter></rsm:ExchangedDocumentContext>' +
+    '<rsm:ExchangedDocument><ram:ID>OWNERSHIP</ram:ID><ram:TypeCode>380</ram:TypeCode></rsm:ExchangedDocument>' +
+    '<rsm:SupplyChainTradeTransaction><ram:IncludedSupplyChainTradeLineItem>' +
+    '<ram:AssociatedDocumentLineDocument><ram:LineID>1</ram:LineID></ram:AssociatedDocumentLineDocument>' +
+    '<ram:SpecifiedTradeProduct><ram:Name>Ownership test</ram:Name>' +
+    '<ram:ApplicableProductCharacteristic><ram:Description>Colour</ram:Description><ram:Value>blue</ram:Value></ram:ApplicableProductCharacteristic>' +
+    '<ram:IncludedReferencedProduct><ram:SellerAssignedID>PART</ram:SellerAssignedID></ram:IncludedReferencedProduct></ram:SpecifiedTradeProduct>' +
+    '<ram:SpecifiedLineTradeAgreement><ram:BuyerOrderReferencedDocument><ram:IssuerAssignedID>ORDER</ram:IssuerAssignedID>' +
+    '<ram:FormattedIssueDateTime><qdt:DateTimeString format="102">{line-order}</qdt:DateTimeString></ram:FormattedIssueDateTime>' +
+    '</ram:BuyerOrderReferencedDocument></ram:SpecifiedLineTradeAgreement>' +
+    '<ram:SpecifiedLineTradeDelivery><ram:ActualDeliverySupplyChainEvent><ram:OccurrenceDateTime>' +
+    '<udt:DateTimeString format="102">{line-delivery}</udt:DateTimeString></ram:OccurrenceDateTime>' +
+    '</ram:ActualDeliverySupplyChainEvent></ram:SpecifiedLineTradeDelivery>' +
+    '<ram:SpecifiedLineTradeSettlement><ram:BillingSpecifiedPeriod><ram:StartDateTime>' +
+    '<udt:DateTimeString format="102">{line-period}</udt:DateTimeString></ram:StartDateTime></ram:BillingSpecifiedPeriod>' +
+    '<ram:AdditionalReferencedDocument><ram:IssuerAssignedID>LINE-DOC</ram:IssuerAssignedID><ram:TypeCode>916</ram:TypeCode>' +
+    '<ram:AttachmentBinaryObject filename="line.txt">SGVsbG8=</ram:AttachmentBinaryObject>' +
+    '<ram:FormattedIssueDateTime><qdt:DateTimeString format="102">{line-reference}</qdt:DateTimeString></ram:FormattedIssueDateTime>' +
+    '</ram:AdditionalReferencedDocument><ram:AdditionalReferencedDocument><ram:IssuerAssignedID>LINE-LATE</ram:IssuerAssignedID>' +
+    '<ram:FormattedIssueDateTime><qdt:DateTimeString format="102">{line-after-attachment}</qdt:DateTimeString></ram:FormattedIssueDateTime>' +
+    '</ram:AdditionalReferencedDocument><ram:ReceivableSpecifiedTradeAccountingAccount><ram:ID>ACCOUNT</ram:ID>' +
+    '</ram:ReceivableSpecifiedTradeAccountingAccount></ram:SpecifiedLineTradeSettlement></ram:IncludedSupplyChainTradeLineItem>' +
+    '<ram:ApplicableHeaderTradeAgreement><ram:AdditionalReferencedDocument>' +
+    '<ram:IssuerAssignedID>HEADER-DOC</ram:IssuerAssignedID><ram:TypeCode>916</ram:TypeCode>' +
+    '<ram:AttachmentBinaryObject filename="header.txt">SGVsbG8=</ram:AttachmentBinaryObject>' +
+    '<ram:FormattedIssueDateTime><qdt:DateTimeString format="102">{header-reference}</qdt:DateTimeString></ram:FormattedIssueDateTime>' +
+    '</ram:AdditionalReferencedDocument><ram:AdditionalReferencedDocument><ram:IssuerAssignedID>HEADER-LATE</ram:IssuerAssignedID>' +
+    '<ram:FormattedIssueDateTime><qdt:DateTimeString format="102">{header-after-attachment}</qdt:DateTimeString></ram:FormattedIssueDateTime>' +
+    '</ram:AdditionalReferencedDocument></ram:ApplicableHeaderTradeAgreement>' +
+    '</rsm:SupplyChainTradeTransaction></rsm:CrossIndustryInvoice>';
+
+  Assert.IsTrue(xmlContent.Contains('{' + failurePoint + '}'), 'Unknown failure point.');
+  expectedError := 'Wrong length of datetime element (format 102)';
+  if invalidData then
+    xmlContent := xmlContent.Replace('{' + failurePoint + '}', invalidDate);
+  for var dateToken in TArray<string>.Create('line-period', 'line-order', 'line-delivery', 'header-reference', 'line-reference',
+    'header-after-attachment', 'line-after-attachment') do
+    xmlContent := xmlContent.Replace('{' + dateToken + '}', validDate);
+
+  inputStream := TStringStream.Create(xmlContent, TEncoding.UTF8);
+  try
+    Assert.IsTrue(LoadAndRelease(True), 'The reader did not produce the expected result or parser exception.');
+    for var warmupIndex := 1 to measuredLoadCount do
+      LoadAndRelease(False);
+    firstBatchMemory := GetAllocatedMemory;
+    allLoadsMatched := True;
+    for var loadIndex := 1 to measuredLoadCount do
+      allLoadsMatched := LoadAndRelease(False) and allLoadsMatched;
+    secondBatchMemory := GetAllocatedMemory;
+    Assert.IsTrue(allLoadsMatched, 'A repeated load did not produce the expected result or parser exception.');
+    AssertNoMemoryGrowth(firstBatchMemory, secondBatchMemory);
+  finally
+    inputStream.Free;
   end;
 end;
 

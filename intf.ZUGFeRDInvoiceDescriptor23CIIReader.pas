@@ -82,9 +82,11 @@ type
   TZUGFeRDInvoiceDescriptor23CIIReader = class(TZUGFeRDIInvoiceDescriptorReader)
   private
     function GetValidURIs : TArray<string>;
+    /// <summary>Returns a caller-owned line item and releases partial results if parsing fails.</summary>
     function _parseTradeLineItem(tradeLineItem : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDTradeLineItem;
     function _nodeAsContact(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDContact;
     function _nodeAsParty(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDParty;
+    /// <summary>Returns a caller-owned reference, including its attachment, only after successful parsing.</summary>
     function _getAdditionalReferencedDocument(a_oXmlNode : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDAdditionalReferencedDocument;
     function _nodeAsLegalOrganization(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDLegalOrganization;
   public
@@ -742,7 +744,7 @@ begin
     TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:AssociatedDocumentLineDocument/ram:LineStatusReasonCode'));
 
   Result := TZUGFeRDTradeLineItem.Create(lineId);
-
+  try
   Result.GlobalID.SchemeID := TEnumExtensions<TZUGFeRDGlobalIDSchemeIdentifiers>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:GlobalID/@schemeID'));
   Result.GlobalID.ID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:GlobalID');
   Result.SellerAssignedID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:SellerAssignedID');
@@ -794,25 +796,36 @@ begin
   for i := 0 to nodes.length-1 do
   begin
     var apcItem : TZUGFeRDApplicableProductCharacteristic := TZUGFeRDApplicableProductCharacteristic.Create;
-    apcItem.Description := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Description');
-    apcItem.Value := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Value');
-    Result.ApplicableProductCharacteristics.Add(apcItem);
+    try
+      apcItem.Description := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Description');
+      apcItem.Value := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Value');
+      Result.ApplicableProductCharacteristics.Add(apcItem);
+    except
+      // Until Add succeeds, the partially parsed line item does not own this child.
+      apcItem.Free;
+      raise;
+    end;
   end;
 
   nodes := tradeLineItem.SelectNodes('.//ram:SpecifiedTradeProduct/ram:IncludedReferencedProduct');
   for i := 0 to nodes.length-1 do
   begin
     var irpItem: TZUGFeRDIncludedReferencedProduct := TZUGFeRDIncludedReferencedProduct.Create;
-    irpItem.GlobalID.SchemeID := TEnumExtensions<TZUGFeRDGlobalIDSchemeIdentifiers>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:GlobalID/@schemeID'));
-    irpItem.GlobalID.ID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:GlobalID');
-    irpItem.SellerAssignedID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:SellerAssignedID');
-    irpItem.BuyerAssignedID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:BuyerAssignedID');
-    irpItem.IndustryAssignedID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:IndustryAssignedID');
-    irpItem.Name := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Name');
-    irpItem.Description := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Description');
-    irpItem.UnitCode := TEnumExtensions<TZUGFeRDQuantityCodes>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:UnitQuantity/@unitCode'));
-    irpItem.UnitQuantity:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:UnitQuantity');
-    Result.IncludedReferencedProducts.Add(irpItem);
+    try
+      irpItem.GlobalID.SchemeID := TEnumExtensions<TZUGFeRDGlobalIDSchemeIdentifiers>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:GlobalID/@schemeID'));
+      irpItem.GlobalID.ID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:GlobalID');
+      irpItem.SellerAssignedID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:SellerAssignedID');
+      irpItem.BuyerAssignedID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:BuyerAssignedID');
+      irpItem.IndustryAssignedID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:IndustryAssignedID');
+      irpItem.Name := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Name');
+      irpItem.Description := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Description');
+      irpItem.UnitCode := TEnumExtensions<TZUGFeRDQuantityCodes>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:UnitQuantity/@unitCode'));
+      irpItem.UnitQuantity:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:UnitQuantity');
+      Result.IncludedReferencedProducts.Add(irpItem);
+    except
+      irpItem.Free;
+      raise;
+    end;
   end;
 
   if (tradeLineItem.SelectSingleNode('.//ram:SpecifiedLineTradeAgreement/ram:BuyerOrderReferencedDocument') <> nil) then
@@ -896,9 +909,14 @@ begin
   for i := 0 to nodes.length-1 do
   begin
     var rstaaItem : TZUGFeRDReceivableSpecifiedTradeAccountingAccount := TZUGFeRDReceivableSpecifiedTradeAccountingAccount.Create;
-    rstaaItem.TradeAccountID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ID');
-    rstaaItem.TradeAccountTypeCode := TEnumExtensions<TZUGFeRDAccountingAccountTypeCodes>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:TypeCode'));
-    Result.ReceivableSpecifiedTradeAccountingAccounts.Add(rstaaItem);
+    try
+      rstaaItem.TradeAccountID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ID');
+      rstaaItem.TradeAccountTypeCode := TEnumExtensions<TZUGFeRDAccountingAccountTypeCodes>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:TypeCode'));
+      Result.ReceivableSpecifiedTradeAccountingAccounts.Add(rstaaItem);
+    except
+      rstaaItem.Free;
+      raise;
+    end;
     break; // an if above would have done it also <g>
   end;
 
@@ -967,7 +985,11 @@ begin
 
   if tradeLineItem.SelectSingleNode('.//ram:OriginTradeCountry//ram:ID') <> nil then
     Result.OriginTradeCountry := TEnumExtensions<TZUGFeRDCountryCodes>.StringToEnum(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:OriginTradeCountry//ram:ID'));
-
+  except
+    // Load cannot release this line until it has been returned and added to TradeLineItems.
+    Result.Free;
+    raise;
+  end;
 end;
 
 function TZUGFeRDInvoiceDescriptor23CIIReader._nodeAsLegalOrganization(
@@ -1050,6 +1072,7 @@ function TZUGFeRDInvoiceDescriptor23CIIReader._getAdditionalReferencedDocument(a
 begin
   var strBase64BinaryData : String := TZUGFeRDXmlUtils.NodeAsString(a_oXmlNode, 'ram:AttachmentBinaryObject');
   Result := TZUGFeRDAdditionalReferencedDocument.Create(false);
+  try
   Result.ID := TZUGFeRDXmlUtils.NodeAsString(a_oXmlNode, 'ram:IssuerAssignedID');
   Result.TypeCode := TEnumExtensions<TZUGFeRDAdditionalReferencedDocumentTypeCode>.StringToEnum(TZUGFeRDXmlUtils.NodeAsString(a_oXmlNode, 'ram:TypeCode'));
   Result.Name := TZUGFeRDXmlUtils.NodeAsString(a_oXmlNode, 'ram:Name');
@@ -1064,6 +1087,11 @@ begin
   Result.ReferenceTypeCode := TEnumExtensions<TZUGFeRDReferenceTypeCodes>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(a_oXmlNode, 'ram:ReferenceTypeCode'));
   Result.URIID := TZUGFeRDXmlUtils.NodeAsString(a_oXmlNode, 'ram:URIID');
   Result.LineID := TZUGFeRDXmlUtils.NodeAsString(a_oXmlNode, 'ram:LineID');
+  except
+    // The reference owns the stream even if decoding or later field parsing fails.
+    Result.Free;
+    raise;
+  end;
 end;
 
 end.
