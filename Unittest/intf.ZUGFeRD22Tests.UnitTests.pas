@@ -880,21 +880,6 @@ var
   loadIndex: Integer;
   allLoadsFailed: Boolean;
 
-  function GetAllocatedMemory: NativeUInt;
-  var
-    memoryManagerState: TMemoryManagerState;
-    smallBlockTypeState: TSmallBlockTypeState;
-  begin
-    {$WARN SYMBOL_PLATFORM OFF}
-    GetMemoryManagerState(memoryManagerState);
-    {$WARN SYMBOL_PLATFORM DEFAULT}
-    Result := memoryManagerState.TotalAllocatedMediumBlockSize +
-      memoryManagerState.TotalAllocatedLargeBlockSize;
-    for smallBlockTypeState in memoryManagerState.SmallBlockTypeStates do
-      Inc(Result, NativeUInt(smallBlockTypeState.UseableBlockSize) *
-        smallBlockTypeState.AllocatedBlockCount);
-  end;
-
   function LoadRaisesParsingError: Boolean;
   var
     loadedInvoice: TZUGFeRDInvoiceDescriptor;
@@ -934,9 +919,7 @@ begin
     secondBatchMemory := GetAllocatedMemory;
 
     Assert.IsTrue(allLoadsFailed, 'Mindestens ein ungültiges Rechnungsdatum wurde nicht abgelehnt.');
-    Assert.IsTrue(secondBatchMemory <= firstBatchMemory,
-      Format('Wiederholte Parser-Ausnahmen erhöhten den belegten Speicher von %s auf %s Bytes.',
-        [UIntToStr(firstBatchMemory), UIntToStr(secondBatchMemory)]));
+    AssertNoMemoryGrowth(firstBatchMemory, secondBatchMemory);
   finally
     invalidStream.Free;
   end;
