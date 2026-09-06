@@ -1,4 +1,4 @@
-{* Licensed to the Apache Software Foundation (ASF) under one
+﻿{* Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -186,6 +186,7 @@ begin
   end;
 end;
 
+/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
 function TZUGFeRDInvoiceDescriptor22UBLReader.Load(
   xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor;
 var
@@ -223,392 +224,421 @@ begin
   baseNode := doc.documentElement;
 
   Result := TZUGFeRDInvoiceDescriptor.Create;
+  try
 
-  Result.IsTest := TZUGFeRDXmlUtils.NodeAsBool(doc.documentElement, '//cbc:TestIndicator', false);
-  Result.BusinessProcess := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cbc:ProfileID');
-  // Profil aus BT-24 (cbc:CustomizationID) ableiten statt hart XRechnung zu setzen.
-  // Relativer XPath, weil ext:UBLExtensions vor BT-24 beliebigen Fremdinhalt (auch eine
-  // cbc:CustomizationID) enthalten darf. Die Rohkennung bleibt wie beim CII-Reader in GuideLine.
-  Result.GuideLine := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, 'cbc:CustomizationID');
-  begin
-    var customizationID: string := Result.GuideLine;
-    // XRechnung mit Extension (BG-DEX): dieselbe Spezifikation, nur erweitert; die Bibliothek
-    // kennt kein eigenes Extension-Profil. Nur die bekannten Extension-URNs werden auf die
-    // jeweilige Basis-URN zurückgeführt, fremde oder fingierte Kennungen bleiben Unknown.
-    if SameText(customizationID, 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3#conformant#urn:xoev-de:kosit:extension:xrechnung_2.3') then
-      customizationID := 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3'
-    else
-    if SameText(customizationID, 'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0#conformant#urn:xeinkauf.de:kosit:extension:xrechnung_3.0') then
-      customizationID := 'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0';
-    Result.Profile := TZUGFeRDProfileExtensions.StringToEnum(customizationID);
-  end;
-  // XRechnung-URNs (1.2 bis 3.0) ergeben XRechnung: der UBL-Writer kennt nur dieses Profil,
-  // XRechnung1 wäre beim Zurückschreiben nicht nutzbar (Dispatcher lässt UBL nur mit
-  // XRechnung zu). Fremde CIUS wie Peppol BIS Billing 3.0 haben kein Enum-Profil und bleiben
-  // bewusst Unknown, statt stillschweigend als XRechnung zu gelten; die Kennung steht in
-  // GuideLine. Reines EN 16931 (urn:cen.eu:en16931:2017) ergibt Comfort.
-  if Result.Profile = TZUGFeRDProfile.XRechnung1 then
-    Result.Profile := TZUGFeRDProfile.XRechnung;
-  Result.InvoiceNo := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cbc:ID');
-  Result.InvoiceDate := TZUGFeRDXmlUtils.NodeAsDateTime(doc.documentElement, '//cbc:IssueDate');
-  Result.Type_ := TEnumExtensions<TZUGFeRDInvoiceType>.StringToEnum(
-    TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, typeSelector));
-
-  // Notes - parse #SubjectCode#Content format
-  nodes := baseNode.selectNodes('cbc:Note');
-  for i := 0 to nodes.length - 1 do
-  begin
-    var content : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], '.');
-    if content.Trim = '' then
-      continue;
-    var contentParts : TArray<string> := content.Split(['#'], TStringSplitOptions.ExcludeEmpty);
-    var subjectCodeAsString : string := '';
-    if (Length(contentParts) > 1) and (Length(contentParts[0]) = 3) then
+    Result.IsTest := TZUGFeRDXmlUtils.NodeAsBool(doc.documentElement, '//cbc:TestIndicator', false);
+    Result.BusinessProcess := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cbc:ProfileID');
+    // Profil aus BT-24 (cbc:CustomizationID) ableiten statt hart XRechnung zu setzen.
+    // Relativer XPath, weil ext:UBLExtensions vor BT-24 beliebigen Fremdinhalt (auch eine
+    // cbc:CustomizationID) enthalten darf. Die Rohkennung bleibt wie beim CII-Reader in GuideLine.
+    Result.GuideLine := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, 'cbc:CustomizationID');
     begin
-      subjectCodeAsString := contentParts[0];
-      content := contentParts[1];
+      var customizationID: string := Result.GuideLine;
+      // XRechnung mit Extension (BG-DEX): dieselbe Spezifikation, nur erweitert; die Bibliothek
+      // kennt kein eigenes Extension-Profil. Nur die bekannten Extension-URNs werden auf die
+      // jeweilige Basis-URN zurückgeführt, fremde oder fingierte Kennungen bleiben Unknown.
+      if SameText(customizationID, 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3#conformant#urn:xoev-de:kosit:extension:xrechnung_2.3') then
+        customizationID := 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3'
+      else
+      if SameText(customizationID, 'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0#conformant#urn:xeinkauf.de:kosit:extension:xrechnung_3.0') then
+        customizationID := 'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0';
+      Result.Profile := TZUGFeRDProfileExtensions.StringToEnum(customizationID);
     end;
-    var subjectCode : ZUGFeRDNullable<TZUGFeRDSubjectCodes> :=
-      TEnumExtensions<TZUGFeRDSubjectCodes>.StringToNullableEnum(subjectCodeAsString);
-    Result.AddNote(content, subjectCode);
-  end;
+    // XRechnung-URNs (1.2 bis 3.0) ergeben XRechnung: der UBL-Writer kennt nur dieses Profil,
+    // XRechnung1 wäre beim Zurückschreiben nicht nutzbar (Dispatcher lässt UBL nur mit
+    // XRechnung zu). Fremde CIUS wie Peppol BIS Billing 3.0 haben kein Enum-Profil und bleiben
+    // bewusst Unknown, statt stillschweigend als XRechnung zu gelten; die Kennung steht in
+    // GuideLine. Reines EN 16931 (urn:cen.eu:en16931:2017) ergibt Comfort.
+    if Result.Profile = TZUGFeRDProfile.XRechnung1 then
+      Result.Profile := TZUGFeRDProfile.XRechnung;
+    Result.InvoiceNo := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cbc:ID');
+    Result.InvoiceDate := TZUGFeRDXmlUtils.NodeAsDateTime(doc.documentElement, '//cbc:IssueDate');
+    Result.Type_ := TEnumExtensions<TZUGFeRDInvoiceType>.StringToEnum(
+      TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, typeSelector));
 
-  Result.ReferenceOrderNo := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cbc:BuyerReference');
-
-  // Seller (BG-4)
-  Result.Seller := _nodeAsParty(doc.documentElement, '//cac:AccountingSupplierParty/cac:Party');
-
-  if doc.selectSingleNode('//cac:AccountingSupplierParty/cac:Party/cbc:EndpointID') <> nil then
-  begin
-    var id : string := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingSupplierParty/cac:Party/cbc:EndpointID');
-    var schemeID : string := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingSupplierParty/cac:Party/cbc:EndpointID/@schemeID');
-    var eas : ZUGFeRDNullable<TZUGFeRDElectronicAddressSchemeIdentifiers> :=
-      TEnumExtensions<TZUGFeRDElectronicAddressSchemeIdentifiers>.StringToNullableEnum(schemeID);
-    if eas.HasValue then
-      Result.SetSellerElectronicAddress(id, eas);
-  end;
-
-  // Seller Tax Registrations
-  nodes := doc.selectNodes('//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme');
-  for i := 0 to nodes.length - 1 do
-  begin
-    var id : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:CompanyID');
-    var taxSchemeID : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cac:TaxScheme/cbc:ID');
-    // Map UBL tax scheme: VAT -> VA, TAX -> FC
-    var schemeID : TZUGFeRDTaxRegistrationSchemeID;
-    if SameText(taxSchemeID, 'VAT') then
-      schemeID := TZUGFeRDTaxRegistrationSchemeID.VA
-    else
-      schemeID := TZUGFeRDTaxRegistrationSchemeID.FC;
-    Result.AddSellerTaxRegistration(id, schemeID);
-  end;
-
-  // Seller Contact
-  if doc.selectSingleNode('//cac:AccountingSupplierParty/cac:Party/cac:Contact') <> nil then
-  begin
-    Result.SellerContact := TZUGFeRDContact.Create;
-    Result.SellerContact.Name := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingSupplierParty/cac:Party/cac:Contact/cbc:Name');
-    Result.SellerContact.OrgUnit := '';
-    Result.SellerContact.PhoneNo := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingSupplierParty/cac:Party/cac:Contact/cbc:Telephone');
-    Result.SellerContact.FaxNo := '';
-    Result.SellerContact.EmailAddress := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingSupplierParty/cac:Party/cac:Contact/cbc:ElectronicMail');
-  end;
-
-  // Buyer (BG-7)
-  Result.Buyer := _nodeAsParty(doc.documentElement, '//cac:AccountingCustomerParty/cac:Party');
-
-  if doc.selectSingleNode('//cac:AccountingCustomerParty/cac:Party/cbc:EndpointID') <> nil then
-  begin
-    var id : string := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingCustomerParty/cac:Party/cbc:EndpointID');
-    var schemeID : string := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingCustomerParty/cac:Party/cbc:EndpointID/@schemeID');
-    var eas : ZUGFeRDNullable<TZUGFeRDElectronicAddressSchemeIdentifiers> :=
-      TEnumExtensions<TZUGFeRDElectronicAddressSchemeIdentifiers>.StringToNullableEnum(schemeID);
-    if eas.HasValue then
-      Result.SetBuyerElectronicAddress(id, eas);
-  end;
-
-  // Buyer Tax Registrations
-  nodes := doc.selectNodes('//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme');
-  for i := 0 to nodes.length - 1 do
-  begin
-    var id : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:CompanyID');
-    var taxSchemeID : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cac:TaxScheme/cbc:ID');
-    var schemeID : TZUGFeRDTaxRegistrationSchemeID;
-    if SameText(taxSchemeID, 'VAT') then
-      schemeID := TZUGFeRDTaxRegistrationSchemeID.VA
-    else
-      schemeID := TZUGFeRDTaxRegistrationSchemeID.FC;
-    Result.AddBuyerTaxRegistration(id, schemeID);
-  end;
-
-  // Buyer Contact
-  if doc.selectSingleNode('//cac:AccountingCustomerParty/cac:Party/cac:Contact') <> nil then
-  begin
-    Result.BuyerContact := TZUGFeRDContact.Create;
-    Result.BuyerContact.Name := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingCustomerParty/cac:Party/cac:Contact/cbc:Name');
-    Result.BuyerContact.OrgUnit := '';
-    Result.BuyerContact.PhoneNo := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingCustomerParty/cac:Party/cac:Contact/cbc:Telephone');
-    Result.BuyerContact.FaxNo := '';
-    Result.BuyerContact.EmailAddress := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingCustomerParty/cac:Party/cac:Contact/cbc:ElectronicMail');
-  end;
-
-  // Tax Representative (BG-11) - Note: in UBL TaxRepresentativeParty contains party info directly
-  Result.SellerTaxRepresentative := _nodeAsParty(doc.documentElement, '//cac:TaxRepresentativeParty');
-
-  // Delivery (BG-13)
-  var deliveryNode : IXMLDOMNode := doc.selectSingleNode('//cac:Delivery');
-  if deliveryNode <> nil then
-  begin
-    var deliveryLocationNode : IXMLDOMNode := deliveryNode.selectSingleNode('.//cac:DeliveryLocation');
-    if deliveryLocationNode <> nil then
+    // Notes - parse #SubjectCode#Content format
+    nodes := baseNode.selectNodes('cbc:Note');
+    for i := 0 to nodes.length - 1 do
     begin
-      Result.ShipTo := _nodeAsAddressParty(deliveryLocationNode, 'cac:Address');
-      if Result.ShipTo = nil then
-        Result.ShipTo := TZUGFeRDParty.Create;
-      Result.ShipTo.GlobalID := TZUGFeRDGlobalID.Create;
-      Result.ShipTo.ID := TZUGFeRDGlobalID.CreateWithParams(
-        TEnumExtensions<TZUGFeRDGlobalIDSchemeIdentifiers>.StringToNullableEnum(
-          TZUGFeRDXmlUtils.NodeAsString(deliveryLocationNode, './/cbc:ID/@schemeID')),
-        TZUGFeRDXmlUtils.NodeAsString(deliveryLocationNode, './/cbc:ID'));
-      Result.ShipTo.Name := TZUGFeRDXmlUtils.NodeAsString(deliveryNode, './/cac:DeliveryParty/cac:PartyName/cbc:Name');
-    end;
-    Result.ActualDeliveryDate := TZUGFeRDXmlUtils.NodeAsDateTime(doc.documentElement, '//cac:Delivery/cbc:ActualDeliveryDate');
-  end;
-
-  // Payee (BG-10)
-  Result.Payee := _nodeAsParty(doc.documentElement, '//cac:PayeeParty');
-
-  // Payment Reference
-  Result.PaymentReference := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:PaymentMeans/cbc:PaymentID');
-
-  // Currency (BT-5)
-  Result.Currency := TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(
-    TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cbc:DocumentCurrencyCode'));
-
-  // Tax Currency (BT-6)
-  var optionalTaxCurrency : ZUGFeRDNullable<TZUGFeRDCurrencyCodes> :=
-    TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToNullableEnum(
-      TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cbc:TaxCurrencyCode'));
-  if optionalTaxCurrency.HasValue then
-    Result.TaxCurrency := optionalTaxCurrency;
-
-  // PaymentMeans (BG-16)
-  Result.PaymentMeans := TZUGFeRDPaymentMeans.Create;
-  Result.PaymentMeans.TypeCode := TEnumExtensions<TZUGFeRDPaymentMeansTypeCodes>.StringToNullableEnum(
-    TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:PaymentMeans/cbc:PaymentMeansCode'));
-  Result.PaymentMeans.Information := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:PaymentMeans/cbc:PaymentMeansCode/@name');
-  Result.PaymentMeans.SEPACreditorIdentifier := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement,
-    '//cac:AccountingSupplierParty/cac:Party/cac:PartyIdentification/cbc:ID[@schemeID=''SEPA'']');
-  Result.PaymentMeans.SEPAMandateReference := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement,
-    '//cac:PaymentMeans/cac:PaymentMandate/cbc:ID');
-
-  var financialCardId : string := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement,
-    '//cac:PaymentMeans/cac:CardAccount/cbc:PrimaryAccountNumberID');
-  var financialCardCardholderName : string := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement,
-    '//cac:PaymentMeans/cac:CardAccount/cbc:HolderName');
-
-  if (financialCardId <> '') or (financialCardCardholderName <> '') then
-  begin
-    Result.PaymentMeans.FinancialCard := TZUGFeRDFinancialCard.Create;
-    Result.PaymentMeans.FinancialCard.Id := financialCardId;
-    Result.PaymentMeans.FinancialCard.CardholderName := financialCardCardholderName;
-  end;
-
-  // Billing Period
-  Result.BillingPeriodStart := TZUGFeRDXmlUtils.NodeAsDateTime(doc.documentElement, '/*[1]/cac:InvoicePeriod/cbc:StartDate');
-  Result.BillingPeriodEnd := TZUGFeRDXmlUtils.NodeAsDateTime(doc.documentElement, '/*[1]/cac:InvoicePeriod/cbc:EndDate');
-
-  // Creditor Bank Accounts (BG-17)
-  nodes := doc.selectNodes('//cac:PaymentMeans/cac:PayeeFinancialAccount');
-  for i := 0 to nodes.length - 1 do
-  begin
-    var bankAccount : TZUGFeRDBankAccount := _nodeAsBankAccount(nodes[i], '.');
-    if bankAccount <> nil then
-      Result.CreditorBankAccounts.Add(bankAccount);
-  end;
-
-  // Debitor Bank Accounts (BG-19)
-  nodes := doc.selectNodes('//cac:PaymentMeans/cac:PaymentMandate/cac:PayerFinancialAccount');
-  for i := 0 to nodes.length - 1 do
-  begin
-    var bankAccount : TZUGFeRDBankAccount := _nodeAsBankAccount(nodes[i], '.');
-    if bankAccount <> nil then
-      Result.DebitorBankAccounts.Add(bankAccount);
-  end;
-
-  // Taxes (BG-23)
-  nodes := doc.selectNodes('/*/cac:TaxTotal/cac:TaxSubtotal');
-  for i := 0 to nodes.length - 1 do
-  begin
-    var taxableAmount : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], 'cbc:TaxableAmount', 0);
-    var percent : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], 'cac:TaxCategory/cbc:Percent', 0);
-    var taxAmount : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], 'cbc:TaxAmount', 0);
-    var taxType : TZUGFeRDTaxTypes := TEnumExtensions<TZUGFeRDTaxTypes>.StringToEnum(
-      TZUGFeRDXmlUtils.NodeAsString(nodes[i], 'cac:TaxCategory/cac:TaxScheme/cbc:ID'));
-    var categoryCode : TZUGFeRDTaxCategoryCodes := TEnumExtensions<TZUGFeRDTaxCategoryCodes>.StringToEnum(
-      TZUGFeRDXmlUtils.NodeAsString(nodes[i], 'cac:TaxCategory/cbc:ID'));
-    var exemptionReasonCode : ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes> :=
-      TEnumExtensions<TZUGFeRDTaxExemptionReasonCodes>.StringToNullableEnum(
-        TZUGFeRDXmlUtils.NodeAsString(nodes[i], 'cac:TaxCategory/cbc:TaxExemptionReasonCode'));
-    var exemptionReason : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], 'cac:TaxCategory/cbc:TaxExemptionReason');
-
-    Result.AddApplicableTradeTax(taxAmount, taxableAmount, percent, taxType, categoryCode,
-      nil, exemptionReasonCode, exemptionReason);
-  end;
-
-  // Document-level AllowanceCharges (BG-20, BG-21)
-  // Use baseNode with direct child selector to avoid getting line-level ones
-  nodes := baseNode.selectNodes('cac:AllowanceCharge');
-  for i := 0 to nodes.length - 1 do
-  begin
-    var chargePercentage : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/cbc:MultiplierFactorNumeric');
-    var basisAmount : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/cbc:BaseAmount');
-    var actualAmount : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/cbc:Amount', 0);
-    var reason : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:AllowanceChargeReason');
-    var taxTypeCode : ZUGFeRDNullable<TZUGFeRDTaxTypes> := TEnumExtensions<TZUGFeRDTaxTypes>.StringToNullableEnum(
-      TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cac:TaxCategory/cac:TaxScheme/cbc:ID'));
-    var taxCategoryCode : ZUGFeRDNullable<TZUGFeRDTaxCategoryCodes> := TEnumExtensions<TZUGFeRDTaxCategoryCodes>.StringToNullableEnum(
-      TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cac:TaxCategory/cbc:ID'));
-    var taxPercent : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/cac:TaxCategory/cbc:Percent', 0);
-
-    if TZUGFeRDXmlUtils.NodeAsBool(nodes[i], './/cbc:ChargeIndicator') then // charge
-    begin
-      var chargeReasonCode : ZUGFeRDNullable<TZUGFeRDChargeReasonCodes> := TEnumExtensions<TZUGFeRDChargeReasonCodes>.StringToNullableEnum(
-        TZUGFeRDXmlUtils.NodeAsString(nodes[i], './cbc:AllowanceChargeReasonCode'));
-      Result.AddTradeCharge(basisAmount, Result.Currency, actualAmount, chargePercentage, reason, taxTypeCode, taxCategoryCode, taxPercent, chargeReasonCode);
-    end
-    else // allowance
-    begin
-      var allowanceReasonCode : ZUGFeRDNullable<TZUGFeRDAllowanceReasonCodes> := TEnumExtensions<TZUGFeRDAllowanceReasonCodes>.StringToNullableEnum(
-        TZUGFeRDXmlUtils.NodeAsString(nodes[i], './cbc:AllowanceChargeReasonCode'));
-      Result.AddTradeAllowance(basisAmount, Result.Currency, actualAmount, chargePercentage, reason, taxTypeCode, taxCategoryCode, taxPercent, allowanceReasonCode);
-    end;
-  end;
-
-  // Invoice Referenced Documents (BG-3)
-  nodes := doc.documentElement.selectNodes('//cac:BillingReference/cac:InvoiceDocumentReference');
-  for i := 0 to nodes.length - 1 do
-  begin
-    Result.AddInvoiceReferencedDocument(
-      TZUGFeRDXmlUtils.NodeAsString(nodes[i], './cbc:ID'),
-      TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './cbc:IssueDate'));
-    break; // only one occurrence allowed in UBL
-  end;
-
-  // Despatch Document Reference (BT-16)
-  node := baseNode.selectSingleNode('cac:DespatchDocumentReference/cbc:ID');
-  if node <> nil then
-    Result.SetDespatchAdviceReferencedDocument(node.text);
-
-  // Receiving Advice Reference (BT-15)
-  node := baseNode.selectSingleNode('cac:ReceiptDocumentReference/cbc:ID');
-  if node <> nil then
-    Result.SetReceivingAdviceReferencedDocument(node.text);
-
-  // Payment Terms
-  Result.AddTradePaymentTerms(
-    TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:PaymentTerms/cbc:Note'),
-    TZUGFeRDXmlUtils.NodeAsDateTime(doc.documentElement, '//cbc:DueDate'));
-
-  // Monetary Totals
-  Result.LineTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:LineExtensionAmount');
-  Result.ChargeTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:ChargeTotalAmount');
-  Result.AllowanceTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:AllowanceTotalAmount');
-  Result.TaxBasisAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:TaxExclusiveAmount');
-  Result.TaxTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement,
-    Format('/*/cac:TaxTotal/cbc:TaxAmount[@currencyID=''%s'']',
-      [TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Result.Currency)]));
-  if not Result.TaxTotalAmount.HasValue then
-  begin
-    // PEPPOL-EN16931-R053 identifies BT-110 as the single TaxTotal group with a
-    // VAT breakdown. Requiring exactly one group avoids confusing reordered BT-111.
-    nodes := doc.documentElement.selectNodes('/*/cac:TaxTotal[cac:TaxSubtotal]/cbc:TaxAmount');
-    if nodes.length = 1 then
-      Result.TaxTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[0], '.');
-  end;
-  if Result.TaxCurrency.HasValue and (Result.TaxCurrency.Value <> Result.Currency) then
-    Result.TaxTotalAmountInAccountingCurrency := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement,
-      Format('/*/cac:TaxTotal/cbc:TaxAmount[@currencyID=''%s'']',
-        [TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Result.TaxCurrency.Value)]));
-  Result.GrandTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount');
-  Result.RoundingAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:PayableRoundingAmount');
-  Result.TotalPrepaidAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:PrepaidAmount');
-  Result.DuePayableAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:PayableAmount');
-
-  // Accounting Cost
-  nodes := doc.selectNodes('//cbc:AccountingCost');
-  for i := 0 to nodes.length - 1 do
-  begin
-    var content : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], '.');
-    if content.Trim <> '' then
-      Result.AddReceivableSpecifiedTradeAccountingAccount(content);
-  end;
-
-  // Order Reference (BT-13)
-  Result.OrderNo := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:OrderReference/cbc:ID');
-
-  // Seller Order Referenced Document (BT-14)
-  if doc.selectSingleNode('//cac:OrderReference/cbc:SalesOrderID') <> nil then
-  begin
-    Result.SellerOrderReferencedDocument := TZUGFeRDSellerOrderReferencedDocument.Create;
-    Result.SellerOrderReferencedDocument.ID := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:OrderReference/cbc:SalesOrderID');
-  end;
-
-  // Contract Referenced Document (BT-12)
-  if doc.selectSingleNode('//cac:ContractDocumentReference/cbc:ID') <> nil then
-  begin
-    Result.ContractReferencedDocument := TZUGFeRDContractReferencedDocument.Create;
-    Result.ContractReferencedDocument.ID := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:ContractDocumentReference/cbc:ID');
-  end;
-
-  // Additional Document References (BG-24)
-  nodes := doc.selectNodes('//cac:AdditionalDocumentReference');
-  for i := 0 to nodes.length - 1 do
-  begin
-    var document : TZUGFeRDAdditionalReferencedDocument := TZUGFeRDAdditionalReferencedDocument.Create(false);
-    document.ID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:ID');
-    document.ReferenceTypeCode := TEnumExtensions<TZUGFeRDReferenceTypeCodes>.StringToNullableEnum(
-      TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:ID/@schemeID'));
-    document.TypeCode := TEnumExtensions<TZUGFeRDAdditionalReferencedDocumentTypeCode>.StringToEnum(
-      TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:DocumentTypeCode'));
-    document.Name := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:DocumentDescription');
-
-    var binaryObjectNode : IXMLDOMNode := nodes[i].selectSingleNode('.//cac:Attachment/cbc:EmbeddedDocumentBinaryObject');
-    if binaryObjectNode <> nil then
-    begin
-      var filenameAttr : IXMLDOMNode := binaryObjectNode.attributes.getNamedItem('filename');
-      if filenameAttr <> nil then
-        document.Filename := filenameAttr.text;
-      var strBase64BinaryData : string := binaryObjectNode.text;
-      if strBase64BinaryData <> '' then
+      var content : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], '.');
+      if content.Trim = '' then
+        continue;
+      var contentParts : TArray<string> := content.Split(['#'], TStringSplitOptions.ExcludeEmpty);
+      var subjectCodeAsString : string := '';
+      if (Length(contentParts) > 1) and (Length(contentParts[0]) = 3) then
       begin
-        document.AttachmentBinaryObject := TMemoryStream.Create;
-        var strBase64BinaryDataBytes : TBytes := TNetEncoding.Base64.DecodeStringToBytes(strBase64BinaryData);
-        document.AttachmentBinaryObject.Write(strBase64BinaryDataBytes, Length(strBase64BinaryDataBytes));
+        subjectCodeAsString := contentParts[0];
+        content := contentParts[1];
+      end;
+      var subjectCode : ZUGFeRDNullable<TZUGFeRDSubjectCodes> :=
+        TEnumExtensions<TZUGFeRDSubjectCodes>.StringToNullableEnum(subjectCodeAsString);
+      Result.AddNote(content, subjectCode);
+    end;
+
+    Result.ReferenceOrderNo := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cbc:BuyerReference');
+
+    // Seller (BG-4)
+    Result.Seller := _nodeAsParty(doc.documentElement, '//cac:AccountingSupplierParty/cac:Party');
+
+    if doc.selectSingleNode('//cac:AccountingSupplierParty/cac:Party/cbc:EndpointID') <> nil then
+    begin
+      var id : string := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingSupplierParty/cac:Party/cbc:EndpointID');
+      var schemeID : string := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingSupplierParty/cac:Party/cbc:EndpointID/@schemeID');
+      var eas : ZUGFeRDNullable<TZUGFeRDElectronicAddressSchemeIdentifiers> :=
+        TEnumExtensions<TZUGFeRDElectronicAddressSchemeIdentifiers>.StringToNullableEnum(schemeID);
+      if eas.HasValue then
+        Result.SetSellerElectronicAddress(id, eas);
+    end;
+
+    // Seller Tax Registrations
+    nodes := doc.selectNodes('//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme');
+    for i := 0 to nodes.length - 1 do
+    begin
+      var id : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:CompanyID');
+      var taxSchemeID : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cac:TaxScheme/cbc:ID');
+      // Map UBL tax scheme: VAT -> VA, TAX -> FC
+      var schemeID : TZUGFeRDTaxRegistrationSchemeID;
+      if SameText(taxSchemeID, 'VAT') then
+        schemeID := TZUGFeRDTaxRegistrationSchemeID.VA
+      else
+        schemeID := TZUGFeRDTaxRegistrationSchemeID.FC;
+      Result.AddSellerTaxRegistration(id, schemeID);
+    end;
+
+    // Seller Contact
+    if doc.selectSingleNode('//cac:AccountingSupplierParty/cac:Party/cac:Contact') <> nil then
+    begin
+      Result.SellerContact := TZUGFeRDContact.Create;
+      Result.SellerContact.Name := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingSupplierParty/cac:Party/cac:Contact/cbc:Name');
+      Result.SellerContact.OrgUnit := '';
+      Result.SellerContact.PhoneNo := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingSupplierParty/cac:Party/cac:Contact/cbc:Telephone');
+      Result.SellerContact.FaxNo := '';
+      Result.SellerContact.EmailAddress := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingSupplierParty/cac:Party/cac:Contact/cbc:ElectronicMail');
+    end;
+
+    // Buyer (BG-7)
+    Result.Buyer := _nodeAsParty(doc.documentElement, '//cac:AccountingCustomerParty/cac:Party');
+
+    if doc.selectSingleNode('//cac:AccountingCustomerParty/cac:Party/cbc:EndpointID') <> nil then
+    begin
+      var id : string := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingCustomerParty/cac:Party/cbc:EndpointID');
+      var schemeID : string := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingCustomerParty/cac:Party/cbc:EndpointID/@schemeID');
+      var eas : ZUGFeRDNullable<TZUGFeRDElectronicAddressSchemeIdentifiers> :=
+        TEnumExtensions<TZUGFeRDElectronicAddressSchemeIdentifiers>.StringToNullableEnum(schemeID);
+      if eas.HasValue then
+        Result.SetBuyerElectronicAddress(id, eas);
+    end;
+
+    // Buyer Tax Registrations
+    nodes := doc.selectNodes('//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme');
+    for i := 0 to nodes.length - 1 do
+    begin
+      var id : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:CompanyID');
+      var taxSchemeID : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cac:TaxScheme/cbc:ID');
+      var schemeID : TZUGFeRDTaxRegistrationSchemeID;
+      if SameText(taxSchemeID, 'VAT') then
+        schemeID := TZUGFeRDTaxRegistrationSchemeID.VA
+      else
+        schemeID := TZUGFeRDTaxRegistrationSchemeID.FC;
+      Result.AddBuyerTaxRegistration(id, schemeID);
+    end;
+
+    // Buyer Contact
+    if doc.selectSingleNode('//cac:AccountingCustomerParty/cac:Party/cac:Contact') <> nil then
+    begin
+      Result.BuyerContact := TZUGFeRDContact.Create;
+      Result.BuyerContact.Name := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingCustomerParty/cac:Party/cac:Contact/cbc:Name');
+      Result.BuyerContact.OrgUnit := '';
+      Result.BuyerContact.PhoneNo := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingCustomerParty/cac:Party/cac:Contact/cbc:Telephone');
+      Result.BuyerContact.FaxNo := '';
+      Result.BuyerContact.EmailAddress := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:AccountingCustomerParty/cac:Party/cac:Contact/cbc:ElectronicMail');
+    end;
+
+    // Tax Representative (BG-11) - Note: in UBL TaxRepresentativeParty contains party info directly
+    Result.SellerTaxRepresentative := _nodeAsParty(doc.documentElement, '//cac:TaxRepresentativeParty');
+
+    // Delivery (BG-13)
+    var deliveryNode : IXMLDOMNode := doc.selectSingleNode('//cac:Delivery');
+    if deliveryNode <> nil then
+    begin
+      var deliveryLocationNode : IXMLDOMNode := deliveryNode.selectSingleNode('.//cac:DeliveryLocation');
+      if deliveryLocationNode <> nil then
+      begin
+        Result.ShipTo := _nodeAsAddressParty(deliveryLocationNode, 'cac:Address');
+        if Result.ShipTo = nil then
+          Result.ShipTo := TZUGFeRDParty.Create;
+        // Party construction already owns both identifiers; populate rather than replace them.
+        Result.ShipTo.ID.SchemeID := TEnumExtensions<TZUGFeRDGlobalIDSchemeIdentifiers>.StringToNullableEnum(
+          TZUGFeRDXmlUtils.NodeAsString(deliveryLocationNode, './/cbc:ID/@schemeID'));
+        Result.ShipTo.ID.ID := TZUGFeRDXmlUtils.NodeAsString(deliveryLocationNode, './/cbc:ID');
+        Result.ShipTo.Name := TZUGFeRDXmlUtils.NodeAsString(deliveryNode, './/cac:DeliveryParty/cac:PartyName/cbc:Name');
+      end;
+      Result.ActualDeliveryDate := TZUGFeRDXmlUtils.NodeAsDateTime(doc.documentElement, '//cac:Delivery/cbc:ActualDeliveryDate');
+    end;
+
+    // Payee (BG-10)
+    Result.Payee := _nodeAsParty(doc.documentElement, '//cac:PayeeParty');
+
+    // Payment Reference
+    Result.PaymentReference := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:PaymentMeans/cbc:PaymentID');
+
+    // Currency (BT-5)
+    Result.Currency := TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(
+      TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cbc:DocumentCurrencyCode'));
+
+    // Tax Currency (BT-6)
+    var optionalTaxCurrency : ZUGFeRDNullable<TZUGFeRDCurrencyCodes> :=
+      TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToNullableEnum(
+        TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cbc:TaxCurrencyCode'));
+    if optionalTaxCurrency.HasValue then
+      Result.TaxCurrency := optionalTaxCurrency;
+
+    // PaymentMeans (BG-16)
+    Result.PaymentMeans := TZUGFeRDPaymentMeans.Create;
+    Result.PaymentMeans.TypeCode := TEnumExtensions<TZUGFeRDPaymentMeansTypeCodes>.StringToNullableEnum(
+      TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:PaymentMeans/cbc:PaymentMeansCode'));
+    Result.PaymentMeans.Information := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:PaymentMeans/cbc:PaymentMeansCode/@name');
+    Result.PaymentMeans.SEPACreditorIdentifier := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement,
+      '//cac:AccountingSupplierParty/cac:Party/cac:PartyIdentification/cbc:ID[@schemeID=''SEPA'']');
+    Result.PaymentMeans.SEPAMandateReference := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement,
+      '//cac:PaymentMeans/cac:PaymentMandate/cbc:ID');
+
+    var financialCardId : string := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement,
+      '//cac:PaymentMeans/cac:CardAccount/cbc:PrimaryAccountNumberID');
+    var financialCardCardholderName : string := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement,
+      '//cac:PaymentMeans/cac:CardAccount/cbc:HolderName');
+
+    if (financialCardId <> '') or (financialCardCardholderName <> '') then
+    begin
+      Result.PaymentMeans.FinancialCard := TZUGFeRDFinancialCard.Create;
+      Result.PaymentMeans.FinancialCard.Id := financialCardId;
+      Result.PaymentMeans.FinancialCard.CardholderName := financialCardCardholderName;
+    end;
+
+    // Billing Period
+    Result.BillingPeriodStart := TZUGFeRDXmlUtils.NodeAsDateTime(doc.documentElement, '/*[1]/cac:InvoicePeriod/cbc:StartDate');
+    Result.BillingPeriodEnd := TZUGFeRDXmlUtils.NodeAsDateTime(doc.documentElement, '/*[1]/cac:InvoicePeriod/cbc:EndDate');
+
+    // Creditor Bank Accounts (BG-17)
+    nodes := doc.selectNodes('//cac:PaymentMeans/cac:PayeeFinancialAccount');
+    for i := 0 to nodes.length - 1 do
+    begin
+      var bankAccount : TZUGFeRDBankAccount := _nodeAsBankAccount(nodes[i], '.');
+      if bankAccount <> nil then
+      begin
+        try
+          Result.CreditorBankAccounts.Add(bankAccount);
+        except
+          bankAccount.Free;
+          raise;
+        end;
       end;
     end;
 
-    Result.AdditionalReferencedDocuments.Add(document);
-  end;
-
-  // Project Reference (BT-11)
-  Result.SpecifiedProcuringProject := TZUGFeRDSpecifiedProcuringProject.Create;
-  Result.SpecifiedProcuringProject.ID := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:ProjectReference/cbc:ID');
-  Result.SpecifiedProcuringProject.Name := '';
-
-  // Trade Line Items
-  nodes := doc.selectNodes(tradeLineItemSelector);
-  for i := 0 to nodes.length - 1 do
-  begin
-    var item : TZUGFeRDTradeLineItem := _parseTradeLineItem(nodes[i], isInvoice);
-    if item <> nil then
+    // Debitor Bank Accounts (BG-19)
+    nodes := doc.selectNodes('//cac:PaymentMeans/cac:PaymentMandate/cac:PayerFinancialAccount');
+    for i := 0 to nodes.length - 1 do
     begin
-      Result.TradeLineItems.Add(item);
-      _addSubLineItems(nodes[i], item.AssociatedDocument.LineID, isInvoice, Result.TradeLineItems);
+      var bankAccount : TZUGFeRDBankAccount := _nodeAsBankAccount(nodes[i], '.');
+      if bankAccount <> nil then
+      begin
+        try
+          Result.DebitorBankAccounts.Add(bankAccount);
+        except
+          bankAccount.Free;
+          raise;
+        end;
+      end;
     end;
+
+    // Taxes (BG-23)
+    nodes := doc.selectNodes('/*/cac:TaxTotal/cac:TaxSubtotal');
+    for i := 0 to nodes.length - 1 do
+    begin
+      var taxableAmount : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], 'cbc:TaxableAmount', 0);
+      var percent : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], 'cac:TaxCategory/cbc:Percent', 0);
+      var taxAmount : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], 'cbc:TaxAmount', 0);
+      var taxType : TZUGFeRDTaxTypes := TEnumExtensions<TZUGFeRDTaxTypes>.StringToEnum(
+        TZUGFeRDXmlUtils.NodeAsString(nodes[i], 'cac:TaxCategory/cac:TaxScheme/cbc:ID'));
+      var categoryCode : TZUGFeRDTaxCategoryCodes := TEnumExtensions<TZUGFeRDTaxCategoryCodes>.StringToEnum(
+        TZUGFeRDXmlUtils.NodeAsString(nodes[i], 'cac:TaxCategory/cbc:ID'));
+      var exemptionReasonCode : ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes> :=
+        TEnumExtensions<TZUGFeRDTaxExemptionReasonCodes>.StringToNullableEnum(
+          TZUGFeRDXmlUtils.NodeAsString(nodes[i], 'cac:TaxCategory/cbc:TaxExemptionReasonCode'));
+      var exemptionReason : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], 'cac:TaxCategory/cbc:TaxExemptionReason');
+
+      Result.AddApplicableTradeTax(taxAmount, taxableAmount, percent, taxType, categoryCode,
+        nil, exemptionReasonCode, exemptionReason);
+    end;
+
+    // Document-level AllowanceCharges (BG-20, BG-21)
+    // Use baseNode with direct child selector to avoid getting line-level ones
+    nodes := baseNode.selectNodes('cac:AllowanceCharge');
+    for i := 0 to nodes.length - 1 do
+    begin
+      var chargePercentage : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/cbc:MultiplierFactorNumeric');
+      var basisAmount : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/cbc:BaseAmount');
+      var actualAmount : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/cbc:Amount', 0);
+      var reason : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:AllowanceChargeReason');
+      var taxTypeCode : ZUGFeRDNullable<TZUGFeRDTaxTypes> := TEnumExtensions<TZUGFeRDTaxTypes>.StringToNullableEnum(
+        TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cac:TaxCategory/cac:TaxScheme/cbc:ID'));
+      var taxCategoryCode : ZUGFeRDNullable<TZUGFeRDTaxCategoryCodes> := TEnumExtensions<TZUGFeRDTaxCategoryCodes>.StringToNullableEnum(
+        TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cac:TaxCategory/cbc:ID'));
+      var taxPercent : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/cac:TaxCategory/cbc:Percent', 0);
+
+      if TZUGFeRDXmlUtils.NodeAsBool(nodes[i], './/cbc:ChargeIndicator') then // charge
+      begin
+        var chargeReasonCode : ZUGFeRDNullable<TZUGFeRDChargeReasonCodes> := TEnumExtensions<TZUGFeRDChargeReasonCodes>.StringToNullableEnum(
+          TZUGFeRDXmlUtils.NodeAsString(nodes[i], './cbc:AllowanceChargeReasonCode'));
+        Result.AddTradeCharge(basisAmount, Result.Currency, actualAmount, chargePercentage, reason, taxTypeCode, taxCategoryCode, taxPercent, chargeReasonCode);
+      end
+      else // allowance
+      begin
+        var allowanceReasonCode : ZUGFeRDNullable<TZUGFeRDAllowanceReasonCodes> := TEnumExtensions<TZUGFeRDAllowanceReasonCodes>.StringToNullableEnum(
+          TZUGFeRDXmlUtils.NodeAsString(nodes[i], './cbc:AllowanceChargeReasonCode'));
+        Result.AddTradeAllowance(basisAmount, Result.Currency, actualAmount, chargePercentage, reason, taxTypeCode, taxCategoryCode, taxPercent, allowanceReasonCode);
+      end;
+    end;
+
+    // Invoice Referenced Documents (BG-3)
+    nodes := doc.documentElement.selectNodes('//cac:BillingReference/cac:InvoiceDocumentReference');
+    for i := 0 to nodes.length - 1 do
+    begin
+      Result.AddInvoiceReferencedDocument(
+        TZUGFeRDXmlUtils.NodeAsString(nodes[i], './cbc:ID'),
+        TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './cbc:IssueDate'));
+      break; // only one occurrence allowed in UBL
+    end;
+
+    // Despatch Document Reference (BT-16)
+    node := baseNode.selectSingleNode('cac:DespatchDocumentReference/cbc:ID');
+    if node <> nil then
+      Result.SetDespatchAdviceReferencedDocument(node.text);
+
+    // Receiving Advice Reference (BT-15)
+    node := baseNode.selectSingleNode('cac:ReceiptDocumentReference/cbc:ID');
+    if node <> nil then
+      Result.SetReceivingAdviceReferencedDocument(node.text);
+
+    // Payment Terms
+    Result.AddTradePaymentTerms(
+      TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:PaymentTerms/cbc:Note'),
+      TZUGFeRDXmlUtils.NodeAsDateTime(doc.documentElement, '//cbc:DueDate'));
+
+    // Monetary Totals
+    Result.LineTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:LineExtensionAmount');
+    Result.ChargeTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:ChargeTotalAmount');
+    Result.AllowanceTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:AllowanceTotalAmount');
+    Result.TaxBasisAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:TaxExclusiveAmount');
+    Result.TaxTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement,
+      Format('/*/cac:TaxTotal/cbc:TaxAmount[@currencyID=''%s'']',
+        [TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Result.Currency)]));
+    if not Result.TaxTotalAmount.HasValue then
+    begin
+      // PEPPOL-EN16931-R053 identifies BT-110 as the single TaxTotal group with a
+      // VAT breakdown. Requiring exactly one group avoids confusing reordered BT-111.
+      nodes := doc.documentElement.selectNodes('/*/cac:TaxTotal[cac:TaxSubtotal]/cbc:TaxAmount');
+      if nodes.length = 1 then
+        Result.TaxTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[0], '.');
+    end;
+    if Result.TaxCurrency.HasValue and (Result.TaxCurrency.Value <> Result.Currency) then
+      Result.TaxTotalAmountInAccountingCurrency := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement,
+        Format('/*/cac:TaxTotal/cbc:TaxAmount[@currencyID=''%s'']',
+          [TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Result.TaxCurrency.Value)]));
+    Result.GrandTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount');
+    Result.RoundingAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:PayableRoundingAmount');
+    Result.TotalPrepaidAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:PrepaidAmount');
+    Result.DuePayableAmount := TZUGFeRDXmlUtils.NodeAsDecimal(doc.documentElement, '//cac:LegalMonetaryTotal/cbc:PayableAmount');
+
+    // Accounting Cost
+    nodes := doc.selectNodes('//cbc:AccountingCost');
+    for i := 0 to nodes.length - 1 do
+    begin
+      var content : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], '.');
+      if content.Trim <> '' then
+        Result.AddReceivableSpecifiedTradeAccountingAccount(content);
+    end;
+
+    // Order Reference (BT-13)
+    Result.OrderNo := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:OrderReference/cbc:ID');
+
+    // Seller Order Referenced Document (BT-14)
+    if doc.selectSingleNode('//cac:OrderReference/cbc:SalesOrderID') <> nil then
+    begin
+      Result.SellerOrderReferencedDocument := TZUGFeRDSellerOrderReferencedDocument.Create;
+      Result.SellerOrderReferencedDocument.ID := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:OrderReference/cbc:SalesOrderID');
+    end;
+
+    // Contract Referenced Document (BT-12)
+    if doc.selectSingleNode('//cac:ContractDocumentReference/cbc:ID') <> nil then
+    begin
+      Result.ContractReferencedDocument := TZUGFeRDContractReferencedDocument.Create;
+      Result.ContractReferencedDocument.ID := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:ContractDocumentReference/cbc:ID');
+    end;
+
+    // Additional Document References (BG-24)
+    nodes := doc.selectNodes('//cac:AdditionalDocumentReference');
+    for i := 0 to nodes.length - 1 do
+    begin
+      var document : TZUGFeRDAdditionalReferencedDocument := TZUGFeRDAdditionalReferencedDocument.Create(false);
+      try
+        document.ID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:ID');
+        document.ReferenceTypeCode := TEnumExtensions<TZUGFeRDReferenceTypeCodes>.StringToNullableEnum(
+          TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:ID/@schemeID'));
+        document.TypeCode := TEnumExtensions<TZUGFeRDAdditionalReferencedDocumentTypeCode>.StringToEnum(
+          TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:DocumentTypeCode'));
+        document.Name := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:DocumentDescription');
+
+        var binaryObjectNode : IXMLDOMNode := nodes[i].selectSingleNode('.//cac:Attachment/cbc:EmbeddedDocumentBinaryObject');
+        if binaryObjectNode <> nil then
+        begin
+          var filenameAttr : IXMLDOMNode := binaryObjectNode.attributes.getNamedItem('filename');
+          if filenameAttr <> nil then
+            document.Filename := filenameAttr.text;
+          var strBase64BinaryData : string := binaryObjectNode.text;
+          if strBase64BinaryData <> '' then
+          begin
+            document.AttachmentBinaryObject := TMemoryStream.Create;
+            var strBase64BinaryDataBytes : TBytes := TNetEncoding.Base64.DecodeStringToBytes(strBase64BinaryData);
+            document.AttachmentBinaryObject.Write(strBase64BinaryDataBytes, Length(strBase64BinaryDataBytes));
+          end;
+        end;
+
+        Result.AdditionalReferencedDocuments.Add(document);
+      except
+        document.Free;
+        raise;
+      end;
+    end;
+
+    // Project Reference (BT-11)
+    Result.SpecifiedProcuringProject := TZUGFeRDSpecifiedProcuringProject.Create;
+    Result.SpecifiedProcuringProject.ID := TZUGFeRDXmlUtils.NodeAsString(doc.documentElement, '//cac:ProjectReference/cbc:ID');
+    Result.SpecifiedProcuringProject.Name := '';
+
+    // Trade Line Items
+    nodes := doc.selectNodes(tradeLineItemSelector);
+    for i := 0 to nodes.length - 1 do
+    begin
+      var item : TZUGFeRDTradeLineItem := _parseTradeLineItem(nodes[i], isInvoice);
+      if item <> nil then
+      begin
+        try
+          Result.TradeLineItems.Add(item);
+        except
+          item.Free;
+          raise;
+        end;
+        _addSubLineItems(nodes[i], item.AssociatedDocument.LineID, isInvoice, Result.TradeLineItems);
+      end;
+    end;
+  except
+    Result.Free;
+    raise;
   end;
 end;
 
+/// <summary>Retains local ownership until a nonduplicate subline has been added to the invoice.</summary>
 procedure TZUGFeRDInvoiceDescriptor22UBLReader._addSubLineItems(
   parentNode: IXMLDOMNode; const parentLineId: string; isInvoice: Boolean;
   tradeLineItems: TObjectList<TZUGFeRDTradeLineItem>);
@@ -632,19 +662,24 @@ begin
     subItem := _parseTradeLineItem(subNodes[j], isInvoice, parentLineId);
     if subItem <> nil then
     begin
-      isDuplicate := False;
-      for k := 0 to tradeLineItems.Count - 1 do
-        if tradeLineItems[k].AssociatedDocument.LineID = subItem.AssociatedDocument.LineID then
-        begin
-          isDuplicate := True;
-          subItem.Free;
-          Break;
-        end;
-      if not isDuplicate then
-      begin
-        tradeLineItems.Add(subItem);
-        _addSubLineItems(subNodes[j], subItem.AssociatedDocument.LineID, isInvoice, tradeLineItems);
+      try
+        isDuplicate := False;
+        for k := 0 to tradeLineItems.Count - 1 do
+          if tradeLineItems[k].AssociatedDocument.LineID = subItem.AssociatedDocument.LineID then
+          begin
+            isDuplicate := True;
+            Break;
+          end;
+        if not isDuplicate then
+          tradeLineItems.Add(subItem);
+      except
+        subItem.Free;
+        raise;
       end;
+      if isDuplicate then
+        subItem.Free
+      else
+        _addSubLineItems(subNodes[j], subItem.AssociatedDocument.LineID, isInvoice, tradeLineItems);
     end;
   end;
 end;
@@ -667,10 +702,13 @@ begin
     TZUGFeRDXmlUtils.NodeAsString(baseNode, 'cac:PartyName/cbc:Name'));
 end;
 
+/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
 function TZUGFeRDInvoiceDescriptor22UBLReader._nodeAsParty(basenode: IXmlDomNode;
   const xpath: string) : TZUGFeRDParty;
 var
   node : IXmlDomNode;
+  schemeID: ZUGFeRDNullable<TZUGFeRDGlobalIDSchemeIdentifiers>;
+  identification: TZUGFeRDGlobalID;
 begin
   Result := nil;
   if baseNode = nil then
@@ -682,31 +720,31 @@ begin
   Result := _nodeAsAddressParty(node, 'cac:PostalAddress');
   if Result = nil then
     Result := TZUGFeRDParty.Create;
+  try
 
-  // Party Identification - route GLN to GlobalID, others to ID
-  var id : TZUGFeRDGlobalID := TZUGFeRDGlobalID.CreateWithParams(
-    TEnumExtensions<TZUGFeRDGlobalIDSchemeIdentifiers>.StringToNullableEnum(
-      TZUGFeRDXmlUtils.NodeAsString(node, 'cac:PartyIdentification/cbc:ID/@schemeID')),
-    TZUGFeRDXmlUtils.NodeAsString(node, 'cac:PartyIdentification/cbc:ID'));
+    // Party Identification - route GLN to GlobalID, others to ID
+    schemeID := TEnumExtensions<TZUGFeRDGlobalIDSchemeIdentifiers>.StringToNullableEnum(
+      TZUGFeRDXmlUtils.NodeAsString(node, 'cac:PartyIdentification/cbc:ID/@schemeID'));
+    // Both objects belong to the new party already; replacing either one would leak it.
+    if schemeID.HasValue and (schemeID.Value = TZUGFeRDGlobalIDSchemeIdentifiers.GLN) then
+      identification := Result.GlobalID
+    else
+      identification := Result.ID;
+    identification.SchemeID := schemeID;
+    identification.ID := TZUGFeRDXmlUtils.NodeAsString(node, 'cac:PartyIdentification/cbc:ID');
 
-  if id.SchemeID.HasValue and (id.SchemeID.Value = TZUGFeRDGlobalIDSchemeIdentifiers.GLN) then
-  begin
-    Result.ID := TZUGFeRDGlobalID.Create;
-    Result.GlobalID := id;
-  end
-  else
-  begin
-    Result.ID := id;
-    Result.GlobalID := TZUGFeRDGlobalID.Create;
+    Result.Name := TZUGFeRDXmlUtils.NodeAsString(node, 'cac:PartyLegalEntity/cbc:RegistrationName');
+    Result.SpecifiedLegalOrganization := _nodeAsLegalOrganization(node, 'cac:PartyLegalEntity');
+
+    if Result.Description.Trim = '' then
+      Result.Description := TZUGFeRDXmlUtils.NodeAsString(node, 'cac:PartyLegalEntity/cbc:CompanyLegalForm');
+  except
+    Result.Free;
+    raise;
   end;
-
-  Result.Name := TZUGFeRDXmlUtils.NodeAsString(node, 'cac:PartyLegalEntity/cbc:RegistrationName');
-  Result.SpecifiedLegalOrganization := _nodeAsLegalOrganization(node, 'cac:PartyLegalEntity');
-
-  if Result.Description.Trim = '' then
-    Result.Description := TZUGFeRDXmlUtils.NodeAsString(node, 'cac:PartyLegalEntity/cbc:CompanyLegalForm');
 end;
 
+/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
 function TZUGFeRDInvoiceDescriptor22UBLReader._nodeAsAddressParty(basenode: IXmlDomNode;
   const xpath: string) : TZUGFeRDParty;
 var
@@ -720,16 +758,22 @@ begin
     exit;
 
   Result := TZUGFeRDParty.Create;
-  Result.Street := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:StreetName');
-  Result.Street2 := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:AdditionalStreetName');
-  Result.AddressLine3 := TZUGFeRDXmlUtils.NodeAsString(node, 'cac:AddressLine/cbc:Line');
-  Result.City := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:CityName');
-  Result.Postcode := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:PostalZone');
-  Result.CountrySubdivisionName := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:CountrySubentity');
-  Result.Country := TEnumExtensions<TZUGFeRDCountryCodes>.StringToNullableEnum(
-    TZUGFeRDXmlUtils.NodeAsString(node, 'cac:Country/cbc:IdentificationCode'));
+  try
+    Result.Street := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:StreetName');
+    Result.Street2 := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:AdditionalStreetName');
+    Result.AddressLine3 := TZUGFeRDXmlUtils.NodeAsString(node, 'cac:AddressLine/cbc:Line');
+    Result.City := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:CityName');
+    Result.Postcode := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:PostalZone');
+    Result.CountrySubdivisionName := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:CountrySubentity');
+    Result.Country := TEnumExtensions<TZUGFeRDCountryCodes>.StringToNullableEnum(
+      TZUGFeRDXmlUtils.NodeAsString(node, 'cac:Country/cbc:IdentificationCode'));
+  except
+    Result.Free;
+    raise;
+  end;
 end;
 
+/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
 function TZUGFeRDInvoiceDescriptor22UBLReader._nodeAsBankAccount(basenode: IXmlDomNode;
   const xpath: string) : TZUGFeRDBankAccount;
 var
@@ -743,13 +787,19 @@ begin
     exit;
 
   Result := TZUGFeRDBankAccount.Create;
-  Result.Name := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:Name');
-  Result.IBAN := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:ID');
-  Result.BIC := TZUGFeRDXmlUtils.NodeAsString(node, 'cac:FinancialInstitutionBranch/cbc:ID');
-  Result.BankName := TZUGFeRDXmlUtils.NodeAsString(node, 'cac:FinancialInstitutionBranch/cbc:Name');
-  Result.ID := '';
+  try
+    Result.Name := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:Name');
+    Result.IBAN := TZUGFeRDXmlUtils.NodeAsString(node, 'cbc:ID');
+    Result.BIC := TZUGFeRDXmlUtils.NodeAsString(node, 'cac:FinancialInstitutionBranch/cbc:ID');
+    Result.BankName := TZUGFeRDXmlUtils.NodeAsString(node, 'cac:FinancialInstitutionBranch/cbc:Name');
+    Result.ID := '';
+  except
+    Result.Free;
+    raise;
+  end;
 end;
 
+/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
 function TZUGFeRDInvoiceDescriptor22UBLReader._parseTradeLineItem(
   tradeLineItem: IXmlDomNode; isInvoice: Boolean; const parentLineId: string = ''): TZUGFeRDTradeLineItem;
 var
@@ -779,172 +829,195 @@ begin
   end;
 
   Result := TZUGFeRDTradeLineItem.Create(lineId);
+  try
 
-  Result.GlobalID.SchemeID := TEnumExtensions<TZUGFeRDGlobalIDSchemeIdentifiers>.StringToNullableEnum(
-    TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './cac:Item/cac:StandardItemIdentification/cbc:ID/@schemeID'));
-  Result.GlobalID.ID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './cac:Item/cac:StandardItemIdentification/cbc:ID');
-  Result.SellerAssignedID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './cac:Item/cac:SellersItemIdentification/cbc:ID');
-  Result.BuyerAssignedID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './cac:Item/cac:BuyersItemIdentification/cbc:ID');
-  Result.Name := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './cac:Item/cbc:Name');
-  Result.Description := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/cac:Item/cbc:Description');
-  Result.NetQuantity := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/cac:Price/cbc:BaseQuantity');
-  if billedQuantity.HasValue then
-    Result.BilledQuantity := billedQuantity.Value
-  else
-    Result.BilledQuantity := 0;
-  Result.LineTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/cbc:LineExtensionAmount', 0);
-  Result.TaxCategoryCode := TEnumExtensions<TZUGFeRDTaxCategoryCodes>.StringToNullableEnum(
-    TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/cac:Item/cac:ClassifiedTaxCategory/cbc:ID'));
-  Result.TaxType := TEnumExtensions<TZUGFeRDTaxTypes>.StringToNullableEnum(
-    TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/cac:Item/cac:ClassifiedTaxCategory/cac:TaxScheme/cbc:ID'));
-  Result.TaxPercent := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/cac:Item/cac:ClassifiedTaxCategory/cbc:Percent', 0);
-  Result.NetUnitPrice := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/cac:Price/cbc:PriceAmount', 0); // BT-146
+    Result.GlobalID.SchemeID := TEnumExtensions<TZUGFeRDGlobalIDSchemeIdentifiers>.StringToNullableEnum(
+      TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './cac:Item/cac:StandardItemIdentification/cbc:ID/@schemeID'));
+    Result.GlobalID.ID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './cac:Item/cac:StandardItemIdentification/cbc:ID');
+    Result.SellerAssignedID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './cac:Item/cac:SellersItemIdentification/cbc:ID');
+    Result.BuyerAssignedID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './cac:Item/cac:BuyersItemIdentification/cbc:ID');
+    Result.Name := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './cac:Item/cbc:Name');
+    Result.Description := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/cac:Item/cbc:Description');
+    Result.NetQuantity := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/cac:Price/cbc:BaseQuantity');
+    if billedQuantity.HasValue then
+      Result.BilledQuantity := billedQuantity.Value
+    else
+      Result.BilledQuantity := 0;
+    Result.LineTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/cbc:LineExtensionAmount', 0);
+    Result.TaxCategoryCode := TEnumExtensions<TZUGFeRDTaxCategoryCodes>.StringToNullableEnum(
+      TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/cac:Item/cac:ClassifiedTaxCategory/cbc:ID'));
+    Result.TaxType := TEnumExtensions<TZUGFeRDTaxTypes>.StringToNullableEnum(
+      TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/cac:Item/cac:ClassifiedTaxCategory/cac:TaxScheme/cbc:ID'));
+    Result.TaxPercent := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/cac:Item/cac:ClassifiedTaxCategory/cbc:Percent', 0);
+    Result.NetUnitPrice := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/cac:Price/cbc:PriceAmount', 0); // BT-146
 
-  // BT-147/BT-148: Der Preisnachlass haengt in UBL unter cac:Price und ist etwas anderes
-  // als die Zu- und Abschlaege der Position selbst (BG-27/BG-28) weiter unten.
-  var priceAllowanceChargeNode : IXMLDOMNode := tradeLineItem.selectSingleNode('./cac:Price/cac:AllowanceCharge');
-  var priceBasisAmount : ZUGFeRDNullable<Currency> := nil;
-  if priceAllowanceChargeNode <> nil then
-    priceBasisAmount := TZUGFeRDXmlUtils.NodeAsDecimal(priceAllowanceChargeNode, './cbc:BaseAmount'); // BT-148
+    // BT-147/BT-148: Der Preisnachlass haengt in UBL unter cac:Price und ist etwas anderes
+    // als die Zu- und Abschlaege der Position selbst (BG-27/BG-28) weiter unten.
+    var priceAllowanceChargeNode : IXMLDOMNode := tradeLineItem.selectSingleNode('./cac:Price/cac:AllowanceCharge');
+    var priceBasisAmount : ZUGFeRDNullable<Currency> := nil;
+    if priceAllowanceChargeNode <> nil then
+      priceBasisAmount := TZUGFeRDXmlUtils.NodeAsDecimal(priceAllowanceChargeNode, './cbc:BaseAmount'); // BT-148
 
-  if priceBasisAmount.HasValue then
-    Result.GrossUnitPrice := priceBasisAmount
-  else if priceAllowanceChargeNode <> nil then
-    // BT-148 ist optional; der Bruttopreis ist dann der Nettopreis zuzueglich des Nachlasses (BT-147)
-    Result.GrossUnitPrice := Result.NetUnitPrice.GetValueOrDefault +
-      TZUGFeRDXmlUtils.NodeAsDecimal(priceAllowanceChargeNode, './cbc:Amount', 0).GetValueOrDefault;
-  Result.UnitCode := unitCode;
-  Result.BillingPeriodStart := TZUGFeRDXmlUtils.NodeAsDateTime(tradeLineItem, './/cac:InvoicePeriod/cbc:StartDate');
-  Result.BillingPeriodEnd := TZUGFeRDXmlUtils.NodeAsDateTime(tradeLineItem, './/cac:InvoicePeriod/cbc:EndDate');
+    if priceBasisAmount.HasValue then
+      Result.GrossUnitPrice := priceBasisAmount
+    else if priceAllowanceChargeNode <> nil then
+      // BT-148 ist optional; der Bruttopreis ist dann der Nettopreis zuzueglich des Nachlasses (BT-147)
+      Result.GrossUnitPrice := Result.NetUnitPrice.GetValueOrDefault +
+        TZUGFeRDXmlUtils.NodeAsDecimal(priceAllowanceChargeNode, './cbc:Amount', 0).GetValueOrDefault;
+    Result.UnitCode := unitCode;
+    Result.BillingPeriodStart := TZUGFeRDXmlUtils.NodeAsDateTime(tradeLineItem, './/cac:InvoicePeriod/cbc:StartDate');
+    Result.BillingPeriodEnd := TZUGFeRDXmlUtils.NodeAsDateTime(tradeLineItem, './/cac:InvoicePeriod/cbc:EndDate');
 
-  if parentLineId <> '' then
-    Result.SetParentLineId(parentLineId);
+    if parentLineId <> '' then
+      Result.SetParentLineId(parentLineId);
 
-  // Commodity Classifications
-  nodes := tradeLineItem.selectNodes('.//cac:Item/cac:CommodityClassification/cbc:ItemClassificationCode');
-  if nodes <> nil then
-    for i := 0 to nodes.length - 1 do
-    begin
-      var listID : TZUGFeRDDesignatedProductClassificationClassCodes :=
-        TEnumExtensions<TZUGFeRDDesignatedProductClassificationClassCodes>.StringToEnum(
-          TZUGFeRDXmlUtils.NodeAsString(nodes[i], './@listID'));
-      var listVersionID : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './@listVersionID');
-      Result.AddDesignatedProductClassification(listID, listVersionID, nodes[i].text, '');
-    end;
-
-  // Product Characteristics (BG-32)
-  nodes := tradeLineItem.selectNodes('.//cac:Item/cac:AdditionalItemProperty');
-  if nodes <> nil then
-    for i := 0 to nodes.length - 1 do
-    begin
-      var apcItem : TZUGFeRDApplicableProductCharacteristic := TZUGFeRDApplicableProductCharacteristic.Create;
-      apcItem.Description := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:Name');
-      apcItem.Value := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:Value');
-      Result.ApplicableProductCharacteristics.Add(apcItem);
-    end;
-
-  // Buyer Order Referenced Document
-  if tradeLineItem.selectSingleNode('cac:OrderLineReference') <> nil then
-  begin
-    Result.BuyerOrderReferencedDocument := TZUGFeRDBuyerOrderReferencedDocument.Create;
-    Result.BuyerOrderReferencedDocument.ID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/cac:OrderLineReference/cbc:LineID');
-    Result.BuyerOrderReferencedDocument.LineID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/cac:OrderLineReference/cbc:LineID');
-  end;
-
-  // Additional Referenced Documents
-  nodes := tradeLineItem.selectNodes('.//cac:DocumentReference');
-  if nodes <> nil then
-    for i := 0 to nodes.length - 1 do
-    begin
-      var document : TZUGFeRDAdditionalReferencedDocument := TZUGFeRDAdditionalReferencedDocument.Create(false);
-      document.ID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:ID');
-      document.ReferenceTypeCode := TEnumExtensions<TZUGFeRDReferenceTypeCodes>.StringToNullableEnum(
-        TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:ID/@schemeID'));
-      document.TypeCode := TEnumExtensions<TZUGFeRDAdditionalReferencedDocumentTypeCode>.StringToEnum(
-        TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:DocumentTypeCode'));
-      document.Name := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:DocumentDescription');
-
-      var binaryObjectNode : IXMLDOMNode := nodes[i].selectSingleNode('.//cac:Attachment/cbc:EmbeddedDocumentBinaryObject');
-      if binaryObjectNode <> nil then
+    // Commodity Classifications
+    nodes := tradeLineItem.selectNodes('.//cac:Item/cac:CommodityClassification/cbc:ItemClassificationCode');
+    if nodes <> nil then
+      for i := 0 to nodes.length - 1 do
       begin
-        var filenameAttr : IXMLDOMNode := binaryObjectNode.attributes.getNamedItem('filename');
-        if filenameAttr <> nil then
-          document.Filename := filenameAttr.text;
-        var strBase64BinaryData : string := binaryObjectNode.text;
-        if strBase64BinaryData <> '' then
-        begin
-          document.AttachmentBinaryObject := TMemoryStream.Create;
-          var strBase64BinaryDataBytes : TBytes := TNetEncoding.Base64.DecodeStringToBytes(strBase64BinaryData);
-          document.AttachmentBinaryObject.Write(strBase64BinaryDataBytes, Length(strBase64BinaryDataBytes));
+        var listID : TZUGFeRDDesignatedProductClassificationClassCodes :=
+          TEnumExtensions<TZUGFeRDDesignatedProductClassificationClassCodes>.StringToEnum(
+            TZUGFeRDXmlUtils.NodeAsString(nodes[i], './@listID'));
+        var listVersionID : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './@listVersionID');
+        Result.AddDesignatedProductClassification(listID, listVersionID, nodes[i].text, '');
+      end;
+
+    // Product Characteristics (BG-32)
+    nodes := tradeLineItem.selectNodes('.//cac:Item/cac:AdditionalItemProperty');
+    if nodes <> nil then
+      for i := 0 to nodes.length - 1 do
+      begin
+        var apcItem : TZUGFeRDApplicableProductCharacteristic := TZUGFeRDApplicableProductCharacteristic.Create;
+        try
+          apcItem.Description := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:Name');
+          apcItem.Value := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:Value');
+          Result.ApplicableProductCharacteristics.Add(apcItem);
+        except
+          apcItem.Free;
+          raise;
         end;
       end;
 
-      Result.AdditionalReferencedDocuments.Add(document);
-    end;
-
-  // Notes
-  nodes := tradeLineItem.selectNodes('.//cbc:Note');
-  if nodes <> nil then
-    for i := 0 to nodes.length - 1 do
-      Result.AssociatedDocument.Notes.Add(TZUGFeRDNote.Create(nodes[i].text));
-
-  // BG-27/BG-28: Zu- und Abschlaege der Position selbst. Nur direkte Kindknoten, denn der
-  // Preisnachlass unter cac:Price (BT-147/BT-148) ist ein anderes Konzept und wird darunter
-  // getrennt eingelesen.
-  nodes := tradeLineItem.selectNodes('./cac:AllowanceCharge');
-  if nodes <> nil then
-    for i := 0 to nodes.length - 1 do
+    // Buyer Order Referenced Document
+    if tradeLineItem.selectSingleNode('cac:OrderLineReference') <> nil then
     begin
-      var chargeIndicator : Boolean := TZUGFeRDXmlUtils.NodeAsBool(nodes[i], './cbc:ChargeIndicator');
-      var basisAmount : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './cbc:BaseAmount'); // BT-137/BT-142
-      var basisAmountCurrency : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './cbc:BaseAmount/@currencyID');
-      var actualAmount : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './cbc:Amount', 0); // BT-136/BT-141
-      var reason : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './cbc:AllowanceChargeReason');
-      var reasonCode : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './cbc:AllowanceChargeReasonCode');
-      var chargePercentage : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './cbc:MultiplierFactorNumeric'); // BT-138/BT-143
-
-      if chargeIndicator then // charge
-        Result.AddSpecifiedTradeCharge(
-          TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(basisAmountCurrency),
-          basisAmount, actualAmount, chargePercentage, reason,
-          TEnumExtensions<TZUGFeRDChargeReasonCodes>.StringToNullableEnum(reasonCode))
-      else // allowance
-        Result.AddSpecifiedTradeAllowance(
-          TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(basisAmountCurrency),
-          basisAmount, actualAmount, chargePercentage, reason,
-          TEnumExtensions<TZUGFeRDAllowanceReasonCodes>.StringToNullableEnum(reasonCode));
+      Result.BuyerOrderReferencedDocument := TZUGFeRDBuyerOrderReferencedDocument.Create;
+      Result.BuyerOrderReferencedDocument.ID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/cac:OrderLineReference/cbc:LineID');
+      Result.BuyerOrderReferencedDocument.LineID := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/cac:OrderLineReference/cbc:LineID');
     end;
 
-  // BT-147/BT-148: Nachlass auf den Einzelpreis. UBL laesst davon einen je Position zu.
-  if priceAllowanceChargeNode <> nil then
-  begin
-    var priceChargeIndicator : Boolean := TZUGFeRDXmlUtils.NodeAsBool(priceAllowanceChargeNode, './cbc:ChargeIndicator');
-    var priceActualAmount : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(priceAllowanceChargeNode, './cbc:Amount', 0); // BT-147
-    var priceCurrency : string := TZUGFeRDXmlUtils.NodeAsString(priceAllowanceChargeNode, './cbc:Amount/@currencyID');
-    var priceReason : string := TZUGFeRDXmlUtils.NodeAsString(priceAllowanceChargeNode, './cbc:AllowanceChargeReason');
-    var priceReasonCode : string := TZUGFeRDXmlUtils.NodeAsString(priceAllowanceChargeNode, './cbc:AllowanceChargeReasonCode');
+    // Additional Referenced Documents
+    nodes := tradeLineItem.selectNodes('.//cac:DocumentReference');
+    if nodes <> nil then
+      for i := 0 to nodes.length - 1 do
+      begin
+        var document : TZUGFeRDAdditionalReferencedDocument := TZUGFeRDAdditionalReferencedDocument.Create(false);
+        try
+          document.ID := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:ID');
+          document.ReferenceTypeCode := TEnumExtensions<TZUGFeRDReferenceTypeCodes>.StringToNullableEnum(
+            TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:ID/@schemeID'));
+          document.TypeCode := TEnumExtensions<TZUGFeRDAdditionalReferencedDocumentTypeCode>.StringToEnum(
+            TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:DocumentTypeCode'));
+          document.Name := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/cbc:DocumentDescription');
 
-    if priceChargeIndicator then // charge
-      Result.AddTradeCharge(
-        TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(priceCurrency),
-        priceBasisAmount, priceActualAmount, priceReason,
-        TEnumExtensions<TZUGFeRDChargeReasonCodes>.StringToNullableEnum(priceReasonCode))
-    else // allowance
-      Result.AddTradeAllowance(
-        TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(priceCurrency),
-        priceBasisAmount, priceActualAmount, priceReason,
-        TEnumExtensions<TZUGFeRDAllowanceReasonCodes>.StringToNullableEnum(priceReasonCode));
-  end;
+          var binaryObjectNode : IXMLDOMNode := nodes[i].selectSingleNode('.//cac:Attachment/cbc:EmbeddedDocumentBinaryObject');
+          if binaryObjectNode <> nil then
+          begin
+            var filenameAttr : IXMLDOMNode := binaryObjectNode.attributes.getNamedItem('filename');
+            if filenameAttr <> nil then
+              document.Filename := filenameAttr.text;
+            var strBase64BinaryData : string := binaryObjectNode.text;
+            if strBase64BinaryData <> '' then
+            begin
+              document.AttachmentBinaryObject := TMemoryStream.Create;
+              var strBase64BinaryDataBytes : TBytes := TNetEncoding.Base64.DecodeStringToBytes(strBase64BinaryData);
+              document.AttachmentBinaryObject.Write(strBase64BinaryDataBytes, Length(strBase64BinaryDataBytes));
+            end;
+          end;
 
-  // UnitCode fallback
-  if not Result.UnitCode.HasValue then
-  begin
-    if isInvoice then
-      Result.UnitCode := TEnumExtensions<TZUGFeRDQuantityCodes>.StringToNullableEnum(
-        TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/cbc:InvoicedQuantity/@unitCode'))
-    else
-      Result.UnitCode := TEnumExtensions<TZUGFeRDQuantityCodes>.StringToNullableEnum(
-        TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/cbc:CreditedQuantity/@unitCode'));
+          Result.AdditionalReferencedDocuments.Add(document);
+        except
+          document.Free;
+          raise;
+        end;
+      end;
+
+    // Notes
+    nodes := tradeLineItem.selectNodes('.//cbc:Note');
+    if nodes <> nil then
+      for i := 0 to nodes.length - 1 do
+      begin
+        var parsedItem := TZUGFeRDNote.Create(nodes[i].text);
+        try
+          Result.AssociatedDocument.Notes.Add(parsedItem);
+        except
+          parsedItem.Free;
+          raise;
+        end;
+      end;
+
+    // BG-27/BG-28: Zu- und Abschlaege der Position selbst. Nur direkte Kindknoten, denn der
+    // Preisnachlass unter cac:Price (BT-147/BT-148) ist ein anderes Konzept und wird darunter
+    // getrennt eingelesen.
+    nodes := tradeLineItem.selectNodes('./cac:AllowanceCharge');
+    if nodes <> nil then
+      for i := 0 to nodes.length - 1 do
+      begin
+        var chargeIndicator : Boolean := TZUGFeRDXmlUtils.NodeAsBool(nodes[i], './cbc:ChargeIndicator');
+        var basisAmount : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './cbc:BaseAmount'); // BT-137/BT-142
+        var basisAmountCurrency : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './cbc:BaseAmount/@currencyID');
+        var actualAmount : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './cbc:Amount', 0); // BT-136/BT-141
+        var reason : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './cbc:AllowanceChargeReason');
+        var reasonCode : string := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './cbc:AllowanceChargeReasonCode');
+        var chargePercentage : ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './cbc:MultiplierFactorNumeric'); // BT-138/BT-143
+
+        if chargeIndicator then // charge
+          Result.AddSpecifiedTradeCharge(
+            TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(basisAmountCurrency),
+            basisAmount, actualAmount, chargePercentage, reason,
+            TEnumExtensions<TZUGFeRDChargeReasonCodes>.StringToNullableEnum(reasonCode))
+        else // allowance
+          Result.AddSpecifiedTradeAllowance(
+            TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(basisAmountCurrency),
+            basisAmount, actualAmount, chargePercentage, reason,
+            TEnumExtensions<TZUGFeRDAllowanceReasonCodes>.StringToNullableEnum(reasonCode));
+      end;
+
+    // BT-147/BT-148: Nachlass auf den Einzelpreis. UBL laesst davon einen je Position zu.
+    if priceAllowanceChargeNode <> nil then
+    begin
+      var priceChargeIndicator : Boolean := TZUGFeRDXmlUtils.NodeAsBool(priceAllowanceChargeNode, './cbc:ChargeIndicator');
+      var priceActualAmount : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(priceAllowanceChargeNode, './cbc:Amount', 0); // BT-147
+      var priceCurrency : string := TZUGFeRDXmlUtils.NodeAsString(priceAllowanceChargeNode, './cbc:Amount/@currencyID');
+      var priceReason : string := TZUGFeRDXmlUtils.NodeAsString(priceAllowanceChargeNode, './cbc:AllowanceChargeReason');
+      var priceReasonCode : string := TZUGFeRDXmlUtils.NodeAsString(priceAllowanceChargeNode, './cbc:AllowanceChargeReasonCode');
+
+      if priceChargeIndicator then // charge
+        Result.AddTradeCharge(
+          TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(priceCurrency),
+          priceBasisAmount, priceActualAmount, priceReason,
+          TEnumExtensions<TZUGFeRDChargeReasonCodes>.StringToNullableEnum(priceReasonCode))
+      else // allowance
+        Result.AddTradeAllowance(
+          TEnumExtensions<TZUGFeRDCurrencyCodes>.StringToEnum(priceCurrency),
+          priceBasisAmount, priceActualAmount, priceReason,
+          TEnumExtensions<TZUGFeRDAllowanceReasonCodes>.StringToNullableEnum(priceReasonCode));
+    end;
+
+    // UnitCode fallback
+    if not Result.UnitCode.HasValue then
+    begin
+      if isInvoice then
+        Result.UnitCode := TEnumExtensions<TZUGFeRDQuantityCodes>.StringToNullableEnum(
+          TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/cbc:InvoicedQuantity/@unitCode'))
+      else
+        Result.UnitCode := TEnumExtensions<TZUGFeRDQuantityCodes>.StringToNullableEnum(
+          TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/cbc:CreditedQuantity/@unitCode'));
+    end;
+  except
+    Result.Free;
+    raise;
   end;
 end;
 

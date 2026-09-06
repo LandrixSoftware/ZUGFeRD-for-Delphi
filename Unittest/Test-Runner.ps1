@@ -84,6 +84,49 @@ try {
     Invoke-CheckedProcess 'direct-no-match' $ExePath "--run:NoSuchZfDTest --xmlfile:`"$emptyXml`"" 3 $emptyXml 0
     Invoke-CheckedProcess 'direct-invalid-option' $ExePath '--this-option-does-not-exist:42' 2
 
+    # A bare parameterized method is not a case selector; never silently run the whole fixture.
+    $parameterMethod = 'intf.ZUGFeRD22Tests.UnitTests.TZUGFeRD22Tests.TestCIIReaderNestedObjectOwnership'
+    $parameterCase = "$parameterMethod.ValidDocument"
+    foreach ($viaHelper in @($false, $true)) {
+        $prefix = if ($viaHelper) { 'helper' } else { 'direct' }
+        foreach ($exactCase in @($false, $true)) {
+            $name = if ($exactCase) { "$prefix-parameter-case" } else { "$prefix-parameter-method" }
+            $filter = if ($exactCase) { $parameterCase } else { $parameterMethod }
+            $expectedExit = if ($exactCase) { 0 } else { 3 }
+            $expectedCount = if ($exactCase) { 1 } else { 0 }
+            $parameterXml = Join-Path $ResultsDirectory "$name.xml"
+            if ($viaHelper) {
+                Invoke-CheckedProcess $name $powershell "-NoProfile -ExecutionPolicy Bypass -File `"$helper`" -ExePath `"$ExePath`" -XmlPath `"$parameterXml`" -Filter $filter" $expectedExit $parameterXml $expectedCount
+            } else {
+                Invoke-CheckedProcess $name $ExePath "--run:$filter --xmlfile:`"$parameterXml`"" $expectedExit $parameterXml $expectedCount
+            }
+            if ($exactCase) { Assert-TestNames $parameterXml @('TestCIIReaderNestedObjectOwnership.ValidDocument') }
+        }
+    }
+
+    # An option error can precede logger creation. A surviving report does not belong to that run.
+    $previousSingleReport = [IO.File]::ReadAllBytes($singleXml)
+    Invoke-CheckedProcess 'direct-invalid-option-existing-report' $ExePath "--this-option-does-not-exist:42 --xmlfile:`"$singleXml`"" 2
+    if ([Convert]::ToBase64String([IO.File]::ReadAllBytes($singleXml)) -ne [Convert]::ToBase64String($previousSingleReport)) {
+        throw 'The early option error unexpectedly replaced the report.'
+    }
+
+    # Check the reviewed source list and prove detection of each encoding error in isolated fixtures.
+    $encodingCheck = Join-Path $PSScriptRoot 'Test-SourceEncoding.ps1'
+    Invoke-CheckedProcess 'source-encoding' $powershell "-NoProfile -ExecutionPolicy Bypass -File `"$encodingCheck`"" 0
+    $unicodeText = 'ung' + [char]252 + 'ltig'
+    foreach ($encodingCase in @('bom', 'ascii', 'missing-bom', 'invalid-utf8', 'missing-file')) {
+        $sourcePath = Join-Path $ResultsDirectory "$encodingCase.pas"
+        $expectedExit = 1
+        switch ($encodingCase) {
+            'bom' { [IO.File]::WriteAllText($sourcePath, $unicodeText, (New-Object Text.UTF8Encoding($true))); $expectedExit = 0 }
+            'ascii' { [IO.File]::WriteAllText($sourcePath, 'unit ASCII;', (New-Object Text.UTF8Encoding($false))); $expectedExit = 0 }
+            'missing-bom' { [IO.File]::WriteAllText($sourcePath, $unicodeText, (New-Object Text.UTF8Encoding($false))) }
+            'invalid-utf8' { [IO.File]::WriteAllBytes($sourcePath, [byte[]]@(239, 187, 191, 195, 40)) }
+        }
+        Invoke-CheckedProcess "encoding-$encodingCase" $powershell "-NoProfile -ExecutionPolicy Bypass -File `"$encodingCheck`" -Paths `"$sourcePath`"" $expectedExit
+    }
+
     $fullXml = Join-Path $ResultsDirectory 'suite.xml'
     Invoke-CheckedProcess 'helper-suite' $powershell "-NoProfile -ExecutionPolicy Bypass -File `"$helper`" -ExePath `"$ExePath`" -XmlPath `"$fullXml`"" 0
     [xml]$fullReport = Get-Content -LiteralPath $fullXml -Raw -Encoding UTF8

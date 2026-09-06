@@ -1,4 +1,4 @@
-{* Licensed to the Apache Software Foundation (ASF) under one
+﻿{* Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -34,6 +34,28 @@ type
     procedure AssertUBLTaxTotalFallback(const ReplacementCurrencyCode: string;
       const MakeFallbackAmbiguous: Boolean);
   public
+    /// <summary>Checks an actual assertion diagnostic against Unicode code points, not another source literal.</summary>
+    [Test]
+    procedure TestDiagnosticEncoding;
+
+    /// <summary>Checks result ownership on successful loads and early/late date failures through both reader entry paths.</summary>
+    [Test]
+    [TestCase('CII1Valid', '100,valid')]
+    [TestCase('CII1Header', '100,header')]
+    [TestCase('CII1Line', '100,line')]
+    [TestCase('CII1PaymentTerms', '100,payment')]
+    [TestCase('CII20Valid', '200,valid')]
+    [TestCase('CII20Header', '200,header')]
+    [TestCase('CII20Line', '200,line')]
+    [TestCase('CII20PaymentTerms', '200,payment')]
+    [TestCase('UBLInvoiceValid', '221,valid')]
+    [TestCase('UBLInvoiceHeader', '221,header')]
+    [TestCase('UBLInvoiceLine', '221,line')]
+    [TestCase('UBLCreditNoteValid', '222,valid')]
+    [TestCase('UBLCreditNoteHeader', '222,header')]
+    [TestCase('UBLCreditNoteLine', '222,line')]
+    procedure TestReaderResultOwnership(readerKind: Integer; const failurePoint: string);
+
     [Test]
     procedure TestAutomaticLineIds;
 
@@ -346,6 +368,11 @@ uses
   Winapi.MSXMLIntf, Winapi.msxml,
   intf.ZUGFeRDInvoiceDescriptor,
   intf.ZUGFeRDInvoiceProvider,
+  intf.ZUGFeRDIInvoiceDescriptorReader,
+  intf.ZUGFeRDInvoiceDescriptor1Reader,
+  intf.ZUGFeRDInvoiceDescriptor20Reader,
+  intf.ZUGFeRDInvoiceDescriptor22UblReader,
+  intf.ZUGFeRDInvoiceTypes,
   intf.ZUGFeRDProfile,
   intf.ZUGFeRDVersion,
   intf.ZUGFeRDFormats,
@@ -378,6 +405,186 @@ uses
   intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes;
 
 { TZUGFeRDCrossVersionTests }
+
+procedure TZUGFeRDCrossVersionTests.TestReaderResultOwnership(readerKind: Integer; const failurePoint: string);
+const
+  loadCount = 10;
+var
+  sourceInvoice: TZUGFeRDInvoiceDescriptor;
+  reader: TZUGFeRDIInvoiceDescriptorReader;
+  version: TZUGFeRDVersion;
+  profile: TZUGFeRDProfile;
+  format: TZUGFeRDFormats;
+  outputStream, inputStream: TStringStream;
+  xmlContent, dateToken, expectedError: string;
+  beforeBytes, afterBytes: NativeUInt;
+  allLoadsMatched: Boolean;
+
+  /// <summary>Preserves parser exceptions and leaves the caller-owned stream available for the next load.</summary>
+  function LoadAndRelease(useDispatcher, checkValues: Boolean): Boolean;
+  var
+    loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  begin
+    inputStream.Position := 0;
+    loadedInvoice := nil;
+    try
+      try
+        if useDispatcher then
+          loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(inputStream)
+        else
+          loadedInvoice := reader.Load(inputStream);
+      except
+        on error: Exception do
+        begin
+          if failurePoint = 'valid' then
+            raise;
+          Exit((error.Message = expectedError) and
+            (((readerKind < 221) and (error.ClassType = Exception)) or
+             ((readerKind >= 221) and (error is TZUGFeRDUnsupportedException))));
+        end;
+      end;
+      Result := failurePoint = 'valid';
+      if checkValues then
+      begin
+        Assert.IsNotNull(loadedInvoice);
+        Assert.AreEqual('471102', loadedInvoice.InvoiceNo);
+        Assert.AreEqual(EncodeDate(2001, 10, 1), loadedInvoice.InvoiceDate.Value);
+        Assert.AreEqual(2, loadedInvoice.TradeLineItems.Count);
+        Assert.AreEqual(EncodeDate(2001, 11, 2), loadedInvoice.TradeLineItems[0].BillingPeriodStart.Value);
+        Assert.IsNotNull(loadedInvoice.Seller);
+        Assert.IsNotNull(loadedInvoice.Buyer);
+        if readerKind >= 221 then
+        begin
+          Assert.AreEqual('4000001123452', loadedInvoice.Seller.GlobalID.ID);
+          Assert.AreEqual('GE2020211', loadedInvoice.Buyer.ID.ID);
+          Assert.IsNotNull(loadedInvoice.ShipTo);
+          Assert.AreEqual('DELIVERY-OWNERSHIP', loadedInvoice.ShipTo.ID.ID);
+        end;
+        if readerKind = 222 then
+          Assert.AreEqual(TZUGFeRDInvoiceType.CreditNote, loadedInvoice.Type_);
+      end;
+    finally
+      loadedInvoice.Free;
+    end;
+  end;
+begin
+  profile := TZUGFeRDProfile.Extended;
+  format := TZUGFeRDFormats.CII;
+  case readerKind of
+    100: begin
+      version := TZUGFeRDVersion.Version1;
+      reader := TZUGFeRDInvoiceDescriptor1Reader.Create;
+    end;
+    200: begin
+      // EXTENDED has a unique 2.0 guideline; COMFORT would select the 2.3 reader.
+      version := TZUGFeRDVersion.Version20;
+      reader := TZUGFeRDInvoiceDescriptor20Reader.Create;
+    end;
+    221, 222: begin
+      version := TZUGFeRDVersion.Version23;
+      profile := TZUGFeRDProfile.XRechnung;
+      format := TZUGFeRDFormats.UBL;
+      reader := TZUGFeRDInvoiceDescriptor22UblReader.Create;
+    end;
+  else
+    raise EArgumentException.Create('Unknown reader kind.');
+  end;
+  try
+    sourceInvoice := TZUGFeRDInvoiceProvider.CreateInvoice;
+    try
+      sourceInvoice.InvoiceDate := EncodeDate(2001, 10, 1);
+      sourceInvoice.TradeLineItems[0].BillingPeriodStart := EncodeDate(2001, 11, 2);
+      sourceInvoice.TradeLineItems[0].BillingPeriodEnd := EncodeDate(2001, 11, 3);
+      sourceInvoice.PaymentTermsList[0].DueDate := EncodeDate(2001, 12, 3);
+      sourceInvoice.ShipTo := TZUGFeRDParty.Create;
+      sourceInvoice.ShipTo.ID.ID := 'DELIVERY-OWNERSHIP';
+      sourceInvoice.ShipTo.Name := 'Delivery';
+      sourceInvoice.ShipTo.Country := TZUGFeRDCountryCodes.DE;
+      if readerKind >= 221 then
+      begin
+        // Exercise both UBL routing branches: a GLN seller ID and an ordinary buyer ID.
+        sourceInvoice.Seller.ID.ID := '4000001123452';
+        sourceInvoice.Seller.ID.SchemeID := TZUGFeRDGlobalIDSchemeIdentifiers.GLN;
+        sourceInvoice.PaymentMeans.SEPACreditorIdentifier := '';
+      end;
+      if readerKind = 222 then
+        sourceInvoice.Type_ := TZUGFeRDInvoiceType.CreditNote;
+      outputStream := TStringStream.Create('', TEncoding.UTF8);
+      try
+        sourceInvoice.Save(outputStream, version, profile, format);
+        xmlContent := outputStream.DataString;
+      finally
+        outputStream.Free;
+      end;
+    finally
+      sourceInvoice.Free;
+    end;
+
+    if failurePoint <> 'valid' then
+    begin
+      if failurePoint = 'header' then
+        dateToken := '20011001'
+      else if failurePoint = 'line' then
+        dateToken := '20011102'
+      else if failurePoint = 'payment' then
+        dateToken := '20011203'
+      else
+        raise EArgumentException.Create('Unknown failure point.');
+      if format = TZUGFeRDFormats.UBL then
+        dateToken := Copy(dateToken, 1, 4) + '-' + Copy(dateToken, 5, 2) + '-' + Copy(dateToken, 7, 2);
+      Assert.AreEqual(1, (Length(xmlContent) - Length(xmlContent.Replace(dateToken, ''))) div Length(dateToken), 'Expected one date at the selected failure point.');
+      xmlContent := xmlContent.Replace(dateToken, Copy(dateToken, 1, Length(dateToken) - 1));
+    end;
+    if format = TZUGFeRDFormats.UBL then
+      expectedError := 'Invalid length of datetime value'
+    else
+      expectedError := 'Wrong length of datetime element (format 102)';
+
+    inputStream := TStringStream.Create(xmlContent, TEncoding.UTF8);
+    try
+      Assert.IsTrue(reader.IsReadableByThisReaderVersion(inputStream), 'The fixture must select the intended reader.');
+      inputStream.Position := 0;
+      Assert.AreEqual(version, TZUGFeRDInvoiceDescriptor.GetVersion(inputStream));
+      Assert.IsTrue(LoadAndRelease(False, True), 'Unexpected result from the direct reader.');
+      Assert.IsTrue(LoadAndRelease(True, True), 'Unexpected result from the dispatcher.');
+      for var warmupIndex := 1 to loadCount do
+      begin
+        Assert.IsTrue(LoadAndRelease(False, False), 'Unexpected direct-reader warmup result.');
+        Assert.IsTrue(LoadAndRelease(True, False), 'Unexpected dispatcher warmup result.');
+      end;
+      beforeBytes := GetAllocatedMemory;
+      allLoadsMatched := True;
+      for var loadIndex := 1 to loadCount do
+      begin
+        allLoadsMatched := LoadAndRelease(False, False) and allLoadsMatched;
+        allLoadsMatched := LoadAndRelease(True, False) and allLoadsMatched;
+      end;
+      afterBytes := GetAllocatedMemory;
+      Assert.IsTrue(allLoadsMatched, 'A repeated load changed the result or exception.');
+      AssertNoMemoryGrowth(beforeBytes, afterBytes);
+      inputStream.Position := 0;
+      Assert.AreEqual(xmlContent, inputStream.DataString, 'Loading must not modify or free the caller-owned stream.');
+    finally
+      inputStream.Free;
+    end;
+  finally
+    reader.Free;
+  end;
+end;
+
+procedure TZUGFeRDCrossVersionTests.TestDiagnosticEncoding;
+var
+  diagnostic: string;
+begin
+  diagnostic := '';
+  try
+    Assert.Fail('ungültig');
+  except
+    on error: Exception do
+      diagnostic := error.Message;
+  end;
+  Assert.IsTrue(diagnostic.Contains('ung' + #$00FC + 'ltig'), 'The compiled assertion diagnostic must contain U+00FC.');
+end;
 
 procedure TZUGFeRDCrossVersionTests.TestAutomaticLineIds;
 var

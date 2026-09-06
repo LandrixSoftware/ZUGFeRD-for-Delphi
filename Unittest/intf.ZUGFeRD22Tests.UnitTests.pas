@@ -45,21 +45,15 @@ type
     procedure TestAdvancePaymentReaderRejectsMissingMandatoryData;
     [Test]
     procedure TestCIIReaderReleasesDescriptorAfterParsingError;
-    /// <summary>Checks ownership before and after nested CII objects are handed to their parent.</summary>
+    /// <summary>Checks one valid document and seven distinct date failures before and after ownership transfer.</summary>
     [Test]
-    [TestCase('ValidLinePeriod', 'line-period,False')]
+    [TestCase('ValidDocument', 'line-period,False')]
     [TestCase('InvalidLinePeriod', 'line-period,True')]
-    [TestCase('ValidLineOrder', 'line-order,False')]
     [TestCase('InvalidLineOrder', 'line-order,True')]
-    [TestCase('ValidHeaderReference', 'header-reference,False')]
     [TestCase('InvalidHeaderReference', 'header-reference,True')]
-    [TestCase('ValidLineReference', 'line-reference,False')]
     [TestCase('InvalidLineReference', 'line-reference,True')]
-    [TestCase('ValidHeaderAfterAttachment', 'header-after-attachment,False')]
     [TestCase('InvalidHeaderAfterAttachment', 'header-after-attachment,True')]
-    [TestCase('ValidLineAfterAttachment', 'line-after-attachment,False')]
     [TestCase('InvalidLineAfterAttachment', 'line-after-attachment,True')]
-    [TestCase('ValidLineDelivery', 'line-delivery,False')]
     [TestCase('InvalidLineDelivery', 'line-delivery,True')]
     procedure TestCIIReaderNestedObjectOwnership(const failurePoint: string; invalidData: Boolean);
     [Test]
@@ -944,6 +938,8 @@ end;
 
 /// <summary>
 /// Exercises late failures with both unowned children and already attached documents and streams.
+/// AfterAttachment fails in the second reference, testing cleanup of its parent's first attachment.
+/// Date failures precede the failing reference's own stream allocation; they do not exercise decoder/write failures.
 /// </summary>
 procedure TZUGFeRD22Tests.TestCIIReaderNestedObjectOwnership(const failurePoint: string; invalidData: Boolean);
 const
@@ -985,7 +981,7 @@ var
         begin
           if not invalidData then
             raise;
-          Exit(error.Message = expectedError);
+          Exit((error.ClassType = Exception) and (error.Message = expectedError));
         end;
       end;
       Result := not invalidData and (loadedInvoice <> nil);
@@ -993,6 +989,11 @@ var
       begin
         Assert.AreEqual(1, loadedInvoice.TradeLineItems.Count);
         Assert.AreEqual(2, loadedInvoice.AdditionalReferencedDocuments.Count);
+        Assert.IsNotNull(loadedInvoice.ShipTo);
+        Assert.IsNotNull(loadedInvoice.ShipTo.SpecifiedLegalOrganization);
+        Assert.AreEqual('SHIP-LEGAL', loadedInvoice.ShipTo.SpecifiedLegalOrganization.ID.ID);
+        Assert.IsNotNull(loadedInvoice.ShipToContact);
+        Assert.AreEqual('CONTACT', loadedInvoice.ShipToContact.Name);
         Assert.AreEqual('HEADER-DOC', loadedInvoice.AdditionalReferencedDocuments[0].ID);
         CheckAttachment(loadedInvoice.AdditionalReferencedDocuments[0].AttachmentBinaryObject);
         Assert.AreEqual('HEADER-LATE', loadedInvoice.AdditionalReferencedDocuments[1].ID);
@@ -1056,6 +1057,10 @@ begin
     '</ram:AdditionalReferencedDocument><ram:AdditionalReferencedDocument><ram:IssuerAssignedID>HEADER-LATE</ram:IssuerAssignedID>' +
     '<ram:FormattedIssueDateTime><qdt:DateTimeString format="102">{header-after-attachment}</qdt:DateTimeString></ram:FormattedIssueDateTime>' +
     '</ram:AdditionalReferencedDocument></ram:ApplicableHeaderTradeAgreement>' +
+    '<ram:ApplicableHeaderTradeDelivery><ram:ShipToTradeParty><ram:Name>SHIP</ram:Name>' +
+    '<ram:SpecifiedLegalOrganization><ram:ID>SHIP-LEGAL</ram:ID></ram:SpecifiedLegalOrganization>' +
+    '<ram:DefinedTradeContact><ram:PersonName>CONTACT</ram:PersonName></ram:DefinedTradeContact>' +
+    '</ram:ShipToTradeParty></ram:ApplicableHeaderTradeDelivery>' +
     '</rsm:SupplyChainTradeTransaction></rsm:CrossIndustryInvoice>';
 
   Assert.IsTrue(xmlContent.Contains('{' + failurePoint + '}'), 'Unknown failure point.');
@@ -1070,7 +1075,7 @@ begin
   try
     Assert.IsTrue(LoadAndRelease(True), 'The reader did not produce the expected result or parser exception.');
     for var warmupIndex := 1 to measuredLoadCount do
-      LoadAndRelease(False);
+      Assert.IsTrue(LoadAndRelease(False), 'A warmup load did not produce the expected result or parser exception.');
     firstBatchMemory := GetAllocatedMemory;
     allLoadsMatched := True;
     for var loadIndex := 1 to measuredLoadCount do
