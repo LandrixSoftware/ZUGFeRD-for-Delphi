@@ -246,7 +246,7 @@ begin
     end;
 
     Log(Format('%d Beispieldateien aus documentation\%s geprueft', [checked, aDocSubDir]));
-    Assert.AreEqual(0, errors.Count,
+    Assert.AreEqual(0, Integer(errors.Count),
       Format('%d von %d Beispieldateien beanstandet:'#13#10'%s',
         [errors.Count, Length(files), errors.Text]));
   finally

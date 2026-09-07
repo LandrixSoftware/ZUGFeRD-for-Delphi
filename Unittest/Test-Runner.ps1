@@ -160,6 +160,23 @@ try {
         Invoke-CheckedProcess "encoding-$encodingCase" $powershell "-NoProfile -ExecutionPolicy Bypass -File `"$encodingCheck`" -Paths `"$sourcePath`"" $expectedExit
     }
 
+    # Check the tracked sources and prove detection of each uncast Count comparison.
+    $countCheck = Join-Path $PSScriptRoot 'Test-CountAssertions.ps1'
+    Invoke-CheckedProcess 'count-assertions' $powershell "-NoProfile -ExecutionPolicy Bypass -File `"$countCheck`"" 0
+    $countCases = [ordered]@{
+        'literal-first' = @('  Assert.AreEqual(1, invoice.TradeLineItems.Count);', 1)
+        'literal-second' = @('  Assert.AreEqual(invoice.Taxes.Count, 2);', 1)
+        'with-message' = @("  Assert.AreEqual(0, invoice.Notes.Count, 'msg');", 1)
+        'cast' = @('  Assert.AreEqual(1, Integer(invoice.TradeLineItems.Count));', 0)
+        'unrelated' = @('  Assert.AreEqual(1, Length(bytes));', 0)
+    }
+    foreach ($countCase in $countCases.Keys) {
+        $sourcePath = Join-Path $ResultsDirectory "count-$countCase.pas"
+        [IO.File]::WriteAllText($sourcePath, "unit Probe;`r`n$($countCases[$countCase][0])`r`n")
+        Invoke-CheckedProcess "count-$countCase" $powershell "-NoProfile -ExecutionPolicy Bypass -File `"$countCheck`" -Paths `"$sourcePath`"" $countCases[$countCase][1]
+    }
+    Invoke-CheckedProcess 'count-missing-file' $powershell "-NoProfile -ExecutionPolicy Bypass -File `"$countCheck`" -Paths `"$(Join-Path $ResultsDirectory 'absent.pas')`"" 1
+
     $fullXml = Join-Path $ResultsDirectory 'suite.xml'
     Invoke-CheckedProcess 'helper-suite' $powershell "-NoProfile -ExecutionPolicy Bypass -File `"$helper`" -ExePath `"$ExePath`" -XmlPath `"$fullXml`"" 0
     [xml]$fullReport = Get-Content -LiteralPath $fullXml -Raw -Encoding UTF8

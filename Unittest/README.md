@@ -12,6 +12,7 @@ DUnitX test or fixture name:
 .\run-tests.ps1 -Filter 'intf.ZUGFeRD22Tests.UnitTests.TZUGFeRD22Tests.TestCIIReaderReleasesDescriptorAfterParsingError'
 .\run-tests.ps1 -Filter 'intf.ZUGFeRD22Tests.UnitTests.TZUGFeRD22Tests.TestCIIReaderNestedObjectOwnership.ValidDocument'
 .\Test-SourceEncoding.ps1
+.\Test-CountAssertions.ps1
 .\Test-Runner.ps1
 ```
 
@@ -63,6 +64,16 @@ the repository; `-Paths` limits the check to explicit files. Run it before commi
 changes. `Test-Runner.ps1` includes valid ASCII/UTF-8 cases as well as missing-BOM, invalid-UTF-8
 and missing-file counterexamples, and `TestDiagnosticEncoding` captures a real assertion
 diagnostic and checks its Unicode code point independently of source literals.
+
+`Test-CountAssertions.ps1` rejects `Assert.AreEqual` comparisons that put a bare integer literal
+against a `.Count`. `TList<T>.Count` is `NativeInt` from Delphi 13 on, which leaves `Assert.AreEqual<T>`
+without a common type argument and fails the unit with `E2532`; the compiler then reports unrelated
+follow-up errors such as `E2250` on `WillRaise` far away in the same unit, which point away from the
+real cause. On Delphi 11 the same source still compiles, so this keeps arriving from older build
+environments. The rule is unconditional — write `Integer(<expression>.Count)` even where `Count` is
+already `Integer`, as with `TStringList` — because the source text does not reveal which one it is,
+and the cast is free. Without arguments the script sweeps every tracked Delphi source; `-Paths`
+limits it to explicit files.
 
 The documentation sweep includes long example paths. On Windows, invoke the executable through a
 short `subst` drive alias when the checkout path would exceed `MAX_PATH`.
