@@ -135,7 +135,7 @@ begin
   end;
 end;
 
-/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
+/// <summary>Übergibt das geparste Ergebnis erst nach erfolgreichem Laden an den Aufrufer.</summary>
 function TZUGFeRDInvoiceDescriptor1Reader.Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor;
 var
   doc : IXMLDOMDocument2;
@@ -400,7 +400,7 @@ begin
   end;
 end;
 
-/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
+/// <summary>Übergibt das geparste Ergebnis erst nach erfolgreichem Laden an den Aufrufer.</summary>
 function TZUGFeRDInvoiceDescriptor1Reader._nodeAsParty(basenode: IXmlDomNode;
   const xpath: string) : TZUGFeRDParty;
 var
@@ -445,7 +445,7 @@ begin
   end;
 end;
 
-/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
+/// <summary>Übergibt das geparste Ergebnis erst nach erfolgreichem Laden an den Aufrufer.</summary>
 function TZUGFeRDInvoiceDescriptor1Reader._parseTradeLineItem(
   tradeLineItem: IXmlDomNode): TZUGFeRDTradeLineItem;
 var

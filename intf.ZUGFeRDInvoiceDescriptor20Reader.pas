@@ -152,7 +152,7 @@ begin
   end;
 end;
 
-/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
+/// <summary>Übergibt das geparste Ergebnis erst nach erfolgreichem Laden an den Aufrufer.</summary>
 function TZUGFeRDInvoiceDescriptor20Reader.Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor;
 var
   doc : IXMLDOMDocument2;
@@ -558,7 +558,7 @@ begin
   end;
 end;
 
-/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
+/// <summary>Übergibt das geparste Ergebnis erst nach erfolgreichem Laden an den Aufrufer.</summary>
 function TZUGFeRDInvoiceDescriptor20Reader._parseTradeLineItem(
   tradeLineItem: IXmlDomNode): TZUGFeRDTradeLineItem;
 var
@@ -737,7 +737,7 @@ begin
   end;
 end;
 
-/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
+/// <summary>Übergibt das geparste Ergebnis erst nach erfolgreichem Laden an den Aufrufer.</summary>
 function TZUGFeRDInvoiceDescriptor20Reader._nodeAsParty(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDParty;
 var
   node : IXmlDomNode;
@@ -782,7 +782,7 @@ begin
   end;
 end;
 
-/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
+/// <summary>Übergibt das geparste Ergebnis erst nach erfolgreichem Laden an den Aufrufer.</summary>
 function TZUGFeRDInvoiceDescriptor20Reader._getAdditionalReferencedDocument(a_oXmlNode: IXmlDomNode): TZUGFeRDAdditionalReferencedDocument;
 begin
   var strBase64BinaryData : String := TZUGFeRDXmlUtils.NodeAsString(a_oXmlNode, 'ram:AttachmentBinaryObject');

@@ -82,11 +82,11 @@ type
   TZUGFeRDInvoiceDescriptor23CIIReader = class(TZUGFeRDIInvoiceDescriptorReader)
   private
     function GetValidURIs : TArray<string>;
-    /// <summary>Returns a caller-owned line item and releases partial results if parsing fails.</summary>
+    /// <summary>Übergibt die Position an den Aufrufer und gibt Teilergebnisse bei Parserfehlern frei.</summary>
     function _parseTradeLineItem(tradeLineItem : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDTradeLineItem;
     function _nodeAsContact(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDContact;
     function _nodeAsParty(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDParty;
-    /// <summary>Returns a caller-owned reference, including its attachment, only after successful parsing.</summary>
+    /// <summary>Übergibt die Referenz samt Anhang erst nach erfolgreichem Parsen an den Aufrufer.</summary>
     function _getAdditionalReferencedDocument(a_oXmlNode : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDAdditionalReferencedDocument;
     function _nodeAsLegalOrganization(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDLegalOrganization;
   public
@@ -801,7 +801,7 @@ begin
         apcItem.Value := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Value');
         Result.ApplicableProductCharacteristics.Add(apcItem);
       except
-        // Until Add succeeds, the partially parsed line item does not own this child.
+        // Bis Add gelingt, gehört dieses Kind noch nicht zur teilweise geparsten Position.
         apcItem.Free;
         raise;
       end;
@@ -986,13 +986,13 @@ begin
     if tradeLineItem.SelectSingleNode('.//ram:OriginTradeCountry//ram:ID') <> nil then
       Result.OriginTradeCountry := TEnumExtensions<TZUGFeRDCountryCodes>.StringToEnum(TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/ram:OriginTradeCountry//ram:ID'));
   except
-    // Load cannot release this line until it has been returned and added to TradeLineItems.
+    // Load kann diese Position erst freigeben, wenn sie zurückgegeben und in TradeLineItems aufgenommen wurde.
     Result.Free;
     raise;
   end;
 end;
 
-/// <summary>Evaluates XML fields before construction; constructor failure releases its own instance.</summary>
+/// <summary>Liest die XML-Felder vor der Konstruktion; scheitert der Konstruktor, gibt er seine Instanz selbst frei.</summary>
 function TZUGFeRDInvoiceDescriptor23CIIReader._nodeAsLegalOrganization(
   basenode: IXmlDomNode; const xpath: string) : TZUGFeRDLegalOrganization;
 var
@@ -1010,7 +1010,7 @@ begin
                TZUGFeRDXmlUtils.NodeAsString(node, 'ram:TradingBusinessName'));
 end;
 
-/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
+/// <summary>Übergibt das geparste Ergebnis erst nach erfolgreichem Laden an den Aufrufer.</summary>
 function TZUGFeRDInvoiceDescriptor23CIIReader._nodeAsContact(basenode: IXmlDomNode;  const xpath: string) : TZUGFeRDContact;
 var
   node : IXmlDomNode;
@@ -1034,7 +1034,7 @@ begin
   end;
 end;
 
-/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
+/// <summary>Übergibt das geparste Ergebnis erst nach erfolgreichem Laden an den Aufrufer.</summary>
 function TZUGFeRDInvoiceDescriptor23CIIReader._nodeAsParty(basenode: IXmlDomNode;  const xpath: string) : TZUGFeRDParty;
 var
   node : IXmlDomNode;
@@ -1101,7 +1101,7 @@ begin
     Result.URIID := TZUGFeRDXmlUtils.NodeAsString(a_oXmlNode, 'ram:URIID');
     Result.LineID := TZUGFeRDXmlUtils.NodeAsString(a_oXmlNode, 'ram:LineID');
   except
-    // The reference owns the stream even if decoding or later field parsing fails.
+    // Die Referenz besitzt den Stream auch dann, wenn das Dekodieren oder ein späteres Feld scheitert.
     Result.Free;
     raise;
   end;

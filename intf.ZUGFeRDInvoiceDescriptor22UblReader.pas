@@ -186,7 +186,7 @@ begin
   end;
 end;
 
-/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
+/// <summary>Übergibt das geparste Ergebnis erst nach erfolgreichem Laden an den Aufrufer.</summary>
 function TZUGFeRDInvoiceDescriptor22UBLReader.Load(
   xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor;
 var
@@ -367,7 +367,7 @@ begin
         Result.ShipTo := _nodeAsAddressParty(deliveryLocationNode, 'cac:Address');
         if Result.ShipTo = nil then
           Result.ShipTo := TZUGFeRDParty.Create;
-        // Party construction already owns both identifiers; populate rather than replace them.
+        // Die Konstruktion der Party besitzt beide Kennungen bereits; sie werden befüllt, nicht ersetzt.
         Result.ShipTo.ID.SchemeID := TEnumExtensions<TZUGFeRDGlobalIDSchemeIdentifiers>.StringToNullableEnum(
           TZUGFeRDXmlUtils.NodeAsString(deliveryLocationNode, './/cbc:ID/@schemeID'));
         Result.ShipTo.ID.ID := TZUGFeRDXmlUtils.NodeAsString(deliveryLocationNode, './/cbc:ID');
@@ -535,8 +535,8 @@ begin
         [TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Result.Currency)]));
     if not Result.TaxTotalAmount.HasValue then
     begin
-      // PEPPOL-EN16931-R053 identifies BT-110 as the single TaxTotal group with a
-      // VAT breakdown. Requiring exactly one group avoids confusing reordered BT-111.
+      // PEPPOL-EN16931-R053 kennzeichnet BT-110 als die eine TaxTotal-Gruppe mit
+      // Steueraufschlüsselung. Genau eine Gruppe zu verlangen schließt ein vorgezogenes BT-111 aus.
       nodes := doc.documentElement.selectNodes('/*/cac:TaxTotal[cac:TaxSubtotal]/cbc:TaxAmount');
       if nodes.length = 1 then
         Result.TaxTotalAmount := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[0], '.');
@@ -638,7 +638,7 @@ begin
   end;
 end;
 
-/// <summary>Retains local ownership until a nonduplicate subline has been added to the invoice.</summary>
+/// <summary>Behält den lokalen Besitz, bis eine nicht doppelte Unterposition in der Rechnung hängt.</summary>
 procedure TZUGFeRDInvoiceDescriptor22UBLReader._addSubLineItems(
   parentNode: IXMLDOMNode; const parentLineId: string; isInvoice: Boolean;
   tradeLineItems: TObjectList<TZUGFeRDTradeLineItem>);
@@ -702,7 +702,7 @@ begin
     TZUGFeRDXmlUtils.NodeAsString(baseNode, 'cac:PartyName/cbc:Name'));
 end;
 
-/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
+/// <summary>Übergibt das geparste Ergebnis erst nach erfolgreichem Laden an den Aufrufer.</summary>
 function TZUGFeRDInvoiceDescriptor22UBLReader._nodeAsParty(basenode: IXmlDomNode;
   const xpath: string) : TZUGFeRDParty;
 var
@@ -725,7 +725,7 @@ begin
     // Party Identification - route GLN to GlobalID, others to ID
     schemeID := TEnumExtensions<TZUGFeRDGlobalIDSchemeIdentifiers>.StringToNullableEnum(
       TZUGFeRDXmlUtils.NodeAsString(node, 'cac:PartyIdentification/cbc:ID/@schemeID'));
-    // Both objects belong to the new party already; replacing either one would leak it.
+    // Beide Objekte gehören der neuen Party bereits; eines davon zu ersetzen würde es lecken.
     if schemeID.HasValue and (schemeID.Value = TZUGFeRDGlobalIDSchemeIdentifiers.GLN) then
       identification := Result.GlobalID
     else
@@ -744,7 +744,7 @@ begin
   end;
 end;
 
-/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
+/// <summary>Übergibt das geparste Ergebnis erst nach erfolgreichem Laden an den Aufrufer.</summary>
 function TZUGFeRDInvoiceDescriptor22UBLReader._nodeAsAddressParty(basenode: IXmlDomNode;
   const xpath: string) : TZUGFeRDParty;
 var
@@ -773,7 +773,7 @@ begin
   end;
 end;
 
-/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
+/// <summary>Übergibt das geparste Ergebnis erst nach erfolgreichem Laden an den Aufrufer.</summary>
 function TZUGFeRDInvoiceDescriptor22UBLReader._nodeAsBankAccount(basenode: IXmlDomNode;
   const xpath: string) : TZUGFeRDBankAccount;
 var
@@ -799,7 +799,7 @@ begin
   end;
 end;
 
-/// <summary>Transfers the parsed result to the caller only after successful loading.</summary>
+/// <summary>Übergibt das geparste Ergebnis erst nach erfolgreichem Laden an den Aufrufer.</summary>
 function TZUGFeRDInvoiceDescriptor22UBLReader._parseTradeLineItem(
   tradeLineItem: IXmlDomNode; isInvoice: Boolean; const parentLineId: string = ''): TZUGFeRDTradeLineItem;
 var
