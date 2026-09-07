@@ -987,8 +987,8 @@ var
       Result := not invalidData and (loadedInvoice <> nil);
       if checkValues and Result then
       begin
-        Assert.AreEqual(1, loadedInvoice.TradeLineItems.Count);
-        Assert.AreEqual(2, loadedInvoice.AdditionalReferencedDocuments.Count);
+        Assert.AreEqual(1, Integer(loadedInvoice.TradeLineItems.Count));
+        Assert.AreEqual(2, Integer(loadedInvoice.AdditionalReferencedDocuments.Count));
         Assert.IsNotNull(loadedInvoice.ShipTo);
         Assert.IsNotNull(loadedInvoice.ShipTo.SpecifiedLegalOrganization);
         Assert.AreEqual('SHIP-LEGAL', loadedInvoice.ShipTo.SpecifiedLegalOrganization.ID.ID);
@@ -1002,13 +1002,13 @@ var
         Assert.AreEqual('1', lineItem.AssociatedDocument.LineID);
         Assert.AreEqual(EncodeDate(2025, 10, 1), lineItem.BillingPeriodStart.Value);
         Assert.AreEqual('ORDER', lineItem.BuyerOrderReferencedDocument.ID);
-        Assert.AreEqual(1, lineItem.ApplicableProductCharacteristics.Count);
+        Assert.AreEqual(1, Integer(lineItem.ApplicableProductCharacteristics.Count));
         Assert.AreEqual('blue', lineItem.ApplicableProductCharacteristics[0].Value);
-        Assert.AreEqual(1, lineItem.IncludedReferencedProducts.Count);
+        Assert.AreEqual(1, Integer(lineItem.IncludedReferencedProducts.Count));
         Assert.AreEqual('PART', lineItem.IncludedReferencedProducts[0].SellerAssignedID);
-        Assert.AreEqual(1, lineItem.ReceivableSpecifiedTradeAccountingAccounts.Count);
+        Assert.AreEqual(1, Integer(lineItem.ReceivableSpecifiedTradeAccountingAccounts.Count));
         Assert.AreEqual('ACCOUNT', lineItem.ReceivableSpecifiedTradeAccountingAccounts[0].TradeAccountID);
-        Assert.AreEqual(2, lineItem.AdditionalReferencedDocuments.Count);
+        Assert.AreEqual(2, Integer(lineItem.AdditionalReferencedDocuments.Count));
         Assert.AreEqual('LINE-DOC', lineItem.AdditionalReferencedDocuments[0].ID);
         CheckAttachment(lineItem.AdditionalReferencedDocuments[0].AttachmentBinaryObject);
         Assert.AreEqual('LINE-LATE', lineItem.AdditionalReferencedDocuments[1].ID);

@@ -449,7 +449,7 @@ var
         Assert.IsNotNull(loadedInvoice);
         Assert.AreEqual('471102', loadedInvoice.InvoiceNo);
         Assert.AreEqual(EncodeDate(2001, 10, 1), loadedInvoice.InvoiceDate.Value);
-        Assert.AreEqual(2, loadedInvoice.TradeLineItems.Count);
+        Assert.AreEqual(2, Integer(loadedInvoice.TradeLineItems.Count));
         Assert.AreEqual(EncodeDate(2001, 11, 2), loadedInvoice.TradeLineItems[0].BillingPeriodStart.Value);
         Assert.IsNotNull(loadedInvoice.Seller);
         Assert.IsNotNull(loadedInvoice.Buyer);
