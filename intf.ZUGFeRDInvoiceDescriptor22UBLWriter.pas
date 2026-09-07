@@ -87,7 +87,6 @@ type
     procedure _writeOptionalParty(_writer: TZUGFeRDProfileAwareXmlTextWriter; partyType : TZUGFeRDPartyTypes; party : TZUGFeRDParty; contact : TZUGFeRDContact = nil; electronicAddress : TZUGFeRDElectronicAddress = nil; taxRegistrations : TObjectList<TZUGFeRDTaxRegistration> = nil);
     procedure _writeApplicableProductCharacteristics(_writer: TZUGFeRDProfileAwareXmlTextWriter; productCharacteristics : TObjectList<TZUGFeRDApplicableProductCharacteristic>);
     procedure _writeIncludedReferencedProducts(_writer: TZUGFeRDProfileAwareXmlTextWriter; includedReferencedProducts : TObjectList<TZUGFeRDIncludedReferencedProduct>);
-    function _CalculateLineTotalAmount(tradeLineItem: TZUGFeRDTradeLineItem): Currency;
     procedure _WriteDocumentLevelAllowanceCharges(tradeAllowanceCharge: TZUGFeRDAbstractTradeAllowanceCharge);
     procedure _WriteTradeLineItem(tradeLineItem: TZUGFeRDTradeLineItem; isInvoice: Boolean; options: TZUGFeRDInvoiceFormatOptions);
     procedure _WriteItemLevelSpecifiedTradeAllowanceCharge(specifiedTradeAllowanceCharge: TZUGFeRDAbstractTradeAllowanceCharge);
@@ -683,35 +682,6 @@ begin
 end;
 
 
-/// <summary>
-/// Returns BT-131, calculating a missing value according to
-/// PEPPOL-EN16931-R120 from BT-146, BT-129, BT-149, BG-27 and BG-28.
-/// </summary>
-function TZUGFeRDInvoiceDescriptor22UBLWriter._CalculateLineTotalAmount(
-  tradeLineItem: TZUGFeRDTradeLineItem): Currency;
-var
-  SpecifiedTradeAllowance: TZUGFeRDTradeAllowance;
-  SpecifiedTradeCharge: TZUGFeRDTradeCharge;
-begin
-  if not tradeLineItem.NetUnitPrice.HasValue then
-    raise TZUGFeRDMissingDataException.Create('Net unit price (BT-146) is required for UBL lines.');
-
-  if tradeLineItem.NetQuantity.HasValue and (tradeLineItem.NetQuantity.Value <= 0) then
-    raise TZUGFeRDArgumentException.Create('Price base quantity (BT-149) must be greater than zero (PEPPOL-EN16931-R121).');
-
-  if tradeLineItem.LineTotalAmount.HasValue then
-    Exit(tradeLineItem.LineTotalAmount.Value);
-
-  Result := tradeLineItem.NetUnitPrice.Value * tradeLineItem.BilledQuantity;
-  if tradeLineItem.NetQuantity.HasValue then
-    Result := Result / tradeLineItem.NetQuantity.Value;
-
-  for SpecifiedTradeAllowance in tradeLineItem.GetSpecifiedTradeAllowances do
-    Result := Result - SpecifiedTradeAllowance.ActualAmount;
-  for SpecifiedTradeCharge in tradeLineItem.GetSpecifiedTradeCharges do
-    Result := Result + SpecifiedTradeCharge.ActualAmount;
-end;
-
 
 procedure TZUGFeRDInvoiceDescriptor22UBLWriter._WriteTradeLineItem(
   tradeLineItem: TZUGFeRDTradeLineItem; isInvoice: Boolean;
@@ -768,7 +738,7 @@ begin
 
   WriteComment(Writer, options, TZUGFeRDInvoiceCommentConstants.SpecifiedTradeSettlementLineMonetarySummationComment);
 
-  lineTotalAmount := _CalculateLineTotalAmount(tradeLineItem);
+  lineTotalAmount := CalculateLineTotalAmount(tradeLineItem);
 
   Writer.WriteStartElement('cbc:LineExtensionAmount');
   Writer.WriteAttributeString('currencyID', TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Descriptor.Currency));

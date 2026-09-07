@@ -610,16 +610,9 @@ begin
     WriteComment(Writer, options, TZUGFeRDInvoiceCommentConstants.SpecifiedTradeSettlementLineMonetarySummationComment);
     Writer.WriteStartElement('ram:SpecifiedTradeSettlementLineMonetarySummation');
 
-    var _total : Currency := 0;
-
-    if (tradeLineItem.LineTotalAmount.HasValue) then
-      _total := tradeLineItem.LineTotalAmount.Value
-    else if tradeLineItem.NetUnitPrice.HasValue then
-    begin
-      _total := tradeLineItem.NetUnitPrice.Value * tradeLineItem.BilledQuantity;
-      if tradeLineItem.NetQuantity.HasValue and (tradeLineItem.NetQuantity.Value <> 0) then
-        _total := _total / tradeLineItem.NetQuantity.Value;
-    end;
+    // Gemeinsam mit dem UBL-Writer, damit derselbe Descriptor in beiden Formaten
+    // denselben Positionsbetrag ergibt.
+    var _total : Currency := CalculateLineTotalAmount(tradeLineItem);
 
     Writer.WriteStartElement('ram:LineTotalAmount', [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
     Writer.WriteValue(_formatDecimal(_total));

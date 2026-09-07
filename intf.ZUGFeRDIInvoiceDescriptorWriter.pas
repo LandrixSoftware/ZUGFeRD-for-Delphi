@@ -44,6 +44,16 @@ type
     /// im Interface-Teil zu referenzieren.
     /// </summary>
     class function ValidateVersion23(descriptor: TZUGFeRDInvoiceDescriptor; throwExceptions: Boolean): Boolean; static;
+    /// <summary>
+    /// Liefert BT-131 und berechnet einen fehlenden Wert nach PEPPOL-EN16931-R120
+    /// aus BT-146, BT-129, BT-149 sowie den Positionszu- und -abschlägen BG-27/BG-28.
+    /// Liegt hier aus demselben Grund wie ValidateVersion23: CII- und UBL-Writer
+    /// müssen für denselben Descriptor denselben Positionsbetrag schreiben.
+    /// BT-146 wird auch bei vorhandenem BT-131 verlangt, weil beide Writer den
+    /// Nettoeinzelpreis ohnehin ausgeben - der UBL-Writer unbedingt, sodass ein
+    /// fehlender Wert dort als 0,0000 im Dokument landen würde.
+    /// </summary>
+    class function CalculateLineTotalAmount(tradeLineItem: TZUGFeRDTradeLineItem): Currency; static;
   public
     procedure Save(descriptor: TZUGFeRDInvoiceDescriptor; stream: TStream; format: TZUGFeRDFormats = TZUGFeRDFormats.CII; options: TZUGFeRDInvoiceFormatOptions = Nil); overload; virtual; abstract;
     procedure Save(descriptor: TZUGFeRDInvoiceDescriptor; const filename: string; format: TZUGFeRDFormats = TZUGFeRDFormats.CII; options: TZUGFeRDInvoiceFormatOptions = Nil); overload;
@@ -183,6 +193,32 @@ begin
   end;
 
   Result := true;
+end;
+
+class function TZUGFeRDIInvoiceDescriptorWriter.CalculateLineTotalAmount(
+  tradeLineItem: TZUGFeRDTradeLineItem): Currency;
+begin
+  if not tradeLineItem.NetUnitPrice.HasValue then
+    raise TZUGFeRDMissingDataException.Create('Net unit price (BT-146) is required for invoice lines.');
+
+  // PEPPOL-EN16931-R121: eine Preisbasismenge von 0 teilt durch null, eine negative
+  // dreht das Vorzeichen des Positionsbetrags um.
+  if tradeLineItem.NetQuantity.HasValue and (tradeLineItem.NetQuantity.Value <= 0) then
+    raise TZUGFeRDArgumentException.Create('Price base quantity (BT-149) must be greater than zero (PEPPOL-EN16931-R121).');
+
+  if tradeLineItem.LineTotalAmount.HasValue then
+    Exit(tradeLineItem.LineTotalAmount.Value);
+
+  Result := tradeLineItem.NetUnitPrice.Value * tradeLineItem.BilledQuantity;
+  if tradeLineItem.NetQuantity.HasValue then
+    Result := Result / tradeLineItem.NetQuantity.Value;
+
+  // BT-131 vermindert sich um BG-27-Positionsabschläge und erhöht sich um
+  // BG-28-Positionszuschläge. BG-29-Preisnachlässe stecken bereits in BT-146.
+  for var specifiedTradeAllowance in tradeLineItem.GetSpecifiedTradeAllowances do
+    Result := Result - specifiedTradeAllowance.ActualAmount;
+  for var specifiedTradeCharge in tradeLineItem.GetSpecifiedTradeCharges do
+    Result := Result + specifiedTradeCharge.ActualAmount;
 end;
 
 procedure TZUGFeRDIInvoiceDescriptorWriter.WriteOptionalElementString(

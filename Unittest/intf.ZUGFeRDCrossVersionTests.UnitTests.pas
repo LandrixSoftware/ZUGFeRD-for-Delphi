@@ -358,6 +358,20 @@ type
 
     [Test]
     procedure TestCIIReaderDoesNotTreatDifferentNamespaceUriAsRam;
+
+    /// <summary>Checks that both writers derive the same BT-131 from one descriptor.</summary>
+    [Test]
+    procedure TestCalculatedLineTotalAmountIsIdenticalInBothFormats;
+
+    /// <summary>Checks that the CII writer no longer writes 0.00 for a missing BT-146.</summary>
+    [Test]
+    procedure TestCIIWriterRequiresNetUnitPrice;
+
+    /// <summary>Checks that the CII writer rejects a price base quantity that is zero or negative.</summary>
+    [Test]
+    [TestCase('Zero', '0')]
+    [TestCase('Negative', '-1')]
+    procedure TestCIIWriterRejectsNonPositivePriceBaseQuantity(const UnitQuantity: Currency);
   end;
 
 implementation
@@ -3323,6 +3337,132 @@ begin
     Desc.Free;
   end;
 end; // !TestNoBT6WithoutAccountingCurrencyAmount()
+
+/// <summary>
+/// Legt eine Position mit Preisbasismenge und BG-27/BG-28-Anpassungen an, deren
+/// BT-131 nicht deklariert ist: 100,00 x 2 / 10 = 20,00, abzüglich 3,00 Abschlag
+/// und zuzüglich 1,00 Zuschlag ergibt 18,00. Der BG-29-Preisnachlass steckt
+/// bereits in BT-146 und darf nicht ein zweites Mal abgezogen werden.
+/// </summary>
+function CreateLineWithoutDeclaredLineTotal(descriptor: TZUGFeRDInvoiceDescriptor;
+  const unitQuantity: Currency): TZUGFeRDTradeLineItem;
+begin
+  descriptor.TradeLineItems.Clear;
+  Result := descriptor.AddTradeLineItem(
+    {name=}            'Line adjustments',
+    {netUnitPrice=}    TZUGFeRDNullableParam<Currency>.Create(100),
+    {description=}     '',
+    {unitCode=}        TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+    {unitQuantity=}    TZUGFeRDNullableParam<Currency>.Create(unitQuantity),
+    {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(110),
+    {billedQuantity=}  2,
+    {lineTotalAmount=} 0,
+    {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+    {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+    {taxPercent=}      19.0);
+  Result.LineTotalAmount := nil;
+  Result.AddTradeAllowance(TZUGFeRDCurrencyCodes.EUR,
+    TZUGFeRDNullableParam<Currency>.Create(110), 10, 'Price allowance');
+  Result.AddSpecifiedTradeAllowance(TZUGFeRDCurrencyCodes.EUR,
+    TZUGFeRDNullableParam<Currency>.Create(20), 3, 'Line allowance');
+  Result.AddSpecifiedTradeCharge(TZUGFeRDCurrencyCodes.EUR,
+    TZUGFeRDNullableParam<Currency>.Create(20), 1, 'Line charge');
+end;
+
+function SaveDescriptorAsString(descriptor: TZUGFeRDInvoiceDescriptor;
+  format: TZUGFeRDFormats): string;
+var
+  ms: TMemoryStream;
+  bytes: TBytes;
+begin
+  ms := TMemoryStream.Create;
+  try
+    descriptor.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, format);
+    ms.Position := 0;
+    SetLength(bytes, ms.Size);
+    if ms.Size > 0 then
+      ms.ReadBuffer(bytes[0], ms.Size);
+    Result := TEncoding.UTF8.GetString(bytes);
+  finally
+    ms.Free;
+  end;
+end;
+
+procedure TZUGFeRDCrossVersionTests.TestCalculatedLineTotalAmountIsIdenticalInBothFormats;
+var
+  descriptor: TZUGFeRDInvoiceDescriptor;
+  ciiContent, ublContent: string;
+begin
+  descriptor := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    CreateLineWithoutDeclaredLineTotal(descriptor, 10);
+
+    ciiContent := SaveDescriptorAsString(descriptor, TZUGFeRDFormats.CII);
+    ublContent := SaveDescriptorAsString(descriptor, TZUGFeRDFormats.UBL);
+
+    Assert.IsTrue(ciiContent.Contains('<ram:LineTotalAmount>18.00</ram:LineTotalAmount>'),
+      'Der CII-Writer bezieht die BG-27/BG-28-Anpassungen nicht in BT-131 ein:'#13#10 + ciiContent);
+    Assert.IsTrue(ublContent.Contains('<cbc:LineExtensionAmount currencyID="EUR">18.00</cbc:LineExtensionAmount>'),
+      'Der UBL-Writer bezieht die BG-27/BG-28-Anpassungen nicht in BT-131 ein:'#13#10 + ublContent);
+  finally
+    descriptor.Free;
+  end;
+end;
+
+procedure TZUGFeRDCrossVersionTests.TestCIIWriterRequiresNetUnitPrice;
+var
+  descriptor: TZUGFeRDInvoiceDescriptor;
+  lineItem: TZUGFeRDTradeLineItem;
+  raised: Boolean;
+begin
+  descriptor := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    lineItem := CreateLineWithoutDeclaredLineTotal(descriptor, 10);
+    lineItem.NetUnitPrice := nil;
+
+    raised := False;
+    try
+      SaveDescriptorAsString(descriptor, TZUGFeRDFormats.CII);
+    except
+      on E: TZUGFeRDMissingDataException do
+      begin
+        raised := True;
+        Assert.IsTrue(E.Message.Contains('BT-146'),
+          'Die Meldung benennt den fehlenden Nettoeinzelpreis nicht: ' + E.Message);
+      end;
+    end;
+    Assert.IsTrue(raised, 'Der CII-Writer hat einen fehlenden BT-146 still als 0,00 geschrieben');
+  finally
+    descriptor.Free;
+  end;
+end;
+
+procedure TZUGFeRDCrossVersionTests.TestCIIWriterRejectsNonPositivePriceBaseQuantity(
+  const UnitQuantity: Currency);
+var
+  descriptor: TZUGFeRDInvoiceDescriptor;
+  raised: Boolean;
+begin
+  descriptor := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    CreateLineWithoutDeclaredLineTotal(descriptor, UnitQuantity);
+
+    raised := False;
+    try
+      SaveDescriptorAsString(descriptor, TZUGFeRDFormats.CII);
+    except
+      on E: TZUGFeRDArgumentException do
+      begin
+        raised := True;
+        Assert.IsTrue(E.Message.Contains('BT-149'),
+          'Die Meldung benennt die Preisbasismenge nicht: ' + E.Message);
+      end;
+    end;
+    Assert.IsTrue(raised, 'Der CII-Writer hat eine nicht positive Preisbasismenge akzeptiert');
+  finally
+    descriptor.Free;
+  end;
+end;
 
 
 initialization
