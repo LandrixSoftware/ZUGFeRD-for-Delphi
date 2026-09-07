@@ -234,6 +234,12 @@ attachments in pure Pascal.
 Building and running the suite, selecting individual tests, the exit codes and the limits of
 the memory checks are documented in [Unittest/README.md](Unittest/README.md).
 
+## Contributing
+
+Conventions that are not visible from the source - build baseline, comment language, source
+encoding and the checks to run before a pull request - are collected in
+[CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Relationship to the C# library
 
 Synchronization point:
