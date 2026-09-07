@@ -10,10 +10,43 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $completedChecks = 0
 $helper = Join-Path $PSScriptRoot 'run-tests.ps1'
-$powershell = Join-Path $PSHOME 'powershell.exe'
+# Der laufende Host, nicht fest powershell.exe: unter PowerShell 7 heisst die Datei in
+# $PSHOME pwsh.exe, und das Zusammensetzen des alten Namens brach den Lauf mit einem
+# "Datei nicht gefunden" ab, bevor auch nur eine Pruefung lief.
+$powershell = (Get-Process -Id $PID).Path
+if ([string]::IsNullOrEmpty($powershell) -or -not (Test-Path -LiteralPath $powershell)) {
+    throw 'The running PowerShell host executable could not be determined.'
+}
 $heapFixture = 'intf.ZUGFeRDTestInfrastructure.UnitTests.TZUGFeRDTestInfrastructureTests'
 $retainedTest = "$heapFixture.TestHeapAssertionDetectsRetainedObject"
 $releasedTest = "$heapFixture.TestHeapAssertionAcceptsReleasedObject"
+
+# Baut die Stub-Exe fuer die Report-Faelle. PowerShell 7 kennt "Add-Type -OutputAssembly"
+# nicht mehr ("assembly types ... are not currently supported"), deshalb wird der Bau dort
+# an das immer vorhandene Windows PowerShell 5.1 abgegeben.
+function New-StubExecutable {
+    param([string]$OutputPath, [string]$Source)
+    try {
+        Add-Type -OutputAssembly $OutputPath -OutputType ConsoleApplication -TypeDefinition $Source
+        return
+    } catch [System.PlatformNotSupportedException], [System.Management.Automation.PSNotSupportedException] {
+    } catch {
+        if ($_.Exception.Message -notmatch 'not currently supported') { throw }
+    }
+
+    $windowsPowerShell = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+    if (-not (Test-Path -LiteralPath $windowsPowerShell)) {
+        throw 'Building the stub executable requires Windows PowerShell 5.1.'
+    }
+    $sourcePath = Join-Path ([IO.Path]::GetDirectoryName($OutputPath)) 'ReportProbe.cs'
+    [IO.File]::WriteAllText($sourcePath, $Source)
+    $command = "Add-Type -OutputAssembly '$OutputPath' -OutputType ConsoleApplication " +
+        "-TypeDefinition ([IO.File]::ReadAllText('$sourcePath'))"
+    & $windowsPowerShell -NoProfile -ExecutionPolicy Bypass -Command $command
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $OutputPath)) {
+        throw 'Windows PowerShell could not build the stub executable.'
+    }
+}
 
 # Each process has separate logs and a timeout so a broken runner cannot hang the verification.
 function Invoke-CheckedProcess {
@@ -153,7 +186,7 @@ try {
 
     # Controlled executables exercise report failures without changing production fixtures or source files.
     $stubExe = Join-Path $isolated 'ReportProbe.exe'
-    Add-Type -OutputAssembly $stubExe -OutputType ConsoleApplication -TypeDefinition @'
+    New-StubExecutable $stubExe @'
 using System;
 using System.IO;
 using System.Threading;

@@ -1,19 +1,29 @@
-param([string[]]$Paths = @(
-    "$PSScriptRoot\intf.ZUGFeRDInvoiceValidatorTests.UnitTests.pas",
-    "$PSScriptRoot\intf.ZUGFeRDCrossVersionTests.UnitTests.pas",
-    "$PSScriptRoot\intf.XRechnungUBLTests.UnitTests.pas",
-    "$PSScriptRoot\intf.ZUGFeRDDocumentationSweep.UnitTests.pas",
-    "$PSScriptRoot\..\intf.ZUGFeRDInvoiceDescriptor22UBLWriter.pas",
-    "$PSScriptRoot\..\intf.ZUGFeRDInvoiceDescriptor22UblReader.pas",
-    "$PSScriptRoot\..\intf.ZUGFeRDProfileAwareXmlTextWriter.pas",
-    "$PSScriptRoot\..\intf.ZUGFeRDAdvancePayment.pas"
-))
+param([string[]]$Paths = @())
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# Delphi 11 needs an explicit UTF-8 signature for non-ASCII source on an ANSI system locale.
+# Delphi needs an explicit UTF-8 signature for non-ASCII source on an ANSI system locale.
+# Without -Paths every tracked Delphi source is checked, so a new unit cannot slip past
+# this guard the way a hard-coded file list would have allowed.
+function Get-TrackedDelphiSource {
+    $repositoryRoot = Split-Path -Parent $PSScriptRoot
+    Push-Location -LiteralPath $repositoryRoot
+    try {
+        $tracked = & git ls-files '*.pas' '*.dpr' '*.inc'
+        if ($LASTEXITCODE -ne 0) {
+            throw 'git ls-files failed; run the check inside the repository or pass -Paths.'
+        }
+        return @($tracked | ForEach-Object { Join-Path $repositoryRoot $_ })
+    } finally {
+        Pop-Location
+    }
+}
+
 try {
+    if ($Paths.Count -eq 0) {
+        $Paths = Get-TrackedDelphiSource
+    }
     if ($Paths.Count -eq 0) { throw 'No source files selected.' }
     $decoder = New-Object System.Text.UTF8Encoding($false, $true)
     foreach ($path in $Paths) {

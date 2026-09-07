@@ -231,68 +231,8 @@ attachments in pure Pascal.
 - [documentation/](documentation/) — the official specifications, schemas and example invoices from
   ZUGFeRD 1.0 up to 2.5.2 / Factur-X 1.09.2.
 
-### Console test execution
-
-Build `Unittest/ZfDUnitTest.dproj` with Delphi 11, Win64, Debug. The executable is written
-directly to `Unittest/`. From that directory, Windows PowerShell 5.1 can run the suite or
-select a fully qualified DUnitX test/fixture name:
-
-```powershell
-.\run-tests.ps1
-.\run-tests.ps1 -Filter 'intf.ZUGFeRD22Tests.UnitTests.TZUGFeRD22Tests.TestCIIReaderReleasesDescriptorAfterParsingError'
-.\run-tests.ps1 -Filter 'intf.ZUGFeRD22Tests.UnitTests.TZUGFeRD22Tests.TestCIIReaderNestedObjectOwnership.ValidDocument'
-.\Test-SourceEncoding.ps1
-.\Test-Runner.ps1
-```
-
-The native DUnitX syntax uses colons: `--run:<qualified-name>`, `--xmlfile:<path>` and
-`--exitbehavior:Continue`. `--filter` and `--option=value` are not supported by the
-DUnitX version shipped with Delphi 11. The helper passes `--run` and closes stdin, so
-non-interactive runs do not require a placeholder file or an Enter keypress.
-
-Parameterized tests require the case suffix: `<unit>.<fixture>.<method>.<case>`.
-The bare parameterized method selects no executable cases and returns exit code `3`;
-selecting its fixture runs all of that fixture's cases. The helper does not broaden filters.
-
-Exit codes: `0` for successful executed tests, `1` for test failures, `2` for runner
-exceptions or invalid command-line options, and `3` if no tests execute. The PowerShell
-helper returns `4` for infrastructure failures, including missing/invalid XML or a timeout.
-It parses a unique report for each invocation before publishing `dunitx-results.xml`;
-an existing report is not reused as evidence for a failed invocation. `-XmlPath` selects
-another report destination and `-TimeoutSeconds` controls the process timeout.
-Always check the exit code and the current invocation's report together. An early native
-option error returns `2` before logger creation and can leave an earlier XML file untouched.
-The helper can likewise leave its published report unchanged when the current run fails
-before producing a valid report; that file is not a success result for the failed run.
-
-`Test-Runner.ps1` verifies test names, counts and exit codes, including missing fixtures,
-invalid reports and an isolated executable path containing spaces. It requires the compiled
-console runner and retains its logs and generated fixtures in a unique temporary directory,
-or in a new directory specified by `-ResultsDirectory`.
-
-Before committing changes to the eight reviewed non-ASCII units, run `Test-SourceEncoding.ps1`.
-It checks strict UTF-8 and requires a BOM for non-ASCII source so Delphi 11 does not interpret
-Unicode diagnostics using the system ANSI code page. `-Paths` selects explicit files for
-the same check. `Test-Runner.ps1` includes valid ASCII/UTF-8 cases and missing-BOM,
-invalid-UTF-8 and missing-file counterexamples. `TestDiagnosticEncoding` captures a real
-assertion diagnostic and checks its Unicode code point independently of source literals.
-
-The documentation sweep includes long example paths. On Windows, invoke the executable
-through a short `subst` drive alias when the checkout path would exceed `MAX_PATH`.
-
-The default DUnitX memory monitor always reports zero: **`Tests Leaked: 0` does not prove
-that tests are leak-free**. Ownership regressions use explicit allocated-heap snapshots
-from `TZUGFeRDTestBase` around warmed-up, isolated operations. The infrastructure tests
-prove that the assertion rejects a retained object and accepts a released object, without
-leaving the counterexample allocated. These checks cover only the measured paths, not
-every test or possible reader exception. No replacement memory manager is installed.
-
-The reader ownership tests cover CII 1.0/2.0 and UBL Invoice/CreditNote via direct readers
-and automatic dispatch, including successful loads, early/late date errors and payment
-terms errors. The CII 2.3 nested-object test has one common valid case and seven distinct
-date failures. Its `AfterAttachment` cases verify parent cleanup after a second reference
-fails, not a decoder failure in that reference's own attachment. COM, allocation and list
-insertion failures are not exhaustively covered by the regular suite.
+Building and running the suite, selecting individual tests, the exit codes and the limits of
+the memory checks are documented in [Unittest/README.md](Unittest/README.md).
 
 ## Relationship to the C# library
 
