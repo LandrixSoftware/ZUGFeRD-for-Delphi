@@ -96,6 +96,7 @@ type
 
     /// <summary>
     /// Parses the ZUGFeRD invoice from the given stream.
+    /// Fehlende BG-X-45-Pflichtangaben bleiben im Modell erkennbar; ihre Präsenz prüft der Writer.
     ///
     /// Make sure that the stream is open, otherwise an IllegalStreamException exception is thrown.
     /// Important: the stream will not be closed by this function.
@@ -506,7 +507,7 @@ begin
   nodes := doc.SelectNodes('//ram:ApplicableHeaderTradeSettlement/ram:ApplicableTradeTax');
   for i := 0 to nodes.length-1 do
   begin
-    var calculatedAmount: ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:CalculatedAmount', 0);
+    var calculatedAmount: ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:CalculatedAmount');
     var basisAmount: ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:BasisAmount', 0);
     var ratePercent: ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:RateApplicablePercent', 0);
     var taxType: ZUGFeRDNullable<TZUGFeRDTaxTypes> := TEnumExtensions<TZUGFeRDTaxTypes>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:TypeCode'));
@@ -625,21 +626,23 @@ begin
       TEnumExtensions<TZUGFeRDAccountingAccountTypeCodes>.StringToNullableEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:TypeCode')));
 
   // Vorauszahlungen / Anzahlungen, BG-X-45 (nur EXTENDED)
+  // Fehlende Pflichtangaben präsenztreu lesen, damit der übrige Beleg lesbar bleibt.
+  // Die Ausgabe bleibt streng: insbesondere BT-X-293 nach FX-SCH-A-000952 ist Pflicht.
+  // Nichtleere, unlesbare Beträge/Codes bleiben Fehler; nur fehlende Werte sind toleriert.
   nodes := doc.SelectNodes('//ram:ApplicableHeaderTradeSettlement/ram:SpecifiedAdvancePayment');
   for i := 0 to nodes.length-1 do
   begin
     var advancePayment: TZUGFeRDAdvancePayment := TZUGFeRDAdvancePayment.Create;
     try
       advancePayment.PaidAmount := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './ram:PaidAmount');
-      if not advancePayment.PaidAmount.HasValue then
-        raise TZUGFeRDMissingDataException.Create('Advance payment paid amount is required (BG-X-45).');
+      if not advancePayment.PaidAmount.HasValue and
+        (Trim(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './ram:PaidAmount')) <> '') then
+        raise TZUGFeRDMissingDataException.Create('Advance payment paid amount is invalid (BG-X-45).');
 
       advancePayment.FormattedReceivedDateTime := TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i],
         './ram:FormattedReceivedDateTime/qdt:DateTimeString');
 
       var taxNodes: IXMLDOMNodeList := nodes[i].selectNodes('./ram:IncludedTradeTax');
-      if taxNodes.length = 0 then
-        raise TZUGFeRDMissingDataException.Create('At least one included trade tax is required for an advance payment (BG-X-45).');
 
       for var taxIndex: Integer := 0 to taxNodes.length-1 do
       begin
@@ -651,12 +654,18 @@ begin
         var taxCategoryCode: ZUGFeRDNullable<TZUGFeRDTaxCategoryCodes> :=
           TEnumExtensions<TZUGFeRDTaxCategoryCodes>.StringToNullableEnum(
             TZUGFeRDXmlUtils.NodeAsString(taxNodes[taxIndex], './ram:CategoryCode'));
-        if not taxAmount.HasValue or not taxTypeCode.HasValue or not taxCategoryCode.HasValue then
-          raise TZUGFeRDMissingDataException.Create('Advance payment tax amount, type and category are required (BG-X-45).');
+        if not taxAmount.HasValue and
+          (Trim(TZUGFeRDXmlUtils.NodeAsString(taxNodes[taxIndex], './ram:CalculatedAmount')) <> '') then
+          raise TZUGFeRDMissingDataException.Create('Advance payment tax amount is invalid (BG-X-45).');
+        if (not taxTypeCode.HasValue and
+          (Trim(TZUGFeRDXmlUtils.NodeAsString(taxNodes[taxIndex], './ram:TypeCode')) <> '')) or
+          (not taxCategoryCode.HasValue and
+          (Trim(TZUGFeRDXmlUtils.NodeAsString(taxNodes[taxIndex], './ram:CategoryCode')) <> '')) then
+          raise TZUGFeRDMissingDataException.Create('Advance payment tax type or category is invalid (BG-X-45).');
 
         var includedTax: TZUGFeRDTax := TZUGFeRDTax.Create;
         try
-          includedTax.TaxAmount := taxAmount.Value;
+          includedTax.TaxAmount := taxAmount;
           includedTax.TypeCode := taxTypeCode;
           includedTax.CategoryCode := taxCategoryCode;
           includedTax.Percent := TZUGFeRDXmlUtils.NodeAsDecimal(
@@ -672,8 +681,6 @@ begin
       begin
         var invoiceReferenceID: string := TZUGFeRDXmlUtils.NodeAsString(nodes[i],
           './ram:InvoiceSpecifiedReferencedDocument/ram:IssuerAssignedID');
-        if Trim(invoiceReferenceID) = '' then
-          raise TZUGFeRDMissingDataException.Create('Advance payment invoice reference ID is required when a reference is specified (BG-X-45).');
 
         advancePayment.SetInvoiceReferencedDocument(
           invoiceReferenceID,

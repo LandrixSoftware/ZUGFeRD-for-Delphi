@@ -139,6 +139,7 @@ begin
 
   // Bei direkter Nutzung des Writers gilt dieselbe Profilgrenze wie im Dispatcher
   _validateProfile(_descriptor, True);
+  ValidateTaxAmounts(_descriptor, True);
 
   streamPosition := _stream.Position;
 

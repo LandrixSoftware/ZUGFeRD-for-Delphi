@@ -173,6 +173,24 @@ amount of zero are not the same thing.
 BIS document reads back as `Unknown` rather than `XRechnung`, and cannot be written out again
 unchanged. The raw identifier is always kept in `GuideLine`.
 
+### Steuerbeträge und fehlende Anzahlungsdaten
+
+`TZUGFeRDTax.TaxAmount` und der Parameter `calculatedAmount` von `AddApplicableTradeTax`
+haben den Typ `ZUGFeRDNullable<Currency>`. Ein neues Steuerobjekt hat keinen Betrag;
+die Zuweisung `TaxAmount := 0` setzt dagegen einen vorhandenen Nullbetrag. Numerische
+Zuweisungen bleiben möglich. Bei Berechnungen und Vergleichen zuerst `HasValue` prüfen
+und anschließend `Value` verwenden. Der Betrag wird nicht automatisch aus Basis und
+Steuersatz berechnet. Abhängige Anwendungen müssen neu kompiliert werden.
+
+Der CII-Reader erhält fehlende Pflichtangaben in `SpecifiedAdvancePayment` (BG-X-45),
+statt deshalb den übrigen Beleg abzulehnen. Fehlende Beträge und Steuercodes bleiben
+ohne Wert, eine fehlende Steuerliste bleibt leer; eine vorhandene Rechnungsreferenz
+bleibt auch ohne ID erhalten. Nichtleere, unlesbare Pflichtbeträge und Steuercodes
+bleiben Lesefehler. Das tolerante Lesen bestätigt keine Standardkonformität:
+Der EXTENDED-Writer lehnt unvollständige Anzahlungen weiterhin ab, insbesondere einen
+fehlenden Steuerbetrag BT-X-293 nach `FX-SCH-A-000952`. Auch die Kopfsteuer-Writer
+verlangen vorhandene Beträge; der Summenvalidator meldet fehlendes BT-117.
+
 ## Validating totals
 
 `TZUGFeRDInvoiceValidator` recalculates the monetary summation of a loaded or newly built invoice and

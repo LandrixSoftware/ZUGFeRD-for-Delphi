@@ -34,6 +34,24 @@ type
     procedure AssertUBLTaxTotalFallback(const ReplacementCurrencyCode: string;
       const MakeFallbackAmbiguous: Boolean);
   public
+    /// <summary>Unterscheidet einen fehlenden Steuerbetrag von expliziten Null- und Geldbeträgen.</summary>
+    [Test]
+    procedure TestTaxAmountPresence;
+
+    /// <summary>Prüft die Betragspräsenz über alle Reader sowie direkte und vermittelte Writer-Aufrufe.</summary>
+    [Test]
+    [TestCase('CII1Missing', '100,True')]
+    [TestCase('CII1Zero', '100,False')]
+    [TestCase('CII20Missing', '200,True')]
+    [TestCase('CII20Zero', '200,False')]
+    [TestCase('CII23Missing', '230,True')]
+    [TestCase('CII23Zero', '230,False')]
+    [TestCase('UBLInvoiceMissing', '221,True')]
+    [TestCase('UBLInvoiceZero', '221,False')]
+    [TestCase('UBLCreditNoteMissing', '222,True')]
+    [TestCase('UBLCreditNoteZero', '222,False')]
+    procedure TestHeaderTaxAmountPresence(readerKind: Integer; missingAmount: Boolean);
+
     /// <summary>Checks an actual assertion diagnostic against Unicode code points, not another source literal.</summary>
     [Test]
     procedure TestDiagnosticEncoding;
@@ -386,6 +404,12 @@ uses
   intf.ZUGFeRDInvoiceDescriptor1Reader,
   intf.ZUGFeRDInvoiceDescriptor20Reader,
   intf.ZUGFeRDInvoiceDescriptor22UblReader,
+  intf.ZUGFeRDInvoiceDescriptor23CIIReader,
+  intf.ZUGFeRDIInvoiceDescriptorWriter,
+  intf.ZUGFeRDInvoiceDescriptor1Writer,
+  intf.ZUGFeRDInvoiceDescriptor20Writer,
+  intf.ZUGFeRDInvoiceDescriptor23CIIWriter,
+  intf.ZUGFeRDInvoiceDescriptor22UBLWriter,
   intf.ZUGFeRDInvoiceTypes,
   intf.ZUGFeRDProfile,
   intf.ZUGFeRDVersion,
@@ -419,6 +443,184 @@ uses
   intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes;
 
 { TZUGFeRDCrossVersionTests }
+
+procedure TZUGFeRDCrossVersionTests.TestTaxAmountPresence;
+var
+  descriptor: TZUGFeRDInvoiceDescriptor;
+  tax: TZUGFeRDTax;
+begin
+  tax := TZUGFeRDTax.Create;
+  try
+    Assert.IsFalse(tax.TaxAmount.HasValue, 'Ein neuer Steuerbetrag darf nicht als Null vorbelegt sein.');
+    tax.TaxAmount := 0;
+    Assert.IsTrue(tax.TaxAmount.HasValue);
+    Assert.AreEqual<Currency>(0, tax.TaxAmount.Value);
+    tax.TaxAmount := 19;
+    Assert.AreEqual<Currency>(19, tax.TaxAmount.Value);
+    tax.TaxAmount := nil;
+    Assert.IsFalse(tax.TaxAmount.HasValue);
+  finally
+    tax.Free;
+  end;
+
+  descriptor := TZUGFeRDInvoiceDescriptor.Create;
+  try
+    descriptor.AddApplicableTradeTax(nil, 100, 19, TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S);
+    descriptor.AddApplicableTradeTax(0, 100, 0, TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.Z);
+    Assert.IsFalse(descriptor.Taxes[0].TaxAmount.HasValue, 'Die Factory muss fehlende Beträge erhalten.');
+    Assert.IsTrue(descriptor.Taxes[1].TaxAmount.HasValue);
+    Assert.AreEqual<Currency>(0, descriptor.Taxes[1].TaxAmount.Value);
+  finally
+    descriptor.Free;
+  end;
+end;
+
+procedure TZUGFeRDCrossVersionTests.TestHeaderTaxAmountPresence(readerKind: Integer; missingAmount: Boolean);
+var
+  sourceInvoice: TZUGFeRDInvoiceDescriptor;
+  reader: TZUGFeRDIInvoiceDescriptorReader;
+  writer: TZUGFeRDIInvoiceDescriptorWriter;
+  version: TZUGFeRDVersion;
+  profile: TZUGFeRDProfile;
+  format: TZUGFeRDFormats;
+  sourceStream: TStringStream;
+  document: IXMLDOMDocument2;
+  amountNode: IXMLDOMNode;
+  xmlContent: string;
+  useDispatcher: Boolean;
+
+  /// <summary>Erhält die XML-Präsenz und prüft beide Schreibwege vor jeder Ausgabe.</summary>
+  procedure LoadAndCheck;
+  var
+    inputStream: TStringStream;
+    outputStream: TMemoryStream;
+    loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  begin
+    inputStream := TStringStream.Create(xmlContent, TEncoding.UTF8);
+    try
+      if useDispatcher then
+        loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(inputStream)
+      else
+        loadedInvoice := reader.Load(inputStream);
+      try
+        Assert.AreEqual(Integer(sourceInvoice.Taxes.Count), Integer(loadedInvoice.Taxes.Count));
+        Assert.AreEqual(not missingAmount, loadedInvoice.Taxes[0].TaxAmount.HasValue);
+        Assert.AreEqual(sourceInvoice.InvoiceNo, loadedInvoice.InvoiceNo);
+        Assert.AreEqual(Integer(sourceInvoice.TradeLineItems.Count), Integer(loadedInvoice.TradeLineItems.Count));
+        if not missingAmount then
+          Assert.AreEqual<Currency>(0, loadedInvoice.Taxes[0].TaxAmount.Value);
+
+        Assert.AreEqual(not missingAmount, writer.Validate(loadedInvoice, False));
+        outputStream := TMemoryStream.Create;
+        try
+          if missingAmount then
+          begin
+            Assert.WillRaise(
+              procedure
+              begin
+                writer.Validate(loadedInvoice, True);
+              end,
+              TZUGFeRDMissingDataException);
+            Assert.WillRaise(
+              procedure
+              begin
+                writer.Save(loadedInvoice, outputStream, format);
+              end,
+              TZUGFeRDMissingDataException);
+            Assert.WillRaise(
+              procedure
+              begin
+                loadedInvoice.Save(outputStream, version, profile, format);
+              end,
+              TZUGFeRDMissingDataException);
+            Assert.AreEqual<Int64>(0, outputStream.Size);
+          end
+          else
+          begin
+            writer.Save(loadedInvoice, outputStream, format);
+            Assert.IsTrue(outputStream.Size > 0);
+          end;
+        finally
+          outputStream.Free;
+        end;
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      inputStream.Free;
+    end;
+  end;
+
+begin
+  profile := TZUGFeRDProfile.Extended;
+  format := TZUGFeRDFormats.CII;
+  case readerKind of
+    100: begin
+      version := TZUGFeRDVersion.Version1;
+      reader := TZUGFeRDInvoiceDescriptor1Reader.Create;
+      writer := TZUGFeRDInvoiceDescriptor1Writer.Create;
+    end;
+    200: begin
+      version := TZUGFeRDVersion.Version20;
+      reader := TZUGFeRDInvoiceDescriptor20Reader.Create;
+      writer := TZUGFeRDInvoiceDescriptor20Writer.Create;
+    end;
+    230: begin
+      version := TZUGFeRDVersion.Version23;
+      reader := TZUGFeRDInvoiceDescriptor23CIIReader.Create;
+      writer := TZUGFeRDInvoiceDescriptor23CIIWriter.Create;
+    end;
+    221, 222: begin
+      version := TZUGFeRDVersion.Version23;
+      profile := TZUGFeRDProfile.XRechnung;
+      format := TZUGFeRDFormats.UBL;
+      reader := TZUGFeRDInvoiceDescriptor22UblReader.Create;
+      writer := TZUGFeRDInvoiceDescriptor22UBLWriter.Create;
+    end;
+  else
+    raise EArgumentException.Create('Unknown reader kind.');
+  end;
+  try
+    sourceInvoice := TZUGFeRDInvoiceProvider.CreateInvoice;
+    try
+      sourceInvoice.Taxes[0].TaxAmount := 0;
+      if format = TZUGFeRDFormats.UBL then
+      begin
+        sourceInvoice.PaymentMeans.SEPAMandateReference := '';
+        sourceInvoice.PaymentMeans.SEPACreditorIdentifier := '';
+      end;
+      if readerKind = 222 then
+        sourceInvoice.Type_ := TZUGFeRDInvoiceType.CreditNote;
+      sourceStream := TStringStream.Create('', TEncoding.UTF8);
+      try
+        sourceInvoice.Save(sourceStream, version, profile, format);
+        document := CoDOMDocument60.Create;
+        document.setProperty('SelectionLanguage', 'XPath');
+        Assert.IsTrue(document.loadXML(sourceStream.DataString));
+        if format = TZUGFeRDFormats.UBL then
+          amountNode := document.selectSingleNode('/*/*[local-name()="TaxTotal"]/*[local-name()="TaxSubtotal"]/*[local-name()="TaxAmount"]')
+        else
+          amountNode := document.selectSingleNode(
+            '//*[local-name()="ApplicableHeaderTradeSettlement" or local-name()="ApplicableSupplyChainTradeSettlement"]' +
+            '/*[local-name()="ApplicableTradeTax"]/*[local-name()="CalculatedAmount"]');
+        Assert.IsNotNull(amountNode, 'Die positive Kontrolle muss den Nullbetrag ausgeben.');
+        Assert.AreEqual('0.00', string(amountNode.text));
+        if missingAmount then
+          amountNode.parentNode.removeChild(amountNode);
+        xmlContent := document.xml;
+      finally
+        sourceStream.Free;
+      end;
+      for useDispatcher := False to True do
+        LoadAndCheck;
+    finally
+      sourceInvoice.Free;
+    end;
+  finally
+    writer.Free;
+    reader.Free;
+  end;
+end;
 
 procedure TZUGFeRDCrossVersionTests.TestReaderResultOwnership(readerKind: Integer; const failurePoint: string);
 const

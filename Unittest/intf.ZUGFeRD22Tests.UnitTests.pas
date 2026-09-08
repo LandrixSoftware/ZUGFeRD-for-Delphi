@@ -42,7 +42,19 @@ type
     [Test]
     procedure TestNilAdvancePaymentValidation;
     [Test]
-    procedure TestAdvancePaymentReaderRejectsMissingMandatoryData;
+    [TestCase('ValidAmount', 'None')]
+    [TestCase('ExplicitZero', 'Zero')]
+    [TestCase('MissingPaidAmount', 'PaidAmount')]
+    [TestCase('MissingIncludedTradeTax', 'IncludedTradeTax')]
+    [TestCase('MissingCalculatedAmount', 'CalculatedAmount')]
+    [TestCase('MissingTypeCode', 'TypeCode')]
+    [TestCase('MissingCategoryCode', 'CategoryCode')]
+    [TestCase('MissingReferenceID', 'IssuerAssignedID')]
+    [TestCase('InvalidPaidAmount', 'InvalidPaidAmount')]
+    [TestCase('InvalidCalculatedAmount', 'InvalidCalculatedAmount')]
+    [TestCase('InvalidTypeCode', 'InvalidTypeCode')]
+    [TestCase('InvalidCategoryCode', 'InvalidCategoryCode')]
+    procedure TestAdvancePaymentReaderPreservesMissingMandatoryData(const missingField: string);
     [Test]
     procedure TestCIIReaderReleasesDescriptorAfterParsingError;
     /// <summary>Checks one valid document and seven distinct date failures before and after ownership transfer.</summary>
@@ -745,8 +757,12 @@ begin
     AssertSaveRaisesMissingData;
 
     includedTax := TZUGFeRDTax.Create;
-    includedTax.TypeCode := nil;
     advancePayment.IncludedTradeTaxes.Add(includedTax);
+    Assert.IsFalse(includedTax.TaxAmount.HasValue);
+    AssertSaveRaisesMissingData;
+
+    includedTax.TaxAmount := 0;
+    includedTax.TypeCode := nil;
     AssertSaveRaisesMissingData;
 
     includedTax.TypeCode := TZUGFeRDTaxTypes.VAT;
@@ -799,57 +815,146 @@ begin
 end;
 
 /// <summary>
-/// Prüft, dass fehlende XML-Pflichtwerte nicht als Nullwerte übernommen werden.
+/// Bewahrt fehlende BG-X-45-Pflichtwerte ohne erfundene Nullwerte oder Verlust des
+/// übrigen Belegs. Nur die gültigen Kontrollen dürfen wieder geschrieben werden.
+/// Nichtleere, ungültige Beträge/Codes bleiben dagegen Lesefehler.
+/// Aufgewärmte Lade-/Schreibzyklen prüfen zugleich die geänderten Besitzpfade.
 /// </summary>
-procedure TZUGFeRD22Tests.TestAdvancePaymentReaderRejectsMissingMandatoryData;
+procedure TZUGFeRD22Tests.TestAdvancePaymentReaderPreservesMissingMandatoryData(const missingField: string);
 var
   desc: TZUGFeRDInvoiceDescriptor;
   advancePayment: TZUGFeRDAdvancePayment;
   includedTax: TZUGFeRDTax;
   stream: TMemoryStream;
   bytes: TBytes;
-  xmlContent: string;
+  xmlContent, advanceXml, fieldName, removedFieldXml, changedAdvanceXml: string;
+  firstBatchMemory, secondBatchMemory: NativeUInt;
+  invalidValue: Boolean;
 
-  procedure AssertRemovalRaisesMissingData(const pattern: string);
+  // Prüft den geladenen Inhalt vor dem erneuten Schreiben, nicht nur Ausnahmefreiheit.
+  procedure LoadAndCheck;
   var
-    invalidXml: string;
-    invalidStream: TStringStream;
+    inputStream: TStringStream;
+    outputStream: TMemoryStream;
     loadedInvoice: TZUGFeRDInvoiceDescriptor;
+    loadedPayment: TZUGFeRDAdvancePayment;
+    loadedTax: TZUGFeRDTax;
+    expectedAmount: Currency;
   begin
-    invalidXml := TRegEx.Replace(xmlContent, pattern, '', [roSingleLine]);
-    Assert.IsTrue(invalidXml <> xmlContent, 'Das zu entfernende XML-Pflichtfeld wurde nicht gefunden.');
-
-    invalidStream := TStringStream.Create(invalidXml, TEncoding.UTF8);
-    loadedInvoice := nil;
+    inputStream := TStringStream.Create(xmlContent, TEncoding.UTF8);
     try
-      Assert.WillRaise(
-        procedure
+      if invalidValue then
+      begin
+        Assert.WillRaise(
+          procedure
+          var
+            unexpectedInvoice: TZUGFeRDInvoiceDescriptor;
+          begin
+            unexpectedInvoice := TZUGFeRDInvoiceDescriptor.Load(inputStream);
+            unexpectedInvoice.Free;
+          end,
+          TZUGFeRDMissingDataException);
+        Exit;
+      end;
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(inputStream);
+      try
+        Assert.AreEqual(desc.InvoiceNo, loadedInvoice.InvoiceNo);
+        Assert.AreEqual(Integer(desc.TradeLineItems.Count), Integer(loadedInvoice.TradeLineItems.Count));
+        Assert.AreEqual(desc.TradeLineItems[0].Name, loadedInvoice.TradeLineItems[0].Name);
+        Assert.AreEqual<Currency>(desc.GrandTotalAmount.Value, loadedInvoice.GrandTotalAmount.Value);
+        Assert.AreEqual<Currency>(desc.TotalPrepaidAmount.Value, loadedInvoice.TotalPrepaidAmount.Value);
+        Assert.AreEqual<Currency>(desc.Taxes[0].TaxAmount.Value, loadedInvoice.Taxes[0].TaxAmount.Value);
+        Assert.AreEqual(1, Integer(loadedInvoice.AdvancePayments.Count));
+        loadedPayment := loadedInvoice.AdvancePayments[0];
+        Assert.AreEqual(missingField <> 'PaidAmount', loadedPayment.PaidAmount.HasValue);
+        if loadedPayment.PaidAmount.HasValue then
+          Assert.AreEqual<Currency>(2975, loadedPayment.PaidAmount.Value);
+        Assert.AreEqual(EncodeDate(2025, 6, 7), loadedPayment.FormattedReceivedDateTime.Value);
+
+        if missingField = 'IncludedTradeTax' then
+          Assert.AreEqual(0, Integer(loadedPayment.IncludedTradeTaxes.Count))
+        else
         begin
-          invalidStream.Position := 0;
-          loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(invalidStream);
-        end,
-        TZUGFeRDMissingDataException);
+          Assert.AreEqual(1, Integer(loadedPayment.IncludedTradeTaxes.Count));
+          loadedTax := loadedPayment.IncludedTradeTaxes[0];
+          Assert.AreEqual(missingField <> 'CalculatedAmount', loadedTax.TaxAmount.HasValue);
+          if loadedTax.TaxAmount.HasValue then
+          begin
+            expectedAmount := 1900;
+            if missingField = 'Zero' then
+              expectedAmount := 0;
+            Assert.AreEqual<Currency>(expectedAmount, loadedTax.TaxAmount.Value);
+          end;
+          Assert.AreEqual(missingField <> 'TypeCode', loadedTax.TypeCode.HasValue);
+          if loadedTax.TypeCode.HasValue then
+            Assert.AreEqual<TZUGFeRDTaxTypes>(TZUGFeRDTaxTypes.VAT, loadedTax.TypeCode.Value);
+          Assert.AreEqual(missingField <> 'CategoryCode', loadedTax.CategoryCode.HasValue);
+          if loadedTax.CategoryCode.HasValue then
+            Assert.AreEqual<TZUGFeRDTaxCategoryCodes>(TZUGFeRDTaxCategoryCodes.S, loadedTax.CategoryCode.Value);
+        end;
+
+        Assert.IsNotNull(loadedPayment.InvoiceSpecifiedReferencedDocument);
+        if missingField = 'IssuerAssignedID' then
+          Assert.AreEqual('', loadedPayment.InvoiceSpecifiedReferencedDocument.ID)
+        else
+          Assert.AreEqual('R202506-01', loadedPayment.InvoiceSpecifiedReferencedDocument.ID);
+        Assert.AreEqual(EncodeDate(2025, 6, 1), loadedPayment.InvoiceSpecifiedReferencedDocument.IssueDateTime.Value);
+        Assert.AreEqual<TZUGFeRDInvoiceType>(TZUGFeRDInvoiceType.PartialInvoice,
+          loadedPayment.InvoiceSpecifiedReferencedDocument.TypeCode.Value);
+
+        outputStream := TMemoryStream.Create;
+        try
+          if (missingField = 'None') or (missingField = 'Zero') then
+          begin
+            loadedInvoice.Save(outputStream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
+            Assert.IsTrue(outputStream.Size > 0);
+          end
+          else
+          begin
+            Assert.WillRaise(
+              procedure
+              begin
+                loadedInvoice.Save(outputStream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
+              end,
+              TZUGFeRDMissingDataException);
+            Assert.AreEqual<Int64>(0, outputStream.Size, 'Pflichtdaten vor der Ausgabe ablehnen.');
+          end;
+        finally
+          outputStream.Free;
+        end;
+      finally
+        loadedInvoice.Free;
+      end;
+      Assert.IsTrue(inputStream.Size > 0, 'Der Reader darf den Eingabestream nicht freigeben.');
     finally
-      loadedInvoice.Free;
-      invalidStream.Free;
+      inputStream.Free;
     end;
   end;
 
 begin
+  invalidValue := missingField.StartsWith('Invalid');
+  fieldName := missingField;
+  if invalidValue then
+    fieldName := missingField.Substring(Length('Invalid'));
   desc := TZUGFeRDInvoiceDescriptor.Load(DemodataPath('zugferd21\zugferd_2p1_EXTENDED_Warenrechnung-factur-x.xml'));
   try
     desc.AdvancePayments.Clear;
     advancePayment := TZUGFeRDAdvancePayment.Create;
+    desc.AdvancePayments.Add(advancePayment);
     advancePayment.PaidAmount := 2975.0;
+    advancePayment.FormattedReceivedDateTime := EncodeDate(2025, 6, 7);
 
     includedTax := TZUGFeRDTax.Create;
+    advancePayment.IncludedTradeTaxes.Add(includedTax);
     includedTax.TaxAmount := 1900;
+    if missingField = 'Zero' then
+      includedTax.TaxAmount := 0;
     includedTax.TypeCode := TZUGFeRDTaxTypes.VAT;
     includedTax.CategoryCode := TZUGFeRDTaxCategoryCodes.S;
-    advancePayment.IncludedTradeTaxes.Add(includedTax);
 
-    advancePayment.SetInvoiceReferencedDocument('R202506-01');
-    desc.AdvancePayments.Add(advancePayment);
+    advancePayment.SetInvoiceReferencedDocument('R202506-01',
+      TZUGFeRDNullableParam<TDateTime>.Create(EncodeDate(2025, 6, 1)),
+      TZUGFeRDNullableParam<TZUGFeRDInvoiceType>.Create(TZUGFeRDInvoiceType.PartialInvoice));
 
     stream := TMemoryStream.Create;
     try
@@ -862,12 +967,31 @@ begin
       stream.Free;
     end;
 
-    AssertRemovalRaisesMissingData('<ram:PaidAmount(?:\s[^>]*)?>.*?</ram:PaidAmount>');
-    AssertRemovalRaisesMissingData('<ram:IncludedTradeTax>.*?</ram:IncludedTradeTax>');
-    AssertRemovalRaisesMissingData('<ram:CalculatedAmount(?:\s[^>]*)?>.*?</ram:CalculatedAmount>');
-    AssertRemovalRaisesMissingData('<ram:TypeCode>VAT</ram:TypeCode>');
-    AssertRemovalRaisesMissingData('<ram:CategoryCode>S</ram:CategoryCode>');
-    AssertRemovalRaisesMissingData('<ram:IssuerAssignedID>R202506-01</ram:IssuerAssignedID>');
+    if (missingField <> 'None') and (missingField <> 'Zero') then
+    begin
+      // Ausschließlich BG-X-45 mutieren, niemals gleichnamige Kopf-/Positionsfelder.
+      advanceXml := TRegEx.Match(xmlContent,
+        '<ram:SpecifiedAdvancePayment>.*?</ram:SpecifiedAdvancePayment>', [roSingleLine]).Value;
+      Assert.IsTrue(advanceXml <> '', 'Anzahlungsgruppe fehlt in der positiven Kontrolle.');
+      removedFieldXml := TRegEx.Match(advanceXml,
+        '<ram:' + fieldName + '(?:\s[^>]*)?>.*?</ram:' + fieldName + '>', [roSingleLine]).Value;
+      Assert.IsTrue(removedFieldXml <> '', 'Das zu entfernende XML-Pflichtfeld wurde nicht gefunden.');
+      // Nur den ersten Treffer entfernen: TypeCode kommt auch in der Rechnungsreferenz vor.
+      changedAdvanceXml := StringReplace(advanceXml, removedFieldXml, '', []);
+      if invalidValue then
+        changedAdvanceXml := StringReplace(advanceXml, removedFieldXml,
+          '<ram:' + fieldName + '>INVALID</ram:' + fieldName + '>', []);
+      Assert.IsTrue(changedAdvanceXml <> advanceXml, 'Das zu entfernende XML-Pflichtfeld wurde nicht gefunden.');
+      xmlContent := StringReplace(xmlContent, advanceXml, changedAdvanceXml, []);
+    end;
+
+    for var iteration := 1 to 10 do
+      LoadAndCheck;
+    firstBatchMemory := GetAllocatedMemory;
+    for var iteration := 1 to 10 do
+      LoadAndCheck;
+    secondBatchMemory := GetAllocatedMemory;
+    AssertNoMemoryGrowth(firstBatchMemory, secondBatchMemory);
   finally
     desc.Free;
   end;

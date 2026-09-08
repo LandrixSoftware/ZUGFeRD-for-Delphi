@@ -457,7 +457,7 @@ begin
     begin
       var taxableAmount : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], 'cbc:TaxableAmount', 0);
       var percent : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], 'cac:TaxCategory/cbc:Percent', 0);
-      var taxAmount : Currency := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], 'cbc:TaxAmount', 0);
+      var taxAmount: ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], 'cbc:TaxAmount');
       var taxType : TZUGFeRDTaxTypes := TEnumExtensions<TZUGFeRDTaxTypes>.StringToEnum(
         TZUGFeRDXmlUtils.NodeAsString(nodes[i], 'cac:TaxCategory/cac:TaxScheme/cbc:ID'));
       var categoryCode : TZUGFeRDTaxCategoryCodes := TEnumExtensions<TZUGFeRDTaxCategoryCodes>.StringToEnum(

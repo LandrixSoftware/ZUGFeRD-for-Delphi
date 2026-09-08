@@ -115,6 +115,7 @@ begin
     raise TZUGFeRDUnsupportedException.Create('Invalid profile used for ZUGFeRD 1.x invoice.');
 
   // write data
+  ValidateTaxAmounts(_descriptor, True);
   streamPosition := _stream.Position;
 
   Descriptor := _descriptor;
@@ -846,7 +847,7 @@ begin
 
     _writer.WriteStartElement('ram:CalculatedAmount');
     _writer.WriteAttributeString('currencyID', TEnumExtensions<TZUGFeRDCurrencyCodes>.EnumToString(Descriptor.Currency));
-    _writer.WriteValue(_formatDecimal(tax.TaxAmount));
+    _writer.WriteValue(_formatDecimal(tax.TaxAmount.Value));
     _writer.WriteEndElement(); // !CalculatedAmount
 
     _writer.WriteElementString('ram:TypeCode', TEnumExtensions<TZUGFeRDTaxTypes>.EnumToString(tax.TypeCode));
@@ -1056,7 +1057,7 @@ begin
     end;
   end;
 
-  Result := true;
+  Result := ValidateTaxAmounts(_descriptor, _throwExceptions);
 end;
 
 procedure TZUGFeRDInvoiceDescriptor1Writer._writeOptionalAmount(
