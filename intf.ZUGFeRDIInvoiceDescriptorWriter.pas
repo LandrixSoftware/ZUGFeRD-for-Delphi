@@ -31,12 +31,19 @@ uses
   ,intf.ZUGFeRDExceptions
   ,intf.ZUGFeRDInvoiceTypes
   ,intf.ZUGFeRDTaxTypes
+  ,intf.ZUGFeRDTax
   ,intf.ZUGFeRDTradeLineItem
   ;
 
 type
   TZUGFeRDIInvoiceDescriptorWriter = class abstract
   protected
+    /// <summary>
+    /// Verhindert, dass fehlende Kopfsteuerbeträge als Null ausgegeben werden.
+    /// BT-117 verlangt einen Betrag (Factur-X: FX-SCH-A-000176); auch ZUGFeRD 1.0
+    /// fordert CalculatedAmount in der Kopfsteuer, trotz optionalem gemeinsamem XSD-Typ.
+    /// </summary>
+    class function ValidateTaxAmounts(descriptor: TZUGFeRDInvoiceDescriptor; throwExceptions: Boolean): Boolean; static;
     /// <summary>
     /// Gemeinsame Vorprüfung für ZUGFeRD 2.x / Factur-X / XRechnung (Version23).
     /// Liegt hier, damit der Dispatcher (23Writer) und die direkt nutzbaren Writer
@@ -110,6 +117,23 @@ begin
   finally
     ms.Free;
   end;
+end;
+
+class function TZUGFeRDIInvoiceDescriptorWriter.ValidateTaxAmounts(
+  descriptor: TZUGFeRDInvoiceDescriptor; throwExceptions: Boolean): Boolean;
+var
+  tax: TZUGFeRDTax;
+begin
+  for tax in descriptor.Taxes do
+  begin
+    if not tax.TaxAmount.HasValue then
+    begin
+      if throwExceptions then
+        raise TZUGFeRDMissingDataException.Create('Tax amount is required for every header tax breakdown (BT-117).');
+      Exit(False);
+    end;
+  end;
+  Result := True;
 end;
 
 class function TZUGFeRDIInvoiceDescriptorWriter.ValidateVersion23(descriptor: TZUGFeRDInvoiceDescriptor; throwExceptions: Boolean): Boolean;
@@ -192,7 +216,7 @@ begin
       exit;
   end;
 
-  Result := true;
+  Result := ValidateTaxAmounts(descriptor, throwExceptions);
 end;
 
 class function TZUGFeRDIInvoiceDescriptorWriter.CalculateLineTotalAmount(

@@ -124,6 +124,7 @@ begin
     raise TZUGFeRDUnsupportedException.Create('UBL format is not supported for ZUGFeRD 2.0');
 
   // write data
+  ValidateTaxAmounts(_descriptor, True);
   streamPosition := _stream.Position;
 
   Descriptor := _descriptor;
@@ -1176,7 +1177,7 @@ begin
     _writer.WriteStartElement('ram:ApplicableTradeTax');
 
     _writer.WriteStartElement('ram:CalculatedAmount');
-    _writer.WriteValue(_formatDecimal(tax.TaxAmount));
+    _writer.WriteValue(_formatDecimal(tax.TaxAmount.Value));
     _writer.WriteEndElement(); // !CalculatedAmount
 
     _writer.WriteElementString('ram:TypeCode', TEnumExtensions<TZUGFeRDTaxTypes>.EnumToString(tax.TypeCode));
@@ -1385,7 +1386,7 @@ begin
     end;
   end;
 
-  Result := true;
+  Result := ValidateTaxAmounts(_descriptor, _throwExceptions);
 end;
 
 end.

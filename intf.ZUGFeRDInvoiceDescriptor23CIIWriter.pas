@@ -135,6 +135,7 @@ end;
 
 /// <summary>
 /// Prüft die Pflichtangaben der nur im EXTENDED-Profil ausgegebenen Vorauszahlungen.
+/// BT-X-293 ist nach FX-SCH-A-000952 Pflicht, auch wenn TradeTaxType im XSD 0..1 erlaubt.
 /// </summary>
 procedure TZUGFeRDInvoiceDescriptor23CIIWriter._validateAdvancePayments;
 begin
@@ -157,6 +158,8 @@ begin
     begin
       if not Assigned(includedTax) then
         raise TZUGFeRDMissingDataException.Create('Advance payment tax type and category are required (BG-X-45).');
+      if not includedTax.TaxAmount.HasValue then
+        raise TZUGFeRDMissingDataException.Create('Advance payment tax amount is required (BT-X-293, BG-X-45).');
       if not includedTax.TypeCode.HasValue or not includedTax.CategoryCode.HasValue then
         raise TZUGFeRDMissingDataException.Create('Advance payment tax type and category are required (BG-X-45).');
     end;
@@ -175,6 +178,7 @@ begin
     raise TZUGFeRDIllegalStreamException.Create('Cannot write to stream');
 
   // write data
+  ValidateTaxAmounts(_descriptor, True);
   streamPosition := _stream.Position;
 
   Descriptor := _descriptor;
@@ -1294,7 +1298,7 @@ begin
     for var includedTax: TZUGFeRDTax in advancePayment.IncludedTradeTaxes do
     begin
       Writer.WriteStartElement('ram:IncludedTradeTax', [TZUGFeRDProfile.Extended]);
-      Writer.WriteOptionalElementString('ram:CalculatedAmount', _formatDecimal(includedTax.TaxAmount));
+      Writer.WriteOptionalElementString('ram:CalculatedAmount', _formatDecimal(includedTax.TaxAmount.Value));
       if includedTax.TypeCode.HasValue then
         Writer.WriteOptionalElementString('ram:TypeCode', TEnumExtensions<TZUGFeRDTaxTypes>.EnumToString(includedTax.TypeCode));
       if includedTax.CategoryCode.HasValue then
@@ -1661,7 +1665,7 @@ begin
     _writer.WriteStartElement('ram:ApplicableTradeTax');
 
     _writer.WriteStartElement('ram:CalculatedAmount');
-    _writer.WriteValue(_formatDecimal(tax.TaxAmount));
+    _writer.WriteValue(_formatDecimal(tax.TaxAmount.Value));
     _writer.WriteEndElement(); // !CalculatedAmount
 
     _writer.WriteElementString('ram:TypeCode', TEnumExtensions<TZUGFeRDTaxTypes>.EnumToString(tax.TypeCode));
