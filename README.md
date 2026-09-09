@@ -182,11 +182,14 @@ Zuweisungen bleiben möglich. Bei Berechnungen und Vergleichen zuerst `HasValue`
 und anschließend `Value` verwenden. Der Betrag wird nicht automatisch aus Basis und
 Steuersatz berechnet. Abhängige Anwendungen müssen neu kompiliert werden.
 
-Der CII-Reader erhält fehlende Pflichtangaben in `SpecifiedAdvancePayment` (BG-X-45),
-statt deshalb den übrigen Beleg abzulehnen. Fehlende Beträge und Steuercodes bleiben
+Der CII-Reader erhält Anzahlungen in `SpecifiedAdvancePayment` (BG-X-45) auch bei
+fehlenden oder unlesbaren Pflichtangaben, statt deshalb den übrigen Beleg abzulehnen.
+Fehlende oder unlesbare Pflichtbeträge und unbekannte Steuercodes bleiben
 ohne Wert, eine fehlende Steuerliste bleibt leer; eine vorhandene Rechnungsreferenz
-bleibt auch ohne ID erhalten. Nichtleere, unlesbare Pflichtbeträge und Steuercodes
-bleiben Lesefehler. Das tolerante Lesen bestätigt keine Standardkonformität:
+bleibt auch ohne ID erhalten. Ein leerer Nullable unterscheidet fehlende und
+unlesbare Werte nicht; der ursprüngliche ungültige Text wird nicht gespeichert.
+XML-, Datei-, Stream- und Datumsfehler werden nicht zusätzlich abgefangen.
+Das tolerante Lesen bestätigt keine Standardkonformität:
 Der EXTENDED-Writer lehnt unvollständige Anzahlungen weiterhin ab, insbesondere einen
 fehlenden Steuerbetrag BT-X-293 nach `FX-SCH-A-000952`. Auch die Kopfsteuer-Writer
 verlangen vorhandene Beträge; der Summenvalidator meldet fehlendes BT-117.

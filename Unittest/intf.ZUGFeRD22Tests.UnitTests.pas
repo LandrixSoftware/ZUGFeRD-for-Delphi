@@ -815,9 +815,9 @@ begin
 end;
 
 /// <summary>
-/// Bewahrt fehlende BG-X-45-Pflichtwerte ohne erfundene Nullwerte oder Verlust des
-/// übrigen Belegs. Nur die gültigen Kontrollen dürfen wieder geschrieben werden.
-/// Nichtleere, ungültige Beträge/Codes bleiben dagegen Lesefehler.
+/// Liest fehlende oder unlesbare BG-X-45-Pflichtwerte als leere Nullable, ohne
+/// erfundene Nullwerte oder Verlust des übrigen Belegs. Nur die gültigen Kontrollen
+/// dürfen wieder geschrieben werden; alle unbrauchbaren Pflichtwerte sind abzulehnen.
 /// Aufgewärmte Lade-/Schreibzyklen prüfen zugleich die geänderten Besitzpfade.
 /// </summary>
 procedure TZUGFeRD22Tests.TestAdvancePaymentReaderPreservesMissingMandatoryData(const missingField: string);
@@ -843,19 +843,6 @@ var
   begin
     inputStream := TStringStream.Create(xmlContent, TEncoding.UTF8);
     try
-      if invalidValue then
-      begin
-        Assert.WillRaise(
-          procedure
-          var
-            unexpectedInvoice: TZUGFeRDInvoiceDescriptor;
-          begin
-            unexpectedInvoice := TZUGFeRDInvoiceDescriptor.Load(inputStream);
-            unexpectedInvoice.Free;
-          end,
-          TZUGFeRDMissingDataException);
-        Exit;
-      end;
       loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(inputStream);
       try
         Assert.AreEqual(desc.InvoiceNo, loadedInvoice.InvoiceNo);
@@ -866,7 +853,7 @@ var
         Assert.AreEqual<Currency>(desc.Taxes[0].TaxAmount.Value, loadedInvoice.Taxes[0].TaxAmount.Value);
         Assert.AreEqual(1, Integer(loadedInvoice.AdvancePayments.Count));
         loadedPayment := loadedInvoice.AdvancePayments[0];
-        Assert.AreEqual(missingField <> 'PaidAmount', loadedPayment.PaidAmount.HasValue);
+        Assert.AreEqual(fieldName <> 'PaidAmount', loadedPayment.PaidAmount.HasValue);
         if loadedPayment.PaidAmount.HasValue then
           Assert.AreEqual<Currency>(2975, loadedPayment.PaidAmount.Value);
         Assert.AreEqual(EncodeDate(2025, 6, 7), loadedPayment.FormattedReceivedDateTime.Value);
@@ -877,7 +864,7 @@ var
         begin
           Assert.AreEqual(1, Integer(loadedPayment.IncludedTradeTaxes.Count));
           loadedTax := loadedPayment.IncludedTradeTaxes[0];
-          Assert.AreEqual(missingField <> 'CalculatedAmount', loadedTax.TaxAmount.HasValue);
+          Assert.AreEqual(fieldName <> 'CalculatedAmount', loadedTax.TaxAmount.HasValue);
           if loadedTax.TaxAmount.HasValue then
           begin
             expectedAmount := 1900;
@@ -885,10 +872,10 @@ var
               expectedAmount := 0;
             Assert.AreEqual<Currency>(expectedAmount, loadedTax.TaxAmount.Value);
           end;
-          Assert.AreEqual(missingField <> 'TypeCode', loadedTax.TypeCode.HasValue);
+          Assert.AreEqual(fieldName <> 'TypeCode', loadedTax.TypeCode.HasValue);
           if loadedTax.TypeCode.HasValue then
             Assert.AreEqual<TZUGFeRDTaxTypes>(TZUGFeRDTaxTypes.VAT, loadedTax.TypeCode.Value);
-          Assert.AreEqual(missingField <> 'CategoryCode', loadedTax.CategoryCode.HasValue);
+          Assert.AreEqual(fieldName <> 'CategoryCode', loadedTax.CategoryCode.HasValue);
           if loadedTax.CategoryCode.HasValue then
             Assert.AreEqual<TZUGFeRDTaxCategoryCodes>(TZUGFeRDTaxCategoryCodes.S, loadedTax.CategoryCode.Value);
         end;
