@@ -926,14 +926,14 @@ type
     /// </summary>
     /// <param name="basisAmount">Base amount for tax calculation</param>
     /// <param name="percent">Tax percentage rate</param>
-    /// <param name="taxAmount">Calculated tax amount</param>
+    /// <param name="calculatedAmount">Angegebener Steuerbetrag; ohne Wert für beim Lesen fehlende Beträge.</param>
     /// <param name="typeCode">Type of tax</param>
     /// <param name="categoryCode">Tax category</param>
     /// <param name="allowanceChargeBasisAmount">Base amount for allowances/charges</param>
     /// <param name="exemptionReasonCode">Tax exemption reason code</param>
     /// <param name="exemptionReason">Tax exemption reason text</param>
     /// <param name="lineTotalBasisAmount">Line total base amount for tax calculation</param>
-    function AddApplicableTradeTax(const calculatedAmount, basisAmount: Currency;
+    function AddApplicableTradeTax(calculatedAmount: ZUGFeRDNullable<Currency>; const basisAmount: Currency;
       const percent: Currency; const typeCode: TZUGFeRDTaxTypes;
       const categoryCode: TZUGFeRDTaxCategoryCodes;
       const allowanceChargeBasisAmount: IZUGFeRDNullableParam<Currency> = Nil;
@@ -1937,7 +1937,7 @@ begin
   TaxCurrency:= accountingCurrency;
 end;
 
-function TZUGFeRDInvoiceDescriptor.AddApplicableTradeTax(const calculatedAmount, basisAmount: Currency;
+function TZUGFeRDInvoiceDescriptor.AddApplicableTradeTax(calculatedAmount: ZUGFeRDNullable<Currency>; const basisAmount: Currency;
   const percent: Currency; const typeCode: TZUGFeRDTaxTypes;
   const categoryCode: TZUGFeRDTaxCategoryCodes;
   const allowanceChargeBasisAmount: IZUGFeRDNullableParam<Currency> = Nil;

@@ -55,6 +55,7 @@ type
   TZUGFeRDInvoiceValidator = class
   public
     class procedure ValidateAndPrint(descriptor: TZUGFeRDInvoiceDescriptor; version: TZUGFeRDVersion; filename: string = '');
+    /// <summary>Prüft deklarierte Beträge und Summen; fehlendes BT-117 wird gemeldet, nicht als Null summiert.</summary>
     class function Validate(descriptor: TZUGFeRDInvoiceDescriptor; version: TZUGFeRDVersion): TZUGFeRDValidationResult;
   end;
 
@@ -98,7 +99,7 @@ var
     rounding, duePayable, expectedDuePayable, expectedTaxAmount,
     recalculatedLineAmount: Currency;
   declaredAllowanceTotal, declaredChargeTotal, expectedTaxBasis: Currency;
-  taxDeviation: Currency;
+  taxDeviation, declaredTaxAmount: Currency;
   item: TZUGFeRDTradeLineItem;
   tax: TZUGFeRDTax;
 begin
@@ -220,6 +221,15 @@ begin
 
     for tax in descriptor.Taxes do
     begin
+      // Die implizite Nullable-Konvertierung würde einen fehlenden Pflichtbetrag
+      // als null behandeln. BT-117 verlangt Präsenz, auch bei steuerfreien Umsätzen.
+      if not tax.TaxAmount.HasValue then
+      begin
+        Result.Messages.Add('Tax amount is required for every tax breakdown (BT-117)');
+        Result.IsValid := false;
+        Continue;
+      end;
+      declaredTaxAmount := tax.TaxAmount.Value;
       if not tax.TypeCode.HasValue then
       begin
         Result.Messages.Add('Tax type code is required for every tax breakdown');
@@ -234,7 +244,7 @@ begin
       // BR-CO-14 bildet BT-110 aus den angegebenen BT-117, nicht aus den
       // nachgerechneten Sollwerten. Beides fällt nur zusammen, solange BR-CO-17
       // exakt erzwungen wird - die Regel lässt aber eine Abweichung zu.
-      taxTotal := taxTotal + tax.TaxAmount;
+      taxTotal := taxTotal + declaredTaxAmount;
 
       Result.Messages.Add(Format('===> %f x %f%% = %f', [tax.BasisAmount, tax.Percent, expectedTaxAmount]));
 
@@ -244,10 +254,10 @@ begin
       // deshalb für jeden sechsten sauber zweistelligen Betrag einen Verstoß,
       // etwa für 0,07 oder 20,90. Currency rechnet in Hundertsteln exakt, also
       // beantwortet der Nachkommaanteil nach Multiplikation mit 100 die Frage genau.
-      if Frac(tax.TaxAmount * 100) <> 0 then
+      if Frac(declaredTaxAmount * 100) <> 0 then
       begin
         Result.Messages.Add(Format(
-          'BR-DEC-20: Der Steuerbetrag[%.4f] hat mehr als zwei Nachkommastellen', [tax.TaxAmount]));
+          'BR-DEC-20: Der Steuerbetrag[%.4f] hat mehr als zwei Nachkommastellen', [declaredTaxAmount]));
         Result.IsValid := false;
       end;
 
@@ -257,7 +267,7 @@ begin
       // Artefakte eine strikt kleinere Abweichung verlangen. Bis der Validator das
       // konkrete Regelwerk kennt, bleibt die Factur-X-Grenze für alle Profile
       // erhalten. Abweichungen werden protokolliert, damit sie nicht untergehen.
-      taxDeviation := tax.TaxAmount - expectedTaxAmount;
+      taxDeviation := declaredTaxAmount - expectedTaxAmount;
       if Abs(tax.Percent) < 0.5 then
       begin
         // Erster Zweig von FX-SCH-A-000052: rundet der Steuersatz auf null, muss
@@ -266,32 +276,32 @@ begin
         // Steuerbetrag von bis zu einer Einheit unbeanstandet. Die Kategorien mit
         // Nullsatz verlangen über BR-Z-09, BR-E-09, BR-AE-09, BR-G-09 und
         // BR-O-09 ohnehin genau null.
-        if Abs(tax.TaxAmount) >= 0.5 then
+        if Abs(declaredTaxAmount) >= 0.5 then
         begin
           Result.Messages.Add(Format(
             'BR-CO-17: Bei Steuersatz[%4f] muss der Steuerbetrag null sein, angegeben ist[%4f] bei Bemessungsgrundlage[%4f]',
-            [tax.Percent, tax.TaxAmount, tax.BasisAmount]));
+            [tax.Percent, declaredTaxAmount, tax.BasisAmount]));
           Result.IsValid := false;
         end
-        else if tax.TaxAmount <> 0 then
+        else if declaredTaxAmount <> 0 then
         begin
           Result.Messages.Add(Format(
             'Hinweis: Bei Steuersatz[%4f] ist ein Steuerbetrag von[%4f] angegeben, der auf null rundet',
-            [tax.Percent, tax.TaxAmount]));
+            [tax.Percent, declaredTaxAmount]));
         end;
       end
       else if Abs(taxDeviation) > 1 then
       begin
         Result.Messages.Add(Format(
           'BR-CO-17: Berechneter Steuerbetrag ist[%4f] aber vorhandener Steuerbetrag ist[%4f] bei Bemessungsgrundlage[%4f] und Steuersatz[%4f]',
-          [expectedTaxAmount, tax.TaxAmount, tax.BasisAmount, tax.Percent]));
+          [expectedTaxAmount, declaredTaxAmount, tax.BasisAmount, tax.Percent]));
         Result.IsValid := false;
       end
       else if taxDeviation <> 0 then
       begin
         Result.Messages.Add(Format(
           'Hinweis: Der Steuerbetrag[%4f] weicht um [%4f] vom berechneten Wert[%4f] ab, bleibt aber innerhalb der BR-CO-17-Toleranz von einer Währungseinheit',
-          [tax.TaxAmount, taxDeviation, expectedTaxAmount]));
+          [declaredTaxAmount, taxDeviation, expectedTaxAmount]));
       end;
     end;
 

@@ -41,14 +41,15 @@ type
     FLineTotalBasisAmount: ZUGFeRDNullable<Currency>;
     FExemptionReasonCode: ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes>;
     FExemptionReason: string;
-    FTaxAmount: Currency;
+    FTaxAmount: ZUGFeRDNullable<Currency>;
     FTaxPointDate: ZUGFeRDNullable<TDateTime>;
     FDueDateTypeCode: ZUGFeRDNullable<TZUGFeRDDateTypeCodes>;
   public
     /// <summary>
-    /// Returns the amount of the tax (Percent * BasisAmount)
+    /// Angegebener Steuerbetrag, nicht aus BasisAmount und Percent berechnet.
+    /// Ohne Wert bleibt ein fehlender XML-Betrag von einer expliziten Null unterscheidbar.
     /// </summary>
-    property TaxAmount: Currency read FTaxAmount write FTaxAmount;
+    property TaxAmount: ZUGFeRDNullable<Currency> read FTaxAmount write FTaxAmount;
     /// <summary>
     /// VAT category taxable amount
     /// </summary>
@@ -133,7 +134,7 @@ begin
   FTypeCode := TZUGFeRDTaxTypes.VAT;
   FCategoryCode := TZUGFeRDTaxCategoryCodes.S;
   FExemptionReason := '';
-  FTaxAmount := 0;
+  FTaxAmount := nil;
 end;
 
 procedure TZUGFeRDTax.SetTaxPointDate(taxPointDate: IZUGFeRDNullableParam<TDateTime>; dueDateTypeCode: IZUGFeRDNullableParam<TZUGFeRDDateTypeCodes>);

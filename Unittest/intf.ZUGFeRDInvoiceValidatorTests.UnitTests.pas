@@ -110,6 +110,11 @@ type
     procedure TestNonVatTaxDoesNotAffectVatTotals;
     [Test]
     procedure TestMissingTaxTypeIsReported;
+    /// <summary>Ein fehlendes BT-117 ist ungültig, eine explizite Null bleibt prüfbar.</summary>
+    [Test]
+    [TestCase('MissingAmount', 'True')]
+    [TestCase('ExplicitZero', 'False')]
+    procedure TestTaxAmountPresence(missingAmount: Boolean);
     [Test]
     procedure TestMissingTaxBasisAmountIsReported;
     [Test]
@@ -968,6 +973,40 @@ begin
     end;
   finally
     Descriptor.Free;
+  end;
+end;
+
+/// <summary>
+/// Prüft fehlendes BT-117 gegen eine ansonsten ausgeglichene Nullsteuerrechnung.
+/// Die Validierung muss die Präsenz erhalten, statt einen Ersatzbetrag einzusetzen.
+/// </summary>
+procedure TZUGFeRDInvoiceValidatorTests.TestTaxAmountPresence(missingAmount: Boolean);
+var
+  descriptor: TZUGFeRDInvoiceDescriptor;
+  validationResult: TZUGFeRDValidationResult;
+begin
+  descriptor := CreateBalancedInvoice(False);
+  try
+    descriptor.TradeLineItems[0].TaxPercent := 0;
+    descriptor.Taxes[0].Percent := 0;
+    descriptor.Taxes[0].TaxAmount := 0;
+    descriptor.TaxTotalAmount := 0;
+    descriptor.GrandTotalAmount := 200;
+    descriptor.DuePayableAmount := 200;
+    if missingAmount then
+      descriptor.Taxes[0].TaxAmount := nil;
+
+    validationResult := TZUGFeRDInvoiceValidator.Validate(descriptor, TZUGFeRDVersion.Version23);
+    try
+      Assert.AreEqual(not missingAmount, validationResult.IsValid, validationResult.Messages.Text);
+      Assert.AreEqual(missingAmount, validationResult.Messages.Text.Contains('Tax amount is required'));
+      Assert.AreEqual(missingAmount, not descriptor.Taxes[0].TaxAmount.HasValue,
+        'Die Validierung darf fehlende Beträge nicht nachberechnen.');
+    finally
+      validationResult.Free;
+    end;
+  finally
+    descriptor.Free;
   end;
 end;
 
