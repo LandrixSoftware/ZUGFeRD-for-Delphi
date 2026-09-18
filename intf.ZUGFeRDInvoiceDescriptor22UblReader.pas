@@ -123,10 +123,12 @@ end;
 
 function TZUGFeRDInvoiceDescriptor22UBLReader.GetValidURIs : TArray<string>;
 begin
+  // Nur die Namespaces der UBL-Wurzelelemente. cac/cbc taugen nicht als Kennung:
+  // CII-Rechnungen aus Konvertern deklarieren sie mitunter ungenutzt im
+  // Wurzelelement und wuerden dann faelschlich als UBL gelesen (leeres Ergebnis).
   Result := TArray<string>.Create(
     'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2',
-    'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
-    'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2'
+    'urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2'
   );
 end;
 

@@ -406,6 +406,10 @@ type
     [Test]
     procedure TestCIIReaderDoesNotTreatDifferentNamespaceUriAsRam;
 
+    /// <summary>Checks that a CII invoice declaring an unused UBL cac namespace is not dispatched to the UBL reader.</summary>
+    [Test]
+    procedure TestCIIWithUnusedUblNamespaceIsReadAsCII;
+
     /// <summary>Checks that both writers derive the same BT-131 from one descriptor.</summary>
     [Test]
     procedure TestCalculatedLineTotalAmountIsIdenticalInBothFormats;
@@ -3623,6 +3627,60 @@ begin
     FreeAndNil(Desc);
   end;
 end; // !TestCIIReaderDoesNotTreatDifferentNamespaceUriAsRam()
+
+procedure TZUGFeRDCrossVersionTests.TestCIIWithUnusedUblNamespaceIsReadAsCII;
+const
+  RootTag = '<rsm:CrossIndustryInvoice ';
+  UnusedUblNamespace = 'xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" ';
+var
+  Desc, LoadedInvoice: TZUGFeRDInvoiceDescriptor;
+  InvoiceStream: TMemoryStream;
+  ModifiedStream: TStringStream;
+  UblReader: TZUGFeRDInvoiceDescriptor22UBLReader;
+  Bytes: TBytes;
+  XmlContent, ModifiedXml: string;
+begin
+  Desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    InvoiceStream := TMemoryStream.Create;
+    try
+      Desc.Save(InvoiceStream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Comfort, TZUGFeRDFormats.CII);
+      SetLength(Bytes, InvoiceStream.Size);
+      InvoiceStream.Position := 0;
+      InvoiceStream.ReadBuffer(Bytes[0], InvoiceStream.Size);
+      XmlContent := TEncoding.UTF8.GetString(Bytes);
+    finally
+      FreeAndNil(InvoiceStream);
+    end;
+
+    ModifiedXml := StringReplace(XmlContent, RootTag, RootTag + UnusedUblNamespace, []);
+    Assert.AreNotEqual(XmlContent, ModifiedXml, 'The test invoice must contain the CII root element');
+
+    ModifiedStream := TStringStream.Create(ModifiedXml, TEncoding.UTF8);
+    try
+      UblReader := TZUGFeRDInvoiceDescriptor22UBLReader.Create;
+      try
+        Assert.IsFalse(UblReader.IsReadableByThisReaderVersion(ModifiedStream),
+          'An unused cac namespace declaration must not make a CII invoice a UBL invoice');
+      finally
+        FreeAndNil(UblReader);
+      end;
+
+      ModifiedStream.Position := 0;
+      LoadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ModifiedStream);
+      try
+        Assert.AreEqual(Desc.InvoiceNo, LoadedInvoice.InvoiceNo);
+        Assert.AreEqual(Integer(Desc.TradeLineItems.Count), Integer(LoadedInvoice.TradeLineItems.Count));
+      finally
+        FreeAndNil(LoadedInvoice);
+      end;
+    finally
+      FreeAndNil(ModifiedStream);
+    end;
+  finally
+    FreeAndNil(Desc);
+  end;
+end; // !TestCIIWithUnusedUblNamespaceIsReadAsCII()
 
 procedure TZUGFeRDCrossVersionTests.TestSellerOrderReferencedDocumentOnItemLevel(_version: Integer);
 var
