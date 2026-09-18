@@ -792,7 +792,8 @@ begin
 
   //#region ApplicableHeaderTradeDelivery
   WriteComment(Writer, options, TZUGFeRDInvoiceCommentConstants.ApplicableHeaderTradeDeliveryComment);
-  Writer.WriteStartElement('ram:ApplicableHeaderTradeDelivery');
+  // CII-XSD: Der Container ist auch ohne Lieferdatum oder Lieferadresse obligatorisch.
+  Writer.WriteStartRequiredElement('ram:ApplicableHeaderTradeDelivery');
 
   //RelatedSupplyChainConsignment --> SpecifiedLogisticsTransportMovement --> ModeCode // Only in extended profile
   if Descriptor.TransportMode <> nil then

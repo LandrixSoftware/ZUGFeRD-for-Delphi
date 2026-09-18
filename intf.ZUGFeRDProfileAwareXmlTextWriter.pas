@@ -90,6 +90,8 @@ type
     procedure WriteStartElement(const prefix, localName, ns: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
     procedure WriteStartElement(const localName: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
     procedure WriteStartElement(const localName, ns: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
+    /// <summary>Erhält auch leere Pflichtcontainer, sofern sie und ihre Eltern im aktuellen Profil sichtbar sind.</summary>
+    procedure WriteStartRequiredElement(const localName: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
     procedure WriteRawString(const value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
     procedure WriteRawIndention(profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
     procedure WriteComment(const comment: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
@@ -222,6 +224,14 @@ begin
   info.IsVisible := True;
   XmlStack.Push(info);
   // Don't write to XML yet - deferred until content is written
+end;
+
+procedure TZUGFeRDProfileAwareXmlTextWriter.WriteStartRequiredElement(const localName: string; profile: TZUGFeRDProfiles);
+begin
+  WriteStartElement(localName, profile);
+  // Bei ausgeblendeten Kindern dürfen auch noch leere optionale Eltern nicht materialisiert werden.
+  if _IsNodeVisible then
+    _FlushPendingStartElements;
 end;
 
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteEndElement;

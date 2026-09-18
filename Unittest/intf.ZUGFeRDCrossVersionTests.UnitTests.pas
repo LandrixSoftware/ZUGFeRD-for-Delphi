@@ -295,6 +295,34 @@ type
     [TestCase('V23-CII-Ext', '230,0,4')]
     procedure TestInvoicerContactWriteAndRead(_version: Integer; _format: Integer; _profile: Integer);
 
+    /// <summary>Pflichtcontainer dürfen weder Profilfilter umgehen noch leere optionale Knoten erzwingen.</summary>
+    [Test]
+    procedure TestRequiredElementsRespectProfiles;
+
+    /// <summary>Prüft den CII-Pflichtcontainer unabhängig von BT-72 sowie BG-14 und BG-26.</summary>
+    [Test]
+    [TestCase('V1Optional', '100,4,empty')]
+    [TestCase('V1Date', '100,4,date')]
+    [TestCase('V20Minimum', '200,8,empty')]
+    [TestCase('V20BasicWL', '200,16,empty')]
+    [TestCase('V20Basic', '200,1,empty')]
+    [TestCase('V20Comfort', '200,2,empty')]
+    [TestCase('V20Extended', '200,4,empty')]
+    [TestCase('V20HeaderPeriod', '200,4,header')]
+    [TestCase('V20LinePeriod', '200,4,line')]
+    [TestCase('V20Date', '200,4,date')]
+    [TestCase('V23Minimum', '230,8,empty')]
+    [TestCase('V23BasicWL', '230,16,empty')]
+    [TestCase('V23Basic', '230,1,empty')]
+    [TestCase('V23Comfort', '230,2,empty')]
+    [TestCase('V23Extended', '230,4,empty')]
+    [TestCase('V23XRechnung1', '230,64,empty')]
+    [TestCase('V23XRechnung', '230,32,empty')]
+    [TestCase('V23HeaderPeriod', '230,4,header')]
+    [TestCase('V23LinePeriod', '230,4,line')]
+    [TestCase('V23Date', '230,4,date')]
+    procedure TestHeaderDeliveryCII(VersionValue, ProfileValue: Integer; const Scenario: string);
+
     [Test]
     [TestCase('V20-CII-Ext', '200,0,4')]
     [TestCase('V23-CII-Ext', '230,0,4')]
@@ -324,6 +352,7 @@ type
     [TestCase('V23-CII-Comfort', '230,0,2')]
     [TestCase('V23-CII-Ext',     '230,0,4')]
     [TestCase('V23-UBL-XR',      '230,1,32')]
+    /// <summary>Nur der im CII-2.x-XSD vorgeschriebene Delivery-Container darf leer bleiben.</summary>
     procedure TestAvoidEmptyElementsWithMinimalInvoice(_version: Integer; _format: Integer; _profile: Integer);
 
     [Test]
@@ -414,6 +443,7 @@ uses
   intf.ZUGFeRDInvoiceDescriptor20Writer,
   intf.ZUGFeRDInvoiceDescriptor23CIIWriter,
   intf.ZUGFeRDInvoiceDescriptor22UBLWriter,
+  intf.ZUGFeRDProfileAwareXmlTextWriter,
   intf.ZUGFeRDInvoiceTypes,
   intf.ZUGFeRDProfile,
   intf.ZUGFeRDVersion,
@@ -2681,6 +2711,152 @@ begin
   end;
 end;
 
+procedure TZUGFeRDCrossVersionTests.TestRequiredElementsRespectProfiles;
+var
+  Stream: TStringStream;
+  Writer: TZUGFeRDProfileAwareXmlTextWriter;
+  Document: IXMLDOMDocument2;
+begin
+  Stream := TStringStream.Create('', TEncoding.UTF8);
+  try
+    Writer := TZUGFeRDProfileAwareXmlTextWriter.Create(Stream, TEncoding.UTF8, TZUGFeRDProfile.Extended);
+    try
+      Writer.WriteStartElement('root');
+      Writer.WriteStartElement('optional');
+      Writer.WriteOptionalElementString('emptyValue', '');
+      Writer.WriteStartElement('emptyChild');
+      Writer.WriteEndElement;
+      Writer.WriteEndElement;
+      Writer.WriteStartRequiredElement('required');
+      Writer.WriteStartElement('optionalChild');
+      Writer.WriteEndElement;
+      Writer.WriteEndElement;
+      Writer.WriteStartRequiredElement('withContent', [TZUGFeRDProfile.Extended]);
+      Writer.WriteElementString('child', 'value');
+      Writer.WriteEndElement;
+      Writer.WriteStartRequiredElement('withAttribute');
+      Writer.WriteAttributeString('id', '123');
+      Writer.WriteEndElement;
+      Writer.WriteStartRequiredElement('excluded', [TZUGFeRDProfile.Basic]);
+      Writer.WriteEndElement;
+      Writer.WriteStartElement('optionalParent');
+      Writer.WriteStartRequiredElement('excludedChild', [TZUGFeRDProfile.Basic]);
+      Writer.WriteEndElement;
+      Writer.WriteEndElement;
+      Writer.WriteStartElement('excludedParent', [TZUGFeRDProfile.Basic]);
+      Writer.WriteStartRequiredElement('requiredBelowExcludedParent', [TZUGFeRDProfile.Extended]);
+      Writer.WriteEndElement;
+      Writer.WriteEndElement;
+      Writer.WriteElementString('sibling', 'ok');
+      Writer.WriteEndElement;
+      Writer.Flush;
+    finally
+      Writer.Free;
+    end;
+    Document := CoDOMDocument60.Create;
+    Document.setProperty('SelectionLanguage', 'XPath');
+    Assert.IsTrue(Document.loadXML(Stream.DataString));
+    Assert.AreEqual(4, Document.selectNodes('/root/*').length);
+    Assert.AreEqual(1, Document.selectNodes('/root/required').length);
+    Assert.AreEqual(0, Document.selectNodes('/root/required/node()').length);
+    Assert.AreEqual('value', string(Document.selectSingleNode('/root/withContent/child').text));
+    Assert.AreEqual('123', string(Document.selectSingleNode('/root/withAttribute/@id').text));
+    Assert.AreEqual('ok', string(Document.selectSingleNode('/root/sibling').text));
+    Assert.AreEqual(0, Document.selectNodes('//optional | //optionalChild | //optionalParent | //excluded | //excludedChild | //excludedParent').length);
+  finally
+    Stream.Free;
+  end;
+end;
+
+procedure TZUGFeRDCrossVersionTests.TestHeaderDeliveryCII(VersionValue, ProfileValue: Integer; const Scenario: string);
+var
+  Descriptor: TZUGFeRDInvoiceDescriptor;
+  Stream: TStringStream;
+  Document: IXMLDOMDocument2;
+  DeliveryNode, PeriodNode: IXMLDOMNode;
+  DeliveryPath, AgreementName, SettlementName, PeriodPath: string;
+begin
+  Descriptor := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    Descriptor.ActualDeliveryDate := nil;
+    Assert.IsNull(Descriptor.ShipTo);
+    Assert.IsNull(Descriptor.ShipFrom);
+    Assert.IsNull(Descriptor.UltimateShipTo);
+    if Scenario = 'date' then
+      Descriptor.ActualDeliveryDate := EncodeDate(2026, 9, 18)
+    else if Scenario = 'header' then
+    begin
+      Descriptor.BillingPeriodStart := EncodeDate(2026, 9, 1);
+      Descriptor.BillingPeriodEnd := EncodeDate(2026, 9, 30);
+    end
+    else if Scenario = 'line' then
+    begin
+      Descriptor.TradeLineItems[0].BillingPeriodStart := EncodeDate(2026, 9, 1);
+      Descriptor.TradeLineItems[0].BillingPeriodEnd := EncodeDate(2026, 9, 30);
+    end;
+
+    Stream := TStringStream.Create('', TEncoding.UTF8);
+    try
+      Descriptor.Save(Stream, TZUGFeRDVersion(VersionValue), TZUGFeRDProfile(ProfileValue), TZUGFeRDFormats.CII);
+      Document := CoDOMDocument60.Create;
+      Document.setProperty('SelectionLanguage', 'XPath');
+      Assert.IsTrue(Document.loadXML(Stream.DataString));
+      if VersionValue = 100 then
+      begin
+        DeliveryPath := '/*/*[local-name()="SpecifiedSupplyChainTradeTransaction"]/*[local-name()="ApplicableSupplyChainTradeDelivery"]';
+        AgreementName := 'ApplicableSupplyChainTradeAgreement';
+        SettlementName := 'ApplicableSupplyChainTradeSettlement';
+      end
+      else
+      begin
+        DeliveryPath := '/*/*[local-name()="SupplyChainTradeTransaction"]/*[local-name()="ApplicableHeaderTradeDelivery"]';
+        AgreementName := 'ApplicableHeaderTradeAgreement';
+        SettlementName := 'ApplicableHeaderTradeSettlement';
+      end;
+      DeliveryNode := Document.selectSingleNode(DeliveryPath);
+      if (VersionValue = 100) and (Scenario = 'empty') then
+      begin
+        // ZUGFeRD 1.0: ApplicableSupplyChainTradeDelivery hat im XSD minOccurs="0".
+        Assert.IsNull(DeliveryNode);
+        Exit;
+      end;
+      Assert.AreEqual(1, Document.selectNodes(DeliveryPath).length, 'Der Delivery-Container muss genau einmal vorhanden sein.');
+      Assert.IsNotNull(DeliveryNode.selectSingleNode('preceding-sibling::*[1][local-name()="' + AgreementName + '"]'));
+      Assert.IsNotNull(DeliveryNode.selectSingleNode('following-sibling::*[1][local-name()="' + SettlementName + '"]'));
+      if VersionValue <> 100 then
+        Assert.AreEqual('urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100', string(DeliveryNode.namespaceURI));
+
+      if Scenario = 'date' then
+      begin
+        Assert.AreEqual(1, DeliveryNode.selectNodes('*[local-name()="ActualDeliverySupplyChainEvent"]').length);
+        Assert.AreEqual('20260918', string(DeliveryNode.selectSingleNode('.//*[local-name()="DateTimeString"]').text));
+      end
+      else
+      begin
+        Assert.AreEqual(0, DeliveryNode.selectNodes('*').length, 'Ohne Lieferdaten bleibt der Pflichtcontainer leer.');
+        Assert.AreEqual(0, Document.selectNodes('//*[local-name()="ActualDeliverySupplyChainEvent"]').length, 'BT-72 darf nicht erfunden werden.');
+      end;
+
+      if (Scenario = 'header') or (Scenario = 'line') then
+      begin
+        if Scenario = 'header' then
+          PeriodPath := '/*/*[local-name()="SupplyChainTradeTransaction"]/*[local-name()="ApplicableHeaderTradeSettlement"]'
+        else
+          PeriodPath := '/*/*[local-name()="SupplyChainTradeTransaction"]/*[local-name()="IncludedSupplyChainTradeLineItem"][1]' +
+            '/*[local-name()="SpecifiedLineTradeSettlement"]';
+        PeriodNode := Document.selectSingleNode(PeriodPath + '/*[local-name()="BillingSpecifiedPeriod"]');
+        Assert.IsNotNull(PeriodNode, 'BG-14 beziehungsweise BG-26 muss am fachlich richtigen Ort erhalten bleiben.');
+        Assert.AreEqual('20260901', string(PeriodNode.selectSingleNode('*[local-name()="StartDateTime"]/*').text));
+        Assert.AreEqual('20260930', string(PeriodNode.selectSingleNode('*[local-name()="EndDateTime"]/*').text));
+      end;
+    finally
+      Stream.Free;
+    end;
+  finally
+    Descriptor.Free;
+  end;
+end;
+
 procedure TZUGFeRDCrossVersionTests.TestBillingPeriod(_version: Integer; _format: Integer; _profile: Integer);
 var
   version: TZUGFeRDVersion;
@@ -2855,7 +3031,13 @@ var
       begin
         if (child.ChildNodes.Count = 0) and (child.AttributeNodes.Count = 0) and
            (child.Text = '') then
-          Inc(emptyCount);
+        begin
+          // Nur dieser Pflichtcontainer ist leer zulässig, nicht beliebige optionale Elemente.
+          if not ((format = TZUGFeRDFormats.CII) and (version <> TZUGFeRDVersion.Version1) and
+            (node.LocalName = 'SupplyChainTradeTransaction') and (child.LocalName = 'ApplicableHeaderTradeDelivery') and
+            (child.NamespaceURI = 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100')) then
+            Inc(emptyCount);
+        end;
         CountEmptyElements(child);
       end;
     end;
