@@ -30,6 +30,12 @@ format is defined for. Everything else is CII.
 [intf.ZUGFeRDProfileAwareXmlTextWriter.pas](intf.ZUGFeRDProfileAwareXmlTextWriter.pas), so the same
 invoice object yields a valid MINIMUM or a full EXTENDED document without any changes on your side.
 
+Leere optionale Container werden unterdrückt. `WriteStartRequiredElement` erhält dagegen auch
+einen leeren, im Profil sichtbaren Pflichtcontainer, ohne Unterelemente oder Werte zu ergänzen.
+Die CII-Writer für Version 2.0 und 2.3 verwenden dies für `ApplicableHeaderTradeDelivery`, auch
+wenn nur ein Abrechnungszeitraum (BG-14/BG-26), aber kein Lieferdatum (BT-72) vorliegt.
+In ZUGFeRD 1.0 bleibt `ApplicableSupplyChainTradeDelivery` gemäß XSD optional.
+
 Reading detects version and profile from the document itself. `TZUGFeRDInvoiceDescriptor.GetVersion`
 answers that question before you load anything.
 
