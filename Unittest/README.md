@@ -9,9 +9,9 @@ subdirectory of each compiler-specific output directory. The sibling executable 
 remain one level below the repository root, so relative access to `demodata` and `documentation`
 continues to work.
 
-DelphiMCPServer 2.8.0.8 or newer supplies the selected BDS version as `PRODUCTVERSION` before
-loading the project and uses the same value for build metadata. This keeps the returned build ID,
-the compiler output and the effective settings on the same version-specific paths.
+The build environment must supply the selected BDS version as `PRODUCTVERSION` before loading the
+project and use the same value for build metadata. This keeps the compiler output and the effective
+settings on the same version-specific paths.
 
 From this directory, Windows PowerShell 5.1 can run the suite or select a fully qualified
 DUnitX test or fixture name:
@@ -86,10 +86,10 @@ already `Integer`, as with `TStringList` — because the source text does not re
 and the cast is free. Without arguments the script sweeps every tracked Delphi source; `-Paths`
 limits it to explicit files.
 
-The documentation sweep includes long example paths. Through DelphiMCPServer, use
-`run_delphi_tests` with the build ID, `short_path=auto` and the ZfD repository root as
-`short_path_root`. The server then invokes the versioned executable through a temporary short
-drive alias and removes that alias after the run.
+The documentation sweep includes long example paths. If the checkout path exceeds the Windows
+path limit, run the versioned executable through a temporary short drive alias that points to the
+ZfD repository root. Keeping the versioned `Unittest-*` directory below that root preserves the
+relative paths to `demodata` and `documentation`. Remove the alias after the run.
 
 ## What the memory checks do and do not prove
 
