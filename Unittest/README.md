@@ -1,19 +1,30 @@
 # Running the test suite
 
 The DUnitX suite lives here as a console runner (`ZfDUnitTest.dpr`) and a GUI runner
-(`ZfDUnitTestGUI.dpr`). Build `ZfDUnitTest.dproj` for Win64/Debug; the executable is written
-directly to this directory, not to `Win64\Debug\`.
+(`ZfDUnitTestGUI.dpr`). Build `ZfDUnitTest.dproj` for Win64/Debug. Compiler outputs are isolated
+by RAD Studio product version, platform and configuration. Delphi 11 (Studio 22.0) writes the
+console executable to `Unittest-22.0-Win64-Debug\ZfDUnitTest.exe`; Delphi 13 (Studio 37.0) writes
+it to `Unittest-37.0-Win64-Debug\ZfDUnitTest.exe`. DCUs and DCPs are separated below the `DCU`
+subdirectory of each compiler-specific output directory. The sibling executable directories
+remain one level below the repository root, so relative access to `demodata` and `documentation`
+continues to work.
+
+DelphiMCPServer 2.8.0.8 or newer supplies the selected BDS version as `PRODUCTVERSION` before
+loading the project and uses the same value for build metadata. This keeps the returned build ID,
+the compiler output and the effective settings on the same version-specific paths.
 
 From this directory, Windows PowerShell 5.1 can run the suite or select a fully qualified
 DUnitX test or fixture name:
 
 ```powershell
 .\run-tests.ps1
+.\run-tests.ps1 -ProductVersion 22.0
 .\run-tests.ps1 -Filter 'intf.ZUGFeRD22Tests.UnitTests.TZUGFeRD22Tests.TestCIIReaderReleasesDescriptorAfterParsingError'
 .\run-tests.ps1 -Filter 'intf.ZUGFeRD22Tests.UnitTests.TZUGFeRD22Tests.TestCIIReaderNestedObjectOwnership.ValidDocument'
 .\Test-SourceEncoding.ps1
 .\Test-CountAssertions.ps1
 .\Test-Runner.ps1
+.\Test-Runner.ps1 -ProductVersion 22.0
 ```
 
 ## Selecting tests
@@ -75,8 +86,10 @@ already `Integer`, as with `TStringList` — because the source text does not re
 and the cast is free. Without arguments the script sweeps every tracked Delphi source; `-Paths`
 limits it to explicit files.
 
-The documentation sweep includes long example paths. On Windows, invoke the executable through a
-short `subst` drive alias when the checkout path would exceed `MAX_PATH`.
+The documentation sweep includes long example paths. Through DelphiMCPServer, use
+`run_delphi_tests` with the build ID, `short_path=auto` and the ZfD repository root as
+`short_path_root`. The server then invokes the versioned executable through a temporary short
+drive alias and removes that alias after the run.
 
 ## What the memory checks do and do not prove
 

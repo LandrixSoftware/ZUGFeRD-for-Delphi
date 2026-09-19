@@ -2,7 +2,13 @@
 # Run with Windows PowerShell 5.1 after building ZfDUnitTest.dproj.
 # Logs and isolated fixtures remain in ResultsDirectory for inspection.
 param(
-    [string]$ExePath = "$PSScriptRoot\ZfDUnitTest.exe",
+    [ValidateSet('22.0', '37.0')]
+    [string]$ProductVersion = '37.0',
+    [ValidateSet('Win32', 'Win64')]
+    [string]$Platform = 'Win64',
+    [ValidateSet('Debug', 'Release')]
+    [string]$Configuration = 'Debug',
+    [string]$ExePath = '',
     [string]$ResultsDirectory = (Join-Path ([IO.Path]::GetTempPath()) ('zfd-runner-' + [Guid]::NewGuid().ToString('N')))
 )
 
@@ -101,6 +107,11 @@ function Assert-TestNames {
 }
 
 try {
+    if ([string]::IsNullOrWhiteSpace($ExePath)) {
+        $repositoryRoot = Split-Path -Parent $PSScriptRoot
+        $outputDirectory = "Unittest-$ProductVersion-$Platform-$Configuration"
+        $ExePath = Join-Path (Join-Path $repositoryRoot $outputDirectory) 'ZfDUnitTest.exe'
+    }
     $ExePath = (Get-Item -LiteralPath $ExePath).FullName
     if (Test-Path -LiteralPath $ResultsDirectory) { throw 'ResultsDirectory must not already exist.' }
     $ResultsDirectory = (New-Item -ItemType Directory -Path $ResultsDirectory).FullName
@@ -192,7 +203,8 @@ try {
     Copy-Item -LiteralPath $helper -Destination $isolatedHelper
     Copy-Item -LiteralPath $ExePath -Destination (Join-Path $isolated 'ZfDUnitTest.exe')
     $isolatedXml = Join-Path $isolated 'dunitx-results.xml'
-    Invoke-CheckedProcess 'helper-clean-copy' $powershell "-NoProfile -ExecutionPolicy Bypass -File `"$isolatedHelper`" -Filter $releasedTest" 0 $isolatedXml 1
+    $isolatedExe = Join-Path $isolated 'ZfDUnitTest.exe'
+    Invoke-CheckedProcess 'helper-clean-copy' $powershell "-NoProfile -ExecutionPolicy Bypass -File `"$isolatedHelper`" -ExePath `"$isolatedExe`" -Filter $releasedTest" 0 $isolatedXml 1
     Assert-TestNames $isolatedXml @('TestHeapAssertionAcceptsReleasedObject')
 
     $failingTest = 'intf.ZUGFeRD22Tests.UnitTests.TZUGFeRD22Tests.TestCIIReaderReleasesDescriptorAfterParsingError'
