@@ -48,12 +48,15 @@ direction, and please do not translate existing German comments.
 
 ## Before opening a pull request
 
-From `Unittest/`, after building `ZfDUnitTest.dproj` (Win64/Debug):
+Build `ZfDUnitTest.dproj` for Win64/Debug with Delphi 11 and Delphi 13. The project separates
+compiler outputs by RAD Studio product version, platform and configuration. From `Unittest/`, run
+the checks against Delphi 13 and Delphi 11:
 
 ```powershell
 .\Test-SourceEncoding.ps1     # UTF-8 and BOM
 .\Test-CountAssertions.ps1    # the NativeInt Count rule
 .\Test-Runner.ps1             # runner self-test plus the full Delphi suite
+.\Test-Runner.ps1 -ProductVersion 22.0
 ```
 
 `Test-Runner.ps1` covers the other two, so it alone is enough before pushing. Exit codes, test

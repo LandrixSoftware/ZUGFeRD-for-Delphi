@@ -3,14 +3,21 @@
 # Called by Claude Code to run tests, read results, and fix failures.
 #
 # Usage:
-#   .\run-tests.ps1                    # run all tests
+#   .\run-tests.ps1                    # run all Delphi 13 tests
+#   .\run-tests.ps1 -ProductVersion 22.0 # run all Delphi 11 tests
 #   .\run-tests.ps1 -Filter "intf.ZUGFeRD22Tests.UnitTests.TZUGFeRD22Tests.TestComment"
 #   .\run-tests.ps1 -ShowXml           # also dump the raw XML
 
 param(
     [string]$Filter = '',
     [switch]$ShowXml,
-    [string]$ExePath = "$PSScriptRoot\ZfDUnitTest.exe",
+    [ValidateSet('22.0', '37.0')]
+    [string]$ProductVersion = '37.0',
+    [ValidateSet('Win32', 'Win64')]
+    [string]$Platform = 'Win64',
+    [ValidateSet('Debug', 'Release')]
+    [string]$Configuration = 'Debug',
+    [string]$ExePath = '',
     [string]$XmlPath = "$PSScriptRoot\dunitx-results.xml",
     [ValidateRange(1, 3600)]
     [int]$TimeoutSeconds = 120
@@ -23,6 +30,11 @@ $process = $null
 $runXmlPath = Join-Path ([IO.Path]::GetTempPath()) ('zfd-results-' + [Guid]::NewGuid().ToString('N') + '.xml')
 
 try {
+    if ([string]::IsNullOrWhiteSpace($ExePath)) {
+        $repositoryRoot = Split-Path -Parent $PSScriptRoot
+        $outputDirectory = "Unittest-$ProductVersion-$Platform-$Configuration"
+        $ExePath = Join-Path (Join-Path $repositoryRoot $outputDirectory) 'ZfDUnitTest.exe'
+    }
     $resolvedExe = Get-Item -LiteralPath $ExePath
     if ($resolvedExe.PSIsContainer) {
         throw "The executable path is a directory: $ExePath"
