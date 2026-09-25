@@ -83,4 +83,31 @@ C#" is not a reason to close a finding — it only shows that the port was faith
 
 ## License
 
-Contributions are made under the Apache License 2.0, matching the headers in the source files.
+ZUGFeRD-for-Delphi is licensed under the **Apache License 2.0**.
+
+By intentionally submitting a contribution for inclusion in ZUGFeRD-for-Delphi, you agree that your
+contribution is provided under the terms of the Apache License 2.0, unless you explicitly state
+otherwise in writing before the contribution is accepted.
+
+You retain the copyright in your contribution.
+
+Under the Apache License 2.0, your contribution may be used, reproduced, modified, distributed,
+sublicensed and included in derivative works in accordance with the terms of that license. This
+includes the possibility that ZUGFeRD-for-Delphi, individual contributions, or derivative works based
+on them are incorporated into other projects that use different or additional licensing terms, as
+permitted by the Apache License 2.0.
+
+By submitting a pull request or other contribution, you confirm that:
+
+- you created the contribution yourself or otherwise have the legal right to submit it;
+- you have the authority to provide the contribution under the Apache License 2.0;
+- the contribution does not knowingly contain code or other material that you are not authorized to
+  provide;
+- if the contribution was created as part of your employment or on behalf of another organization,
+  you are authorized to submit it under these terms.
+
+If a contribution contains or is derived from third-party code, please identify the original source
+and license clearly in the pull request. Do not submit code whose license is incompatible with the
+Apache License 2.0.
+
+Submission of a pull request constitutes acceptance of these contribution terms.
