@@ -408,7 +408,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(9.9),
       {billedQuantity=}  1,
-      {lineTotalAmount=} 9.9,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(9.9),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      19.0
@@ -454,7 +454,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(9.9),
       {billedQuantity=}  20,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      19.0
@@ -469,7 +469,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(5.5),
       {billedQuantity=}  50,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      7.0
@@ -483,7 +483,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  nil,
       {billedQuantity=}  -1,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      19.0
@@ -538,7 +538,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(9.9),
       {billedQuantity=}  20,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      19.0
@@ -592,7 +592,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(9.9),
       {billedQuantity=}  20,
-      {lineTotalAmount=} 198,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(198),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      19.0
@@ -1244,7 +1244,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(9.9),
       {billedQuantity=}  20,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      19.0
@@ -1300,7 +1300,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(5.0),
       {billedQuantity=}  10,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      19.0,
@@ -1367,7 +1367,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(20.0),
       {billedQuantity=}  5,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      19.0
@@ -2346,7 +2346,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  nil,
       {billedQuantity=}  0,
-      {lineTotalAmount=} 0
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0)
     );
     item0.ApplicableProductCharacteristics.Add(TZUGFeRDApplicableProductCharacteristic.Create);
     item0.ApplicableProductCharacteristics.Last.Description := 'Description_1_1';
@@ -2363,7 +2363,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  nil,
       {billedQuantity=}  0,
-      {lineTotalAmount=} 0
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0)
     );
     item1.ApplicableProductCharacteristics.Add(TZUGFeRDApplicableProductCharacteristic.Create);
     item1.ApplicableProductCharacteristics.Last.Description := 'Description_2_1';
@@ -2416,7 +2416,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  nil,
       {billedQuantity=}  0,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0),
       {taxType=}         nil,
       {categoryCode=}    nil,
       {taxPercent=}      0,
@@ -2441,7 +2441,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  nil,
       {billedQuantity=}  0,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0),
       {taxType=}         nil,
       {categoryCode=}    nil,
       {taxPercent=}      0,
@@ -2497,7 +2497,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  nil,
       {billedQuantity=}  10,
-      {lineTotalAmount=} 0
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0)
     );
     originalDesc.IsTest := False;
 
@@ -2536,7 +2536,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  nil,
       {billedQuantity=}  0,
-      {lineTotalAmount=} 0
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0)
     );
     tli.ChargeFreeQuantity := 10;
     tli.ChargeFreeUnitCode := TZUGFeRDQuantityCodes.C62;
@@ -2581,7 +2581,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  nil,
       {billedQuantity=}  0,
-      {lineTotalAmount=} 0
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0)
     );
     originalDesc.IsTest := False;
 
@@ -2682,7 +2682,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(9.9),
       {billedQuantity=}  20,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      19.0,
@@ -2700,7 +2700,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(5.5),
       {billedQuantity=}  50,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      7.0,
@@ -3911,7 +3911,7 @@ begin
       {unitQuantity=}    TZUGFeRDNullableParam<Currency>.Create(1),
       {grossUnitPrice=}  nil,
       {billedQuantity=}  1,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      19
@@ -3926,7 +3926,7 @@ begin
       {unitQuantity=}    TZUGFeRDNullableParam<Currency>.Create(1),
       {grossUnitPrice=}  nil,
       {billedQuantity=}  1,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      19
@@ -3941,7 +3941,7 @@ begin
       {unitQuantity=}    TZUGFeRDNullableParam<Currency>.Create(1),
       {grossUnitPrice=}  nil,
       {billedQuantity=}  -1,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.Z),
       {taxPercent=}      0
@@ -5085,7 +5085,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(11.781),
       {billedQuantity=}  20,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      19,
@@ -5159,7 +5159,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(11.781),
       {billedQuantity=}  20,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      19,
@@ -5620,12 +5620,11 @@ procedure TZUGFeRD22Tests.TestBasisQuantityStandard;
 var
   desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
   ms: TMemoryStream;
-  lineItem: TZUGFeRDTradeLineItem;
 begin
   desc := TZUGFeRDInvoiceProvider.CreateInvoice;
   try
     desc.TradeLineItems.Clear;
-    lineItem := desc.AddTradeLineItem(
+    desc.AddTradeLineItem(
       {name=}           'Joghurt Banane',
       {netUnitPrice=}   TZUGFeRDNullableParam<Currency>.Create(5.5),
       {description=}    '',
@@ -5633,7 +5632,7 @@ begin
       {unitQuantity=}   nil,  // no basis quantity: standard = 1
       {grossUnitPrice=} TZUGFeRDNullableParam<Currency>.Create(5.5),
       {billedQuantity=} 50,
-      {lineTotalAmount=} 0,  // will be cleared below
+      {lineTotalAmount=} nil,
       {taxType=}        TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}   TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}     7,
@@ -5641,9 +5640,6 @@ begin
       {id=}             TZUGFeRDGlobalID.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.EAN, '4000050986428'),
       {sellerAssignedID=} 'ARNR2'
     );
-    // Override LineTotalAmount with HasValue=false so writer calculates netUnitPrice * billedQuantity
-    lineItem.LineTotalAmount := ZUGFeRDNullable<Currency>.Create(False);
-
     ms := TMemoryStream.Create;
     try
       desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
@@ -5668,12 +5664,11 @@ procedure TZUGFeRD22Tests.TestBasisQuantityMultiple;
 var
   desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
   ms: TMemoryStream;
-  lineItem: TZUGFeRDTradeLineItem;
 begin
   desc := TZUGFeRDInvoiceProvider.CreateInvoice;
   try
     desc.TradeLineItems.Clear;
-    lineItem := desc.AddTradeLineItem(
+    desc.AddTradeLineItem(
       {name=}           'Joghurt Banane',
       {netUnitPrice=}   TZUGFeRDNullableParam<Currency>.Create(5.5),
       {description=}    '',
@@ -5681,7 +5676,7 @@ begin
       {unitQuantity=}   TZUGFeRDNullableParam<Currency>.Create(10),  // basis quantity = 10
       {grossUnitPrice=} TZUGFeRDNullableParam<Currency>.Create(5.5),
       {billedQuantity=} 50,
-      {lineTotalAmount=} 0,  // will be cleared below
+      {lineTotalAmount=} nil,
       {taxType=}        TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}   TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}     7,
@@ -5689,9 +5684,6 @@ begin
       {id=}             TZUGFeRDGlobalID.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.EAN, '4000050986428'),
       {sellerAssignedID=} 'ARNR2'
     );
-    // Clear LineTotalAmount so the writer calculates it as netUnitPrice * billedQuantity / unitQuantity
-    lineItem.LineTotalAmount := ZUGFeRDNullable<Currency>.Create(False);  // HasValue=false, writer will calculate
-
     ms := TMemoryStream.Create;
     try
       desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);

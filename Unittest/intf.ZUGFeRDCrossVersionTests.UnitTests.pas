@@ -414,15 +414,31 @@ type
     [Test]
     procedure TestCalculatedLineTotalAmountIsIdenticalInBothFormats;
 
-    /// <summary>Checks that the CII writer no longer writes 0.00 for a missing BT-146.</summary>
+    /// <summary>Checks that an explicitly supplied BT-131 value of 0.00 remains 0.00 in both formats.</summary>
     [Test]
-    procedure TestCIIWriterRequiresNetUnitPrice;
+    procedure TestExplicitZeroLineTotalAmountIsPreservedInBothFormats;
 
-    /// <summary>Checks that the CII writer rejects a price base quantity that is zero or negative.</summary>
+    /// <summary>Checks that both writers derive a missing BT-131 from BT-146 and BT-129.</summary>
+    [Test]
+    procedure TestMissingLineTotalAmountIsCalculatedInBothFormats;
+
+    /// <summary>Checks that a complete BG-27 allowance produces BT-131 0.00 in both formats.</summary>
+    [Test]
+    procedure TestFullyDiscountedLineTotalAmountIsZeroInBothFormats;
+
+    /// <summary>Checks that an explicitly supplied positive BT-131 remains unchanged in both formats.</summary>
+    [Test]
+    procedure TestExplicitPositiveLineTotalAmountIsPreservedInBothFormats;
+
+    /// <summary>Checks that neither writer writes 0.00 for a missing BT-146.</summary>
+    [Test]
+    procedure TestBothWritersRequireNetUnitPrice;
+
+    /// <summary>Checks that both writers reject a price base quantity that is zero or negative.</summary>
     [Test]
     [TestCase('Zero', '0')]
     [TestCase('Negative', '-1')]
-    procedure TestCIIWriterRejectsNonPositivePriceBaseQuantity(const UnitQuantity: Currency);
+    procedure TestBothWritersRejectNonPositivePriceBaseQuantity(const UnitQuantity: Currency);
   end;
 
 implementation
@@ -845,9 +861,11 @@ begin
     desc.TradeLineItems.Clear;
 
     desc.AddTradeLineItem('Item1', TZUGFeRDNullableParam<Currency>.Create(0), '',
-      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62));
+      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62),
+      nil, nil, 0, TZUGFeRDNullableParam<Currency>.Create(0));
     desc.AddTradeLineItem('Item2', TZUGFeRDNullableParam<Currency>.Create(0), '',
-      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62));
+      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62),
+      nil, nil, 0, TZUGFeRDNullableParam<Currency>.Create(0));
 
     Assert.AreEqual('1', desc.TradeLineItems[0].AssociatedDocument.LineID);
     Assert.AreEqual('2', desc.TradeLineItems[1].AssociatedDocument.LineID);
@@ -1024,9 +1042,11 @@ begin
   try
     desc.TradeLineItems.Clear;
     desc._AddTradeLineItem('item-01', 'Item1', TZUGFeRDNullableParam<Currency>.Create(0), '',
-      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62));
+      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62),
+      nil, nil, 0, TZUGFeRDNullableParam<Currency>.Create(0));
     desc._AddTradeLineItem('item-02', 'Item2', TZUGFeRDNullableParam<Currency>.Create(0), '',
-      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62));
+      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62),
+      nil, nil, 0, TZUGFeRDNullableParam<Currency>.Create(0));
 
     Assert.AreEqual('item-01', desc.TradeLineItems[0].AssociatedDocument.LineID);
     Assert.AreEqual('item-02', desc.TradeLineItems[1].AssociatedDocument.LineID);
@@ -1208,7 +1228,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(9.9),
       {billedQuantity=}  20,
-      {lineTotalAmount=} 0,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(0),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      19
@@ -1338,7 +1358,8 @@ begin
   try
     line := desc.AddTradeLineItem('DeliveryNoteReferencedDocument-Text',
       TZUGFeRDNullableParam<Currency>.Create(0), '',
-      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62));
+      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62),
+      nil, nil, 0, TZUGFeRDNullableParam<Currency>.Create(0));
     line.SetDeliveryNoteReferencedDocument(deliveryNoteNumber,
       TZUGFeRDNullableParam<TDateTime>.Create(deliveryNoteDate), deliveryNoteLineID);
 
@@ -1518,7 +1539,8 @@ begin
   try
     line := desc.AddTradeLineItem('ContractReferencedDocument-Text',
       TZUGFeRDNullableParam<Currency>.Create(0), '',
-      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62));
+      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62),
+      nil, nil, 0, TZUGFeRDNullableParam<Currency>.Create(0));
     line.SetContractReferencedDocument(contractNumber,
       TZUGFeRDNullableParam<TDateTime>.Create(contractDate), contractLineID);
 
@@ -1560,16 +1582,20 @@ begin
   try
     desc.AddTradeLineItem('Item with 2 decimal places',
       TZUGFeRDNullableParam<Currency>.Create(123.45), '',
-      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62));
+      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62),
+      nil, nil, 0, TZUGFeRDNullableParam<Currency>.Create(0));
     desc.AddTradeLineItem('Item with 3 decimal places',
       TZUGFeRDNullableParam<Currency>.Create(123.456), '',
-      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62));
+      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62),
+      nil, nil, 0, TZUGFeRDNullableParam<Currency>.Create(0));
     desc.AddTradeLineItem('Item with 4 decimal places',
       TZUGFeRDNullableParam<Currency>.Create(123.4567), '',
-      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62));
+      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62),
+      nil, nil, 0, TZUGFeRDNullableParam<Currency>.Create(0));
     desc.AddTradeLineItem('Item with 5 decimal places',
       TZUGFeRDNullableParam<Currency>.Create(123.4568), '',  // Currency rounds 123.45678 to 123.4568
-      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62));
+      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62),
+      nil, nil, 0, TZUGFeRDNullableParam<Currency>.Create(0));
 
     ms := TMemoryStream.Create;
     try
@@ -1609,19 +1635,23 @@ begin
     desc.AddTradeLineItem('Item with 2 decimal places',
       TZUGFeRDNullableParam<Currency>.Create(123.45), '',
       TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62),
-      nil, TZUGFeRDNullableParam<Currency>.Create(123.45));
+      nil, TZUGFeRDNullableParam<Currency>.Create(123.45), 0,
+      TZUGFeRDNullableParam<Currency>.Create(0));
     desc.AddTradeLineItem('Item with 2 decimal places',
       TZUGFeRDNullableParam<Currency>.Create(123.456), '',
       TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62),
-      nil, TZUGFeRDNullableParam<Currency>.Create(123.456));
+      nil, TZUGFeRDNullableParam<Currency>.Create(123.456), 0,
+      TZUGFeRDNullableParam<Currency>.Create(0));
     desc.AddTradeLineItem('Item with 2 decimal places',
       TZUGFeRDNullableParam<Currency>.Create(123.4567), '',
       TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62),
-      nil, TZUGFeRDNullableParam<Currency>.Create(123.4567));
+      nil, TZUGFeRDNullableParam<Currency>.Create(123.4567), 0,
+      TZUGFeRDNullableParam<Currency>.Create(0));
     desc.AddTradeLineItem('Item with 2 decimal places',
       TZUGFeRDNullableParam<Currency>.Create(123.4568), '',  // Currency rounds 123.45678 to 123.4568
       TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62),
-      nil, TZUGFeRDNullableParam<Currency>.Create(123.4568)); // same rounding
+      nil, TZUGFeRDNullableParam<Currency>.Create(123.4568), 0,
+      TZUGFeRDNullableParam<Currency>.Create(0)); // same rounding
 
     ms := TMemoryStream.Create;
     try
@@ -1812,7 +1842,8 @@ begin
       TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62),
       nil,
       TZUGFeRDNullableParam<Currency>.Create(grossPrice),
-      1);
+      1,
+      TZUGFeRDNullableParam<Currency>.Create(0));
 
     ms := TMemoryStream.Create;
     try
@@ -1874,7 +1905,8 @@ begin
       TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62),
       nil,
       TZUGFeRDNullableParam<Currency>.Create(grossPrice),
-      1);
+      1,
+      TZUGFeRDNullableParam<Currency>.Create(0));
 
     item.AddTradeAllowance(TZUGFeRDCurrencyCodes.EUR, grossPrice, discountAmount,
       'Discount', TZUGFeRDNullableParam<TZUGFeRDAllowanceReasonCodes>.Create(TZUGFeRDAllowanceReasonCodes.Discount));
@@ -3700,7 +3732,8 @@ begin
   try
     line := desc.AddTradeLineItem('SellerOrderReferencedDocument-Text',
       TZUGFeRDNullableParam<Currency>.Create(0), '',
-      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62));
+      TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.C62),
+      nil, nil, 0, TZUGFeRDNullableParam<Currency>.Create(0));
     line.SellerOrderReferencedDocument := TZUGFeRDSellerOrderReferencedDocument.Create;
     line.SellerOrderReferencedDocument.ID := orderId;
     line.SellerOrderReferencedDocument.IssueDateTime := orderDate;
@@ -3798,17 +3831,36 @@ begin
     {unitQuantity=}    TZUGFeRDNullableParam<Currency>.Create(unitQuantity),
     {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(110),
     {billedQuantity=}  2,
-    {lineTotalAmount=} 0,
+    {lineTotalAmount=} nil,
     {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
     {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
     {taxPercent=}      19.0);
-  Result.LineTotalAmount := nil;
   Result.AddTradeAllowance(TZUGFeRDCurrencyCodes.EUR,
     TZUGFeRDNullableParam<Currency>.Create(110), 10, 'Price allowance');
   Result.AddSpecifiedTradeAllowance(TZUGFeRDCurrencyCodes.EUR,
     TZUGFeRDNullableParam<Currency>.Create(20), 3, 'Line allowance');
   Result.AddSpecifiedTradeCharge(TZUGFeRDCurrencyCodes.EUR,
     TZUGFeRDNullableParam<Currency>.Create(20), 1, 'Line charge');
+end;
+
+function CreateBT131TestLine(descriptor: TZUGFeRDInvoiceDescriptor;
+  const lineTotalAmount: IZUGFeRDNullableParam<Currency>;
+  const netUnitPrice: IZUGFeRDNullableParam<Currency>;
+  const unitQuantity: IZUGFeRDNullableParam<Currency>): TZUGFeRDTradeLineItem;
+begin
+  descriptor.TradeLineItems.Clear;
+  Result := descriptor.AddTradeLineItem(
+    {name=}            'BT-131 test line',
+    {netUnitPrice=}    netUnitPrice,
+    {description=}     '',
+    {unitCode=}        TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+    {unitQuantity=}    unitQuantity,
+    {grossUnitPrice=}  nil,
+    {billedQuantity=}  3,
+    {lineTotalAmount=} lineTotalAmount,
+    {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+    {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
+    {taxPercent=}      19.0);
 end;
 
 function SaveDescriptorAsString(descriptor: TZUGFeRDInvoiceDescriptor;
@@ -3828,6 +3880,21 @@ begin
   finally
     ms.Free;
   end;
+end;
+
+procedure AssertLineTotalInBothFormats(descriptor: TZUGFeRDInvoiceDescriptor;
+  const expectedAmount: string);
+var
+  ciiContent, ublContent: string;
+begin
+  ciiContent := SaveDescriptorAsString(descriptor, TZUGFeRDFormats.CII);
+  ublContent := SaveDescriptorAsString(descriptor, TZUGFeRDFormats.UBL);
+
+  Assert.IsTrue(ciiContent.Contains('<ram:LineTotalAmount>' + expectedAmount + '</ram:LineTotalAmount>'),
+    'CII LineTotalAmount does not contain the expected BT-131 value:'#13#10 + ciiContent);
+  Assert.IsTrue(ublContent.Contains('<cbc:LineExtensionAmount currencyID="EUR">' + expectedAmount +
+    '</cbc:LineExtensionAmount>'),
+    'UBL LineExtensionAmount does not contain the expected BT-131 value:'#13#10 + ublContent);
 end;
 
 procedure TZUGFeRDCrossVersionTests.TestCalculatedLineTotalAmountIsIdenticalInBothFormats;
@@ -3851,56 +3918,136 @@ begin
   end;
 end;
 
-procedure TZUGFeRDCrossVersionTests.TestCIIWriterRequiresNetUnitPrice;
+procedure TZUGFeRDCrossVersionTests.TestExplicitZeroLineTotalAmountIsPreservedInBothFormats;
 var
   descriptor: TZUGFeRDInvoiceDescriptor;
-  lineItem: TZUGFeRDTradeLineItem;
-  raised: Boolean;
 begin
   descriptor := TZUGFeRDInvoiceProvider.CreateInvoice;
   try
-    lineItem := CreateLineWithoutDeclaredLineTotal(descriptor, 10);
-    lineItem.NetUnitPrice := nil;
+    CreateBT131TestLine(descriptor,
+      TZUGFeRDNullableParam<Currency>.Create(0),
+      TZUGFeRDNullableParam<Currency>.Create(40),
+      nil);
 
-    raised := False;
-    try
-      SaveDescriptorAsString(descriptor, TZUGFeRDFormats.CII);
-    except
-      on E: TZUGFeRDMissingDataException do
-      begin
-        raised := True;
-        Assert.IsTrue(E.Message.Contains('BT-146'),
-          'Die Meldung benennt den fehlenden Nettoeinzelpreis nicht: ' + E.Message);
-      end;
-    end;
-    Assert.IsTrue(raised, 'Der CII-Writer hat einen fehlenden BT-146 still als 0,00 geschrieben');
+    AssertLineTotalInBothFormats(descriptor, '0.00');
   finally
     descriptor.Free;
   end;
 end;
 
-procedure TZUGFeRDCrossVersionTests.TestCIIWriterRejectsNonPositivePriceBaseQuantity(
-  const UnitQuantity: Currency);
+procedure TZUGFeRDCrossVersionTests.TestMissingLineTotalAmountIsCalculatedInBothFormats;
 var
   descriptor: TZUGFeRDInvoiceDescriptor;
+begin
+  descriptor := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    CreateBT131TestLine(descriptor,
+      nil,
+      TZUGFeRDNullableParam<Currency>.Create(40),
+      nil);
+
+    AssertLineTotalInBothFormats(descriptor, '120.00');
+  finally
+    descriptor.Free;
+  end;
+end;
+
+procedure TZUGFeRDCrossVersionTests.TestFullyDiscountedLineTotalAmountIsZeroInBothFormats;
+var
+  descriptor: TZUGFeRDInvoiceDescriptor;
+  lineItem: TZUGFeRDTradeLineItem;
+begin
+  descriptor := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    lineItem := CreateBT131TestLine(descriptor,
+      nil,
+      TZUGFeRDNullableParam<Currency>.Create(40),
+      nil);
+    lineItem.AddSpecifiedTradeAllowance(TZUGFeRDCurrencyCodes.EUR,
+      TZUGFeRDNullableParam<Currency>.Create(120), 120, 'Complete line allowance');
+
+    AssertLineTotalInBothFormats(descriptor, '0.00');
+  finally
+    descriptor.Free;
+  end;
+end;
+
+procedure TZUGFeRDCrossVersionTests.TestExplicitPositiveLineTotalAmountIsPreservedInBothFormats;
+var
+  descriptor: TZUGFeRDInvoiceDescriptor;
+begin
+  descriptor := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    CreateBT131TestLine(descriptor,
+      TZUGFeRDNullableParam<Currency>.Create(120),
+      TZUGFeRDNullableParam<Currency>.Create(40),
+      nil);
+
+    AssertLineTotalInBothFormats(descriptor, '120.00');
+  finally
+    descriptor.Free;
+  end;
+end;
+
+procedure TZUGFeRDCrossVersionTests.TestBothWritersRequireNetUnitPrice;
+var
+  descriptor: TZUGFeRDInvoiceDescriptor;
+  format: TZUGFeRDFormats;
   raised: Boolean;
 begin
   descriptor := TZUGFeRDInvoiceProvider.CreateInvoice;
   try
-    CreateLineWithoutDeclaredLineTotal(descriptor, UnitQuantity);
+    CreateBT131TestLine(descriptor, nil, nil, nil);
 
-    raised := False;
-    try
-      SaveDescriptorAsString(descriptor, TZUGFeRDFormats.CII);
-    except
-      on E: TZUGFeRDArgumentException do
-      begin
-        raised := True;
-        Assert.IsTrue(E.Message.Contains('BT-149'),
-          'Die Meldung benennt die Preisbasismenge nicht: ' + E.Message);
+    for format := Low(TZUGFeRDFormats) to High(TZUGFeRDFormats) do
+    begin
+      raised := False;
+      try
+        SaveDescriptorAsString(descriptor, format);
+      except
+        on E: TZUGFeRDMissingDataException do
+        begin
+          raised := True;
+          Assert.IsTrue(E.Message.Contains('BT-146'),
+            'The validation message does not identify the missing net unit price: ' + E.Message);
+        end;
       end;
+      Assert.IsTrue(raised, 'The writer accepted a missing BT-146 for format ' + IntToStr(Ord(format)));
     end;
-    Assert.IsTrue(raised, 'Der CII-Writer hat eine nicht positive Preisbasismenge akzeptiert');
+  finally
+    descriptor.Free;
+  end;
+end;
+
+procedure TZUGFeRDCrossVersionTests.TestBothWritersRejectNonPositivePriceBaseQuantity(
+  const UnitQuantity: Currency);
+var
+  descriptor: TZUGFeRDInvoiceDescriptor;
+  format: TZUGFeRDFormats;
+  raised: Boolean;
+begin
+  descriptor := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    CreateBT131TestLine(descriptor,
+      nil,
+      TZUGFeRDNullableParam<Currency>.Create(40),
+      TZUGFeRDNullableParam<Currency>.Create(UnitQuantity));
+
+    for format := Low(TZUGFeRDFormats) to High(TZUGFeRDFormats) do
+    begin
+      raised := False;
+      try
+        SaveDescriptorAsString(descriptor, format);
+      except
+        on E: TZUGFeRDArgumentException do
+        begin
+          raised := True;
+          Assert.IsTrue(E.Message.Contains('BT-149'),
+            'The validation message does not identify the price base quantity: ' + E.Message);
+        end;
+      end;
+      Assert.IsTrue(raised, 'The writer accepted a non-positive BT-149 for format ' + IntToStr(Ord(format)));
+    end;
   finally
     descriptor.Free;
   end;
