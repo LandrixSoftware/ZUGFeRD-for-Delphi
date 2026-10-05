@@ -125,6 +125,14 @@ type
   BLU,
 
   /// <summary>
+  /// Legislation
+  ///
+  /// Gesetzliche Vorschriften
+  /// </summary>
+  /// Information about legislation, e.g. Paragraph 14b UStG.
+  BLP,
+
+  /// <summary>
   /// Order information
   /// </summary>
   COI,
@@ -250,6 +258,7 @@ begin
   Map(AIN,     'AIN');
   Map(BAR,     'BAR');
   Map(BLU,     'BLU');
+  Map(BLP,     'BLP');
   Map(COI,     'COI');
   Map(CUS,     'CUS');
   Map(PMD,     'PMD');
