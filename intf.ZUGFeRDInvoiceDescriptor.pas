@@ -993,7 +993,7 @@ type
     /// <param name="grossUnitPrice"></param>
     /// <param name="netUnitPrice"></param>
     /// <param name="billedQuantity"></param>
-    /// <param name="lineTotalAmount">net total including discounts and surcharges. This parameter is optional. If it is not filled, the line total amount is automatically calculated based on netUnitPrice and billedQuantity</param>
+    /// <param name="lineTotalAmount">Net total including BG-27 allowances and BG-28 charges. Pass nil to calculate BT-131 when writing, or an IZUGFeRDNullableParam value to preserve an explicitly supplied amount, including 0.00.</param>
     /// <param name="taxType"></param>
     /// <param name="categoryCode"></param>
     /// <param name="taxPercent"></param>
@@ -1017,7 +1017,7 @@ type
       const unitQuantity: IZUGFeRDNullableParam<Currency> = nil;
       const grossUnitPrice: IZUGFeRDNullableParam<Currency> = nil;
       const billedQuantity: Currency = 0;
-      const lineTotalAmount: Currency = 0;
+      const lineTotalAmount: IZUGFeRDNullableParam<Currency> = nil;
       const taxType: IZUGFeRDNullableParam<TZUGFeRDTaxTypes> = Nil;
       const categoryCode: IZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes> = Nil;
       const taxPercent: Currency = 0;
@@ -1044,7 +1044,7 @@ type
       const unitQuantity: IZUGFeRDNullableParam<Currency> = nil;
       const grossUnitPrice: IZUGFeRDNullableParam<Currency> = nil;
       const billedQuantity: Currency = 0;
-      const lineTotalAmount: Currency = 0;
+      const lineTotalAmount: IZUGFeRDNullableParam<Currency> = nil;
       const taxType: IZUGFeRDNullableParam<TZUGFeRDTaxTypes> = Nil;
       const categoryCode: IZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes> = Nil;
       const taxPercent: Currency = 0;
@@ -2050,7 +2050,7 @@ function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(
   const unitQuantity: IZUGFeRDNullableParam<Currency> = nil;
   const grossUnitPrice: IZUGFeRDNullableParam<Currency> = nil;
   const billedQuantity: Currency = 0;
-  const lineTotalAmount: Currency = 0;
+  const lineTotalAmount: IZUGFeRDNullableParam<Currency> = nil;
   const taxType: IZUGFeRDNullableParam<TZUGFeRDTaxTypes> = Nil;
   const categoryCode: IZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes> = Nil;
   const taxPercent: Currency = 0;
@@ -2099,7 +2099,7 @@ function TZUGFeRDInvoiceDescriptor._AddTradeLineItem(const lineID: string;
   const unitQuantity: IZUGFeRDNullableParam<Currency> = nil;
   const grossUnitPrice: IZUGFeRDNullableParam<Currency> = nil;
   const billedQuantity: Currency = 0;
-  const lineTotalAmount: Currency = 0;
+  const lineTotalAmount: IZUGFeRDNullableParam<Currency> = nil;
   const taxType: IZUGFeRDNullableParam<TZUGFeRDTaxTypes> = Nil;
   const categoryCode: IZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes> = Nil;
   const taxPercent: Currency = 0;

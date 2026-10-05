@@ -172,7 +172,7 @@ begin
     {unitQuantity=}    nil,
     {grossUnitPrice=}  nil,
     {billedQuantity=}  1,
-    {lineTotalAmount=} BasisAmount,
+    {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(BasisAmount),
     {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
     {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(CategoryCode),
     {taxPercent=}      TaxPercent);
@@ -198,7 +198,7 @@ begin
     {unitQuantity=}    nil,
     {grossUnitPrice=}  nil,
     {billedQuantity=}  2,
-    {lineTotalAmount=} 200,
+    {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(200),
     {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
     {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
     {taxPercent=}      19.0
@@ -830,7 +830,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  nil,
       {billedQuantity=}  2,
-      {lineTotalAmount=} 200,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(200),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      19.0);
@@ -1029,7 +1029,7 @@ begin
     {unitQuantity=}    TZUGFeRDNullableParam<Currency>.Create(unitQuantity),
     {grossUnitPrice=}  nil,
     {billedQuantity=}  2,
-    {lineTotalAmount=} 20,
+    {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(20),
     {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
     {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
     {taxPercent=}      19.0);
@@ -1279,7 +1279,7 @@ begin
         {unitQuantity=}    TZUGFeRDNullableParam<Currency>.Create(3),
         {grossUnitPrice=}  nil,
         {billedQuantity=}  1,
-        {lineTotalAmount=} 33.33,
+        {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(33.33),
         {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
         {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
         {taxPercent=}      19.0);
