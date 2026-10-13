@@ -59,6 +59,10 @@ type
     [Test]
     procedure TestSpecialUnitCodes;
     [Test]
+    procedure TestPriceBaseQuantityUnitCodeIsRead;
+    [Test]
+    procedure TestMissingPriceBaseQuantityUnitCodeRemainsEmpty;
+    [Test]
     procedure TestTradelineitemAdditionalDocuments;
     [Test]
     procedure TestSkippingOfAllowanceChargeBasisAmount;
@@ -505,6 +509,70 @@ begin
       end;
     finally
       ms.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TXRechnungUBLTests.TestPriceBaseQuantityUnitCodeIsRead;
+var
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  stream: TStringStream;
+  content: string;
+begin
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.TradeLineItems[0].NetQuantity := 1;
+    desc.TradeLineItems[0].UnitCode := TZUGFeRDQuantityCodes.MTR;
+    content := SaveAsUBL(desc);
+    Assert.IsTrue(content.Contains('<cbc:BaseQuantity unitCode="MTR">'));
+
+    stream := TStringStream.Create(content, TEncoding.UTF8);
+    try
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(stream);
+      try
+        Assert.IsTrue(loadedInvoice.TradeLineItems[0].NetUnitCode.HasValue);
+        Assert.AreEqual(TZUGFeRDQuantityCodes.MTR, loadedInvoice.TradeLineItems[0].NetUnitCode.Value);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      stream.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TXRechnungUBLTests.TestMissingPriceBaseQuantityUnitCodeRemainsEmpty;
+const
+  BaseQuantityWithUnitCode = '<cbc:BaseQuantity unitCode="MTR">';
+  BaseQuantityWithoutUnitCode = '<cbc:BaseQuantity>';
+var
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  stream: TStringStream;
+  content: string;
+begin
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.TradeLineItems[0].NetQuantity := 1;
+    desc.TradeLineItems[0].UnitCode := TZUGFeRDQuantityCodes.MTR;
+    content := SaveAsUBL(desc);
+    Assert.IsTrue(content.Contains(BaseQuantityWithUnitCode));
+    content := content.Replace(BaseQuantityWithUnitCode, BaseQuantityWithoutUnitCode);
+
+    stream := TStringStream.Create(content, TEncoding.UTF8);
+    try
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(stream);
+      try
+        Assert.IsTrue(loadedInvoice.TradeLineItems[0].NetQuantity.HasValue);
+        Assert.IsFalse(loadedInvoice.TradeLineItems[0].NetUnitCode.HasValue);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      stream.Free;
     end;
   finally
     desc.Free;

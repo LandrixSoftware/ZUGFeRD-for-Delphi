@@ -841,6 +841,8 @@ begin
     Result.Name := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './cac:Item/cbc:Name');
     Result.Description := TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/cac:Item/cbc:Description');
     Result.NetQuantity := TZUGFeRDXmlUtils.NodeAsDecimal(tradeLineItem, './/cac:Price/cbc:BaseQuantity');
+    Result.NetUnitCode := TEnumExtensions<TZUGFeRDQuantityCodes>.StringToNullableEnum(
+      TZUGFeRDXmlUtils.NodeAsString(tradeLineItem, './/cac:Price/cbc:BaseQuantity/@unitCode'));
     if billedQuantity.HasValue then
       Result.BilledQuantity := billedQuantity.Value
     else
