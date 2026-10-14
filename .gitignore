@@ -105,3 +105,7 @@ GTAGS
 
 # Platzhalter für umgeleitetes stdin in run-tests.ps1
 Unittest/nul_stdin.tmp
+
+# Compilerausgaben der Testprojekte, nach Delphi-Version/Plattform/Konfiguration getrennt
+Unittest-*/
+

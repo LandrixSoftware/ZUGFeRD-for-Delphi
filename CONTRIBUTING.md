@@ -49,8 +49,21 @@ direction, and please do not translate existing German comments.
 ## Before opening a pull request
 
 Build `ZfDUnitTest.dproj` for Win64/Debug with Delphi 11 and Delphi 13. The project separates
-compiler outputs by RAD Studio product version, platform and configuration. From `Unittest/`, run
-the checks against Delphi 13 and Delphi 11:
+compiler outputs by RAD Studio product version, platform and configuration, so the executable
+lands in `Unittest-<version>-<platform>-<configuration>/` beside the `Unittest` directory.
+
+Building from the IDE needs nothing extra. Building with msbuild outside the IDE, pass the
+version explicitly whenever it is not the one `rsvars.bat` set up:
+
+```
+msbuild ZfDUnitTest.dproj /t:Build /p:Config=Debug /p:Platform=Win64 /p:ProductVersion=22.0
+```
+
+Without that switch the project derives the version from `$(BDS)`, because `$(PRODUCTVERSION)`
+is still empty where the output path is formed — msbuild evaluates property groups before the
+RAD Studio targets are imported, and only the IDE supplies the value as a global property.
+
+From `Unittest/`, run the checks against Delphi 13 and Delphi 11:
 
 ```powershell
 .\Test-SourceEncoding.ps1     # UTF-8 and BOM

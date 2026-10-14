@@ -130,6 +130,14 @@
         </BorlandProject>
         <ProjectFileVersion>12</ProjectFileVersion>
     </ProjectExtensions>
+    <!-- PRODUCTVERSION setzt die IDE als globale Property. Von der Kommandozeile ist sie
+         hier noch leer, weil CodeGear.Common.Targets erst weiter unten importiert wird und
+         MSBuild PropertyGroups in Dokumentreihenfolge auswertet. Der Ausgabepfad entstand
+         dadurch mit leerem Versionssegment, und run-tests.ps1 fand die EXE nicht.
+         $(BDS) ist dagegen schon gesetzt (aus rsvars.bat) und endet auf die Produktversion. -->
+    <PropertyGroup Condition="'$(PRODUCTVERSION)'==''">
+        <PRODUCTVERSION>$([System.IO.Path]::GetFileName('$(BDS)'))</PRODUCTVERSION>
+    </PropertyGroup>
     <PropertyGroup>
         <DCC_ExeOutput>..\Unittest-$(PRODUCTVERSION)-$(Platform)-$(Config)</DCC_ExeOutput>
         <DCC_DcuOutput>..\Unittest-$(PRODUCTVERSION)-$(Platform)-$(Config)\DCU</DCC_DcuOutput>

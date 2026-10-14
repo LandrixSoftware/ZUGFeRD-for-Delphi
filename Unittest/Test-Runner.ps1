@@ -197,7 +197,9 @@ try {
     $helperEmptyXml = Join-Path $ResultsDirectory 'helper-empty.xml'
     Invoke-CheckedProcess 'helper-no-match' $powershell "-NoProfile -ExecutionPolicy Bypass -File `"$helper`" -ExePath `"$ExePath`" -XmlPath `"$helperEmptyXml`" -Filter NoSuchZfDTest" 3 $helperEmptyXml 0
 
-    # A clean copy tests default paths, spaces, and the absence of the old stdin placeholder.
+    # A clean copy tests a path containing spaces and the absence of the old stdin placeholder.
+    # Every call below passes -ExePath: since the output directory carries the Delphi version,
+    # the helper's own default resolves relative to the copy, not to the repository.
     $isolated = (New-Item -ItemType Directory -Path (Join-Path $ResultsDirectory 'clean copy with spaces')).FullName
     $isolatedHelper = Join-Path $isolated 'run-tests.ps1'
     Copy-Item -LiteralPath $helper -Destination $isolatedHelper
@@ -211,7 +213,9 @@ try {
     $readerXml = Join-Path $ResultsDirectory 'reader.xml'
     Invoke-CheckedProcess 'direct-reader-heap' $ExePath "--run:$failingTest --xmlfile:`"$readerXml`"" 0 $readerXml 1
     Assert-TestNames $readerXml @('TestCIIReaderReleasesDescriptorAfterParsingError')
-    Invoke-CheckedProcess 'helper-test-failure' $powershell "-NoProfile -ExecutionPolicy Bypass -File `"$isolatedHelper`" -Filter $failingTest" 1 $isolatedXml 1
+    # -ExePath wie bei den anderen Aufrufen des kopierten Helpers: er leitet den Default aus
+    # seinem eigenen Verzeichnis ab und suchte sonst im Temp-Ordner nach dem Ausgabeverzeichnis.
+    Invoke-CheckedProcess 'helper-test-failure' $powershell "-NoProfile -ExecutionPolicy Bypass -File `"$isolatedHelper`" -ExePath `"$isolatedExe`" -Filter $failingTest" 1 $isolatedXml 1
 
     # Controlled executables exercise report failures without changing production fixtures or source files.
     $stubExe = Join-Path $isolated 'ReportProbe.exe'
