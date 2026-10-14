@@ -834,8 +834,16 @@ begin
 
   if tradeLineItem.NetQuantity.HasValue then
   begin
+    // BT-150 muss nach BR-65 der Einheit der berechneten Menge BT-130 entsprechen, ist aber
+    // ein eigenes Feld im Modell. Ist es gesetzt, wird es geschrieben, statt es still durch
+    // BT-130 zu ersetzen; fehlt es, dient BT-130 als Rueckfall. Der CII-Writer schreibt an
+    // dieser Stelle ebenfalls NetUnitCode.
+    var baseQuantityUnitCode: ZUGFeRDNullable<TZUGFeRDQuantityCodes> := tradeLineItem.NetUnitCode;
+    if not baseQuantityUnitCode.HasValue then
+      baseQuantityUnitCode := tradeLineItem.UnitCode;
+
     Writer.WriteStartElement('cbc:BaseQuantity'); // BT-149
-    Writer.WriteAttributeString('unitCode', TEnumExtensions<TZUGFeRDQuantityCodes>.EnumToString(tradeLineItem.UnitCode)); // BT-150
+    Writer.WriteAttributeString('unitCode', TEnumExtensions<TZUGFeRDQuantityCodes>.EnumToString(baseQuantityUnitCode)); // BT-150
     Writer.WriteValue(_formatDecimal(tradeLineItem.NetQuantity.Value));
     Writer.WriteEndElement;
   end;

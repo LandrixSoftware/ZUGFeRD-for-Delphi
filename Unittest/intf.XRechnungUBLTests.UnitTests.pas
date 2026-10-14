@@ -63,6 +63,12 @@ type
     [Test]
     procedure TestMissingPriceBaseQuantityUnitCodeRemainsEmpty;
     [Test]
+    procedure TestPriceBaseQuantityUnitCodeIsWritten;
+    [Test]
+    procedure TestPriceBaseQuantityUnitCodeFallsBackToInvoicedUnit;
+    [Test]
+    procedure TestPriceBaseQuantityUnitCodeSurvivesCIIToUBL;
+    [Test]
     procedure TestTradelineitemAdditionalDocuments;
     [Test]
     procedure TestSkippingOfAllowanceChargeBasisAmount;
@@ -573,6 +579,84 @@ begin
       end;
     finally
       stream.Free;
+    end;
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TXRechnungUBLTests.TestPriceBaseQuantityUnitCodeIsWritten;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  content: string;
+begin
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    // BT-150 weicht hier bewusst von BT-130 ab: der Writer darf den Modellwert nicht
+    // still durch die Einheit der berechneten Menge ersetzen.
+    desc.TradeLineItems[0].NetQuantity := 1;
+    desc.TradeLineItems[0].UnitCode := TZUGFeRDQuantityCodes.H87;
+    desc.TradeLineItems[0].NetUnitCode := TZUGFeRDQuantityCodes.MTR;
+
+    content := SaveAsUBL(desc);
+
+    Assert.IsTrue(content.Contains('<cbc:BaseQuantity unitCode="MTR">'),
+      'BT-150 wurde nicht aus NetUnitCode geschrieben:'#13#10 + content);
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TXRechnungUBLTests.TestPriceBaseQuantityUnitCodeFallsBackToInvoicedUnit;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  content: string;
+begin
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.TradeLineItems[0].NetQuantity := 1;
+    desc.TradeLineItems[0].UnitCode := TZUGFeRDQuantityCodes.H87;
+    desc.TradeLineItems[0].NetUnitCode := nil;
+
+    content := SaveAsUBL(desc);
+
+    Assert.IsTrue(content.Contains('<cbc:BaseQuantity unitCode="H87">'),
+      'Ohne NetUnitCode muss BT-130 als Rueckfall dienen:'#13#10 + content);
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TXRechnungUBLTests.TestPriceBaseQuantityUnitCodeSurvivesCIIToUBL;
+var
+  desc, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  ciiStream: TMemoryStream;
+  content: string;
+begin
+  desc := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    desc.TradeLineItems[0].NetQuantity := 1;
+    desc.TradeLineItems[0].UnitCode := TZUGFeRDQuantityCodes.H87;
+    desc.TradeLineItems[0].NetUnitCode := TZUGFeRDQuantityCodes.MTR;
+
+    ciiStream := TMemoryStream.Create;
+    try
+      desc.Save(ciiStream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.CII);
+      ciiStream.Position := 0;
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ciiStream);
+      try
+        Assert.IsTrue(loadedInvoice.TradeLineItems[0].NetUnitCode.HasValue,
+          'Der CII-Reader hat BT-150 nicht gelesen');
+        Assert.AreEqual(TZUGFeRDQuantityCodes.MTR, loadedInvoice.TradeLineItems[0].NetUnitCode.Value);
+
+        content := SaveAsUBL(loadedInvoice);
+        Assert.IsTrue(content.Contains('<cbc:BaseQuantity unitCode="MTR">'),
+          'BT-150 ging beim Weg von CII nach UBL verloren:'#13#10 + content);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      ciiStream.Free;
     end;
   finally
     desc.Free;
