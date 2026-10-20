@@ -204,6 +204,14 @@ type
     [Test]
     procedure TestSellerContact;
     [Test]
+    [TestCase('EN16931', '2')]
+    [TestCase('Extended', '4')]
+    [TestCase('XRechnung', '32')]
+    [TestCase('XRechnung1', '64')]
+    procedure TestSellerAndBuyerContactNameCardinality(profileOrd: Integer);
+    [Test]
+    procedure TestSellerAndBuyerContactDepartmentFallback;
+    [Test]
     procedure ShouldLoadCiiWithoutQdtNamespace;
     [Test]
     procedure TestDesignatedProductClassificationWithFullClassification;
@@ -3629,7 +3637,7 @@ begin
         Assert.AreEqual<TZUGFeRDGlobalIDSchemeIdentifiers>(TZUGFeRDGlobalIDSchemeIdentifiers.GLN, loadedInvoice.Seller.GlobalID.SchemeID);
         Assert.AreEqual('4000001123452', loadedInvoice.Seller.GlobalID.ID);
         Assert.AreEqual('Max Mustermann', loadedInvoice.SellerContact.Name);
-        Assert.AreEqual('Muster-Einkauf', loadedInvoice.SellerContact.OrgUnit);
+        Assert.AreEqual('', loadedInvoice.SellerContact.OrgUnit);
         Assert.AreEqual('Max@Mustermann.de', loadedInvoice.SellerContact.EmailAddress);
         Assert.AreEqual('+49891234567', loadedInvoice.SellerContact.PhoneNo);
 
@@ -4296,7 +4304,7 @@ begin
       loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
       try
         Assert.AreEqual('1-123', loadedInvoice.SellerContact.Name);
-        Assert.AreEqual('2-123', loadedInvoice.SellerContact.OrgUnit);
+        Assert.AreEqual('', loadedInvoice.SellerContact.OrgUnit);
         Assert.AreEqual('3-123', loadedInvoice.SellerContact.EmailAddress);
         Assert.AreEqual('4-123', loadedInvoice.SellerContact.PhoneNo);
         Assert.AreEqual('5-123', loadedInvoice.SellerContact.FaxNo);
@@ -4306,6 +4314,71 @@ begin
       end;
     finally
       ms.Free;
+    end;
+  finally
+    invoice.Free;
+  end;
+end;
+
+procedure TZUGFeRD22Tests.TestSellerAndBuyerContactNameCardinality(profileOrd: Integer);
+var
+  invoice: TZUGFeRDInvoiceDescriptor;
+  stream: TMemoryStream;
+  bytes: TBytes;
+  xmlContent: string;
+begin
+  invoice := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    invoice.SetSellerContact('Seller Person', 'Seller Department');
+    invoice.SetBuyerContact('Buyer Person', 'Buyer Department');
+
+    stream := TMemoryStream.Create;
+    try
+      invoice.Save(stream, TZUGFeRDVersion.Version23, TZUGFeRDProfile(profileOrd));
+      SetLength(bytes, stream.Size);
+      stream.Position := 0;
+      if stream.Size > 0 then
+        stream.ReadBuffer(bytes[0], stream.Size);
+      xmlContent := TEncoding.UTF8.GetString(bytes);
+
+      Assert.IsTrue(xmlContent.Contains('<ram:PersonName>Seller Person</ram:PersonName>'));
+      Assert.IsFalse(xmlContent.Contains('<ram:DepartmentName>Seller Department</ram:DepartmentName>'));
+      Assert.IsTrue(xmlContent.Contains('<ram:PersonName>Buyer Person</ram:PersonName>'));
+      Assert.IsFalse(xmlContent.Contains('<ram:DepartmentName>Buyer Department</ram:DepartmentName>'));
+    finally
+      stream.Free;
+    end;
+  finally
+    invoice.Free;
+  end;
+end;
+
+procedure TZUGFeRD22Tests.TestSellerAndBuyerContactDepartmentFallback;
+var
+  invoice: TZUGFeRDInvoiceDescriptor;
+  stream: TMemoryStream;
+  bytes: TBytes;
+  xmlContent: string;
+begin
+  invoice := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    invoice.SetSellerContact('', 'Seller Department');
+    invoice.SetBuyerContact('', 'Buyer Department');
+
+    stream := TMemoryStream.Create;
+    try
+      invoice.Save(stream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
+      SetLength(bytes, stream.Size);
+      stream.Position := 0;
+      if stream.Size > 0 then
+        stream.ReadBuffer(bytes[0], stream.Size);
+      xmlContent := TEncoding.UTF8.GetString(bytes);
+
+      Assert.IsTrue(xmlContent.Contains('<ram:DepartmentName>Seller Department</ram:DepartmentName>'));
+      Assert.IsTrue(xmlContent.Contains('<ram:DepartmentName>Buyer Department</ram:DepartmentName>'));
+      Assert.IsFalse(xmlContent.Contains('<ram:PersonName>'));
+    finally
+      stream.Free;
     end;
   finally
     invoice.Free;

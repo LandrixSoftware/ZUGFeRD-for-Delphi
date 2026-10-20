@@ -92,7 +92,7 @@ type
     procedure _writeNotes(_writer : TZUGFeRDProfileAwareXmlTextWriter;notes : TObjectList<TZUGFeRDNote>; profile: TZUGFeRDProfiles);
     procedure _writeOptionalLegalOrganization(_writer : TZUGFeRDProfileAwareXmlTextWriter; legalOrganizationTag : String;legalOrganization : TZUGFeRDLegalOrganization; partyType : TZUGFeRDPartyTypes = TZUGFeRDPartyTypes.Unknown);
     procedure _writeOptionalParty(_writer: TZUGFeRDProfileAwareXmlTextWriter; partyType : TZUGFeRDPartyTypes; party : TZUGFeRDParty; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT; contact : TZUGFeRDContact = nil; electronicAddress : TZUGFeRDElectronicAddress = nil; taxRegistrations : TObjectList<TZUGFeRDTaxRegistration> = nil);
-    procedure _writeOptionalContact(_writer: TZUGFeRDProfileAwareXmlTextWriter;contactTag: String; contact: TZUGFeRDContact;profile: TZUGFeRDProfiles);
+    procedure _writeOptionalContact(_writer: TZUGFeRDProfileAwareXmlTextWriter; contactTag: String; contact: TZUGFeRDContact; profile: TZUGFeRDProfiles; partyType: TZUGFeRDPartyTypes);
     procedure _writeOptionalTaxes(_writer : TZUGFeRDProfileAwareXmlTextWriter; options: TZUGFeRDInvoiceFormatOptions);
     procedure _writeElementWithAttribute(_writer: TZUGFeRDProfileAwareXmlTextWriter; tagName, attributeName,attributeValue, nodeValue: String; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
     procedure _writeElementWithAttributeWithPrefix(_writer: TZUGFeRDProfileAwareXmlTextWriter; tagName, attributeName,attributeValue, nodeValue: String; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
@@ -1827,7 +1827,7 @@ begin
   writer.WriteOptionalElementString('ram:Description', Party.Description, [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung1, TZUGFeRDProfile.XRechnung]);
 
   _writeOptionalLegalOrganization(writer, 'ram:SpecifiedLegalOrganization', party.SpecifiedLegalOrganization, partyType);
-  _writeOptionalContact(writer, 'ram:DefinedTradeContact', contact, [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung]);
+  _writeOptionalContact(writer, 'ram:DefinedTradeContact', contact, [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung], partyType);
 
   // spec 2.3 says: Minimum/BuyerTradeParty does not include PostalTradeAddress
   if (Descriptor.Profile = TZUGFeRDProfile.Extended) or (partyType In [TZUGFeRDPartyTypes.BuyerTradeParty, TZUGFeRDPartyTypes.SellerTradeParty, TZUGFeRDPartyTypes.SellerTaxRepresentativeTradeParty, TZUGFeRDPartyTypes.BuyerTaxRepresentativeTradeParty, TZUGFeRDPartyTypes.ShipToTradeParty, TZUGFeRDPartyTypes.ShipToTradeParty, TZUGFeRDPartyTypes.UltimateShipToTradeParty, TZUGFeRDPartyTypes.SalesAgentTradeParty]) then
@@ -1886,15 +1886,26 @@ end;
 
 procedure TZUGFeRDInvoiceDescriptor23CIIWriter._writeOptionalContact(
   _writer: TZUGFeRDProfileAwareXmlTextWriter; contactTag : String;
-  contact : TZUGFeRDContact; profile : TZUGFeRDProfiles);
+  contact : TZUGFeRDContact; profile : TZUGFeRDProfiles; partyType: TZUGFeRDPartyTypes);
 begin
   if contact = nil then
     exit;
 
   _writer.WriteStartElement(contactTag,profile);
 
-  _writer.WriteOptionalElementString('ram:PersonName', contact.Name);
-  _writer.WriteOptionalElementString('ram:DepartmentName', contact.OrgUnit);
+  // PersonName und DepartmentName bilden bei Verkäufer und Käufer denselben BT ab und dürfen nach CII-SR-465/466 nicht gemeinsam vorkommen.
+  if partyType in [TZUGFeRDPartyTypes.SellerTradeParty, TZUGFeRDPartyTypes.BuyerTradeParty] then
+  begin
+    if contact.Name <> '' then
+      _writer.WriteOptionalElementString('ram:PersonName', contact.Name)
+    else
+      _writer.WriteOptionalElementString('ram:DepartmentName', contact.OrgUnit);
+  end
+  else
+  begin
+    _writer.WriteOptionalElementString('ram:PersonName', contact.Name);
+    _writer.WriteOptionalElementString('ram:DepartmentName', contact.OrgUnit);
+  end;
 
   if (contact.PhoneNo <> '') then
   begin

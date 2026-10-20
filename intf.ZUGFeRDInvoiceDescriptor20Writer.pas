@@ -79,7 +79,7 @@ type
     procedure _writeDocumentLevelSpecifiedTradeAllowanceCharge(_writer: TZUGFeRDProfileAwareXmlTextWriter; tradeAllowanceCharge: TZUGFeRDAbstractTradeAllowanceCharge);
     procedure _writeOptionalAmount(_writer : TZUGFeRDProfileAwareXmlTextWriter; tagName : string; value : ZUGFeRDNullable<Currency>; numDecimals : Integer = 2; forceCurrency : Boolean = false; profile : TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
     procedure _writeOptionalAdaptiveAmount(_writer: TZUGFeRDProfileAwareXmlTextWriter; _tagName: string; _value: ZUGFeRDNullable<Currency>; _numDecimals: Integer = 2;_maxnumDecimals: Integer = 4; _forceCurrency: boolean = false);
-    procedure _writeOptionalContact(_writer: TZUGFeRDProfileAwareXmlTextWriter; contactTag: String; contact: TZUGFeRDContact);
+    procedure _writeOptionalContact(_writer: TZUGFeRDProfileAwareXmlTextWriter; contactTag: String; contact: TZUGFeRDContact; restrictContactNameCardinality: Boolean);
     procedure _writeOptionalParty(_writer: TZUGFeRDProfileAwareXmlTextWriter; PartyTag: String; Party: TZUGFeRDParty; Contact: TZUGFeRDContact = nil; TaxRegistrations: TObjectList<TZUGFeRDTaxRegistration> = nil);
     procedure _writeOptionalTaxes(_writer : TZUGFeRDProfileAwareXmlTextWriter; options: TZUGFeRDInvoiceFormatOptions);
     procedure _writeNotes(_writer : TZUGFeRDProfileAwareXmlTextWriter;notes : TObjectList<TZUGFeRDNote>);
@@ -1272,7 +1272,8 @@ begin
 
   _Writer.WriteOptionalElementString('ram:Name', Party.Name);
   _Writer.WriteOptionalElementString('ram:Description', Party.Description, PROFILE_COMFORT_EXTENDED_XRECHNUNG);
-  _writeOptionalContact(_writer, 'ram:DefinedTradeContact', Contact);
+  _writeOptionalContact(_writer, 'ram:DefinedTradeContact', Contact,
+    (PartyTag = 'ram:SellerTradeParty') or (PartyTag = 'ram:BuyerTradeParty'));
 
   _writer.WriteStartElement('ram:PostalTradeAddress');
   _writer.WriteOptionalElementString('ram:PostcodeCode', Party.Postcode);
@@ -1302,15 +1303,26 @@ begin
   _writer.WriteEndElement(); // !*TradeParty
 end;
 
-procedure TZUGFeRDInvoiceDescriptor20Writer._writeOptionalContact(_writer: TZUGFeRDProfileAwareXmlTextWriter; contactTag : String;  contact : TZUGFeRDContact);
+procedure TZUGFeRDInvoiceDescriptor20Writer._writeOptionalContact(_writer: TZUGFeRDProfileAwareXmlTextWriter; contactTag: String; contact: TZUGFeRDContact; restrictContactNameCardinality: Boolean);
 begin
   if contact = nil then
     exit;
 
   _writer.WriteStartElement(contactTag);
 
-  _writer.WriteOptionalElementString('ram:PersonName', contact.Name);
-  _writer.WriteOptionalElementString('ram:DepartmentName', contact.OrgUnit);
+  // PersonName und DepartmentName bilden bei Verkäufer und Käufer denselben BT ab und dürfen nach CII-SR-465/466 nicht gemeinsam vorkommen.
+  if restrictContactNameCardinality then
+  begin
+    if contact.Name <> '' then
+      _writer.WriteOptionalElementString('ram:PersonName', contact.Name)
+    else
+      _writer.WriteOptionalElementString('ram:DepartmentName', contact.OrgUnit);
+  end
+  else
+  begin
+    _writer.WriteOptionalElementString('ram:PersonName', contact.Name);
+    _writer.WriteOptionalElementString('ram:DepartmentName', contact.OrgUnit);
+  end;
 
   if (contact.PhoneNo <> '') then
   begin

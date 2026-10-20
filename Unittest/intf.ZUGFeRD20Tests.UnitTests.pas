@@ -56,6 +56,12 @@ type
     [Test]
     procedure TestWriteAndReadExtended;
     [Test]
+    [TestCase('EN16931', '2')]
+    [TestCase('Extended', '4')]
+    procedure TestSellerAndBuyerContactNameCardinality(profileOrd: Integer);
+    [Test]
+    procedure TestSellerAndBuyerContactDepartmentFallback;
+    [Test]
     procedure TestApplicableTradeDeliveryTermsExists;
     [Test]
     procedure TestApplicableTradeDeliveryTermsIsNull;
@@ -885,7 +891,7 @@ begin
         Assert.AreEqual(TZUGFeRDGlobalIDSchemeIdentifiers.GLN, loadedInvoice.Seller.GlobalID.SchemeID.Value);
         Assert.AreEqual('4000001123452', loadedInvoice.Seller.GlobalID.ID);
         Assert.AreEqual('Max Mustermann', loadedInvoice.SellerContact.Name);
-        Assert.AreEqual('Muster-Einkauf', loadedInvoice.SellerContact.OrgUnit);
+        Assert.AreEqual('', loadedInvoice.SellerContact.OrgUnit);
         Assert.AreEqual('Max@Mustermann.de', loadedInvoice.SellerContact.EmailAddress);
         Assert.AreEqual('+49891234567', loadedInvoice.SellerContact.PhoneNo);
 
@@ -1133,6 +1139,71 @@ begin
     end;
   finally
     desc.Free;
+  end;
+end;
+
+procedure TZUGFeRD20Tests.TestSellerAndBuyerContactNameCardinality(profileOrd: Integer);
+var
+  invoice: TZUGFeRDInvoiceDescriptor;
+  stream: TMemoryStream;
+  bytes: TBytes;
+  xmlContent: string;
+begin
+  invoice := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    invoice.SetSellerContact('Seller Person', 'Seller Department');
+    invoice.SetBuyerContact('Buyer Person', 'Buyer Department');
+
+    stream := TMemoryStream.Create;
+    try
+      invoice.Save(stream, TZUGFeRDVersion.Version20, TZUGFeRDProfile(profileOrd));
+      SetLength(bytes, stream.Size);
+      stream.Position := 0;
+      if stream.Size > 0 then
+        stream.ReadBuffer(bytes[0], stream.Size);
+      xmlContent := TEncoding.UTF8.GetString(bytes);
+
+      Assert.IsTrue(xmlContent.Contains('<ram:PersonName>Seller Person</ram:PersonName>'));
+      Assert.IsFalse(xmlContent.Contains('<ram:DepartmentName>Seller Department</ram:DepartmentName>'));
+      Assert.IsTrue(xmlContent.Contains('<ram:PersonName>Buyer Person</ram:PersonName>'));
+      Assert.IsFalse(xmlContent.Contains('<ram:DepartmentName>Buyer Department</ram:DepartmentName>'));
+    finally
+      stream.Free;
+    end;
+  finally
+    invoice.Free;
+  end;
+end;
+
+procedure TZUGFeRD20Tests.TestSellerAndBuyerContactDepartmentFallback;
+var
+  invoice: TZUGFeRDInvoiceDescriptor;
+  stream: TMemoryStream;
+  bytes: TBytes;
+  xmlContent: string;
+begin
+  invoice := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    invoice.SetSellerContact('', 'Seller Department');
+    invoice.SetBuyerContact('', 'Buyer Department');
+
+    stream := TMemoryStream.Create;
+    try
+      invoice.Save(stream, TZUGFeRDVersion.Version20, TZUGFeRDProfile.Comfort);
+      SetLength(bytes, stream.Size);
+      stream.Position := 0;
+      if stream.Size > 0 then
+        stream.ReadBuffer(bytes[0], stream.Size);
+      xmlContent := TEncoding.UTF8.GetString(bytes);
+
+      Assert.IsTrue(xmlContent.Contains('<ram:DepartmentName>Seller Department</ram:DepartmentName>'));
+      Assert.IsTrue(xmlContent.Contains('<ram:DepartmentName>Buyer Department</ram:DepartmentName>'));
+      Assert.IsFalse(xmlContent.Contains('<ram:PersonName>'));
+    finally
+      stream.Free;
+    end;
+  finally
+    invoice.Free;
   end;
 end;
 
