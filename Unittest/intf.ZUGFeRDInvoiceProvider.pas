@@ -103,7 +103,7 @@ begin
 
   Result.SetSellerContact(
     {name=}         'Max Mustermann',
-    {orgunit=}      'Muster-Einkauf',
+    {orgunit=}      '',
     {emailAddress=} 'Max@Mustermann.de',
     {phoneno=}      '+49891234567'
   );
