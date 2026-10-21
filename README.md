@@ -154,6 +154,12 @@ profile other than `XRechnung`, and CII validates advance payments in the `Exten
 `Save` with a file name, or use `TZUGFeRDInvoiceDescriptor23Writer.Validate` yourself, if you want
 the full profile rules enforced before writing to a stream.
 
+Seller and buyer contacts carry a single name in CII (BT-41 / BT-56): `ram:PersonName` and
+`ram:DepartmentName` must not both be present (CII-SR-465/466, enforced by the Factur-X and
+XRechnung validators in every profile). If both `Name` and `OrgUnit` are set, the CII writers for
+2.0 and 2.3 write only the person name and drop the department; the department is written only
+when no person name is given. Contacts of other parties keep both elements.
+
 ## Reading an invoice
 
 One call handles every supported version and syntax; the reader is selected from the document:

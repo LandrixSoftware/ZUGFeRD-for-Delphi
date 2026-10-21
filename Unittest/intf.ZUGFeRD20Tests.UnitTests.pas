@@ -1177,7 +1177,7 @@ end;
 
 procedure TZUGFeRD20Tests.TestSellerAndBuyerContactDepartmentFallback;
 var
-  invoice: TZUGFeRDInvoiceDescriptor;
+  invoice, loadedInvoice: TZUGFeRDInvoiceDescriptor;
   stream: TMemoryStream;
   bytes: TBytes;
   xmlContent: string;
@@ -1199,6 +1199,18 @@ begin
       Assert.IsTrue(xmlContent.Contains('<ram:DepartmentName>Seller Department</ram:DepartmentName>'));
       Assert.IsTrue(xmlContent.Contains('<ram:DepartmentName>Buyer Department</ram:DepartmentName>'));
       Assert.IsFalse(xmlContent.Contains('<ram:PersonName>'));
+
+      // Der Reader muss die Abteilung aus DepartmentName wieder in OrgUnit liefern.
+      stream.Position := 0;
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(stream);
+      try
+        Assert.AreEqual('', loadedInvoice.SellerContact.Name);
+        Assert.AreEqual('Seller Department', loadedInvoice.SellerContact.OrgUnit);
+        Assert.AreEqual('', loadedInvoice.BuyerContact.Name);
+        Assert.AreEqual('Buyer Department', loadedInvoice.BuyerContact.OrgUnit);
+      finally
+        loadedInvoice.Free;
+      end;
     finally
       stream.Free;
     end;
