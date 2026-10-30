@@ -218,6 +218,8 @@ type
     [Test]
     procedure TestSpecifiedProcuringProjectIsOmittedWhenMissing;
     [Test]
+    procedure TestSpecifiedProcuringProjectIsOmittedWithoutID;
+    [Test]
     procedure ShouldLoadCiiWithoutQdtNamespace;
     [Test]
     procedure TestDesignatedProductClassificationWithFullClassification;
@@ -4490,6 +4492,40 @@ begin
     end;
   finally
     invoice.Free;
+  end;
+end;
+
+procedure TZUGFeRD22Tests.TestSpecifiedProcuringProjectIsOmittedWithoutID;
+var
+  invoice: TZUGFeRDInvoiceDescriptor;
+  stream: TMemoryStream;
+  bytes: TBytes;
+  xmlContent: string;
+begin
+  // Kein TestCase: DUnitX trimmt die Werte, die ID aus Leerzeichen käme sonst als Leerstring an.
+  for var projectID in TArray<string>.Create('', '  ') do
+  begin
+    invoice := TZUGFeRDInvoiceProvider.CreateInvoice;
+    try
+      invoice.SetSpecifiedProcuringProject(projectID, 'Named project');
+
+      stream := TMemoryStream.Create;
+      try
+        invoice.Save(stream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
+        SetLength(bytes, stream.Size);
+        stream.Position := 0;
+        if stream.Size > 0 then
+          stream.ReadBuffer(bytes[0], stream.Size);
+        xmlContent := TEncoding.UTF8.GetString(bytes);
+
+        Assert.IsFalse(xmlContent.Contains('<ram:SpecifiedProcuringProject>'), 'ID: "' + projectID + '"');
+        Assert.IsFalse(xmlContent.Contains('Named project'), 'ID: "' + projectID + '"');
+      finally
+        stream.Free;
+      end;
+    finally
+      invoice.Free;
+    end;
   end;
 end;
 

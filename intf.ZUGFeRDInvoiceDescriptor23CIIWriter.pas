@@ -778,7 +778,8 @@ begin
   //#endregion
 
   //#region SpecifiedProcuringProject
-  if (Descriptor.SpecifiedProcuringProject <> nil) then
+  // Ohne ID (BT-11) gibt es keine Projektreferenz; der Knoten entfällt, statt ein leeres ram:ID zu schreiben.
+  if (Descriptor.SpecifiedProcuringProject <> nil) and (Trim(Descriptor.SpecifiedProcuringProject.ID) <> '') then
   begin
     Writer.WriteStartElement('ram:SpecifiedProcuringProject', PROFILE_COMFORT_EXTENDED_XRECHNUNG);
     Writer.WriteElementString('ram:ID', Descriptor.SpecifiedProcuringProject.ID, PROFILE_COMFORT_EXTENDED_XRECHNUNG);

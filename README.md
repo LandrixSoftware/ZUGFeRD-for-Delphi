@@ -160,6 +160,11 @@ XRechnung validators in every profile). If both `Name` and `OrgUnit` are set, th
 2.0 and 2.3 write only the person name and drop the department; the department is written only
 when no person name is given. Contacts of other parties keep both elements.
 
+The project reference (BT-11) is written in CII as `ram:SpecifiedProcuringProject`, whose schema
+also requires a `ram:Name`. Without a project name the CII writer fills in `Project reference`, the
+value KoSIT uses in its own test documents, so such an invoice reads back with that name instead of
+an empty one. A project without an ID is not written at all.
+
 ## Reading an invoice
 
 One call handles every supported version and syntax; the reader is selected from the document:
