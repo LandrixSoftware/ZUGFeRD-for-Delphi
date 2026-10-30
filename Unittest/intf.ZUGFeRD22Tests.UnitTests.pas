@@ -212,6 +212,12 @@ type
     [Test]
     procedure TestSellerAndBuyerContactDepartmentFallback;
     [Test]
+    procedure TestSpecifiedProcuringProjectWritesIDAndName;
+    [Test]
+    procedure TestSpecifiedProcuringProjectUsesDefaultName;
+    [Test]
+    procedure TestSpecifiedProcuringProjectIsOmittedWhenMissing;
+    [Test]
     procedure ShouldLoadCiiWithoutQdtNamespace;
     [Test]
     procedure TestDesignatedProductClassificationWithFullClassification;
@@ -4389,6 +4395,96 @@ begin
       finally
         loadedInvoice.Free;
       end;
+    finally
+      stream.Free;
+    end;
+  finally
+    invoice.Free;
+  end;
+end;
+
+procedure TZUGFeRD22Tests.TestSpecifiedProcuringProjectWritesIDAndName;
+var
+  invoice: TZUGFeRDInvoiceDescriptor;
+  stream: TMemoryStream;
+  bytes: TBytes;
+  xmlContent: string;
+begin
+  invoice := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    invoice.SetSpecifiedProcuringProject('PROJECT-1', 'Named project');
+
+    stream := TMemoryStream.Create;
+    try
+      invoice.Save(stream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
+      SetLength(bytes, stream.Size);
+      stream.Position := 0;
+      if stream.Size > 0 then
+        stream.ReadBuffer(bytes[0], stream.Size);
+      xmlContent := TEncoding.UTF8.GetString(bytes);
+
+      Assert.IsTrue(xmlContent.Contains('<ram:SpecifiedProcuringProject>'));
+      Assert.IsTrue(xmlContent.Contains('<ram:ID>PROJECT-1</ram:ID>'));
+      Assert.IsTrue(xmlContent.Contains('<ram:Name>Named project</ram:Name>'));
+    finally
+      stream.Free;
+    end;
+  finally
+    invoice.Free;
+  end;
+end;
+
+procedure TZUGFeRD22Tests.TestSpecifiedProcuringProjectUsesDefaultName;
+var
+  invoice: TZUGFeRDInvoiceDescriptor;
+  stream: TMemoryStream;
+  bytes: TBytes;
+  xmlContent: string;
+begin
+  invoice := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    invoice.SetSpecifiedProcuringProject('PROJECT-2', '');
+
+    stream := TMemoryStream.Create;
+    try
+      invoice.Save(stream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
+      SetLength(bytes, stream.Size);
+      stream.Position := 0;
+      if stream.Size > 0 then
+        stream.ReadBuffer(bytes[0], stream.Size);
+      xmlContent := TEncoding.UTF8.GetString(bytes);
+
+      Assert.IsTrue(xmlContent.Contains('<ram:SpecifiedProcuringProject>'));
+      Assert.IsTrue(xmlContent.Contains('<ram:ID>PROJECT-2</ram:ID>'));
+      Assert.IsTrue(xmlContent.Contains('<ram:Name>Project reference</ram:Name>'));
+      Assert.IsFalse(xmlContent.Contains('<ram:Name/>'));
+    finally
+      stream.Free;
+    end;
+  finally
+    invoice.Free;
+  end;
+end;
+
+procedure TZUGFeRD22Tests.TestSpecifiedProcuringProjectIsOmittedWhenMissing;
+var
+  invoice: TZUGFeRDInvoiceDescriptor;
+  stream: TMemoryStream;
+  bytes: TBytes;
+  xmlContent: string;
+begin
+  invoice := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    stream := TMemoryStream.Create;
+    try
+      invoice.Save(stream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
+      SetLength(bytes, stream.Size);
+      stream.Position := 0;
+      if stream.Size > 0 then
+        stream.ReadBuffer(bytes[0], stream.Size);
+      xmlContent := TEncoding.UTF8.GetString(bytes);
+
+      Assert.IsFalse(xmlContent.Contains('<ram:SpecifiedProcuringProject>'));
     finally
       stream.Free;
     end;

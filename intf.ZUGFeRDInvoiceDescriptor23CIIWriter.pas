@@ -782,7 +782,9 @@ begin
   begin
     Writer.WriteStartElement('ram:SpecifiedProcuringProject', PROFILE_COMFORT_EXTENDED_XRECHNUNG);
     Writer.WriteElementString('ram:ID', Descriptor.SpecifiedProcuringProject.ID, PROFILE_COMFORT_EXTENDED_XRECHNUNG);
-    Writer.WriteElementString('ram:Name', Descriptor.SpecifiedProcuringProject.Name, PROFILE_COMFORT_EXTENDED_XRECHNUNG);
+    // CII verlangt für den ausgegebenen Projektknoten ID und Name; der Standardwert verhindert ein leeres Element nach PEPPOL-EN16931-R008.
+    Writer.WriteElementString('ram:Name', IfThen(Trim(Descriptor.SpecifiedProcuringProject.Name) <> '',
+      Descriptor.SpecifiedProcuringProject.Name, 'Project reference'), PROFILE_COMFORT_EXTENDED_XRECHNUNG);
     Writer.WriteEndElement(); // !ram:SpecifiedProcuringProject
   end;
   //#endregion
