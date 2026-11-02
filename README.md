@@ -84,8 +84,8 @@ uses
   intf.ZUGFeRDInvoiceDescriptor, intf.ZUGFeRDVersion, intf.ZUGFeRDProfile,
   intf.ZUGFeRDFormats, intf.ZUGFeRDCurrencyCodes, intf.ZUGFeRDCountryCodes,
   intf.ZUGFeRDQuantityCodes, intf.ZUGFeRDTaxTypes, intf.ZUGFeRDTaxCategoryCodes,
-  intf.ZUGFeRDTaxRegistrationSchemeID,intf.ZUGFeRDPaymentMeansTypeCodes,
-  intf.ZUGFeRDHelper;
+  intf.ZUGFeRDTaxRegistrationSchemeID, intf.ZUGFeRDPaymentMeansTypeCodes,
+  intf.ZUGFeRDElectronicAddressSchemeIdentifiers, intf.ZUGFeRDHelper;
 
 var
   desc : TZUGFeRDInvoiceDescriptor;
@@ -95,14 +95,19 @@ begin
   try
     desc.SetSeller('Verkaeufer GmbH', '01234', 'Verkaeuferstadt', 'Hauptstrasse 1',
                    TZUGFeRDNullableParam<TZUGFeRDCountryCodes>.Create(TZUGFeRDCountryCodes.DE));
-    desc.AddSellerTaxRegistration('DE 123456789',TZUGFeRDTaxRegistrationSchemeID.VA);
+    desc.AddSellerTaxRegistration('DE123456789', TZUGFeRDTaxRegistrationSchemeID.VA);
     desc.SetBuyer('Kaeufer AG', '05678', 'Kaeuferstadt', 'Nebenweg 2',
                   TZUGFeRDNullableParam<TZUGFeRDCountryCodes>.Create(TZUGFeRDCountryCodes.DE));
 
     //BR-DE-2 and BR-DE-5..7: XRechnung requires a seller contact with name, phone and mail
     desc.SetSellerContact('Meier', '', 'meier@verkaeufer.de', '030 0815');
-    //BR-DE-15: Käuferreferenz ist Pflicht
-    desc.referenceOrderNo:='999';
+    //BR-DE-15: XRechnung requires a buyer reference (BT-10), e.g. the Leitweg-ID
+    desc.ReferenceOrderNo := '04011000-12345-03';
+    //PEPPOL-EN16931-R020/R010: XRechnung requires electronic addresses (BT-34, BT-49)
+    desc.SetSellerElectronicAddress('rechnung@verkaeufer.de', TZUGFeRDElectronicAddressSchemeIdentifiers.ElectronicMailSmtp);
+    desc.SetBuyerElectronicAddress('eingang@kaeufer.de', TZUGFeRDElectronicAddressSchemeIdentifiers.ElectronicMailSmtp);
+    //PEPPOL-EN16931-R001: XRechnung requires the business process (BT-23)
+    desc.BusinessProcess := 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0';
 
     desc.AddTradeLineItem(
       {name=}            'Beratungsleistung',
@@ -112,7 +117,7 @@ begin
       {unitQuantity=}    nil,
       {grossUnitPrice=}  nil,
       {billedQuantity=}  2,
-      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.create(200),
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(200),
       {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
       {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S),
       {taxPercent=}      19.0);
@@ -132,8 +137,9 @@ begin
 
     desc.AddTradePaymentTerms('7 Tage ohne Abzug');
     desc.SetPaymentMeans(TZUGFeRDPaymentMeansTypeCodes.SEPACreditTransfer);
-    desc.AddCreditorFinancialAccount('DE17 8600 0000 0086 0010 30','','','','','Schuldekonto des Bundes');
-    desc.ActualDeliveryDate:=TZUGFeRDNullableParam<TDateTime>.Create(EncodeDate(2026, 9, 3));
+    //Fictitious example IBAN: always without spaces
+    desc.AddCreditorFinancialAccount('DE75512108001245126199', '', '', '', '', 'Verkaeufer GmbH');
+    desc.ActualDeliveryDate := TZUGFeRDNullableParam<TDateTime>.Create(EncodeDate(2026, 9, 3));
 
     desc.Save('invoice-cii.xml', TZUGFeRDVersion.Version23, TZUGFeRDProfile.Comfort);
   finally
