@@ -99,7 +99,6 @@ type
     procedure _writeAdditionalReferencedDocument(_writer: TZUGFeRDProfileAwareXmlTextWriter; document :TZUGFeRDAdditionalReferencedDocument; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT; parentElement: string = '');
     procedure _WriteItemLevelAppliedTradeAllowanceCharge(_writer: TZUGFeRDProfileAwareXmlTextWriter; tradeAllowanceCharge: TZUGFeRDAbstractTradeAllowanceCharge);
     procedure _WriteItemLevelSpecifiedTradeAllowanceCharge(_writer: TZUGFeRDProfileAwareXmlTextWriter; specifiedTradeAllowanceCharge: TZUGFeRDAbstractTradeAllowanceCharge);
-    function _translateTaxCategoryCode(taxCategoryCode : TZUGFeRDTaxCategoryCodes) : String;
     function GetNameSpaces: TDictionary<string, string>;
     procedure _validateAdvancePayments;
   public
@@ -562,7 +561,7 @@ begin
     Writer.WriteStartElement('ram:ApplicableTradeTax', [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
     if tradeLineItem.TaxType.HasValue then
       Writer.WriteElementString('ram:TypeCode', TEnumExtensions<TZUGFeRDTaxTypes>.EnumToString(tradeLineItem.TaxType));
-    Writer.WriteOptionalElementString('ram:ExemptionReason', IfThen(tradeLineItem.TaxExemptionReason='', _translateTaxCategoryCode(tradeLineItem.TaxCategoryCode), tradeLineItem.TaxExemptionReason), [TZUGFeRDProfile.Extended]);  // BT-X-96
+    Writer.WriteOptionalElementString('ram:ExemptionReason', tradeLineItem.TaxExemptionReason, [TZUGFeRDProfile.Extended]);  // BT-X-96
     if tradeLineItem.TaxCategoryCode.HasValue then
       Writer.WriteElementString('ram:CategoryCode', TEnumExtensions<TZUGFeRDTaxCategoryCodes>.EnumToString(tradeLineItem.TaxCategoryCode)); // BT-151
     if tradeLineItem.TaxExemptionReasonCode.HasValue then
@@ -1404,9 +1403,15 @@ begin
     Writer.WriteStartElement('ram:CategoryTradeTax');
     if tradeAllowanceCharge.Tax.TypeCode.HasValue then
       Writer.WriteElementString('ram:TypeCode', TEnumExtensions<TZUGFeRDTaxTypes>.EnumToString(tradeAllowanceCharge.Tax.TypeCode));
+    Writer.WriteOptionalElementString('ram:ExemptionReason', tradeAllowanceCharge.Tax.ExemptionReason, [TZUGFeRDProfile.Extended]);
     if tradeAllowanceCharge.Tax.CategoryCode.HasValue then
       Writer.WriteElementString('ram:CategoryCode', TEnumExtensions<TZUGFeRDTaxCategoryCodes>.EnumToString(tradeAllowanceCharge.Tax.CategoryCode));
-    Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(tradeAllowanceCharge.Tax.Percent));
+    if tradeAllowanceCharge.Tax.ExemptionReasonCode.HasValue then
+      Writer.WriteOptionalElementString('ram:ExemptionReasonCode',
+        TEnumExtensions<TZUGFeRDTaxExemptionReasonCodes>.EnumToString(tradeAllowanceCharge.Tax.ExemptionReasonCode), [TZUGFeRDProfile.Extended]);
+    // BR-O-06 and BR-O-07 prohibit a VAT rate for document allowances and charges outside the scope of VAT.
+    if not (tradeAllowanceCharge.Tax.CategoryCode.HasValue and (tradeAllowanceCharge.Tax.CategoryCode.Value = TZUGFeRDTaxCategoryCodes.O)) then
+      Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(tradeAllowanceCharge.Tax.Percent));
     Writer.WriteEndElement();
   end;
   Writer.WriteEndElement();
@@ -1932,36 +1937,6 @@ begin
   end;
 
   _writer.WriteEndElement();
-end;
-
-function TZUGFeRDInvoiceDescriptor23CIIWriter._translateTaxCategoryCode(
-  taxCategoryCode : TZUGFeRDTaxCategoryCodes) : String;
-begin
-  Result := '';
-  case taxCategoryCode of
-    TZUGFeRDTaxCategoryCodes.A :;
-    TZUGFeRDTaxCategoryCodes.AA :;
-    TZUGFeRDTaxCategoryCodes.AB :;
-    TZUGFeRDTaxCategoryCodes.AC :;
-    TZUGFeRDTaxCategoryCodes.AD :;
-    TZUGFeRDTaxCategoryCodes.AE : Result := 'Umkehrung der Steuerschuldnerschaft';
-    TZUGFeRDTaxCategoryCodes.B: ;
-    TZUGFeRDTaxCategoryCodes.C: ;
-    TZUGFeRDTaxCategoryCodes.E: Result := 'steuerbefreit';
-    TZUGFeRDTaxCategoryCodes.G: Result := 'freier Ausfuhrartikel, Steuer nicht erhoben';
-    TZUGFeRDTaxCategoryCodes.H: ;
-    TZUGFeRDTaxCategoryCodes.O: Result := 'Dienstleistungen außerhalb des Steueranwendungsbereichs';
-    TZUGFeRDTaxCategoryCodes.S: Result := ''; // 'Normalsatz' (don't be verbose)
-    TZUGFeRDTaxCategoryCodes.Z: Result := 'nach dem Nullsatz zu versteuernde Waren';
-    TZUGFeRDTaxCategoryCodes.Unknown: ;
-    TZUGFeRDTaxCategoryCodes.D: ;
-    TZUGFeRDTaxCategoryCodes.F: ;
-    TZUGFeRDTaxCategoryCodes.I: ;
-    TZUGFeRDTaxCategoryCodes.J: ;
-    TZUGFeRDTaxCategoryCodes.K: Result := 'Kein Ausweis der Umsatzsteuer bei innergemeinschaftlichen Lieferungen';
-    TZUGFeRDTaxCategoryCodes.L: Result := 'IGIC (Kanarische Inseln)';
-    TZUGFeRDTaxCategoryCodes.M: Result := 'IPSI (Ceuta/Melilla)';
-  end;
 end;
 
 (*

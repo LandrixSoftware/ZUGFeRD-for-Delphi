@@ -270,6 +270,30 @@ type
     [Test]
     procedure TestInvoiceExemptions;
     [Test]
+    [TestCase('Standard', '19')]
+    [TestCase('Exempt', '9')]
+    [TestCase('ReverseCharge', '5')]
+    [TestCase('OutsideScope', '18')]
+    [TestCase('ZeroRated', '20')]
+    procedure TestCIIExtendedTaxExemptionConsistency(categoryOrd: Integer);
+    [Test]
+    [TestCase('AllowanceText', 'False,Text')]
+    [TestCase('AllowanceCode', 'False,Code')]
+    [TestCase('AllowanceBoth', 'False,Both')]
+    [TestCase('ChargeText', 'True,Text')]
+    [TestCase('ChargeCode', 'True,Code')]
+    [TestCase('ChargeBoth', 'True,Both')]
+    procedure TestCIIDocumentConditionTaxExemptionRoundtrip(isCharge: Boolean; const fieldMode: string);
+    [Test]
+    procedure TestCIIOutsideScopeDocumentChargeOmitsRate;
+    [Test]
+    procedure TestCIIExtendedKeepsDistinctTaxExemptionGroups;
+    [Test]
+    [TestCase('Basic', '1')]
+    [TestCase('EN16931', '2')]
+    [TestCase('XRechnung', '32')]
+    procedure TestCIITaxExemptionFieldsStayExtended(profileOrd: Integer);
+    [Test]
     procedure TestOriginTradeCountry;
     [Test]
     procedure TestLoadingCurrency;
@@ -318,6 +342,7 @@ type
 implementation
 
 uses
+  Winapi.MSXMLIntf, Winapi.msxml,
   System.SysUtils, System.Classes, System.Generics.Collections, System.IOUtils,
   System.RegularExpressions,
   intf.ZUGFeRDInvoiceDescriptor,
@@ -405,6 +430,125 @@ end;
 function TempInvoiceFileName: string;
 begin
   Result := TPath.Combine(TPath.GetTempPath, 'ZfD_' + TPath.GetGUIDFileName + '.xml');
+end;
+
+function SaveInvoiceToXml(invoice: TZUGFeRDInvoiceDescriptor; profile: TZUGFeRDProfile): string;
+var
+  stream: TStringStream;
+begin
+  stream := TStringStream.Create('', TEncoding.UTF8);
+  try
+    invoice.Save(stream, TZUGFeRDVersion.Version23, profile, TZUGFeRDFormats.CII);
+    Result := stream.DataString;
+  finally
+    stream.Free;
+  end;
+end;
+
+function ParseInvoiceXml(const xml: string): IXMLDOMDocument2;
+begin
+  Result := CoDOMDocument60.Create;
+  Result.async := False;
+  Result.validateOnParse := False;
+  Result.setProperty('SelectionLanguage', 'XPath');
+  Assert.IsTrue(Result.loadXML(xml), 'Die erzeugte CII-Rechnung muss wohlgeformtes XML sein.');
+end;
+
+function ChildNodeText(node: IXMLDOMNode; const localName: string): string;
+var
+  childNode: IXMLDOMNode;
+begin
+  childNode := node.selectSingleNode('./*[local-name()="' + localName + '"]');
+  if childNode = nil then
+    Exit('');
+  Result := childNode.text;
+end;
+
+procedure GetTaxExemptionDetails(categoryCode: TZUGFeRDTaxCategoryCodes; out exemptionReason: string;
+  out exemptionReasonCode: ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes>);
+begin
+  exemptionReason := '';
+  exemptionReasonCode.ClearValue;
+  case categoryCode of
+    TZUGFeRDTaxCategoryCodes.E:
+      begin
+        exemptionReason := 'Leistung nach Artikel 132 steuerbefreit';
+        exemptionReasonCode := TZUGFeRDTaxExemptionReasonCodes.VATEX_EU_132;
+      end;
+    TZUGFeRDTaxCategoryCodes.AE:
+      begin
+        exemptionReason := 'Umkehrung der Steuerschuldnerschaft';
+        exemptionReasonCode := TZUGFeRDTaxExemptionReasonCodes.VATEX_EU_AE;
+      end;
+    TZUGFeRDTaxCategoryCodes.O:
+      begin
+        exemptionReason := 'Nicht umsatzsteuerbar';
+        exemptionReasonCode := TZUGFeRDTaxExemptionReasonCodes.VATEX_EU_O;
+      end;
+  end;
+end;
+
+function CreateTaxScenarioInvoice(categoryCode: TZUGFeRDTaxCategoryCodes): TZUGFeRDInvoiceDescriptor;
+var
+  taxPercent, taxAmount, grandTotal: Currency;
+  exemptionReason: string;
+  exemptionReasonCode: ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes>;
+  lineItem: TZUGFeRDTradeLineItem;
+  headerTax: TZUGFeRDTax;
+  documentAllowance: TZUGFeRDAbstractTradeAllowanceCharge;
+begin
+  if categoryCode = TZUGFeRDTaxCategoryCodes.S then
+  begin
+    taxPercent := 19;
+    taxAmount := 18.47;
+  end
+  else
+  begin
+    taxPercent := 0;
+    taxAmount := 0;
+  end;
+  grandTotal := 97.20 + taxAmount;
+  GetTaxExemptionDetails(categoryCode, exemptionReason, exemptionReasonCode);
+
+  Result := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    Result.TradeLineItems.Clear;
+    Result.Taxes.Clear;
+    Result.TradeAllowanceCharges.Clear;
+    if categoryCode = TZUGFeRDTaxCategoryCodes.AE then
+      Result.AddBuyerTaxRegistration('DE987654321', TZUGFeRDTaxRegistrationSchemeID.VA);
+
+    lineItem := Result.AddTradeLineItem(
+      {name=}            'Beratungsleistung',
+      {netUnitPrice=}    TZUGFeRDNullableParam<Currency>.Create(40),
+      {description=}     '',
+      {unitCode=}        TZUGFeRDNullableParam<TZUGFeRDQuantityCodes>.Create(TZUGFeRDQuantityCodes.H87),
+      {unitQuantity=}    TZUGFeRDNullableParam<Currency>.Create(1),
+      {grossUnitPrice=}  TZUGFeRDNullableParam<Currency>.Create(40),
+      {billedQuantity=}  3,
+      {lineTotalAmount=} TZUGFeRDNullableParam<Currency>.Create(108),
+      {taxType=}         TZUGFeRDNullableParam<TZUGFeRDTaxTypes>.Create(TZUGFeRDTaxTypes.VAT),
+      {categoryCode=}    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(categoryCode),
+      {taxPercent=}      taxPercent);
+    lineItem.AddSpecifiedTradeAllowance(TZUGFeRDCurrencyCodes.EUR, 120, 12, 'Mengenrabatt');
+    lineItem.TaxExemptionReason := exemptionReason;
+    lineItem.TaxExemptionReasonCode := exemptionReasonCode;
+
+    Result.AddTradeAllowance(108, TZUGFeRDCurrencyCodes.EUR, 10.80, 'Dokumentnachlass',
+      TZUGFeRDTaxTypes.VAT, categoryCode, taxPercent);
+    documentAllowance := Result.TradeAllowanceCharges.Last;
+    documentAllowance.Tax.ExemptionReason := exemptionReason;
+    documentAllowance.Tax.ExemptionReasonCode := exemptionReasonCode;
+
+    headerTax := Result.AddApplicableTradeTax(taxAmount, 97.20, taxPercent, TZUGFeRDTaxTypes.VAT, categoryCode);
+    headerTax.ExemptionReason := exemptionReason;
+    headerTax.ExemptionReasonCode := exemptionReasonCode;
+
+    Result.SetTotals(108, 0, 10.80, 97.20, taxAmount, grandTotal, 0, grandTotal);
+  except
+    Result.Free;
+    raise;
+  end;
 end;
 
 { TZUGFeRD22Tests }
@@ -5608,6 +5752,280 @@ begin
     end;
   finally
     desc.Free;
+  end;
+end;
+
+procedure TZUGFeRD22Tests.TestCIIExtendedTaxExemptionConsistency(categoryOrd: Integer);
+var
+  invoice: TZUGFeRDInvoiceDescriptor;
+  xmlDocument: IXMLDOMDocument2;
+  lineTaxNode, documentAllowanceTaxNode, headerTaxNode, rateNode: IXMLDOMNode;
+  categoryCode: TZUGFeRDTaxCategoryCodes;
+  exemptionReason, expectedRate: string;
+  exemptionReasonCode: ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes>;
+begin
+  categoryCode := TZUGFeRDTaxCategoryCodes(categoryOrd);
+  if categoryCode = TZUGFeRDTaxCategoryCodes.S then
+  begin
+    expectedRate := '19.00';
+  end
+  else
+  begin
+    expectedRate := '0.00';
+  end;
+  GetTaxExemptionDetails(categoryCode, exemptionReason, exemptionReasonCode);
+
+  invoice := CreateTaxScenarioInvoice(categoryCode);
+  try
+    xmlDocument := ParseInvoiceXml(SaveInvoiceToXml(invoice, TZUGFeRDProfile.Extended));
+    lineTaxNode := xmlDocument.selectSingleNode('//*[local-name()="SpecifiedLineTradeSettlement"]/*[local-name()="ApplicableTradeTax"]');
+    documentAllowanceTaxNode := xmlDocument.selectSingleNode(
+      '//*[local-name()="ApplicableHeaderTradeSettlement"]/*[local-name()="SpecifiedTradeAllowanceCharge"]/*[local-name()="CategoryTradeTax"]');
+    headerTaxNode := xmlDocument.selectSingleNode(
+      '//*[local-name()="ApplicableHeaderTradeSettlement"]/*[local-name()="ApplicableTradeTax"]');
+
+    Assert.IsNotNull(lineTaxNode);
+    Assert.IsNotNull(documentAllowanceTaxNode);
+    Assert.IsNotNull(headerTaxNode);
+    Assert.AreEqual(exemptionReason, ChildNodeText(lineTaxNode, 'ExemptionReason'));
+    Assert.AreEqual(exemptionReason, ChildNodeText(documentAllowanceTaxNode, 'ExemptionReason'));
+    Assert.AreEqual(exemptionReason, ChildNodeText(headerTaxNode, 'ExemptionReason'));
+    if exemptionReasonCode.HasValue then
+    begin
+      Assert.AreEqual(TEnumExtensions<TZUGFeRDTaxExemptionReasonCodes>.EnumToString(exemptionReasonCode.Value), ChildNodeText(lineTaxNode, 'ExemptionReasonCode'));
+      Assert.AreEqual(TEnumExtensions<TZUGFeRDTaxExemptionReasonCodes>.EnumToString(exemptionReasonCode.Value), ChildNodeText(documentAllowanceTaxNode, 'ExemptionReasonCode'));
+      Assert.AreEqual(TEnumExtensions<TZUGFeRDTaxExemptionReasonCodes>.EnumToString(exemptionReasonCode.Value), ChildNodeText(headerTaxNode, 'ExemptionReasonCode'));
+    end
+    else
+    begin
+      Assert.IsNull(lineTaxNode.selectSingleNode('./*[local-name()="ExemptionReasonCode"]'));
+      Assert.IsNull(documentAllowanceTaxNode.selectSingleNode('./*[local-name()="ExemptionReasonCode"]'));
+      Assert.IsNull(headerTaxNode.selectSingleNode('./*[local-name()="ExemptionReasonCode"]'));
+    end;
+
+    rateNode := lineTaxNode.selectSingleNode('./*[local-name()="RateApplicablePercent"]');
+    if categoryCode = TZUGFeRDTaxCategoryCodes.O then
+      Assert.IsNull(rateNode, 'BR-O-11 verbietet den Steuersatz auf Positionsebene.')
+    else
+    begin
+      Assert.IsNotNull(rateNode);
+      Assert.AreEqual(expectedRate, rateNode.text);
+    end;
+    rateNode := documentAllowanceTaxNode.selectSingleNode('./*[local-name()="RateApplicablePercent"]');
+    if categoryCode = TZUGFeRDTaxCategoryCodes.O then
+      Assert.IsNull(rateNode, 'BR-O-06 verbietet den Steuersatz bei Dokumentnachlässen.')
+    else
+    begin
+      Assert.IsNotNull(rateNode);
+      Assert.AreEqual(expectedRate, rateNode.text);
+    end;
+
+    Assert.AreEqual('12.00', xmlDocument.selectSingleNode(
+      '//*[local-name()="SpecifiedLineTradeSettlement"]/*[local-name()="SpecifiedTradeAllowanceCharge"]/*[local-name()="ActualAmount"]').text);
+    Assert.AreEqual('108.00', xmlDocument.selectSingleNode(
+      '//*[local-name()="SpecifiedTradeSettlementLineMonetarySummation"]/*[local-name()="LineTotalAmount"]').text);
+    Assert.AreEqual('10.80', xmlDocument.selectSingleNode(
+      '//*[local-name()="ApplicableHeaderTradeSettlement"]/*[local-name()="SpecifiedTradeAllowanceCharge"]/*[local-name()="ActualAmount"]').text);
+    Assert.AreEqual('97.20', ChildNodeText(headerTaxNode, 'BasisAmount'));
+  finally
+    invoice.Free;
+  end;
+end;
+
+procedure TZUGFeRD22Tests.TestCIIDocumentConditionTaxExemptionRoundtrip(isCharge: Boolean; const fieldMode: string);
+const
+  ExemptionText = 'Individuelle Steuerbefreiung';
+var
+  invoice, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  condition, loadedCondition: TZUGFeRDAbstractTradeAllowanceCharge;
+  inputStream: TStringStream;
+  xmlDocument: IXMLDOMDocument2;
+  conditionTaxNode: IXMLDOMNode;
+  xml: string;
+begin
+  invoice := CreateTaxScenarioInvoice(TZUGFeRDTaxCategoryCodes.E);
+  try
+    if isCharge then
+    begin
+      invoice.TradeAllowanceCharges.Clear;
+      invoice.AddTradeCharge(108, TZUGFeRDCurrencyCodes.EUR, 10.80, 'Dokumentzuschlag',
+        TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.E, 0);
+    end;
+    condition := invoice.TradeAllowanceCharges.Last;
+    condition.Tax.ExemptionReason := '';
+    condition.Tax.ExemptionReasonCode := nil;
+    if SameText(fieldMode, 'Text') or SameText(fieldMode, 'Both') then
+      condition.Tax.ExemptionReason := ExemptionText;
+    if SameText(fieldMode, 'Code') or SameText(fieldMode, 'Both') then
+      condition.Tax.ExemptionReasonCode := TZUGFeRDTaxExemptionReasonCodes.VATEX_EU_132;
+
+    xml := SaveInvoiceToXml(invoice, TZUGFeRDProfile.Extended);
+    xmlDocument := ParseInvoiceXml(xml);
+    conditionTaxNode := xmlDocument.selectSingleNode(
+      '//*[local-name()="ApplicableHeaderTradeSettlement"]/*[local-name()="SpecifiedTradeAllowanceCharge"]/*[local-name()="CategoryTradeTax"]');
+    Assert.IsNotNull(conditionTaxNode);
+    Assert.AreEqual(condition.Tax.ExemptionReason, ChildNodeText(conditionTaxNode, 'ExemptionReason'));
+    if condition.Tax.ExemptionReasonCode.HasValue then
+      Assert.AreEqual('VATEX-EU-132', ChildNodeText(conditionTaxNode, 'ExemptionReasonCode'))
+    else
+      Assert.IsNull(conditionTaxNode.selectSingleNode('./*[local-name()="ExemptionReasonCode"]'));
+
+    inputStream := TStringStream.Create(xml, TEncoding.UTF8);
+    try
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(inputStream);
+      try
+        Assert.AreEqual<Integer>(1, loadedInvoice.TradeAllowanceCharges.Count);
+        loadedCondition := loadedInvoice.TradeAllowanceCharges[0];
+        Assert.AreEqual(isCharge, loadedCondition.ChargeIndicator);
+        Assert.AreEqual(condition.Tax.ExemptionReason, loadedCondition.Tax.ExemptionReason);
+        Assert.AreEqual(condition.Tax.ExemptionReasonCode.HasValue, loadedCondition.Tax.ExemptionReasonCode.HasValue);
+        if condition.Tax.ExemptionReasonCode.HasValue then
+          Assert.AreEqual<TZUGFeRDTaxExemptionReasonCodes>(condition.Tax.ExemptionReasonCode.Value, loadedCondition.Tax.ExemptionReasonCode.Value);
+
+        xmlDocument := ParseInvoiceXml(SaveInvoiceToXml(loadedInvoice, TZUGFeRDProfile.Extended));
+        conditionTaxNode := xmlDocument.selectSingleNode(
+          '//*[local-name()="ApplicableHeaderTradeSettlement"]/*[local-name()="SpecifiedTradeAllowanceCharge"]/*[local-name()="CategoryTradeTax"]');
+        Assert.AreEqual(loadedCondition.Tax.ExemptionReason, ChildNodeText(conditionTaxNode, 'ExemptionReason'));
+        if loadedCondition.Tax.ExemptionReasonCode.HasValue then
+          Assert.AreEqual('VATEX-EU-132', ChildNodeText(conditionTaxNode, 'ExemptionReasonCode'))
+        else
+          Assert.IsNull(conditionTaxNode.selectSingleNode('./*[local-name()="ExemptionReasonCode"]'));
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      inputStream.Free;
+    end;
+  finally
+    invoice.Free;
+  end;
+end;
+
+procedure TZUGFeRD22Tests.TestCIIOutsideScopeDocumentChargeOmitsRate;
+var
+  invoice, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  documentCharge: TZUGFeRDAbstractTradeAllowanceCharge;
+  inputStream: TStringStream;
+  xmlDocument: IXMLDOMDocument2;
+  chargeTaxNode: IXMLDOMNode;
+  xml: string;
+begin
+  invoice := CreateTaxScenarioInvoice(TZUGFeRDTaxCategoryCodes.O);
+  try
+    invoice.TradeAllowanceCharges.Clear;
+    invoice.AddTradeCharge(108, TZUGFeRDCurrencyCodes.EUR, 10.80, 'Dokumentzuschlag',
+      TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.O, 0);
+    documentCharge := invoice.TradeAllowanceCharges.Last;
+    documentCharge.Tax.ExemptionReason := invoice.Taxes[0].ExemptionReason;
+    documentCharge.Tax.ExemptionReasonCode := invoice.Taxes[0].ExemptionReasonCode;
+    invoice.Taxes[0].BasisAmount := 118.80;
+    invoice.SetTotals(108, 10.80, 0, 118.80, 0, 118.80, 0, 118.80);
+
+    xml := SaveInvoiceToXml(invoice, TZUGFeRDProfile.Extended);
+    xmlDocument := ParseInvoiceXml(xml);
+    chargeTaxNode := xmlDocument.selectSingleNode(
+      '//*[local-name()="ApplicableHeaderTradeSettlement"]/*[local-name()="SpecifiedTradeAllowanceCharge"]/*[local-name()="CategoryTradeTax"]');
+    Assert.IsNotNull(chargeTaxNode);
+    Assert.AreEqual('Nicht umsatzsteuerbar', ChildNodeText(chargeTaxNode, 'ExemptionReason'));
+    Assert.AreEqual('VATEX-EU-O', ChildNodeText(chargeTaxNode, 'ExemptionReasonCode'));
+    Assert.IsNull(chargeTaxNode.selectSingleNode('./*[local-name()="RateApplicablePercent"]'),
+      'BR-O-07 verbietet den Steuersatz bei Dokumentzuschlägen.');
+
+    inputStream := TStringStream.Create(xml, TEncoding.UTF8);
+    try
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(inputStream);
+      try
+        Assert.AreEqual<Integer>(1, loadedInvoice.TradeAllowanceCharges.Count);
+        Assert.IsTrue(loadedInvoice.TradeAllowanceCharges[0].ChargeIndicator);
+        Assert.AreEqual('Nicht umsatzsteuerbar', loadedInvoice.TradeAllowanceCharges[0].Tax.ExemptionReason);
+        Assert.AreEqual<TZUGFeRDTaxExemptionReasonCodes>(TZUGFeRDTaxExemptionReasonCodes.VATEX_EU_O,
+          loadedInvoice.TradeAllowanceCharges[0].Tax.ExemptionReasonCode.Value);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      inputStream.Free;
+    end;
+  finally
+    invoice.Free;
+  end;
+end;
+
+procedure TZUGFeRD22Tests.TestCIIExtendedKeepsDistinctTaxExemptionGroups;
+var
+  invoice, loadedInvoice: TZUGFeRDInvoiceDescriptor;
+  secondHeaderTax: TZUGFeRDTax;
+  secondAllowance: TZUGFeRDAbstractTradeAllowanceCharge;
+  inputStream: TStringStream;
+  xmlDocument: IXMLDOMDocument2;
+  headerTaxNodes, allowanceTaxNodes: IXMLDOMNodeList;
+  xml: string;
+begin
+  invoice := CreateTaxScenarioInvoice(TZUGFeRDTaxCategoryCodes.E);
+  try
+    invoice.Taxes[0].ExemptionReason := 'Steuerbefreiung Gruppe A';
+    invoice.TradeAllowanceCharges[0].Tax.ExemptionReason := 'Steuerbefreiung Gruppe A';
+    secondHeaderTax := invoice.AddApplicableTradeTax(0, 0, 0, TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.E);
+    secondHeaderTax.ExemptionReason := 'Steuerbefreiung Gruppe B';
+    secondHeaderTax.ExemptionReasonCode := TZUGFeRDTaxExemptionReasonCodes.VATEX_EU_132_1A;
+    invoice.AddTradeAllowance(0, TZUGFeRDCurrencyCodes.EUR, 0, 'Zweite Steuergruppe',
+      TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.E, 0);
+    secondAllowance := invoice.TradeAllowanceCharges.Last;
+    secondAllowance.Tax.ExemptionReason := 'Steuerbefreiung Gruppe B';
+    secondAllowance.Tax.ExemptionReasonCode := TZUGFeRDTaxExemptionReasonCodes.VATEX_EU_132_1A;
+
+    xml := SaveInvoiceToXml(invoice, TZUGFeRDProfile.Extended);
+    xmlDocument := ParseInvoiceXml(xml);
+    headerTaxNodes := xmlDocument.selectNodes(
+      '//*[local-name()="ApplicableHeaderTradeSettlement"]/*[local-name()="ApplicableTradeTax"]');
+    allowanceTaxNodes := xmlDocument.selectNodes(
+      '//*[local-name()="ApplicableHeaderTradeSettlement"]/*[local-name()="SpecifiedTradeAllowanceCharge"]/*[local-name()="CategoryTradeTax"]');
+    Assert.AreEqual(2, headerTaxNodes.length);
+    Assert.AreEqual(2, allowanceTaxNodes.length);
+    Assert.AreEqual('Steuerbefreiung Gruppe A', ChildNodeText(headerTaxNodes[0], 'ExemptionReason'));
+    Assert.AreEqual('Steuerbefreiung Gruppe B', ChildNodeText(headerTaxNodes[1], 'ExemptionReason'));
+    Assert.AreEqual('Steuerbefreiung Gruppe A', ChildNodeText(allowanceTaxNodes[0], 'ExemptionReason'));
+    Assert.AreEqual('Steuerbefreiung Gruppe B', ChildNodeText(allowanceTaxNodes[1], 'ExemptionReason'));
+
+    inputStream := TStringStream.Create(xml, TEncoding.UTF8);
+    try
+      loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(inputStream);
+      try
+        Assert.AreEqual<Integer>(2, loadedInvoice.Taxes.Count);
+        Assert.AreEqual<Integer>(2, loadedInvoice.TradeAllowanceCharges.Count);
+        Assert.AreEqual('Steuerbefreiung Gruppe A', loadedInvoice.Taxes[0].ExemptionReason);
+        Assert.AreEqual('Steuerbefreiung Gruppe B', loadedInvoice.Taxes[1].ExemptionReason);
+        Assert.AreEqual('Steuerbefreiung Gruppe A', loadedInvoice.TradeAllowanceCharges[0].Tax.ExemptionReason);
+        Assert.AreEqual('Steuerbefreiung Gruppe B', loadedInvoice.TradeAllowanceCharges[1].Tax.ExemptionReason);
+      finally
+        loadedInvoice.Free;
+      end;
+    finally
+      inputStream.Free;
+    end;
+  finally
+    invoice.Free;
+  end;
+end;
+
+procedure TZUGFeRD22Tests.TestCIITaxExemptionFieldsStayExtended(profileOrd: Integer);
+var
+  invoice: TZUGFeRDInvoiceDescriptor;
+  xmlDocument: IXMLDOMDocument2;
+  lineTaxNode, allowanceTaxNode: IXMLDOMNode;
+begin
+  invoice := CreateTaxScenarioInvoice(TZUGFeRDTaxCategoryCodes.E);
+  try
+    xmlDocument := ParseInvoiceXml(SaveInvoiceToXml(invoice, TZUGFeRDProfile(profileOrd)));
+    lineTaxNode := xmlDocument.selectSingleNode('//*[local-name()="SpecifiedLineTradeSettlement"]/*[local-name()="ApplicableTradeTax"]');
+    allowanceTaxNode := xmlDocument.selectSingleNode(
+      '//*[local-name()="ApplicableHeaderTradeSettlement"]/*[local-name()="SpecifiedTradeAllowanceCharge"]/*[local-name()="CategoryTradeTax"]');
+    Assert.IsNotNull(lineTaxNode);
+    Assert.IsNotNull(allowanceTaxNode);
+    Assert.AreEqual(0, lineTaxNode.selectNodes('./*[local-name()="ExemptionReason" or local-name()="ExemptionReasonCode"]').length);
+    Assert.AreEqual(0, allowanceTaxNode.selectNodes('./*[local-name()="ExemptionReason" or local-name()="ExemptionReasonCode"]').length);
+  finally
+    invoice.Free;
   end;
 end;
 
