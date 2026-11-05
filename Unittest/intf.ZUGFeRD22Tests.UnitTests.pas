@@ -270,12 +270,12 @@ type
     [Test]
     procedure TestInvoiceExemptions;
     [Test]
-    [TestCase('Standard', '19')]
-    [TestCase('Exempt', '9')]
-    [TestCase('ReverseCharge', '5')]
-    [TestCase('OutsideScope', '18')]
-    [TestCase('ZeroRated', '20')]
-    procedure TestCIIExtendedTaxExemptionConsistency(categoryOrd: Integer);
+    [TestCase('Standard', 'S')]
+    [TestCase('Exempt', 'E')]
+    [TestCase('ReverseCharge', 'AE')]
+    [TestCase('OutsideScope', 'O')]
+    [TestCase('ZeroRated', 'Z')]
+    procedure TestCIIExtendedTaxExemptionConsistency(const categoryCodeText: string);
     [Test]
     [TestCase('AllowanceText', 'False,Text')]
     [TestCase('AllowanceCode', 'False,Code')]
@@ -5755,7 +5755,7 @@ begin
   end;
 end;
 
-procedure TZUGFeRD22Tests.TestCIIExtendedTaxExemptionConsistency(categoryOrd: Integer);
+procedure TZUGFeRD22Tests.TestCIIExtendedTaxExemptionConsistency(const categoryCodeText: string);
 var
   invoice: TZUGFeRDInvoiceDescriptor;
   xmlDocument: IXMLDOMDocument2;
@@ -5764,7 +5764,7 @@ var
   exemptionReason, expectedRate: string;
   exemptionReasonCode: ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes>;
 begin
-  categoryCode := TZUGFeRDTaxCategoryCodes(categoryOrd);
+  categoryCode := TEnumExtensions<TZUGFeRDTaxCategoryCodes>.StringToEnum(categoryCodeText);
   if categoryCode = TZUGFeRDTaxCategoryCodes.S then
   begin
     expectedRate := '19.00';
