@@ -1899,6 +1899,10 @@ begin
   if contact = nil then
     exit;
 
+  // BG-X-26 erweitert den Leistungsempfänger nur in EXTENDED um Kontaktdaten.
+  if (partyType = TZUGFeRDPartyTypes.ShipToTradeParty) and (Descriptor.Profile <> TZUGFeRDProfile.Extended) then
+    exit;
+
   _writer.WriteStartElement(contactTag,profile);
 
   // PersonName und DepartmentName bilden bei Verkäufer und Käufer denselben BT ab und dürfen nach CII-SR-465/466 nicht gemeinsam vorkommen.
