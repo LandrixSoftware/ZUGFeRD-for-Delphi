@@ -212,6 +212,11 @@ type
     [Test]
     procedure TestSellerAndBuyerContactDepartmentFallback;
     [Test]
+    [TestCase('EN16931', '2,False')]
+    [TestCase('Extended', '4,True')]
+    [TestCase('XRechnung', '32,False')]
+    procedure TestShipToContactProfileHandling(profileOrd: Integer; expectShipToContact: Boolean);
+    [Test]
     procedure TestSpecifiedProcuringProjectWritesIDAndName;
     [Test]
     procedure TestSpecifiedProcuringProjectUsesDefaultName;
@@ -4544,6 +4549,55 @@ begin
     finally
       stream.Free;
     end;
+  finally
+    invoice.Free;
+  end;
+end;
+
+procedure TZUGFeRD22Tests.TestShipToContactProfileHandling(profileOrd: Integer; expectShipToContact: Boolean);
+var
+  invoice: TZUGFeRDInvoiceDescriptor;
+  xmlDocument: IXMLDOMDocument2;
+  shipToNode, shipToAddressNode, shipToContactNode, sellerContactNode, buyerContactNode: IXMLDOMNode;
+begin
+  invoice := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    invoice.SetSellerContact('Seller Contact', '', 'seller@example.org', '+49 30 1000');
+    invoice.SetBuyerContact('Buyer Contact', '', 'buyer@example.org', '+49 30 2000');
+
+    invoice.ShipTo := TZUGFeRDParty.Create;
+    invoice.ShipTo.Name := 'Delivery Recipient';
+    invoice.ShipTo.Postcode := '10115';
+    invoice.ShipTo.City := 'Berlin';
+    invoice.ShipTo.Street := 'Delivery Street 1';
+    invoice.ShipTo.Country := TZUGFeRDCountryCodes.DE;
+    invoice.ShipToContact := TZUGFeRDContact.Create;
+    invoice.ShipToContact.Name := 'Delivery Contact';
+
+    xmlDocument := ParseInvoiceXml(SaveInvoiceToXml(invoice, TZUGFeRDProfile(profileOrd)));
+    shipToNode := xmlDocument.selectSingleNode('//*[local-name()="ApplicableHeaderTradeDelivery"]/*[local-name()="ShipToTradeParty"]');
+    Assert.IsNotNull(shipToNode, 'Die Angaben zum Leistungsempfänger müssen erhalten bleiben.');
+    Assert.AreEqual('Delivery Recipient', ChildNodeText(shipToNode, 'Name'));
+    shipToAddressNode := shipToNode.selectSingleNode('./*[local-name()="PostalTradeAddress"]');
+    Assert.IsNotNull(shipToAddressNode, 'Die Anschrift des Leistungsempfängers muss erhalten bleiben.');
+    Assert.AreEqual('Delivery Street 1', ChildNodeText(shipToAddressNode, 'LineOne'));
+    Assert.AreEqual('DE', ChildNodeText(shipToAddressNode, 'CountryID'));
+
+    sellerContactNode := xmlDocument.selectSingleNode('//*[local-name()="SellerTradeParty"]/*[local-name()="DefinedTradeContact"]');
+    buyerContactNode := xmlDocument.selectSingleNode('//*[local-name()="BuyerTradeParty"]/*[local-name()="DefinedTradeContact"]');
+    Assert.IsNotNull(sellerContactNode, 'Der zulässige Verkäuferkontakt muss erhalten bleiben.');
+    Assert.IsNotNull(buyerContactNode, 'Der zulässige Käuferkontakt muss erhalten bleiben.');
+    Assert.AreEqual('Seller Contact', ChildNodeText(sellerContactNode, 'PersonName'));
+    Assert.AreEqual('Buyer Contact', ChildNodeText(buyerContactNode, 'PersonName'));
+
+    shipToContactNode := shipToNode.selectSingleNode('./*[local-name()="DefinedTradeContact"]');
+    if expectShipToContact then
+    begin
+      Assert.IsNotNull(shipToContactNode, 'EXTENDED muss den Kontakt des Leistungsempfängers schreiben.');
+      Assert.AreEqual('Delivery Contact', ChildNodeText(shipToContactNode, 'PersonName'));
+    end
+    else
+      Assert.IsNull(shipToContactNode, 'Außerhalb von EXTENDED ist der Kontakt des Leistungsempfängers nicht zulässig.');
   finally
     invoice.Free;
   end;
