@@ -808,7 +808,9 @@ begin
   end;
 
   _writeOptionalParty(Writer, TZUGFeRDPartyTypes.ShipToTradeParty, Descriptor.ShipTo, ALL_PROFILES - [TZUGFeRDProfile.Minimum], Descriptor.ShipToContact, Nil, Descriptor.ShipToTaxRegistration);
-  _writeOptionalParty(Writer, TZUGFeRDPartyTypes.UltimateShipToTradeParty, Descriptor.UltimateShipTo, [TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung1, TZUGFeRDProfile.XRechnung], Descriptor.UltimateShipToContact);
+  // Den abweichenden Endempfänger gibt es nur in EXTENDED. EN16931 und XRechnung kennen ihn nicht;
+  // der KoSIT-Validator meldet ihn dort als Warnung (CII-SR-317).
+  _writeOptionalParty(Writer, TZUGFeRDPartyTypes.UltimateShipToTradeParty, Descriptor.UltimateShipTo, [TZUGFeRDProfile.Extended], Descriptor.UltimateShipToContact);
   _writeOptionalParty(Writer, TZUGFeRDPartyTypes.ShipFromTradeParty, Descriptor.ShipFrom, [TZUGFeRDProfile.Extended]);
 
   //#region ActualDeliverySupplyChainEvent

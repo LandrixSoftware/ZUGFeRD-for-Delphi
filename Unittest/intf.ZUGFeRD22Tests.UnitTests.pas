@@ -217,6 +217,11 @@ type
     [TestCase('XRechnung', '32,False')]
     procedure TestShipToContactProfileHandling(profileOrd: Integer; expectShipToContact: Boolean);
     [Test]
+    [TestCase('EN16931', '2,False')]
+    [TestCase('Extended', '4,True')]
+    [TestCase('XRechnung', '32,False')]
+    procedure TestUltimateShipToProfileHandling(profileOrd: Integer; expectUltimateShipTo: Boolean);
+    [Test]
     procedure TestSpecifiedProcuringProjectWritesIDAndName;
     [Test]
     procedure TestSpecifiedProcuringProjectUsesDefaultName;
@@ -4598,6 +4603,47 @@ begin
     end
     else
       Assert.IsNull(shipToContactNode, 'Außerhalb von EXTENDED ist der Kontakt des Leistungsempfängers nicht zulässig.');
+  finally
+    invoice.Free;
+  end;
+end;
+
+procedure TZUGFeRD22Tests.TestUltimateShipToProfileHandling(profileOrd: Integer; expectUltimateShipTo: Boolean);
+var
+  invoice: TZUGFeRDInvoiceDescriptor;
+  xmlDocument: IXMLDOMDocument2;
+  deliveryNode, shipToNode, ultimateShipToNode: IXMLDOMNode;
+begin
+  invoice := TZUGFeRDInvoiceProvider.CreateInvoice;
+  try
+    invoice.ShipTo := TZUGFeRDParty.Create;
+    invoice.ShipTo.Name := 'Delivery Recipient';
+    invoice.ShipTo.Postcode := '10115';
+    invoice.ShipTo.City := 'Berlin';
+    invoice.ShipTo.Country := TZUGFeRDCountryCodes.DE;
+
+    invoice.UltimateShipTo := TZUGFeRDParty.Create;
+    invoice.UltimateShipTo.Name := 'Ultimate Recipient';
+    invoice.UltimateShipTo.Postcode := '80331';
+    invoice.UltimateShipTo.City := 'M' + #$00FC + 'nchen';
+    invoice.UltimateShipTo.Country := TZUGFeRDCountryCodes.DE;
+
+    xmlDocument := ParseInvoiceXml(SaveInvoiceToXml(invoice, TZUGFeRDProfile(profileOrd)));
+    deliveryNode := xmlDocument.selectSingleNode('//*[local-name()="ApplicableHeaderTradeDelivery"]');
+    Assert.IsNotNull(deliveryNode, 'Die Lieferangaben müssen geschrieben werden.');
+
+    shipToNode := deliveryNode.selectSingleNode('./*[local-name()="ShipToTradeParty"]');
+    Assert.IsNotNull(shipToNode, 'Der Leistungsempfänger muss in allen Profilen erhalten bleiben.');
+    Assert.AreEqual('Delivery Recipient', ChildNodeText(shipToNode, 'Name'));
+
+    ultimateShipToNode := deliveryNode.selectSingleNode('./*[local-name()="UltimateShipToTradeParty"]');
+    if expectUltimateShipTo then
+    begin
+      Assert.IsNotNull(ultimateShipToNode, 'EXTENDED muss den abweichenden Endempfänger schreiben.');
+      Assert.AreEqual('Ultimate Recipient', ChildNodeText(ultimateShipToNode, 'Name'));
+    end
+    else
+      Assert.IsNull(ultimateShipToNode, 'Außerhalb von EXTENDED darf der abweichende Endempfänger nicht geschrieben werden.');
   finally
     invoice.Free;
   end;
