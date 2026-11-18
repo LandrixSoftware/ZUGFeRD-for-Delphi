@@ -260,6 +260,10 @@ type
     [Test]
     procedure TestOfficialXRechnungFileForPaymentTerms;
     [Test]
+    procedure TestPaymentTermsXRechnungSkontoWithSeparateNetTerm;
+    [Test]
+    procedure TestPaymentTermsXRechnungSkontoWithoutTrailingHash;
+    [Test]
     procedure TestBuyerOrderReferenceLineId;
     [Test]
     procedure TestRequiredDirectDebitFieldsShouldExist;
@@ -5500,6 +5504,105 @@ begin
     // Dritter PaymentTerm
     Assert.AreEqual<Integer>(30, desc.PaymentTermsList[2].DueDays.Value);
     Assert.AreEqual<Currency>(0.00, desc.PaymentTermsList[2].Percentage.Value);
+  finally
+    desc.Free;
+  end;
+end;
+
+// Lädt die EXTENDED-Warenrechnung, deren Zahlungsbedingungen durch paymentTermsXml ersetzt sind.
+function LoadExtendedInvoiceWithPaymentTerms(const templateFile, paymentTermsXml: string): TZUGFeRDInvoiceDescriptor;
+const
+  StartTag = '<ram:SpecifiedTradePaymentTerms>';
+  EndTag = '</ram:SpecifiedTradePaymentTerms>';
+var
+  xmlContent: string;
+  startPos, endPos: Integer;
+  stream: TStringStream;
+begin
+  xmlContent := TFile.ReadAllText(templateFile, TEncoding.UTF8);
+  startPos := Pos(StartTag, xmlContent);
+  endPos := Pos(EndTag, xmlContent);
+  Assert.IsTrue((startPos > 0) and (endPos > startPos), 'Zahlungsbedingungen in der Vorlage nicht gefunden.');
+  Delete(xmlContent, startPos, endPos + Length(EndTag) - startPos);
+  Insert(paymentTermsXml, xmlContent, startPos);
+  Assert.AreEqual(0, Pos(StartTag, xmlContent, startPos + Length(paymentTermsXml)), 'Vorlage darf nur einen Block enthalten.');
+
+  stream := TStringStream.Create(xmlContent, TEncoding.UTF8);
+  try
+    Result := TZUGFeRDInvoiceDescriptor.Load(stream);
+  finally
+    stream.Free;
+  end;
+end;
+
+procedure TZUGFeRD22Tests.TestPaymentTermsXRechnungSkontoWithSeparateNetTerm;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+begin
+  // Skonto als #SKONTO# mit BG-X-44, Netto-Ziel in einem eigenen Block ohne #-Zeile.
+  // Der Netto-Block ging früher verloren, weil der #SKONTO#-Pfad nur #-Zeilen übernahm.
+  desc := LoadExtendedInvoiceWithPaymentTerms(DemodataPath('zugferd21\zugferd_2p1_EXTENDED_Warenrechnung-factur-x.xml'),
+    '<ram:SpecifiedTradePaymentTerms>' +
+      '<ram:Description>#SKONTO#TAGE=27#PROZENT=3.00#BASISBETRAG=215.24#</ram:Description>' +
+      '<ram:DueDateDateTime><udt:DateTimeString format="102">20261115</udt:DateTimeString></ram:DueDateDateTime>' +
+      '<ram:ApplicableTradePaymentDiscountTerms>' +
+        '<ram:BasisAmount>215.24</ram:BasisAmount>' +
+        '<ram:CalculationPercent>3</ram:CalculationPercent>' +
+        '<ram:ActualDiscountAmount>6.46</ram:ActualDiscountAmount>' +
+      '</ram:ApplicableTradePaymentDiscountTerms>' +
+    '</ram:SpecifiedTradePaymentTerms>' +
+    '<ram:SpecifiedTradePaymentTerms>' +
+      '<ram:Description>Bis zum 08.12.2026 ohne Abzug</ram:Description>' +
+      '<ram:DueDateDateTime><udt:DateTimeString format="102">20261208</udt:DateTimeString></ram:DueDateDateTime>' +
+    '</ram:SpecifiedTradePaymentTerms>');
+  try
+    Assert.AreEqual(2, Integer(desc.PaymentTermsList.Count));
+
+    Assert.IsTrue(desc.PaymentTermsList[0].PaymentTermsType.HasValue);
+    Assert.AreEqual(Ord(TZUGFeRDPaymentTermsType.Skonto), Ord(desc.PaymentTermsList[0].PaymentTermsType.Value));
+    Assert.AreEqual<Integer>(27, desc.PaymentTermsList[0].DueDays.Value);
+    Assert.AreEqual<Currency>(3.00, desc.PaymentTermsList[0].Percentage.Value);
+    Assert.AreEqual<Currency>(215.24, desc.PaymentTermsList[0].BaseAmount.Value);
+    Assert.IsTrue(desc.PaymentTermsList[0].ActualAmount.HasValue, 'ActualDiscountAmount aus BG-X-44 fehlt.');
+    Assert.AreEqual<Currency>(6.46, desc.PaymentTermsList[0].ActualAmount.Value);
+    Assert.AreEqual(EncodeDate(2026, 11, 15), desc.PaymentTermsList[0].DueDate.Value);
+
+    Assert.AreEqual('Bis zum 08.12.2026 ohne Abzug', desc.PaymentTermsList[1].Description);
+    Assert.IsTrue(desc.PaymentTermsList[1].DueDate.HasValue);
+    Assert.AreEqual(EncodeDate(2026, 12, 8), desc.PaymentTermsList[1].DueDate.Value);
+    Assert.IsFalse(desc.PaymentTermsList[1].PaymentTermsType.HasValue);
+    Assert.IsFalse(desc.PaymentTermsList[1].Percentage.HasValue);
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TZUGFeRD22Tests.TestPaymentTermsXRechnungSkontoWithoutTrailingHash;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+begin
+  // Ohne abschließendes '#' hat die Zeile kein viertes Feld; BASISBETRAG und
+  // Fälligkeit kommen dann aus BG-X-44.
+  desc := LoadExtendedInvoiceWithPaymentTerms(DemodataPath('zugferd21\zugferd_2p1_EXTENDED_Warenrechnung-factur-x.xml'),
+    '<ram:SpecifiedTradePaymentTerms>' +
+      '<ram:Description>#SKONTO#TAGE=16#PROZENT=3</ram:Description>' +
+      '<ram:DueDateDateTime><udt:DateTimeString format="102">20261231</udt:DateTimeString></ram:DueDateDateTime>' +
+      '<ram:ApplicableTradePaymentDiscountTerms>' +
+        '<ram:BasisDateTime><udt:DateTimeString format="102">20261111</udt:DateTimeString></ram:BasisDateTime>' +
+        '<ram:BasisPeriodMeasure unitCode="DAY">16</ram:BasisPeriodMeasure>' +
+        '<ram:BasisAmount>1374.06</ram:BasisAmount>' +
+        '<ram:CalculationPercent>3</ram:CalculationPercent>' +
+      '</ram:ApplicableTradePaymentDiscountTerms>' +
+    '</ram:SpecifiedTradePaymentTerms>');
+  try
+    Assert.AreEqual(1, Integer(desc.PaymentTermsList.Count));
+    Assert.AreEqual(Ord(TZUGFeRDPaymentTermsType.Skonto), Ord(desc.PaymentTermsList[0].PaymentTermsType.Value));
+    Assert.AreEqual<Integer>(16, desc.PaymentTermsList[0].DueDays.Value);
+    Assert.AreEqual<Currency>(3, desc.PaymentTermsList[0].Percentage.Value);
+    Assert.IsTrue(desc.PaymentTermsList[0].BaseAmount.HasValue, 'BasisAmount aus BG-X-44 fehlt.');
+    Assert.AreEqual<Currency>(1374.06, desc.PaymentTermsList[0].BaseAmount.Value);
+    Assert.AreEqual(EncodeDate(2026, 11, 11), desc.PaymentTermsList[0].MaturityDate.Value);
+    Assert.AreEqual(EncodeDate(2026, 12, 31), desc.PaymentTermsList[0].DueDate.Value);
   finally
     desc.Free;
   end;

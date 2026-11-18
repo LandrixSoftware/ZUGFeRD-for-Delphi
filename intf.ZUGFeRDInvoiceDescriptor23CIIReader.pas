@@ -172,6 +172,65 @@ begin
   end;
 end;
 
+// Liest ein ram:SpecifiedTradePaymentTerms strukturiert: Beschreibung, Fälligkeit,
+// Teilzahlung und - im Profil EXTENDED - BG-X-44 (Skonto) bzw. BG-X-45 (Verzug).
+function ReadStructuredPaymentTerm(node: IXMLDOMNode): TZUGFeRDPaymentTerms;
+begin
+  Result := TZUGFeRDPaymentTerms.Create;
+  Result.Description := TZUGFeRDXmlUtils.NodeAsString(node, './/ram:Description');
+  Result.DueDate:= TZUGFeRDXmlUtils.NodeAsDateTime(node, './/ram:DueDateDateTime/udt:DateTimeString');
+  Result.PartialPaymentAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(node, './/ram:PartialPaymentAmount');
+  var discountPercent: ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(node, './/ram:ApplicableTradePaymentDiscountTerms/ram:CalculationPercent');
+  var penaltyPercent: ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(node, './/ram:ApplicableTradePaymentPenaltyTerms/ram:CalculationPercent');
+  if discountPercent.HasValue then
+  begin
+    Result.PaymentTermsType:= TZUGFeRDPaymentTermsType.Skonto;
+    Result.Percentage:= discountPercent;
+    if TZUGFeRDQuantityCodes.DAY = TEnumExtensions<TZUGFeRDQuantityCodes>.StringToEnum(TZUGFeRDXmlUtils.NodeAsString(node, './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisPeriodMeasure/@unitCode')) then
+      Result.DueDays:= TZUGFeRDXmlUtils.NodeAsInt(node, './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisPeriodMeasure');
+    Result.MaturityDate:= TZUGFeRDXmlUtils.NodeAsDateTime(node, './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisDateTime/udt:DateTimeString'); //BT-X-282-0
+    Result.BaseAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(node, './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisAmount');
+    Result.ActualAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(node, './/ram:ApplicableTradePaymentDiscountTerms/ram:ActualDiscountAmount');
+  end
+  else
+  if penaltyPercent.HasValue then
+  begin
+    Result.PaymentTermsType:= TZUGFeRDPaymentTermsType.Verzug;
+    Result.Percentage:= penaltyPercent;
+    if TZUGFeRDQuantityCodes.DAY = TEnumExtensions<TZUGFeRDQuantityCodes>.StringToEnum(TZUGFeRDXmlUtils.NodeAsString(node, './/ram:ApplicableTradePaymentPenaltyTerms/ram:BasisPeriodMeasure/@unitCode')) then
+      Result.DueDays:= TZUGFeRDXmlUtils.NodeAsInt(node, './/ram:ApplicableTradePaymentPenaltyTerms/ram:BasisPeriodMeasure');
+    Result.MaturityDate:= TZUGFeRDXmlUtils.NodeAsDateTime(node, './/ram:ApplicableTradePaymentPenaltyTerms/ram:BasisDateTime/udt:DateTimeString'); // BT-X-276-0
+    Result.BaseAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(node, './/ram:ApplicableTradePaymentPenaltyTerms/ram:BasisAmount');
+    Result.ActualAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(node, './/ram:ApplicableTradePaymentPenaltyTerms/ram:ActualPenaltyAmount');
+  end;
+end;
+
+// Ergänzt einen aus #SKONTO#/#VERZUG# gelesenen Eintrag um die strukturierten Angaben
+// desselben Blocks (BG-X-44/BG-X-45), soweit der Text sie nicht schon liefert.
+// Passt nur bei gleicher Art und - falls beide einen haben - gleichem Prozentsatz.
+function MergeStructuredPaymentTerm(paymentTerm, structured: TZUGFeRDPaymentTerms): boolean;
+begin
+  Result := false;
+  if not (paymentTerm.PaymentTermsType.HasValue and structured.PaymentTermsType.HasValue) then
+    exit;
+  if paymentTerm.PaymentTermsType.Value <> structured.PaymentTermsType.Value then
+    exit;
+  if paymentTerm.Percentage.HasValue and structured.Percentage.HasValue and
+     (paymentTerm.Percentage.Value <> structured.Percentage.Value) then
+    exit;
+  if not paymentTerm.Percentage.HasValue then
+    paymentTerm.Percentage := structured.Percentage;
+  if not paymentTerm.DueDays.HasValue then
+    paymentTerm.DueDays := structured.DueDays;
+  if not paymentTerm.BaseAmount.HasValue then
+    paymentTerm.BaseAmount := structured.BaseAmount;
+  if not paymentTerm.ActualAmount.HasValue then
+    paymentTerm.ActualAmount := structured.ActualAmount;
+  if not paymentTerm.MaturityDate.HasValue then
+    paymentTerm.MaturityDate := structured.MaturityDate;
+  Result := true;
+end;
+
 function TryReadXRechnungPaymentTerms(invoice: TZUGFeRDInvoiceDescriptor; nodes : IXMLDOMNodeList): boolean;
 begin
   // try to find if Payment Terms are given in #SKONTO# or #VERZUG# format in the description field
@@ -214,32 +273,51 @@ begin
       finally
         Lines.Free
       end;
-      var first: boolean := true;
-      for var Term in Terms do
+
+      // Block ohne #SKONTO#/#VERZUG#-Zeile, z.B. das Netto-Zahlungsziel neben einem
+      // Skonto-Block (ZUGFeRD EXTENDED): wie im Normalfall lesen, sonst ginge er verloren.
+      if Terms.Count = 0 then
       begin
-         var paymentTerm : TZUGFeRDPaymentTerms := TZUGFeRDPaymentTerms.Create;
-         if first then
-         begin
-           paymentTerm.Description:= Description;
-           paymentTerm.DueDate:= TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './/ram:DueDateDateTime/udt:DateTimeString');
-           first:= false;
-         end;
-         var Parts: TArray<string> := Term.Split(['#']); // 0 Leer, 1 SKONTO/VERZUG, 2 TAGE, 3 PROZENT, 4 Leer or BASISWERT
-         if Length(Parts)>=4 then
-         begin
-           if Parts[1]='SKONTO' then
-             paymentTerm.PaymentTermsType:= TZUGFeRDPaymentTermsType.Skonto
-           else
-           if Parts[1]='VERZUG' then
-             paymentTerm.PaymentTermsType:= TZUGFeRDPaymentTermsType.Verzug;
-           if copy(Parts[2], 1, 5)='TAGE=' then
-             paymentTerm.DueDays:= StrToIntDef(Copy(Parts[2], 6, Length(Parts[2])), 0);
-           if copy(Parts[3], 1, 8)='PROZENT=' then
-             paymentTerm.Percentage:= StrToFloatDef(Copy(Parts[3], 9, Length(Parts[3])), 0, TFormatSettings.Invariant);
-           if copy(Parts[4], 1, 12)='BASISBETRAG=' then
-             paymentTerm.BaseAmount:= StrToCurrDef(copy(Parts[4], 13, Length(Parts[4])), 0, TFormatSettings.Invariant);
-         end;
-        invoice.PaymentTermsList.Add(paymentTerm);
+        invoice.PaymentTermsList.Add(ReadStructuredPaymentTerm(nodes[i]));
+        continue;
+      end;
+
+      // strukturierte Angaben desselben Blocks, um den ersten passenden Eintrag zu ergänzen
+      var structured: TZUGFeRDPaymentTerms := ReadStructuredPaymentTerm(nodes[i]);
+      try
+        var merged: boolean := false;
+        var first: boolean := true;
+        for var Term in Terms do
+        begin
+          var paymentTerm : TZUGFeRDPaymentTerms := TZUGFeRDPaymentTerms.Create;
+          if first then
+          begin
+            paymentTerm.Description:= Description;
+            paymentTerm.DueDate:= TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './/ram:DueDateDateTime/udt:DateTimeString');
+            first:= false;
+          end;
+          var Parts: TArray<string> := Term.Split(['#']); // 0 Leer, 1 SKONTO/VERZUG, 2 TAGE, 3 PROZENT, 4 Leer or BASISWERT
+          if Length(Parts)>=4 then
+          begin
+            if Parts[1]='SKONTO' then
+              paymentTerm.PaymentTermsType:= TZUGFeRDPaymentTermsType.Skonto
+            else
+            if Parts[1]='VERZUG' then
+              paymentTerm.PaymentTermsType:= TZUGFeRDPaymentTermsType.Verzug;
+            if copy(Parts[2], 1, 5)='TAGE=' then
+              paymentTerm.DueDays:= StrToIntDef(Copy(Parts[2], 6, Length(Parts[2])), 0);
+            if copy(Parts[3], 1, 8)='PROZENT=' then
+              paymentTerm.Percentage:= StrToFloatDef(Copy(Parts[3], 9, Length(Parts[3])), 0, TFormatSettings.Invariant);
+            // ohne abschließendes '#' gibt es kein Parts[4]
+            if (Length(Parts)>=5) and (copy(Parts[4], 1, 12)='BASISBETRAG=') then
+              paymentTerm.BaseAmount:= StrToCurrDef(copy(Parts[4], 13, Length(Parts[4])), 0, TFormatSettings.Invariant);
+          end;
+          if not merged then
+            merged := MergeStructuredPaymentTerm(paymentTerm, structured);
+          invoice.PaymentTermsList.Add(paymentTerm);
+        end;
+      finally
+        structured.Free;
       end;
     finally
       Terms.Free;
@@ -574,37 +652,7 @@ begin
   nodes := doc.SelectNodes('//ram:SpecifiedTradePaymentTerms');
   if Not (TryReadXRechnungPaymentTerms(Result, nodes)) then
     for i := 0 to nodes.length-1 do
-    begin
-      var paymentTerm : TZUGFeRDPaymentTerms := TZUGFeRDPaymentTerms.Create;
-      paymentTerm.Description := TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:Description');
-      paymentTerm.DueDate:= TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './/ram:DueDateDateTime/udt:DateTimeString');
-      paymentTerm.PartialPaymentAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:PartialPaymentAmount');
-      var discountPercent: ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:CalculationPercent');
-      var penaltyPercent: ZUGFeRDNullable<Currency> := TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:CalculationPercent');
-      if discountPercent.HasValue then
-      begin
-        paymentTerm.PaymentTermsType:= TZUGFeRDPaymentTermsType.Skonto;
-        paymentTerm.Percentage:= discountPercent;
-        if TZUGFeRDQuantityCodes.DAY = TEnumExtensions<TZUGFeRDQuantityCodes>.StringToEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisPeriodMeasure/@unitCode')) then
-          paymentTerm.DueDays:= TZUGFeRDXmlUtils.NodeAsInt(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisPeriodMeasure');
-        paymentTerm.MaturityDate:= TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisDateTime/udt:DateTimeString'); //BT-X-282-0
-        paymentTerm.BaseAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisAmount');
-        paymentTerm.ActualAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:ActualDiscountAmount');
-      end
-      else
-      if penaltyPercent.HasValue then
-      begin
-        paymentTerm.PaymentTermsType:= TZUGFeRDPaymentTermsType.Verzug;
-        paymentTerm.Percentage:= penaltyPercent;
-        if TZUGFeRDQuantityCodes.DAY = TEnumExtensions<TZUGFeRDQuantityCodes>.StringToEnum(TZUGFeRDXmlUtils.NodeAsString(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:BasisPeriodMeasure/@unitCode')) then
-          paymentTerm.DueDays:= TZUGFeRDXmlUtils.NodeAsInt(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:BasisPeriodMeasure');
-        paymentTerm.MaturityDate:= TZUGFeRDXmlUtils.NodeAsDateTime(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:BasisDateTime/udt:DateTimeString'); // BT-X-276-0
-        paymentTerm.BaseAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:BasisAmount');
-        paymentTerm.ActualAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:ActualPenaltyAmount');
-      end;
-
-      Result.PaymentTermsList.Add(paymentTerm);
-    end;
+      Result.PaymentTermsList.Add(ReadStructuredPaymentTerm(nodes[i]));
 
   Result.LineTotalAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:LineTotalAmount');
   Result.ChargeTotalAmount:= TZUGFeRDXmlUtils.NodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:ChargeTotalAmount');
